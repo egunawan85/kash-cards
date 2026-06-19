@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="utf-8"?>
+<edmx:Edmx Version="3.0" xmlns:edmx="http://schemas.microsoft.com/ado/2009/11/edmx">
+ <!-- EF Designer content (DO NOT EDIT MANUALLY BELOW HERE) -->
+  <edmx:Designer xmlns="http://schemas.microsoft.com/ado/2009/11/edmx">
+    <!-- Diagram content (shape and connector positions) -->
+    <edmx:Diagrams>
+      <Diagram DiagramId="87f8131b8ac5425b9ca38eedcd6063a9" Name="Diagram1">
+        <EntityTypeShape EntityType="DBModel.tblH_Admin_Login" Width="1.5" PointX="0.75" PointY="0.75" />
+        <EntityTypeShape EntityType="DBModel.tblH_Admin_OTP" Width="1.5" PointX="2.75" PointY="0.75" />
+        <EntityTypeShape EntityType="DBModel.tblH_API_Log" Width="1.5" PointX="4.75" PointY="0.75" />
+        <EntityTypeShape EntityType="DBModel.tblH_Partner_Webhook" Width="1.5" PointX="4.75" PointY="3.75" />
+        <EntityTypeShape EntityType="DBModel.tblH_Partner_Webhook_ID" Width="1.5" PointX="6.75" PointY="0.75" />
+        <EntityTypeShape EntityType="DBModel.tblH_User_Balance" Width="1.5" PointX="6.75" PointY="3.75" />
+        <EntityTypeShape EntityType="DBModel.tblH_User_Login" Width="1.5" PointX="0.75" PointY="7.75" />
+        <EntityTypeShape EntityType="DBModel.tblH_User_OTP" Width="1.5" PointX="2.75" PointY="7.75" />
+        <EntityTypeShape EntityType="DBModel.tblH_User_Register" Width="1.5" PointX="8.75" PointY="0.75" />
+        <EntityTypeShape EntityType="DBModel.tblM_Address_Generator" Width="1.5" PointX="4.75" PointY="8.75" />
+        <EntityTypeShape EntityType="DBModel.tblM_Admin" Width="1.5" PointX="8.75" PointY="6.75" />
+        <EntityTypeShape EntityType="DBModel.tblM_Admin_Role" Width="1.5" PointX="10.75" PointY="0.75" />
+        <EntityTypeShape EntityType="DBModel.tblM_Card_Type" Width="1.5" PointX="10.75" PointY="4.75" />
+        <EntityTypeShape EntityType="DBModel.tblM_Card_Type_Recharge" Width="1.5" PointX="12.75" PointY="0.75" />
+        <EntityTypeShape EntityType="DBModel.tblM_Cardholder" Width="1.5" PointX="12.75" PointY="4.75" />
+        <EntityTypeShape EntityType="DBModel.tblM_Country_City" Width="1.5" PointX="10.75" PointY="12.75" />
+        <EntityTypeShape EntityType="DBModel.tblM_Country_Mobile" Width="1.5" PointX="12.75" PointY="11.75" />
+        <EntityTypeShape EntityType="DBModel.tblM_Country_Region" Width="1.5" PointX="4.75" PointY="13.75" />
+        <EntityTypeShape EntityType="DBModel.tblM_Crypto_Network" Width="1.5" PointX="6.75" PointY="13.75" />
+        <EntityTypeShape EntityType="DBModel.tblM_Setting" Width="1.5" PointX="14.75" PointY="0.75" />
+        <EntityTypeShape EntityType="DBModel.tblM_Setting_Counter" Width="1.5" PointX="0.75" PointY="14.75" />
+        <EntityTypeShape EntityType="DBModel.tblM_User" Width="1.5" PointX="14.75" PointY="4.75" />
+        <EntityTypeShape EntityType="DBModel.tblM_User_2FA" Width="1.5" PointX="14.75" PointY="12.75" />
+        <EntityTypeShape EntityType="DBModel.tblM_User_Balance" Width="1.5" PointX="8.75" PointY="15.75" />
+        <EntityTypeShape EntityType="DBModel.tblM_User_Crypto_Deposit" Width="1.5" PointX="10.75" PointY="15.75" />
+        <EntityTypeShape EntityType="DBModel.tblM_User_Fee" Width="1.5" PointX="12.75" PointY="15.75" />
+        <EntityTypeShape EntityType="DBModel.tblM_User_Referral" Width="1.5" PointX="14.75" PointY="15.75" />
+        <EntityTypeShape EntityType="DBModel.tblM_User_Role" Width="1.5" PointX="16.75" PointY="0.75" />
+        <EntityTypeShape EntityType="DBModel.tblT_Card" Width="1.5" PointX="2.75" PointY="16.75" />
+        <EntityTypeShape EntityType="DBModel.tblT_Card_Balance" Width="1.5" PointX="16.75" PointY="4.75" />
+        <EntityTypeShape EntityType="DBModel.tblT_Card_Deposit" Width="1.5" PointX="16.75" PointY="7.75" />
+        <EntityTypeShape EntityType="DBModel.tblT_Card_Transaction" Width="1.5" PointX="16.75" PointY="15.75" />
+        <EntityTypeShape EntityType="DBModel.tblT_Card_Transaction_Auth" Width="1.5" PointX="4.75" PointY="17.75" />
+        <EntityTypeShape EntityType="DBModel.tblT_Commission" Width="1.5" PointX="18.75" PointY="0.75" />
+        <EntityTypeShape EntityType="DBModel.tblT_User_ForgotPassword" Width="1.5" PointX="18.75" PointY="5.75" />
+        <EntityTypeShape EntityType="DBModel.vw_Card" Width="1.5" PointX="18.75" PointY="10.75" />
+        <EntityTypeShape EntityType="DBModel.database_firewall_rules" Width="1.5" PointX="6.75" PointY="19.75" />
+      </Diagram>
+    </edmx:Diagrams>
+  </edmx:Designer>
+</edmx:Edmx>

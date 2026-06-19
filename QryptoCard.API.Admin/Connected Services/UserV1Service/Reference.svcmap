@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ReferenceGroup xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" ID="fa51e480-59b6-466b-b45a-c966c36b3ff3" xmlns="urn:schemas-microsoft-com:xml-wcfservicemap">
+  <ClientOptions>
+    <GenerateAsynchronousMethods>false</GenerateAsynchronousMethods>
+    <GenerateTaskBasedAsynchronousMethod>true</GenerateTaskBasedAsynchronousMethod>
+    <EnableDataBinding>true</EnableDataBinding>
+    <ExcludedTypes />
+    <ImportXmlTypes>false</ImportXmlTypes>
+    <GenerateInternalTypes>false</GenerateInternalTypes>
+    <GenerateMessageContracts>false</GenerateMessageContracts>
+    <NamespaceMappings />
+    <CollectionMappings />
+    <GenerateSerializableTypes>true</GenerateSerializableTypes>
+    <Serializer>Auto</Serializer>
+    <UseSerializerForFaults>true</UseSerializerForFaults>
+    <ReferenceAllAssemblies>true</ReferenceAllAssemblies>
+    <ReferencedAssemblies />
+    <ReferencedDataContractTypes />
+    <ServiceContractMappings />
+  </ClientOptions>
+  <MetadataSources>
+    <MetadataSource Address="http://localhost:50434/Script/Service/Admin/v1/UserV1Service.svc" Protocol="http" SourceId="1" />
+  </MetadataSources>
+  <Metadata>
+    <MetadataFile FileName="UserV1Service.xsd" MetadataType="Schema" ID="0d23451d-eb5c-4cb9-96a8-329edfcdbadf" SourceId="1" SourceUrl="http://localhost:50434/Script/Service/Admin/v1/UserV1Service.svc?xsd=xsd3" />
+    <MetadataFile FileName="UserV1Service1.xsd" MetadataType="Schema" ID="47691de6-c1e5-4584-825e-4b9569520d8a" SourceId="1" SourceUrl="http://localhost:50434/Script/Service/Admin/v1/UserV1Service.svc?xsd=xsd2" />
+    <MetadataFile FileName="UserV1Service.disco" MetadataType="Disco" ID="30a4ab69-5f89-4207-9b2b-23f9ae0e1804" SourceId="1" SourceUrl="http://localhost:50434/Script/Service/Admin/v1/UserV1Service.svc?disco" />
+    <MetadataFile FileName="UserV1Service2.xsd" MetadataType="Schema" ID="fc82dbc5-47a0-4739-b86c-a4e1e1bd3b12" SourceId="1" SourceUrl="http://localhost:50434/Script/Service/Admin/v1/UserV1Service.svc?xsd=xsd0" />
+    <MetadataFile FileName="UserV1Service.wsdl" MetadataType="Wsdl" ID="806df2ae-200b-4136-adb5-d848a9cde1c6" SourceId="1" SourceUrl="http://localhost:50434/Script/Service/Admin/v1/UserV1Service.svc?wsdl" />
+    <MetadataFile FileName="UserV1Service3.xsd" MetadataType="Schema" ID="4df51c94-0cec-4d96-8fe3-4fe91a9c6232" SourceId="1" SourceUrl="http://localhost:50434/Script/Service/Admin/v1/UserV1Service.svc?xsd=xsd1" />
+  </Metadata>
+  <Extensions>
+    <ExtensionFile FileName="configuration91.svcinfo" Name="configuration91.svcinfo" />
+    <ExtensionFile FileName="configuration.svcinfo" Name="configuration.svcinfo" />
+  </Extensions>
+</ReferenceGroup>

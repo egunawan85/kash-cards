@@ -1,0 +1,1 @@
+﻿<%@ ServiceHost Language="C#" Debug="true" Service="QryptoCard.INT.Script.Service.API.v1.CardV1Service" CodeBehind="CardV1Service.svc.cs" %>

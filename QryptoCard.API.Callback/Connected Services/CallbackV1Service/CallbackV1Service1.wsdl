@@ -1,0 +1,115 @@
+<?xml version="1.0" encoding="utf-8"?>
+<wsdl:definitions xmlns:wsam="http://www.w3.org/2007/05/addressing/metadata" xmlns:wsx="http://schemas.xmlsoap.org/ws/2004/09/mex" xmlns:wsap="http://schemas.xmlsoap.org/ws/2004/08/addressing/policy" xmlns:msc="http://schemas.microsoft.com/ws/2005/12/wsdl/contract" xmlns:wsp="http://schemas.xmlsoap.org/ws/2004/09/policy" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:soap="http://schemas.xmlsoap.org/wsdl/soap/" xmlns:wsu="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-utility-1.0.xsd" xmlns:soap12="http://schemas.xmlsoap.org/wsdl/soap12/" xmlns:soapenc="http://schemas.xmlsoap.org/soap/encoding/" xmlns:tns="http://tempuri.org/" xmlns:wsa10="http://www.w3.org/2005/08/addressing" xmlns:wsaw="http://www.w3.org/2006/05/addressing/wsdl" xmlns:wsa="http://schemas.xmlsoap.org/ws/2004/08/addressing" name="CallbackV1Service" targetNamespace="http://tempuri.org/" xmlns:wsdl="http://schemas.xmlsoap.org/wsdl/">
+  <wsdl:types>
+    <xsd:schema targetNamespace="http://tempuri.org/Imports">
+      <xsd:import schemaLocation="http://localhost:61205/Service/v1/CallbackV1Service.svc?xsd=xsd0" namespace="http://tempuri.org/" />
+      <xsd:import schemaLocation="http://localhost:61205/Service/v1/CallbackV1Service.svc?xsd=xsd1" namespace="http://schemas.microsoft.com/2003/10/Serialization/" />
+      <xsd:import schemaLocation="http://localhost:61205/Service/v1/CallbackV1Service.svc?xsd=xsd2" namespace="http://schemas.datacontract.org/2004/07/QryptoCard.INT.Callback.Model.PGCrypto" />
+    </xsd:schema>
+  </wsdl:types>
+  <wsdl:message name="ICallbackV1Service_testDecrypt_InputMessage">
+    <wsdl:part name="parameters" element="tns:testDecrypt" />
+  </wsdl:message>
+  <wsdl:message name="ICallbackV1Service_testDecrypt_OutputMessage">
+    <wsdl:part name="parameters" element="tns:testDecryptResponse" />
+  </wsdl:message>
+  <wsdl:message name="ICallbackV1Service_Wasabi_InputMessage">
+    <wsdl:part name="parameters" element="tns:Wasabi" />
+  </wsdl:message>
+  <wsdl:message name="ICallbackV1Service_Wasabi_OutputMessage">
+    <wsdl:part name="parameters" element="tns:WasabiResponse" />
+  </wsdl:message>
+  <wsdl:message name="ICallbackV1Service_PGCrypto_InputMessage">
+    <wsdl:part name="parameters" element="tns:PGCrypto" />
+  </wsdl:message>
+  <wsdl:message name="ICallbackV1Service_PGCrypto_OutputMessage">
+    <wsdl:part name="parameters" element="tns:PGCryptoResponse" />
+  </wsdl:message>
+  <wsdl:message name="ICallbackV1Service_recreateCallback_InputMessage">
+    <wsdl:part name="parameters" element="tns:recreateCallback" />
+  </wsdl:message>
+  <wsdl:message name="ICallbackV1Service_recreateCallback_OutputMessage">
+    <wsdl:part name="parameters" element="tns:recreateCallbackResponse" />
+  </wsdl:message>
+  <wsdl:message name="ICallbackV1Service_reTopup_InputMessage">
+    <wsdl:part name="parameters" element="tns:reTopup" />
+  </wsdl:message>
+  <wsdl:message name="ICallbackV1Service_reTopup_OutputMessage">
+    <wsdl:part name="parameters" element="tns:reTopupResponse" />
+  </wsdl:message>
+  <wsdl:portType name="ICallbackV1Service">
+    <wsdl:operation name="testDecrypt">
+      <wsdl:input wsaw:Action="http://tempuri.org/ICallbackV1Service/testDecrypt" message="tns:ICallbackV1Service_testDecrypt_InputMessage" />
+      <wsdl:output wsaw:Action="http://tempuri.org/ICallbackV1Service/testDecryptResponse" message="tns:ICallbackV1Service_testDecrypt_OutputMessage" />
+    </wsdl:operation>
+    <wsdl:operation name="Wasabi">
+      <wsdl:input wsaw:Action="http://tempuri.org/ICallbackV1Service/Wasabi" message="tns:ICallbackV1Service_Wasabi_InputMessage" />
+      <wsdl:output wsaw:Action="http://tempuri.org/ICallbackV1Service/WasabiResponse" message="tns:ICallbackV1Service_Wasabi_OutputMessage" />
+    </wsdl:operation>
+    <wsdl:operation name="PGCrypto">
+      <wsdl:input wsaw:Action="http://tempuri.org/ICallbackV1Service/PGCrypto" message="tns:ICallbackV1Service_PGCrypto_InputMessage" />
+      <wsdl:output wsaw:Action="http://tempuri.org/ICallbackV1Service/PGCryptoResponse" message="tns:ICallbackV1Service_PGCrypto_OutputMessage" />
+    </wsdl:operation>
+    <wsdl:operation name="recreateCallback">
+      <wsdl:input wsaw:Action="http://tempuri.org/ICallbackV1Service/recreateCallback" message="tns:ICallbackV1Service_recreateCallback_InputMessage" />
+      <wsdl:output wsaw:Action="http://tempuri.org/ICallbackV1Service/recreateCallbackResponse" message="tns:ICallbackV1Service_recreateCallback_OutputMessage" />
+    </wsdl:operation>
+    <wsdl:operation name="reTopup">
+      <wsdl:input wsaw:Action="http://tempuri.org/ICallbackV1Service/reTopup" message="tns:ICallbackV1Service_reTopup_InputMessage" />
+      <wsdl:output wsaw:Action="http://tempuri.org/ICallbackV1Service/reTopupResponse" message="tns:ICallbackV1Service_reTopup_OutputMessage" />
+    </wsdl:operation>
+  </wsdl:portType>
+  <wsdl:binding name="BasicHttpBinding_ICallbackV1Service" type="tns:ICallbackV1Service">
+    <soap:binding transport="http://schemas.xmlsoap.org/soap/http" />
+    <wsdl:operation name="testDecrypt">
+      <soap:operation soapAction="http://tempuri.org/ICallbackV1Service/testDecrypt" style="document" />
+      <wsdl:input>
+        <soap:body use="literal" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="Wasabi">
+      <soap:operation soapAction="http://tempuri.org/ICallbackV1Service/Wasabi" style="document" />
+      <wsdl:input>
+        <soap:body use="literal" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="PGCrypto">
+      <soap:operation soapAction="http://tempuri.org/ICallbackV1Service/PGCrypto" style="document" />
+      <wsdl:input>
+        <soap:body use="literal" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="recreateCallback">
+      <soap:operation soapAction="http://tempuri.org/ICallbackV1Service/recreateCallback" style="document" />
+      <wsdl:input>
+        <soap:body use="literal" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="reTopup">
+      <soap:operation soapAction="http://tempuri.org/ICallbackV1Service/reTopup" style="document" />
+      <wsdl:input>
+        <soap:body use="literal" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+  </wsdl:binding>
+  <wsdl:service name="CallbackV1Service">
+    <wsdl:port name="BasicHttpBinding_ICallbackV1Service" binding="tns:BasicHttpBinding_ICallbackV1Service">
+      <soap:address location="http://localhost:61205/Service/v1/CallbackV1Service.svc" />
+    </wsdl:port>
+  </wsdl:service>
+</wsdl:definitions>

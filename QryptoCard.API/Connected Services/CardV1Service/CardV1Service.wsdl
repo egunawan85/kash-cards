@@ -1,0 +1,363 @@
+<?xml version="1.0" encoding="utf-8"?>
+<wsdl:definitions xmlns:wsam="http://www.w3.org/2007/05/addressing/metadata" xmlns:wsx="http://schemas.xmlsoap.org/ws/2004/09/mex" xmlns:wsap="http://schemas.xmlsoap.org/ws/2004/08/addressing/policy" xmlns:msc="http://schemas.microsoft.com/ws/2005/12/wsdl/contract" xmlns:wsp="http://schemas.xmlsoap.org/ws/2004/09/policy" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:soap="http://schemas.xmlsoap.org/wsdl/soap/" xmlns:wsu="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-utility-1.0.xsd" xmlns:soap12="http://schemas.xmlsoap.org/wsdl/soap12/" xmlns:soapenc="http://schemas.xmlsoap.org/soap/encoding/" xmlns:tns="http://tempuri.org/" xmlns:wsa10="http://www.w3.org/2005/08/addressing" xmlns:wsaw="http://www.w3.org/2006/05/addressing/wsdl" xmlns:wsa="http://schemas.xmlsoap.org/ws/2004/08/addressing" name="CardV1Service" targetNamespace="http://tempuri.org/" xmlns:wsdl="http://schemas.xmlsoap.org/wsdl/">
+  <wsdl:types>
+    <xsd:schema targetNamespace="http://tempuri.org/Imports">
+      <xsd:import schemaLocation="http://localhost:50434/Script/Service/App/v1/CardV1Service.svc?xsd=xsd0" namespace="http://tempuri.org/" />
+      <xsd:import schemaLocation="http://localhost:50434/Script/Service/App/v1/CardV1Service.svc?xsd=xsd1" namespace="http://schemas.microsoft.com/2003/10/Serialization/" />
+      <xsd:import schemaLocation="http://localhost:50434/Script/Service/App/v1/CardV1Service.svc?xsd=xsd2" namespace="http://schemas.datacontract.org/2004/07/QryptoCard.INT" />
+      <xsd:import schemaLocation="http://localhost:50434/Script/Service/App/v1/CardV1Service.svc?xsd=xsd3" namespace="http://schemas.datacontract.org/2004/07/QryptoCard.INT.Model.Service" />
+    </xsd:schema>
+  </wsdl:types>
+  <wsdl:message name="ICardV1Service_testAPI_InputMessage">
+    <wsdl:part name="parameters" element="tns:testAPI" />
+  </wsdl:message>
+  <wsdl:message name="ICardV1Service_testAPI_OutputMessage">
+    <wsdl:part name="parameters" element="tns:testAPIResponse" />
+  </wsdl:message>
+  <wsdl:message name="ICardV1Service_getDate_InputMessage">
+    <wsdl:part name="parameters" element="tns:getDate" />
+  </wsdl:message>
+  <wsdl:message name="ICardV1Service_getDate_OutputMessage">
+    <wsdl:part name="parameters" element="tns:getDateResponse" />
+  </wsdl:message>
+  <wsdl:message name="ICardV1Service_CardType_InputMessage">
+    <wsdl:part name="parameters" element="tns:CardType" />
+  </wsdl:message>
+  <wsdl:message name="ICardV1Service_CardType_OutputMessage">
+    <wsdl:part name="parameters" element="tns:CardTypeResponse" />
+  </wsdl:message>
+  <wsdl:message name="ICardV1Service_getCardTypeById_InputMessage">
+    <wsdl:part name="parameters" element="tns:getCardTypeById" />
+  </wsdl:message>
+  <wsdl:message name="ICardV1Service_getCardTypeById_OutputMessage">
+    <wsdl:part name="parameters" element="tns:getCardTypeByIdResponse" />
+  </wsdl:message>
+  <wsdl:message name="ICardV1Service_getHolderDetail_InputMessage">
+    <wsdl:part name="parameters" element="tns:getHolderDetail" />
+  </wsdl:message>
+  <wsdl:message name="ICardV1Service_getHolderDetail_OutputMessage">
+    <wsdl:part name="parameters" element="tns:getHolderDetailResponse" />
+  </wsdl:message>
+  <wsdl:message name="ICardV1Service_checkHolderByCardTypeId_InputMessage">
+    <wsdl:part name="parameters" element="tns:checkHolderByCardTypeId" />
+  </wsdl:message>
+  <wsdl:message name="ICardV1Service_checkHolderByCardTypeId_OutputMessage">
+    <wsdl:part name="parameters" element="tns:checkHolderByCardTypeIdResponse" />
+  </wsdl:message>
+  <wsdl:message name="ICardV1Service_openCard_InputMessage">
+    <wsdl:part name="parameters" element="tns:openCard" />
+  </wsdl:message>
+  <wsdl:message name="ICardV1Service_openCard_OutputMessage">
+    <wsdl:part name="parameters" element="tns:openCardResponse" />
+  </wsdl:message>
+  <wsdl:message name="ICardV1Service_getCardList_InputMessage">
+    <wsdl:part name="parameters" element="tns:getCardList" />
+  </wsdl:message>
+  <wsdl:message name="ICardV1Service_getCardList_OutputMessage">
+    <wsdl:part name="parameters" element="tns:getCardListResponse" />
+  </wsdl:message>
+  <wsdl:message name="ICardV1Service_getCardListAll_InputMessage">
+    <wsdl:part name="parameters" element="tns:getCardListAll" />
+  </wsdl:message>
+  <wsdl:message name="ICardV1Service_getCardListAll_OutputMessage">
+    <wsdl:part name="parameters" element="tns:getCardListAllResponse" />
+  </wsdl:message>
+  <wsdl:message name="ICardV1Service_getCardDetail_InputMessage">
+    <wsdl:part name="parameters" element="tns:getCardDetail" />
+  </wsdl:message>
+  <wsdl:message name="ICardV1Service_getCardDetail_OutputMessage">
+    <wsdl:part name="parameters" element="tns:getCardDetailResponse" />
+  </wsdl:message>
+  <wsdl:message name="ICardV1Service_getCardBalance_InputMessage">
+    <wsdl:part name="parameters" element="tns:getCardBalance" />
+  </wsdl:message>
+  <wsdl:message name="ICardV1Service_getCardBalance_OutputMessage">
+    <wsdl:part name="parameters" element="tns:getCardBalanceResponse" />
+  </wsdl:message>
+  <wsdl:message name="ICardV1Service_getCardTransaction_InputMessage">
+    <wsdl:part name="parameters" element="tns:getCardTransaction" />
+  </wsdl:message>
+  <wsdl:message name="ICardV1Service_getCardTransaction_OutputMessage">
+    <wsdl:part name="parameters" element="tns:getCardTransactionResponse" />
+  </wsdl:message>
+  <wsdl:message name="ICardV1Service_getCardTransactionDetail_InputMessage">
+    <wsdl:part name="parameters" element="tns:getCardTransactionDetail" />
+  </wsdl:message>
+  <wsdl:message name="ICardV1Service_getCardTransactionDetail_OutputMessage">
+    <wsdl:part name="parameters" element="tns:getCardTransactionDetailResponse" />
+  </wsdl:message>
+  <wsdl:message name="ICardV1Service_depositCard_InputMessage">
+    <wsdl:part name="parameters" element="tns:depositCard" />
+  </wsdl:message>
+  <wsdl:message name="ICardV1Service_depositCard_OutputMessage">
+    <wsdl:part name="parameters" element="tns:depositCardResponse" />
+  </wsdl:message>
+  <wsdl:message name="ICardV1Service_getCardDepositDetail_InputMessage">
+    <wsdl:part name="parameters" element="tns:getCardDepositDetail" />
+  </wsdl:message>
+  <wsdl:message name="ICardV1Service_getCardDepositDetail_OutputMessage">
+    <wsdl:part name="parameters" element="tns:getCardDepositDetailResponse" />
+  </wsdl:message>
+  <wsdl:message name="ICardV1Service_getCardDepositList_InputMessage">
+    <wsdl:part name="parameters" element="tns:getCardDepositList" />
+  </wsdl:message>
+  <wsdl:message name="ICardV1Service_getCardDepositList_OutputMessage">
+    <wsdl:part name="parameters" element="tns:getCardDepositListResponse" />
+  </wsdl:message>
+  <wsdl:message name="ICardV1Service_cancelCardTransaction_InputMessage">
+    <wsdl:part name="parameters" element="tns:cancelCardTransaction" />
+  </wsdl:message>
+  <wsdl:message name="ICardV1Service_cancelCardTransaction_OutputMessage">
+    <wsdl:part name="parameters" element="tns:cancelCardTransactionResponse" />
+  </wsdl:message>
+  <wsdl:message name="ICardV1Service_cancelDepositTransaction_InputMessage">
+    <wsdl:part name="parameters" element="tns:cancelDepositTransaction" />
+  </wsdl:message>
+  <wsdl:message name="ICardV1Service_cancelDepositTransaction_OutputMessage">
+    <wsdl:part name="parameters" element="tns:cancelDepositTransactionResponse" />
+  </wsdl:message>
+  <wsdl:portType name="ICardV1Service">
+    <wsdl:operation name="testAPI">
+      <wsdl:input wsaw:Action="http://tempuri.org/ICardV1Service/testAPI" message="tns:ICardV1Service_testAPI_InputMessage" />
+      <wsdl:output wsaw:Action="http://tempuri.org/ICardV1Service/testAPIResponse" message="tns:ICardV1Service_testAPI_OutputMessage" />
+    </wsdl:operation>
+    <wsdl:operation name="getDate">
+      <wsdl:input wsaw:Action="http://tempuri.org/ICardV1Service/getDate" message="tns:ICardV1Service_getDate_InputMessage" />
+      <wsdl:output wsaw:Action="http://tempuri.org/ICardV1Service/getDateResponse" message="tns:ICardV1Service_getDate_OutputMessage" />
+    </wsdl:operation>
+    <wsdl:operation name="CardType">
+      <wsdl:input wsaw:Action="http://tempuri.org/ICardV1Service/CardType" message="tns:ICardV1Service_CardType_InputMessage" />
+      <wsdl:output wsaw:Action="http://tempuri.org/ICardV1Service/CardTypeResponse" message="tns:ICardV1Service_CardType_OutputMessage" />
+    </wsdl:operation>
+    <wsdl:operation name="getCardTypeById">
+      <wsdl:input wsaw:Action="http://tempuri.org/ICardV1Service/getCardTypeById" message="tns:ICardV1Service_getCardTypeById_InputMessage" />
+      <wsdl:output wsaw:Action="http://tempuri.org/ICardV1Service/getCardTypeByIdResponse" message="tns:ICardV1Service_getCardTypeById_OutputMessage" />
+    </wsdl:operation>
+    <wsdl:operation name="getHolderDetail">
+      <wsdl:input wsaw:Action="http://tempuri.org/ICardV1Service/getHolderDetail" message="tns:ICardV1Service_getHolderDetail_InputMessage" />
+      <wsdl:output wsaw:Action="http://tempuri.org/ICardV1Service/getHolderDetailResponse" message="tns:ICardV1Service_getHolderDetail_OutputMessage" />
+    </wsdl:operation>
+    <wsdl:operation name="checkHolderByCardTypeId">
+      <wsdl:input wsaw:Action="http://tempuri.org/ICardV1Service/checkHolderByCardTypeId" message="tns:ICardV1Service_checkHolderByCardTypeId_InputMessage" />
+      <wsdl:output wsaw:Action="http://tempuri.org/ICardV1Service/checkHolderByCardTypeIdResponse" message="tns:ICardV1Service_checkHolderByCardTypeId_OutputMessage" />
+    </wsdl:operation>
+    <wsdl:operation name="openCard">
+      <wsdl:input wsaw:Action="http://tempuri.org/ICardV1Service/openCard" message="tns:ICardV1Service_openCard_InputMessage" />
+      <wsdl:output wsaw:Action="http://tempuri.org/ICardV1Service/openCardResponse" message="tns:ICardV1Service_openCard_OutputMessage" />
+    </wsdl:operation>
+    <wsdl:operation name="getCardList">
+      <wsdl:input wsaw:Action="http://tempuri.org/ICardV1Service/getCardList" message="tns:ICardV1Service_getCardList_InputMessage" />
+      <wsdl:output wsaw:Action="http://tempuri.org/ICardV1Service/getCardListResponse" message="tns:ICardV1Service_getCardList_OutputMessage" />
+    </wsdl:operation>
+    <wsdl:operation name="getCardListAll">
+      <wsdl:input wsaw:Action="http://tempuri.org/ICardV1Service/getCardListAll" message="tns:ICardV1Service_getCardListAll_InputMessage" />
+      <wsdl:output wsaw:Action="http://tempuri.org/ICardV1Service/getCardListAllResponse" message="tns:ICardV1Service_getCardListAll_OutputMessage" />
+    </wsdl:operation>
+    <wsdl:operation name="getCardDetail">
+      <wsdl:input wsaw:Action="http://tempuri.org/ICardV1Service/getCardDetail" message="tns:ICardV1Service_getCardDetail_InputMessage" />
+      <wsdl:output wsaw:Action="http://tempuri.org/ICardV1Service/getCardDetailResponse" message="tns:ICardV1Service_getCardDetail_OutputMessage" />
+    </wsdl:operation>
+    <wsdl:operation name="getCardBalance">
+      <wsdl:input wsaw:Action="http://tempuri.org/ICardV1Service/getCardBalance" message="tns:ICardV1Service_getCardBalance_InputMessage" />
+      <wsdl:output wsaw:Action="http://tempuri.org/ICardV1Service/getCardBalanceResponse" message="tns:ICardV1Service_getCardBalance_OutputMessage" />
+    </wsdl:operation>
+    <wsdl:operation name="getCardTransaction">
+      <wsdl:input wsaw:Action="http://tempuri.org/ICardV1Service/getCardTransaction" message="tns:ICardV1Service_getCardTransaction_InputMessage" />
+      <wsdl:output wsaw:Action="http://tempuri.org/ICardV1Service/getCardTransactionResponse" message="tns:ICardV1Service_getCardTransaction_OutputMessage" />
+    </wsdl:operation>
+    <wsdl:operation name="getCardTransactionDetail">
+      <wsdl:input wsaw:Action="http://tempuri.org/ICardV1Service/getCardTransactionDetail" message="tns:ICardV1Service_getCardTransactionDetail_InputMessage" />
+      <wsdl:output wsaw:Action="http://tempuri.org/ICardV1Service/getCardTransactionDetailResponse" message="tns:ICardV1Service_getCardTransactionDetail_OutputMessage" />
+    </wsdl:operation>
+    <wsdl:operation name="depositCard">
+      <wsdl:input wsaw:Action="http://tempuri.org/ICardV1Service/depositCard" message="tns:ICardV1Service_depositCard_InputMessage" />
+      <wsdl:output wsaw:Action="http://tempuri.org/ICardV1Service/depositCardResponse" message="tns:ICardV1Service_depositCard_OutputMessage" />
+    </wsdl:operation>
+    <wsdl:operation name="getCardDepositDetail">
+      <wsdl:input wsaw:Action="http://tempuri.org/ICardV1Service/getCardDepositDetail" message="tns:ICardV1Service_getCardDepositDetail_InputMessage" />
+      <wsdl:output wsaw:Action="http://tempuri.org/ICardV1Service/getCardDepositDetailResponse" message="tns:ICardV1Service_getCardDepositDetail_OutputMessage" />
+    </wsdl:operation>
+    <wsdl:operation name="getCardDepositList">
+      <wsdl:input wsaw:Action="http://tempuri.org/ICardV1Service/getCardDepositList" message="tns:ICardV1Service_getCardDepositList_InputMessage" />
+      <wsdl:output wsaw:Action="http://tempuri.org/ICardV1Service/getCardDepositListResponse" message="tns:ICardV1Service_getCardDepositList_OutputMessage" />
+    </wsdl:operation>
+    <wsdl:operation name="cancelCardTransaction">
+      <wsdl:input wsaw:Action="http://tempuri.org/ICardV1Service/cancelCardTransaction" message="tns:ICardV1Service_cancelCardTransaction_InputMessage" />
+      <wsdl:output wsaw:Action="http://tempuri.org/ICardV1Service/cancelCardTransactionResponse" message="tns:ICardV1Service_cancelCardTransaction_OutputMessage" />
+    </wsdl:operation>
+    <wsdl:operation name="cancelDepositTransaction">
+      <wsdl:input wsaw:Action="http://tempuri.org/ICardV1Service/cancelDepositTransaction" message="tns:ICardV1Service_cancelDepositTransaction_InputMessage" />
+      <wsdl:output wsaw:Action="http://tempuri.org/ICardV1Service/cancelDepositTransactionResponse" message="tns:ICardV1Service_cancelDepositTransaction_OutputMessage" />
+    </wsdl:operation>
+  </wsdl:portType>
+  <wsdl:binding name="BasicHttpBinding_ICardV1Service" type="tns:ICardV1Service">
+    <soap:binding transport="http://schemas.xmlsoap.org/soap/http" />
+    <wsdl:operation name="testAPI">
+      <soap:operation soapAction="http://tempuri.org/ICardV1Service/testAPI" style="document" />
+      <wsdl:input>
+        <soap:body use="literal" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="getDate">
+      <soap:operation soapAction="http://tempuri.org/ICardV1Service/getDate" style="document" />
+      <wsdl:input>
+        <soap:body use="literal" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="CardType">
+      <soap:operation soapAction="http://tempuri.org/ICardV1Service/CardType" style="document" />
+      <wsdl:input>
+        <soap:body use="literal" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="getCardTypeById">
+      <soap:operation soapAction="http://tempuri.org/ICardV1Service/getCardTypeById" style="document" />
+      <wsdl:input>
+        <soap:body use="literal" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="getHolderDetail">
+      <soap:operation soapAction="http://tempuri.org/ICardV1Service/getHolderDetail" style="document" />
+      <wsdl:input>
+        <soap:body use="literal" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="checkHolderByCardTypeId">
+      <soap:operation soapAction="http://tempuri.org/ICardV1Service/checkHolderByCardTypeId" style="document" />
+      <wsdl:input>
+        <soap:body use="literal" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="openCard">
+      <soap:operation soapAction="http://tempuri.org/ICardV1Service/openCard" style="document" />
+      <wsdl:input>
+        <soap:body use="literal" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="getCardList">
+      <soap:operation soapAction="http://tempuri.org/ICardV1Service/getCardList" style="document" />
+      <wsdl:input>
+        <soap:body use="literal" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="getCardListAll">
+      <soap:operation soapAction="http://tempuri.org/ICardV1Service/getCardListAll" style="document" />
+      <wsdl:input>
+        <soap:body use="literal" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="getCardDetail">
+      <soap:operation soapAction="http://tempuri.org/ICardV1Service/getCardDetail" style="document" />
+      <wsdl:input>
+        <soap:body use="literal" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="getCardBalance">
+      <soap:operation soapAction="http://tempuri.org/ICardV1Service/getCardBalance" style="document" />
+      <wsdl:input>
+        <soap:body use="literal" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="getCardTransaction">
+      <soap:operation soapAction="http://tempuri.org/ICardV1Service/getCardTransaction" style="document" />
+      <wsdl:input>
+        <soap:body use="literal" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="getCardTransactionDetail">
+      <soap:operation soapAction="http://tempuri.org/ICardV1Service/getCardTransactionDetail" style="document" />
+      <wsdl:input>
+        <soap:body use="literal" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="depositCard">
+      <soap:operation soapAction="http://tempuri.org/ICardV1Service/depositCard" style="document" />
+      <wsdl:input>
+        <soap:body use="literal" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="getCardDepositDetail">
+      <soap:operation soapAction="http://tempuri.org/ICardV1Service/getCardDepositDetail" style="document" />
+      <wsdl:input>
+        <soap:body use="literal" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="getCardDepositList">
+      <soap:operation soapAction="http://tempuri.org/ICardV1Service/getCardDepositList" style="document" />
+      <wsdl:input>
+        <soap:body use="literal" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="cancelCardTransaction">
+      <soap:operation soapAction="http://tempuri.org/ICardV1Service/cancelCardTransaction" style="document" />
+      <wsdl:input>
+        <soap:body use="literal" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="cancelDepositTransaction">
+      <soap:operation soapAction="http://tempuri.org/ICardV1Service/cancelDepositTransaction" style="document" />
+      <wsdl:input>
+        <soap:body use="literal" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+  </wsdl:binding>
+  <wsdl:service name="CardV1Service">
+    <wsdl:port name="BasicHttpBinding_ICardV1Service" binding="tns:BasicHttpBinding_ICardV1Service">
+      <soap:address location="http://localhost:50434/Script/Service/App/v1/CardV1Service.svc" />
+    </wsdl:port>
+  </wsdl:service>
+</wsdl:definitions>

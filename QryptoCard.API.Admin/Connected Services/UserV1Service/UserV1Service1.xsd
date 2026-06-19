@@ -1,0 +1,119 @@
+<?xml version="1.0" encoding="utf-8"?>
+<xs:schema xmlns:tns="http://schemas.datacontract.org/2004/07/QryptoCard.INT" elementFormDefault="qualified" targetNamespace="http://schemas.datacontract.org/2004/07/QryptoCard.INT" xmlns:xs="http://www.w3.org/2001/XMLSchema">
+  <xs:complexType name="tblM_User">
+    <xs:sequence>
+      <xs:element minOccurs="0" name="BannedBy" nillable="true" type="xs:string" />
+      <xs:element minOccurs="0" name="CompanyID" nillable="true" type="xs:string" />
+      <xs:element minOccurs="0" name="CountryID" nillable="true" type="xs:long" />
+      <xs:element minOccurs="0" name="Date2FA" nillable="true" type="xs:dateTime" />
+      <xs:element minOccurs="0" name="DateActivated" nillable="true" type="xs:dateTime" />
+      <xs:element minOccurs="0" name="DateBanned" nillable="true" type="xs:dateTime" />
+      <xs:element minOccurs="0" name="DateInvited" nillable="true" type="xs:dateTime" />
+      <xs:element minOccurs="0" name="DateJoin" nillable="true" type="xs:dateTime" />
+      <xs:element minOccurs="0" name="DateVerified" nillable="true" type="xs:dateTime" />
+      <xs:element minOccurs="0" name="Email" nillable="true" type="xs:string" />
+      <xs:element minOccurs="0" name="FirstName" nillable="true" type="xs:string" />
+      <xs:element minOccurs="0" name="ID" type="xs:long" />
+      <xs:element minOccurs="0" name="ImageURL" nillable="true" type="xs:string" />
+      <xs:element minOccurs="0" name="InvitedBy" nillable="true" type="xs:string" />
+      <xs:element minOccurs="0" name="LastName" nillable="true" type="xs:string" />
+      <xs:element minOccurs="0" name="PIN" nillable="true" type="xs:string" />
+      <xs:element minOccurs="0" name="Password" nillable="true" type="xs:string" />
+      <xs:element minOccurs="0" name="Phone" nillable="true" type="xs:string" />
+      <xs:element minOccurs="0" name="Profession" nillable="true" type="xs:string" />
+      <xs:element minOccurs="0" name="RegisterVia" nillable="true" type="xs:string" />
+      <xs:element minOccurs="0" name="RoleID" nillable="true" type="xs:string" />
+      <xs:element minOccurs="0" name="ThumbnailURL" nillable="true" type="xs:string" />
+      <xs:element minOccurs="0" name="TotalCard" type="xs:int" />
+      <xs:element minOccurs="0" name="UserID" nillable="true" type="xs:string" />
+      <xs:element minOccurs="0" name="UserName" nillable="true" type="xs:string" />
+      <xs:element minOccurs="0" name="is2FA" nillable="true" type="xs:int" />
+      <xs:element minOccurs="0" name="isActive" nillable="true" type="xs:int" />
+      <xs:element minOccurs="0" name="isBanned" nillable="true" type="xs:int" />
+      <xs:element minOccurs="0" name="isVerified" nillable="true" type="xs:int" />
+    </xs:sequence>
+  </xs:complexType>
+  <xs:element name="tblM_User" nillable="true" type="tns:tblM_User" />
+  <xs:complexType name="vw_User_Commission">
+    <xs:sequence>
+      <xs:element minOccurs="0" name="Commission" nillable="true" type="xs:double" />
+      <xs:element minOccurs="0" name="CommissionID" nillable="true" type="xs:string" />
+      <xs:element minOccurs="0" name="CreatedBy" nillable="true" type="xs:string" />
+      <xs:element minOccurs="0" name="DateCreated" nillable="true" type="xs:dateTime" />
+      <xs:element minOccurs="0" name="DateDeleted" nillable="true" type="xs:dateTime" />
+      <xs:element minOccurs="0" name="DateUpdated" nillable="true" type="xs:dateTime" />
+      <xs:element minOccurs="0" name="DeletedBy" nillable="true" type="xs:string" />
+      <xs:element minOccurs="0" name="Email" nillable="true" type="xs:string" />
+      <xs:element minOccurs="0" name="ID" type="xs:long" />
+      <xs:element minOccurs="0" name="Param1" nillable="true" type="xs:string" />
+      <xs:element minOccurs="0" name="Param2" nillable="true" type="xs:string" />
+      <xs:element minOccurs="0" name="Param3" nillable="true" type="xs:string" />
+      <xs:element minOccurs="0" name="Param4" nillable="true" type="xs:string" />
+      <xs:element minOccurs="0" name="Param5" nillable="true" type="xs:string" />
+      <xs:element minOccurs="0" name="UpdatedBy" nillable="true" type="xs:string" />
+      <xs:element minOccurs="0" name="UserID" nillable="true" type="xs:string" />
+    </xs:sequence>
+  </xs:complexType>
+  <xs:element name="vw_User_Commission" nillable="true" type="tns:vw_User_Commission" />
+  <xs:complexType name="tblM_User_Commission">
+    <xs:sequence>
+      <xs:element minOccurs="0" name="Commission" nillable="true" type="xs:double" />
+      <xs:element minOccurs="0" name="CommissionID" nillable="true" type="xs:string" />
+      <xs:element minOccurs="0" name="CreatedBy" nillable="true" type="xs:string" />
+      <xs:element minOccurs="0" name="DateCreated" nillable="true" type="xs:dateTime" />
+      <xs:element minOccurs="0" name="DateDeleted" nillable="true" type="xs:dateTime" />
+      <xs:element minOccurs="0" name="DateUpdated" nillable="true" type="xs:dateTime" />
+      <xs:element minOccurs="0" name="DeletedBy" nillable="true" type="xs:string" />
+      <xs:element minOccurs="0" name="ID" type="xs:long" />
+      <xs:element minOccurs="0" name="Param1" nillable="true" type="xs:string" />
+      <xs:element minOccurs="0" name="Param2" nillable="true" type="xs:string" />
+      <xs:element minOccurs="0" name="Param3" nillable="true" type="xs:string" />
+      <xs:element minOccurs="0" name="Param4" nillable="true" type="xs:string" />
+      <xs:element minOccurs="0" name="Param5" nillable="true" type="xs:string" />
+      <xs:element minOccurs="0" name="UpdatedBy" nillable="true" type="xs:string" />
+      <xs:element minOccurs="0" name="UserID" nillable="true" type="xs:string" />
+    </xs:sequence>
+  </xs:complexType>
+  <xs:element name="tblM_User_Commission" nillable="true" type="tns:tblM_User_Commission" />
+  <xs:complexType name="vw_User_Fee">
+    <xs:sequence>
+      <xs:element minOccurs="0" name="CreatedBy" nillable="true" type="xs:string" />
+      <xs:element minOccurs="0" name="DateCreated" nillable="true" type="xs:dateTime" />
+      <xs:element minOccurs="0" name="DateDeleted" nillable="true" type="xs:dateTime" />
+      <xs:element minOccurs="0" name="DateUpdated" nillable="true" type="xs:dateTime" />
+      <xs:element minOccurs="0" name="DeletedBy" nillable="true" type="xs:string" />
+      <xs:element minOccurs="0" name="Email" nillable="true" type="xs:string" />
+      <xs:element minOccurs="0" name="Fee" nillable="true" type="xs:double" />
+      <xs:element minOccurs="0" name="FeeID" nillable="true" type="xs:string" />
+      <xs:element minOccurs="0" name="ID" type="xs:long" />
+      <xs:element minOccurs="0" name="Param1" nillable="true" type="xs:string" />
+      <xs:element minOccurs="0" name="Param2" nillable="true" type="xs:string" />
+      <xs:element minOccurs="0" name="Param3" nillable="true" type="xs:string" />
+      <xs:element minOccurs="0" name="Param4" nillable="true" type="xs:string" />
+      <xs:element minOccurs="0" name="Param5" nillable="true" type="xs:string" />
+      <xs:element minOccurs="0" name="UpdatedBy" nillable="true" type="xs:string" />
+      <xs:element minOccurs="0" name="UserID" nillable="true" type="xs:string" />
+    </xs:sequence>
+  </xs:complexType>
+  <xs:element name="vw_User_Fee" nillable="true" type="tns:vw_User_Fee" />
+  <xs:complexType name="tblM_User_Fee">
+    <xs:sequence>
+      <xs:element minOccurs="0" name="CreatedBy" nillable="true" type="xs:string" />
+      <xs:element minOccurs="0" name="DateCreated" nillable="true" type="xs:dateTime" />
+      <xs:element minOccurs="0" name="DateDeleted" nillable="true" type="xs:dateTime" />
+      <xs:element minOccurs="0" name="DateUpdated" nillable="true" type="xs:dateTime" />
+      <xs:element minOccurs="0" name="DeletedBy" nillable="true" type="xs:string" />
+      <xs:element minOccurs="0" name="Fee" nillable="true" type="xs:double" />
+      <xs:element minOccurs="0" name="FeeID" nillable="true" type="xs:string" />
+      <xs:element minOccurs="0" name="ID" type="xs:long" />
+      <xs:element minOccurs="0" name="Param1" nillable="true" type="xs:string" />
+      <xs:element minOccurs="0" name="Param2" nillable="true" type="xs:string" />
+      <xs:element minOccurs="0" name="Param3" nillable="true" type="xs:string" />
+      <xs:element minOccurs="0" name="Param4" nillable="true" type="xs:string" />
+      <xs:element minOccurs="0" name="Param5" nillable="true" type="xs:string" />
+      <xs:element minOccurs="0" name="UpdatedBy" nillable="true" type="xs:string" />
+      <xs:element minOccurs="0" name="UserID" nillable="true" type="xs:string" />
+    </xs:sequence>
+  </xs:complexType>
+  <xs:element name="tblM_User_Fee" nillable="true" type="tns:tblM_User_Fee" />
+</xs:schema>

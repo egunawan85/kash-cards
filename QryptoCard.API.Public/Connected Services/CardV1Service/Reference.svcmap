@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ReferenceGroup xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" ID="454eba31-a47b-4ee8-9200-d875728f4133" xmlns="urn:schemas-microsoft-com:xml-wcfservicemap">
+  <ClientOptions>
+    <GenerateAsynchronousMethods>false</GenerateAsynchronousMethods>
+    <GenerateTaskBasedAsynchronousMethod>true</GenerateTaskBasedAsynchronousMethod>
+    <EnableDataBinding>true</EnableDataBinding>
+    <ExcludedTypes />
+    <ImportXmlTypes>false</ImportXmlTypes>
+    <GenerateInternalTypes>false</GenerateInternalTypes>
+    <GenerateMessageContracts>false</GenerateMessageContracts>
+    <NamespaceMappings />
+    <CollectionMappings />
+    <GenerateSerializableTypes>true</GenerateSerializableTypes>
+    <Serializer>Auto</Serializer>
+    <UseSerializerForFaults>true</UseSerializerForFaults>
+    <ReferenceAllAssemblies>true</ReferenceAllAssemblies>
+    <ReferencedAssemblies />
+    <ReferencedDataContractTypes />
+    <ServiceContractMappings />
+  </ClientOptions>
+  <MetadataSources>
+    <MetadataSource Address="http://localhost:50434/Script/Service/API/v1/CardV1Service.svc" Protocol="http" SourceId="1" />
+  </MetadataSources>
+  <Metadata>
+    <MetadataFile FileName="CardV1Service.xsd" MetadataType="Schema" ID="77254f5a-14ed-4134-8989-ef88d8626962" SourceId="1" SourceUrl="http://localhost:50434/Script/Service/API/v1/CardV1Service.svc?xsd=xsd2" />
+    <MetadataFile FileName="CardV1Service1.xsd" MetadataType="Schema" ID="5a768c90-7bf2-4def-9212-78c89e45c608" SourceId="1" SourceUrl="http://localhost:50434/Script/Service/API/v1/CardV1Service.svc?xsd=xsd3" />
+    <MetadataFile FileName="CardV1Service2.xsd" MetadataType="Schema" ID="ac72fe60-c160-4f45-8395-8c5ed0a46a3b" SourceId="1" SourceUrl="http://localhost:50434/Script/Service/API/v1/CardV1Service.svc?xsd=xsd1" />
+    <MetadataFile FileName="CardV1Service.disco" MetadataType="Disco" ID="8b50e132-7377-4a2e-b669-8c426a6a79d0" SourceId="1" SourceUrl="http://localhost:50434/Script/Service/API/v1/CardV1Service.svc?disco" />
+    <MetadataFile FileName="CardV1Service3.xsd" MetadataType="Schema" ID="953361d9-6248-4cdb-9480-e0870c5208b9" SourceId="1" SourceUrl="http://localhost:50434/Script/Service/API/v1/CardV1Service.svc?xsd=xsd0" />
+    <MetadataFile FileName="CardV1Service.wsdl" MetadataType="Wsdl" ID="b215c61c-dee7-45be-af45-1c50688238d6" SourceId="1" SourceUrl="http://localhost:50434/Script/Service/API/v1/CardV1Service.svc?wsdl" />
+  </Metadata>
+  <Extensions>
+    <ExtensionFile FileName="configuration91.svcinfo" Name="configuration91.svcinfo" />
+    <ExtensionFile FileName="configuration.svcinfo" Name="configuration.svcinfo" />
+  </Extensions>
+</ReferenceGroup>

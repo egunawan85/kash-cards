@@ -1,0 +1,97 @@
+<?xml version="1.0" encoding="utf-8"?>
+<xs:schema xmlns:tns="http://schemas.datacontract.org/2004/07/QryptoCard.INT" elementFormDefault="qualified" targetNamespace="http://schemas.datacontract.org/2004/07/QryptoCard.INT" xmlns:xs="http://www.w3.org/2001/XMLSchema">
+  <xs:complexType name="tblM_Card_Type">
+    <xs:sequence>
+      <xs:element minOccurs="0" name="BankCardBin" nillable="true" type="xs:string" />
+      <xs:element minOccurs="0" name="CardDesc" nillable="true" type="xs:string" />
+      <xs:element minOccurs="0" name="CardName" nillable="true" type="xs:string" />
+      <xs:element minOccurs="0" name="CardPrice" nillable="true" type="xs:string" />
+      <xs:element minOccurs="0" name="CardPriceCurrency" nillable="true" type="xs:string" />
+      <xs:element minOccurs="0" name="CardTypeId" nillable="true" type="xs:long" />
+      <xs:element minOccurs="0" name="Country" nillable="true" type="xs:string" />
+      <xs:element minOccurs="0" name="DateCreated" nillable="true" type="xs:dateTime" />
+      <xs:element minOccurs="0" name="DepositAmountMaxQuotaForActiveCard" nillable="true" type="xs:string" />
+      <xs:element minOccurs="0" name="DepositAmountMinQuotaForActiveCard" nillable="true" type="xs:string" />
+      <xs:element minOccurs="0" name="FiatCurrency" nillable="true" type="xs:string" />
+      <xs:element minOccurs="0" name="ID" type="xs:long" />
+      <xs:element minOccurs="0" name="MaxCount" nillable="true" type="xs:int" />
+      <xs:element minOccurs="0" name="NeedCardHolder" nillable="true" type="xs:int" />
+      <xs:element minOccurs="0" name="NeedDepositForActiveCard" nillable="true" type="xs:int" />
+      <xs:element minOccurs="0" name="Organization" nillable="true" type="xs:string" />
+      <xs:element minOccurs="0" name="OriginalCardPrice" nillable="true" type="xs:string" />
+      <xs:element minOccurs="0" name="OriginalCardPriceCurrency" nillable="true" type="xs:string" />
+      <xs:element minOccurs="0" name="OriginalRechargeFee" nillable="true" type="xs:string" />
+      <xs:element minOccurs="0" name="OriginalRechargeFeeRate" nillable="true" type="xs:string" />
+      <xs:element minOccurs="0" name="RechargeFee" nillable="true" type="xs:string" />
+      <xs:element minOccurs="0" name="RechargeFeeRate" nillable="true" type="xs:string" />
+      <xs:element minOccurs="0" name="RechargeMaxQuota" nillable="true" type="xs:string" />
+      <xs:element minOccurs="0" name="RechargeMinQuota" nillable="true" type="xs:string" />
+      <xs:element minOccurs="0" name="Status" nillable="true" type="xs:string" />
+      <xs:element minOccurs="0" name="Support" nillable="true" type="xs:string" />
+      <xs:element minOccurs="0" name="SupportHolderAreaCode" nillable="true" type="xs:string" />
+      <xs:element minOccurs="0" name="SupportHolderRegin" nillable="true" type="xs:string" />
+      <xs:element minOccurs="0" name="Type" nillable="true" type="xs:string" />
+      <xs:element minOccurs="0" name="TypeStr" nillable="true" type="xs:string" />
+      <xs:element minOccurs="0" name="isActive" nillable="true" type="xs:int" />
+    </xs:sequence>
+  </xs:complexType>
+  <xs:element name="tblM_Card_Type" nillable="true" type="tns:tblM_Card_Type" />
+  <xs:complexType name="vw_Card">
+    <xs:sequence>
+      <xs:element minOccurs="0" name="Address" nillable="true" type="xs:string" />
+      <xs:element minOccurs="0" name="AddressID" nillable="true" type="xs:string" />
+      <xs:element minOccurs="0" name="AreaCode" nillable="true" type="xs:string" />
+      <xs:element minOccurs="0" name="Birthday" nillable="true" type="xs:string" />
+      <xs:element minOccurs="0" name="CVV" nillable="true" type="xs:string" />
+      <xs:element minOccurs="0" name="CardDesc" nillable="true" type="xs:string" />
+      <xs:element minOccurs="0" name="CardName" nillable="true" type="xs:string" />
+      <xs:element minOccurs="0" name="CardNo" nillable="true" type="xs:string" />
+      <xs:element minOccurs="0" name="CardNumber" nillable="true" type="xs:string" />
+      <xs:element minOccurs="0" name="CardTypeId" nillable="true" type="xs:long" />
+      <xs:element minOccurs="0" name="Country" nillable="true" type="xs:string" />
+      <xs:element minOccurs="0" name="CountryStr" nillable="true" type="xs:string" />
+      <xs:element minOccurs="0" name="Currency" nillable="true" type="xs:string" />
+      <xs:element minOccurs="0" name="DateCreated" nillable="true" type="xs:dateTime" />
+      <xs:element minOccurs="0" name="DateExpired" nillable="true" type="xs:dateTime" />
+      <xs:element minOccurs="0" name="DateModified" nillable="true" type="xs:dateTime" />
+      <xs:element minOccurs="0" name="Email" nillable="true" type="xs:string" />
+      <xs:element minOccurs="0" name="Fee" nillable="true" type="xs:double" />
+      <xs:element minOccurs="0" name="FeeInPercentage" nillable="true" type="xs:double" />
+      <xs:element minOccurs="0" name="FirstName" nillable="true" type="xs:string" />
+      <xs:element minOccurs="0" name="HolderAddress" nillable="true" type="xs:string" />
+      <xs:element minOccurs="0" name="HolderID" nillable="true" type="xs:long" />
+      <xs:element minOccurs="0" name="ID" nillable="true" type="xs:string" />
+      <xs:element minOccurs="0" name="InitialDeposit" nillable="true" type="xs:double" />
+      <xs:element minOccurs="0" name="LastName" nillable="true" type="xs:string" />
+      <xs:element minOccurs="0" name="Mobile" nillable="true" type="xs:string" />
+      <xs:element minOccurs="0" name="OrderNo" nillable="true" type="xs:string" />
+      <xs:element minOccurs="0" name="Organization" nillable="true" type="xs:string" />
+      <xs:element minOccurs="0" name="OriginalRechargeFee" nillable="true" type="xs:string" />
+      <xs:element minOccurs="0" name="OriginalRechargeFeeRate" nillable="true" type="xs:string" />
+      <xs:element minOccurs="0" name="Param1" nillable="true" type="xs:string" />
+      <xs:element minOccurs="0" name="Param2" nillable="true" type="xs:string" />
+      <xs:element minOccurs="0" name="Param3" nillable="true" type="xs:string" />
+      <xs:element minOccurs="0" name="Param4" nillable="true" type="xs:string" />
+      <xs:element minOccurs="0" name="Param5" nillable="true" type="xs:string" />
+      <xs:element minOccurs="0" name="PostCode" nillable="true" type="xs:string" />
+      <xs:element minOccurs="0" name="Price" nillable="true" type="xs:double" />
+      <xs:element minOccurs="0" name="ReceivedAmount" nillable="true" type="xs:double" />
+      <xs:element minOccurs="0" name="ReceivedCurrency" nillable="true" type="xs:string" />
+      <xs:element minOccurs="0" name="RechargeFee" nillable="true" type="xs:string" />
+      <xs:element minOccurs="0" name="RechargeFeeRate" nillable="true" type="xs:string" />
+      <xs:element minOccurs="0" name="State" nillable="true" type="xs:string" />
+      <xs:element minOccurs="0" name="StateStr" nillable="true" type="xs:string" />
+      <xs:element minOccurs="0" name="Status" nillable="true" type="xs:string" />
+      <xs:element minOccurs="0" name="Support" nillable="true" type="xs:string" />
+      <xs:element minOccurs="0" name="Total" nillable="true" type="xs:double" />
+      <xs:element minOccurs="0" name="Town" nillable="true" type="xs:string" />
+      <xs:element minOccurs="0" name="TownStr" nillable="true" type="xs:string" />
+      <xs:element minOccurs="0" name="Type" nillable="true" type="xs:string" />
+      <xs:element minOccurs="0" name="UserID" nillable="true" type="xs:string" />
+      <xs:element minOccurs="0" name="ValidPeriod" nillable="true" type="xs:string" />
+      <xs:element minOccurs="0" name="isActive" nillable="true" type="xs:int" />
+      <xs:element minOccurs="0" name="isNeedCardholder" nillable="true" type="xs:int" />
+    </xs:sequence>
+  </xs:complexType>
+  <xs:element name="vw_Card" nillable="true" type="tns:vw_Card" />
+</xs:schema>

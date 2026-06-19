@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="utf-8"?>
+<wsdl:definitions xmlns:wsam="http://www.w3.org/2007/05/addressing/metadata" xmlns:wsx="http://schemas.xmlsoap.org/ws/2004/09/mex" xmlns:wsap="http://schemas.xmlsoap.org/ws/2004/08/addressing/policy" xmlns:msc="http://schemas.microsoft.com/ws/2005/12/wsdl/contract" xmlns:wsp="http://schemas.xmlsoap.org/ws/2004/09/policy" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:soap="http://schemas.xmlsoap.org/wsdl/soap/" xmlns:wsu="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-utility-1.0.xsd" xmlns:soap12="http://schemas.xmlsoap.org/wsdl/soap12/" xmlns:soapenc="http://schemas.xmlsoap.org/soap/encoding/" xmlns:tns="http://tempuri.org/" xmlns:wsa10="http://www.w3.org/2005/08/addressing" xmlns:wsaw="http://www.w3.org/2006/05/addressing/wsdl" xmlns:wsa="http://schemas.xmlsoap.org/ws/2004/08/addressing" name="DashboardV1Service" targetNamespace="http://tempuri.org/" xmlns:wsdl="http://schemas.xmlsoap.org/wsdl/">
+  <wsdl:types>
+    <xsd:schema targetNamespace="http://tempuri.org/Imports">
+      <xsd:import schemaLocation="http://localhost:50434/Script/Service/Admin/v1/DashboardV1Service.svc?xsd=xsd0" namespace="http://tempuri.org/" />
+      <xsd:import schemaLocation="http://localhost:50434/Script/Service/Admin/v1/DashboardV1Service.svc?xsd=xsd1" namespace="http://schemas.microsoft.com/2003/10/Serialization/" />
+      <xsd:import schemaLocation="http://localhost:50434/Script/Service/Admin/v1/DashboardV1Service.svc?xsd=xsd2" namespace="http://schemas.datacontract.org/2004/07/QryptoCard.INT.Model.Service" />
+    </xsd:schema>
+  </wsdl:types>
+  <wsdl:message name="IDashboardV1Service_getDashboardData_InputMessage">
+    <wsdl:part name="parameters" element="tns:getDashboardData" />
+  </wsdl:message>
+  <wsdl:message name="IDashboardV1Service_getDashboardData_OutputMessage">
+    <wsdl:part name="parameters" element="tns:getDashboardDataResponse" />
+  </wsdl:message>
+  <wsdl:message name="IDashboardV1Service_get10ActiveCardTransaction_InputMessage">
+    <wsdl:part name="parameters" element="tns:get10ActiveCardTransaction" />
+  </wsdl:message>
+  <wsdl:message name="IDashboardV1Service_get10ActiveCardTransaction_OutputMessage">
+    <wsdl:part name="parameters" element="tns:get10ActiveCardTransactionResponse" />
+  </wsdl:message>
+  <wsdl:portType name="IDashboardV1Service">
+    <wsdl:operation name="getDashboardData">
+      <wsdl:input wsaw:Action="http://tempuri.org/IDashboardV1Service/getDashboardData" message="tns:IDashboardV1Service_getDashboardData_InputMessage" />
+      <wsdl:output wsaw:Action="http://tempuri.org/IDashboardV1Service/getDashboardDataResponse" message="tns:IDashboardV1Service_getDashboardData_OutputMessage" />
+    </wsdl:operation>
+    <wsdl:operation name="get10ActiveCardTransaction">
+      <wsdl:input wsaw:Action="http://tempuri.org/IDashboardV1Service/get10ActiveCardTransaction" message="tns:IDashboardV1Service_get10ActiveCardTransaction_InputMessage" />
+      <wsdl:output wsaw:Action="http://tempuri.org/IDashboardV1Service/get10ActiveCardTransactionResponse" message="tns:IDashboardV1Service_get10ActiveCardTransaction_OutputMessage" />
+    </wsdl:operation>
+  </wsdl:portType>
+  <wsdl:binding name="BasicHttpBinding_IDashboardV1Service" type="tns:IDashboardV1Service">
+    <soap:binding transport="http://schemas.xmlsoap.org/soap/http" />
+    <wsdl:operation name="getDashboardData">
+      <soap:operation soapAction="http://tempuri.org/IDashboardV1Service/getDashboardData" style="document" />
+      <wsdl:input>
+        <soap:body use="literal" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="get10ActiveCardTransaction">
+      <soap:operation soapAction="http://tempuri.org/IDashboardV1Service/get10ActiveCardTransaction" style="document" />
+      <wsdl:input>
+        <soap:body use="literal" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+  </wsdl:binding>
+  <wsdl:service name="DashboardV1Service">
+    <wsdl:port name="BasicHttpBinding_IDashboardV1Service" binding="tns:BasicHttpBinding_IDashboardV1Service">
+      <soap:address location="http://localhost:50434/Script/Service/Admin/v1/DashboardV1Service.svc" />
+    </wsdl:port>
+  </wsdl:service>
+</wsdl:definitions>

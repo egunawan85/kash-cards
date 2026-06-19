@@ -1,0 +1,458 @@
+<?xml version="1.0" encoding="utf-8"?>
+<wsdl:definitions xmlns:wsam="http://www.w3.org/2007/05/addressing/metadata" xmlns:wsx="http://schemas.xmlsoap.org/ws/2004/09/mex" xmlns:wsap="http://schemas.xmlsoap.org/ws/2004/08/addressing/policy" xmlns:msc="http://schemas.microsoft.com/ws/2005/12/wsdl/contract" xmlns:wsp="http://schemas.xmlsoap.org/ws/2004/09/policy" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:soap="http://schemas.xmlsoap.org/wsdl/soap/" xmlns:wsu="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-utility-1.0.xsd" xmlns:soap12="http://schemas.xmlsoap.org/wsdl/soap12/" xmlns:soapenc="http://schemas.xmlsoap.org/soap/encoding/" xmlns:tns="http://tempuri.org/" xmlns:wsa10="http://www.w3.org/2005/08/addressing" xmlns:wsaw="http://www.w3.org/2006/05/addressing/wsdl" xmlns:wsa="http://schemas.xmlsoap.org/ws/2004/08/addressing" name="UserV1Service" targetNamespace="http://tempuri.org/" xmlns:wsdl="http://schemas.xmlsoap.org/wsdl/">
+  <wsdl:types>
+    <xsd:schema targetNamespace="http://tempuri.org/Imports">
+      <xsd:import schemaLocation="http://localhost:50434/Script/Service/App/v1/UserV1Service.svc?xsd=xsd0" namespace="http://tempuri.org/" />
+      <xsd:import schemaLocation="http://localhost:50434/Script/Service/App/v1/UserV1Service.svc?xsd=xsd1" namespace="http://schemas.microsoft.com/2003/10/Serialization/" />
+      <xsd:import schemaLocation="http://localhost:50434/Script/Service/App/v1/UserV1Service.svc?xsd=xsd2" namespace="http://schemas.datacontract.org/2004/07/QryptoCard.INT.Model.Service" />
+      <xsd:import schemaLocation="http://localhost:50434/Script/Service/App/v1/UserV1Service.svc?xsd=xsd3" namespace="http://schemas.datacontract.org/2004/07/QryptoCard.INT" />
+    </xsd:schema>
+  </wsdl:types>
+  <wsdl:message name="IUserV1Service_getDashboardData_InputMessage">
+    <wsdl:part name="parameters" element="tns:getDashboardData" />
+  </wsdl:message>
+  <wsdl:message name="IUserV1Service_getDashboardData_OutputMessage">
+    <wsdl:part name="parameters" element="tns:getDashboardDataResponse" />
+  </wsdl:message>
+  <wsdl:message name="IUserV1Service_Register_InputMessage">
+    <wsdl:part name="parameters" element="tns:Register" />
+  </wsdl:message>
+  <wsdl:message name="IUserV1Service_Register_OutputMessage">
+    <wsdl:part name="parameters" element="tns:RegisterResponse" />
+  </wsdl:message>
+  <wsdl:message name="IUserV1Service_RegisterVerify_InputMessage">
+    <wsdl:part name="parameters" element="tns:RegisterVerify" />
+  </wsdl:message>
+  <wsdl:message name="IUserV1Service_RegisterVerify_OutputMessage">
+    <wsdl:part name="parameters" element="tns:RegisterVerifyResponse" />
+  </wsdl:message>
+  <wsdl:message name="IUserV1Service_regenerateOTPRegister_InputMessage">
+    <wsdl:part name="parameters" element="tns:regenerateOTPRegister" />
+  </wsdl:message>
+  <wsdl:message name="IUserV1Service_regenerateOTPRegister_OutputMessage">
+    <wsdl:part name="parameters" element="tns:regenerateOTPRegisterResponse" />
+  </wsdl:message>
+  <wsdl:message name="IUserV1Service_Login_InputMessage">
+    <wsdl:part name="parameters" element="tns:Login" />
+  </wsdl:message>
+  <wsdl:message name="IUserV1Service_Login_OutputMessage">
+    <wsdl:part name="parameters" element="tns:LoginResponse" />
+  </wsdl:message>
+  <wsdl:message name="IUserV1Service_LoginVerify_InputMessage">
+    <wsdl:part name="parameters" element="tns:LoginVerify" />
+  </wsdl:message>
+  <wsdl:message name="IUserV1Service_LoginVerify_OutputMessage">
+    <wsdl:part name="parameters" element="tns:LoginVerifyResponse" />
+  </wsdl:message>
+  <wsdl:message name="IUserV1Service_regenerateOTP_InputMessage">
+    <wsdl:part name="parameters" element="tns:regenerateOTP" />
+  </wsdl:message>
+  <wsdl:message name="IUserV1Service_regenerateOTP_OutputMessage">
+    <wsdl:part name="parameters" element="tns:regenerateOTPResponse" />
+  </wsdl:message>
+  <wsdl:message name="IUserV1Service_forgotPassword_InputMessage">
+    <wsdl:part name="parameters" element="tns:forgotPassword" />
+  </wsdl:message>
+  <wsdl:message name="IUserV1Service_forgotPassword_OutputMessage">
+    <wsdl:part name="parameters" element="tns:forgotPasswordResponse" />
+  </wsdl:message>
+  <wsdl:message name="IUserV1Service_checkForgotPassword_InputMessage">
+    <wsdl:part name="parameters" element="tns:checkForgotPassword" />
+  </wsdl:message>
+  <wsdl:message name="IUserV1Service_checkForgotPassword_OutputMessage">
+    <wsdl:part name="parameters" element="tns:checkForgotPasswordResponse" />
+  </wsdl:message>
+  <wsdl:message name="IUserV1Service_changePassword_InputMessage">
+    <wsdl:part name="parameters" element="tns:changePassword" />
+  </wsdl:message>
+  <wsdl:message name="IUserV1Service_changePassword_OutputMessage">
+    <wsdl:part name="parameters" element="tns:changePasswordResponse" />
+  </wsdl:message>
+  <wsdl:message name="IUserV1Service_testEmail_InputMessage">
+    <wsdl:part name="parameters" element="tns:testEmail" />
+  </wsdl:message>
+  <wsdl:message name="IUserV1Service_testEmail_OutputMessage">
+    <wsdl:part name="parameters" element="tns:testEmailResponse" />
+  </wsdl:message>
+  <wsdl:message name="IUserV1Service_getUserData_InputMessage">
+    <wsdl:part name="parameters" element="tns:getUserData" />
+  </wsdl:message>
+  <wsdl:message name="IUserV1Service_getUserData_OutputMessage">
+    <wsdl:part name="parameters" element="tns:getUserDataResponse" />
+  </wsdl:message>
+  <wsdl:message name="IUserV1Service_updateUserData_InputMessage">
+    <wsdl:part name="parameters" element="tns:updateUserData" />
+  </wsdl:message>
+  <wsdl:message name="IUserV1Service_updateUserData_OutputMessage">
+    <wsdl:part name="parameters" element="tns:updateUserDataResponse" />
+  </wsdl:message>
+  <wsdl:message name="IUserV1Service_updatePassword_InputMessage">
+    <wsdl:part name="parameters" element="tns:updatePassword" />
+  </wsdl:message>
+  <wsdl:message name="IUserV1Service_updatePassword_OutputMessage">
+    <wsdl:part name="parameters" element="tns:updatePasswordResponse" />
+  </wsdl:message>
+  <wsdl:message name="IUserV1Service_updateEmailOTP_InputMessage">
+    <wsdl:part name="parameters" element="tns:updateEmailOTP" />
+  </wsdl:message>
+  <wsdl:message name="IUserV1Service_updateEmailOTP_OutputMessage">
+    <wsdl:part name="parameters" element="tns:updateEmailOTPResponse" />
+  </wsdl:message>
+  <wsdl:message name="IUserV1Service_updateEmail_InputMessage">
+    <wsdl:part name="parameters" element="tns:updateEmail" />
+  </wsdl:message>
+  <wsdl:message name="IUserV1Service_updateEmail_OutputMessage">
+    <wsdl:part name="parameters" element="tns:updateEmailResponse" />
+  </wsdl:message>
+  <wsdl:message name="IUserV1Service_enable2FA_InputMessage">
+    <wsdl:part name="parameters" element="tns:enable2FA" />
+  </wsdl:message>
+  <wsdl:message name="IUserV1Service_enable2FA_OutputMessage">
+    <wsdl:part name="parameters" element="tns:enable2FAResponse" />
+  </wsdl:message>
+  <wsdl:message name="IUserV1Service_get2FA_InputMessage">
+    <wsdl:part name="parameters" element="tns:get2FA" />
+  </wsdl:message>
+  <wsdl:message name="IUserV1Service_get2FA_OutputMessage">
+    <wsdl:part name="parameters" element="tns:get2FAResponse" />
+  </wsdl:message>
+  <wsdl:message name="IUserV1Service_getReferralCode_InputMessage">
+    <wsdl:part name="parameters" element="tns:getReferralCode" />
+  </wsdl:message>
+  <wsdl:message name="IUserV1Service_getReferralCode_OutputMessage">
+    <wsdl:part name="parameters" element="tns:getReferralCodeResponse" />
+  </wsdl:message>
+  <wsdl:message name="IUserV1Service_getBalance_InputMessage">
+    <wsdl:part name="parameters" element="tns:getBalance" />
+  </wsdl:message>
+  <wsdl:message name="IUserV1Service_getBalance_OutputMessage">
+    <wsdl:part name="parameters" element="tns:getBalanceResponse" />
+  </wsdl:message>
+  <wsdl:message name="IUserV1Service_generateKeyOTP_InputMessage">
+    <wsdl:part name="parameters" element="tns:generateKeyOTP" />
+  </wsdl:message>
+  <wsdl:message name="IUserV1Service_generateKeyOTP_OutputMessage">
+    <wsdl:part name="parameters" element="tns:generateKeyOTPResponse" />
+  </wsdl:message>
+  <wsdl:message name="IUserV1Service_validateKeyOTP_InputMessage">
+    <wsdl:part name="parameters" element="tns:validateKeyOTP" />
+  </wsdl:message>
+  <wsdl:message name="IUserV1Service_validateKeyOTP_OutputMessage">
+    <wsdl:part name="parameters" element="tns:validateKeyOTPResponse" />
+  </wsdl:message>
+  <wsdl:message name="IUserV1Service_getReferralJoined_InputMessage">
+    <wsdl:part name="parameters" element="tns:getReferralJoined" />
+  </wsdl:message>
+  <wsdl:message name="IUserV1Service_getReferralJoined_OutputMessage">
+    <wsdl:part name="parameters" element="tns:getReferralJoinedResponse" />
+  </wsdl:message>
+  <wsdl:portType name="IUserV1Service">
+    <wsdl:operation name="getDashboardData">
+      <wsdl:input wsaw:Action="http://tempuri.org/IUserV1Service/getDashboardData" message="tns:IUserV1Service_getDashboardData_InputMessage" />
+      <wsdl:output wsaw:Action="http://tempuri.org/IUserV1Service/getDashboardDataResponse" message="tns:IUserV1Service_getDashboardData_OutputMessage" />
+    </wsdl:operation>
+    <wsdl:operation name="Register">
+      <wsdl:input wsaw:Action="http://tempuri.org/IUserV1Service/Register" message="tns:IUserV1Service_Register_InputMessage" />
+      <wsdl:output wsaw:Action="http://tempuri.org/IUserV1Service/RegisterResponse" message="tns:IUserV1Service_Register_OutputMessage" />
+    </wsdl:operation>
+    <wsdl:operation name="RegisterVerify">
+      <wsdl:input wsaw:Action="http://tempuri.org/IUserV1Service/RegisterVerify" message="tns:IUserV1Service_RegisterVerify_InputMessage" />
+      <wsdl:output wsaw:Action="http://tempuri.org/IUserV1Service/RegisterVerifyResponse" message="tns:IUserV1Service_RegisterVerify_OutputMessage" />
+    </wsdl:operation>
+    <wsdl:operation name="regenerateOTPRegister">
+      <wsdl:input wsaw:Action="http://tempuri.org/IUserV1Service/regenerateOTPRegister" message="tns:IUserV1Service_regenerateOTPRegister_InputMessage" />
+      <wsdl:output wsaw:Action="http://tempuri.org/IUserV1Service/regenerateOTPRegisterResponse" message="tns:IUserV1Service_regenerateOTPRegister_OutputMessage" />
+    </wsdl:operation>
+    <wsdl:operation name="Login">
+      <wsdl:input wsaw:Action="http://tempuri.org/IUserV1Service/Login" message="tns:IUserV1Service_Login_InputMessage" />
+      <wsdl:output wsaw:Action="http://tempuri.org/IUserV1Service/LoginResponse" message="tns:IUserV1Service_Login_OutputMessage" />
+    </wsdl:operation>
+    <wsdl:operation name="LoginVerify">
+      <wsdl:input wsaw:Action="http://tempuri.org/IUserV1Service/LoginVerify" message="tns:IUserV1Service_LoginVerify_InputMessage" />
+      <wsdl:output wsaw:Action="http://tempuri.org/IUserV1Service/LoginVerifyResponse" message="tns:IUserV1Service_LoginVerify_OutputMessage" />
+    </wsdl:operation>
+    <wsdl:operation name="regenerateOTP">
+      <wsdl:input wsaw:Action="http://tempuri.org/IUserV1Service/regenerateOTP" message="tns:IUserV1Service_regenerateOTP_InputMessage" />
+      <wsdl:output wsaw:Action="http://tempuri.org/IUserV1Service/regenerateOTPResponse" message="tns:IUserV1Service_regenerateOTP_OutputMessage" />
+    </wsdl:operation>
+    <wsdl:operation name="forgotPassword">
+      <wsdl:input wsaw:Action="http://tempuri.org/IUserV1Service/forgotPassword" message="tns:IUserV1Service_forgotPassword_InputMessage" />
+      <wsdl:output wsaw:Action="http://tempuri.org/IUserV1Service/forgotPasswordResponse" message="tns:IUserV1Service_forgotPassword_OutputMessage" />
+    </wsdl:operation>
+    <wsdl:operation name="checkForgotPassword">
+      <wsdl:input wsaw:Action="http://tempuri.org/IUserV1Service/checkForgotPassword" message="tns:IUserV1Service_checkForgotPassword_InputMessage" />
+      <wsdl:output wsaw:Action="http://tempuri.org/IUserV1Service/checkForgotPasswordResponse" message="tns:IUserV1Service_checkForgotPassword_OutputMessage" />
+    </wsdl:operation>
+    <wsdl:operation name="changePassword">
+      <wsdl:input wsaw:Action="http://tempuri.org/IUserV1Service/changePassword" message="tns:IUserV1Service_changePassword_InputMessage" />
+      <wsdl:output wsaw:Action="http://tempuri.org/IUserV1Service/changePasswordResponse" message="tns:IUserV1Service_changePassword_OutputMessage" />
+    </wsdl:operation>
+    <wsdl:operation name="testEmail">
+      <wsdl:input wsaw:Action="http://tempuri.org/IUserV1Service/testEmail" message="tns:IUserV1Service_testEmail_InputMessage" />
+      <wsdl:output wsaw:Action="http://tempuri.org/IUserV1Service/testEmailResponse" message="tns:IUserV1Service_testEmail_OutputMessage" />
+    </wsdl:operation>
+    <wsdl:operation name="getUserData">
+      <wsdl:input wsaw:Action="http://tempuri.org/IUserV1Service/getUserData" message="tns:IUserV1Service_getUserData_InputMessage" />
+      <wsdl:output wsaw:Action="http://tempuri.org/IUserV1Service/getUserDataResponse" message="tns:IUserV1Service_getUserData_OutputMessage" />
+    </wsdl:operation>
+    <wsdl:operation name="updateUserData">
+      <wsdl:input wsaw:Action="http://tempuri.org/IUserV1Service/updateUserData" message="tns:IUserV1Service_updateUserData_InputMessage" />
+      <wsdl:output wsaw:Action="http://tempuri.org/IUserV1Service/updateUserDataResponse" message="tns:IUserV1Service_updateUserData_OutputMessage" />
+    </wsdl:operation>
+    <wsdl:operation name="updatePassword">
+      <wsdl:input wsaw:Action="http://tempuri.org/IUserV1Service/updatePassword" message="tns:IUserV1Service_updatePassword_InputMessage" />
+      <wsdl:output wsaw:Action="http://tempuri.org/IUserV1Service/updatePasswordResponse" message="tns:IUserV1Service_updatePassword_OutputMessage" />
+    </wsdl:operation>
+    <wsdl:operation name="updateEmailOTP">
+      <wsdl:input wsaw:Action="http://tempuri.org/IUserV1Service/updateEmailOTP" message="tns:IUserV1Service_updateEmailOTP_InputMessage" />
+      <wsdl:output wsaw:Action="http://tempuri.org/IUserV1Service/updateEmailOTPResponse" message="tns:IUserV1Service_updateEmailOTP_OutputMessage" />
+    </wsdl:operation>
+    <wsdl:operation name="updateEmail">
+      <wsdl:input wsaw:Action="http://tempuri.org/IUserV1Service/updateEmail" message="tns:IUserV1Service_updateEmail_InputMessage" />
+      <wsdl:output wsaw:Action="http://tempuri.org/IUserV1Service/updateEmailResponse" message="tns:IUserV1Service_updateEmail_OutputMessage" />
+    </wsdl:operation>
+    <wsdl:operation name="enable2FA">
+      <wsdl:input wsaw:Action="http://tempuri.org/IUserV1Service/enable2FA" message="tns:IUserV1Service_enable2FA_InputMessage" />
+      <wsdl:output wsaw:Action="http://tempuri.org/IUserV1Service/enable2FAResponse" message="tns:IUserV1Service_enable2FA_OutputMessage" />
+    </wsdl:operation>
+    <wsdl:operation name="get2FA">
+      <wsdl:input wsaw:Action="http://tempuri.org/IUserV1Service/get2FA" message="tns:IUserV1Service_get2FA_InputMessage" />
+      <wsdl:output wsaw:Action="http://tempuri.org/IUserV1Service/get2FAResponse" message="tns:IUserV1Service_get2FA_OutputMessage" />
+    </wsdl:operation>
+    <wsdl:operation name="getReferralCode">
+      <wsdl:input wsaw:Action="http://tempuri.org/IUserV1Service/getReferralCode" message="tns:IUserV1Service_getReferralCode_InputMessage" />
+      <wsdl:output wsaw:Action="http://tempuri.org/IUserV1Service/getReferralCodeResponse" message="tns:IUserV1Service_getReferralCode_OutputMessage" />
+    </wsdl:operation>
+    <wsdl:operation name="getBalance">
+      <wsdl:input wsaw:Action="http://tempuri.org/IUserV1Service/getBalance" message="tns:IUserV1Service_getBalance_InputMessage" />
+      <wsdl:output wsaw:Action="http://tempuri.org/IUserV1Service/getBalanceResponse" message="tns:IUserV1Service_getBalance_OutputMessage" />
+    </wsdl:operation>
+    <wsdl:operation name="generateKeyOTP">
+      <wsdl:input wsaw:Action="http://tempuri.org/IUserV1Service/generateKeyOTP" message="tns:IUserV1Service_generateKeyOTP_InputMessage" />
+      <wsdl:output wsaw:Action="http://tempuri.org/IUserV1Service/generateKeyOTPResponse" message="tns:IUserV1Service_generateKeyOTP_OutputMessage" />
+    </wsdl:operation>
+    <wsdl:operation name="validateKeyOTP">
+      <wsdl:input wsaw:Action="http://tempuri.org/IUserV1Service/validateKeyOTP" message="tns:IUserV1Service_validateKeyOTP_InputMessage" />
+      <wsdl:output wsaw:Action="http://tempuri.org/IUserV1Service/validateKeyOTPResponse" message="tns:IUserV1Service_validateKeyOTP_OutputMessage" />
+    </wsdl:operation>
+    <wsdl:operation name="getReferralJoined">
+      <wsdl:input wsaw:Action="http://tempuri.org/IUserV1Service/getReferralJoined" message="tns:IUserV1Service_getReferralJoined_InputMessage" />
+      <wsdl:output wsaw:Action="http://tempuri.org/IUserV1Service/getReferralJoinedResponse" message="tns:IUserV1Service_getReferralJoined_OutputMessage" />
+    </wsdl:operation>
+  </wsdl:portType>
+  <wsdl:binding name="BasicHttpBinding_IUserV1Service" type="tns:IUserV1Service">
+    <soap:binding transport="http://schemas.xmlsoap.org/soap/http" />
+    <wsdl:operation name="getDashboardData">
+      <soap:operation soapAction="http://tempuri.org/IUserV1Service/getDashboardData" style="document" />
+      <wsdl:input>
+        <soap:body use="literal" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="Register">
+      <soap:operation soapAction="http://tempuri.org/IUserV1Service/Register" style="document" />
+      <wsdl:input>
+        <soap:body use="literal" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="RegisterVerify">
+      <soap:operation soapAction="http://tempuri.org/IUserV1Service/RegisterVerify" style="document" />
+      <wsdl:input>
+        <soap:body use="literal" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="regenerateOTPRegister">
+      <soap:operation soapAction="http://tempuri.org/IUserV1Service/regenerateOTPRegister" style="document" />
+      <wsdl:input>
+        <soap:body use="literal" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="Login">
+      <soap:operation soapAction="http://tempuri.org/IUserV1Service/Login" style="document" />
+      <wsdl:input>
+        <soap:body use="literal" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="LoginVerify">
+      <soap:operation soapAction="http://tempuri.org/IUserV1Service/LoginVerify" style="document" />
+      <wsdl:input>
+        <soap:body use="literal" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="regenerateOTP">
+      <soap:operation soapAction="http://tempuri.org/IUserV1Service/regenerateOTP" style="document" />
+      <wsdl:input>
+        <soap:body use="literal" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="forgotPassword">
+      <soap:operation soapAction="http://tempuri.org/IUserV1Service/forgotPassword" style="document" />
+      <wsdl:input>
+        <soap:body use="literal" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="checkForgotPassword">
+      <soap:operation soapAction="http://tempuri.org/IUserV1Service/checkForgotPassword" style="document" />
+      <wsdl:input>
+        <soap:body use="literal" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="changePassword">
+      <soap:operation soapAction="http://tempuri.org/IUserV1Service/changePassword" style="document" />
+      <wsdl:input>
+        <soap:body use="literal" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="testEmail">
+      <soap:operation soapAction="http://tempuri.org/IUserV1Service/testEmail" style="document" />
+      <wsdl:input>
+        <soap:body use="literal" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="getUserData">
+      <soap:operation soapAction="http://tempuri.org/IUserV1Service/getUserData" style="document" />
+      <wsdl:input>
+        <soap:body use="literal" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="updateUserData">
+      <soap:operation soapAction="http://tempuri.org/IUserV1Service/updateUserData" style="document" />
+      <wsdl:input>
+        <soap:body use="literal" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="updatePassword">
+      <soap:operation soapAction="http://tempuri.org/IUserV1Service/updatePassword" style="document" />
+      <wsdl:input>
+        <soap:body use="literal" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="updateEmailOTP">
+      <soap:operation soapAction="http://tempuri.org/IUserV1Service/updateEmailOTP" style="document" />
+      <wsdl:input>
+        <soap:body use="literal" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="updateEmail">
+      <soap:operation soapAction="http://tempuri.org/IUserV1Service/updateEmail" style="document" />
+      <wsdl:input>
+        <soap:body use="literal" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="enable2FA">
+      <soap:operation soapAction="http://tempuri.org/IUserV1Service/enable2FA" style="document" />
+      <wsdl:input>
+        <soap:body use="literal" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="get2FA">
+      <soap:operation soapAction="http://tempuri.org/IUserV1Service/get2FA" style="document" />
+      <wsdl:input>
+        <soap:body use="literal" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="getReferralCode">
+      <soap:operation soapAction="http://tempuri.org/IUserV1Service/getReferralCode" style="document" />
+      <wsdl:input>
+        <soap:body use="literal" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="getBalance">
+      <soap:operation soapAction="http://tempuri.org/IUserV1Service/getBalance" style="document" />
+      <wsdl:input>
+        <soap:body use="literal" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="generateKeyOTP">
+      <soap:operation soapAction="http://tempuri.org/IUserV1Service/generateKeyOTP" style="document" />
+      <wsdl:input>
+        <soap:body use="literal" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="validateKeyOTP">
+      <soap:operation soapAction="http://tempuri.org/IUserV1Service/validateKeyOTP" style="document" />
+      <wsdl:input>
+        <soap:body use="literal" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="getReferralJoined">
+      <soap:operation soapAction="http://tempuri.org/IUserV1Service/getReferralJoined" style="document" />
+      <wsdl:input>
+        <soap:body use="literal" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+  </wsdl:binding>
+  <wsdl:service name="UserV1Service">
+    <wsdl:port name="BasicHttpBinding_IUserV1Service" binding="tns:BasicHttpBinding_IUserV1Service">
+      <soap:address location="http://localhost:50434/Script/Service/App/v1/UserV1Service.svc" />
+    </wsdl:port>
+  </wsdl:service>
+</wsdl:definitions>

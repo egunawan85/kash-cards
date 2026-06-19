@@ -1,0 +1,382 @@
+<?xml version="1.0" encoding="utf-8"?>
+<wsdl:definitions xmlns:wsam="http://www.w3.org/2007/05/addressing/metadata" xmlns:wsx="http://schemas.xmlsoap.org/ws/2004/09/mex" xmlns:wsap="http://schemas.xmlsoap.org/ws/2004/08/addressing/policy" xmlns:msc="http://schemas.microsoft.com/ws/2005/12/wsdl/contract" xmlns:wsp="http://schemas.xmlsoap.org/ws/2004/09/policy" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:soap="http://schemas.xmlsoap.org/wsdl/soap/" xmlns:wsu="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-utility-1.0.xsd" xmlns:soap12="http://schemas.xmlsoap.org/wsdl/soap12/" xmlns:soapenc="http://schemas.xmlsoap.org/soap/encoding/" xmlns:tns="http://tempuri.org/" xmlns:wsa10="http://www.w3.org/2005/08/addressing" xmlns:wsaw="http://www.w3.org/2006/05/addressing/wsdl" xmlns:wsa="http://schemas.xmlsoap.org/ws/2004/08/addressing" name="AdminV1Service" targetNamespace="http://tempuri.org/" xmlns:wsdl="http://schemas.xmlsoap.org/wsdl/">
+  <wsdl:types>
+    <xsd:schema targetNamespace="http://tempuri.org/Imports">
+      <xsd:import schemaLocation="http://localhost:50434/Script/Service/Admin/v1/AdminV1Service.svc?xsd=xsd0" namespace="http://tempuri.org/" />
+      <xsd:import schemaLocation="http://localhost:50434/Script/Service/Admin/v1/AdminV1Service.svc?xsd=xsd1" namespace="http://schemas.microsoft.com/2003/10/Serialization/" />
+      <xsd:import schemaLocation="http://localhost:50434/Script/Service/Admin/v1/AdminV1Service.svc?xsd=xsd2" namespace="http://schemas.datacontract.org/2004/07/QryptoCard.INT" />
+      <xsd:import schemaLocation="http://localhost:50434/Script/Service/Admin/v1/AdminV1Service.svc?xsd=xsd3" namespace="http://schemas.datacontract.org/2004/07/QryptoCard.INT.Model.Service" />
+    </xsd:schema>
+  </wsdl:types>
+  <wsdl:message name="IAdminV1Service_Login_InputMessage">
+    <wsdl:part name="parameters" element="tns:Login" />
+  </wsdl:message>
+  <wsdl:message name="IAdminV1Service_Login_OutputMessage">
+    <wsdl:part name="parameters" element="tns:LoginResponse" />
+  </wsdl:message>
+  <wsdl:message name="IAdminV1Service_LoginVerify_InputMessage">
+    <wsdl:part name="parameters" element="tns:LoginVerify" />
+  </wsdl:message>
+  <wsdl:message name="IAdminV1Service_LoginVerify_OutputMessage">
+    <wsdl:part name="parameters" element="tns:LoginVerifyResponse" />
+  </wsdl:message>
+  <wsdl:message name="IAdminV1Service_regenerateOTP_InputMessage">
+    <wsdl:part name="parameters" element="tns:regenerateOTP" />
+  </wsdl:message>
+  <wsdl:message name="IAdminV1Service_regenerateOTP_OutputMessage">
+    <wsdl:part name="parameters" element="tns:regenerateOTPResponse" />
+  </wsdl:message>
+  <wsdl:message name="IAdminV1Service_viewAdmin_InputMessage">
+    <wsdl:part name="parameters" element="tns:viewAdmin" />
+  </wsdl:message>
+  <wsdl:message name="IAdminV1Service_viewAdmin_OutputMessage">
+    <wsdl:part name="parameters" element="tns:viewAdminResponse" />
+  </wsdl:message>
+  <wsdl:message name="IAdminV1Service_forgotPassword_InputMessage">
+    <wsdl:part name="parameters" element="tns:forgotPassword" />
+  </wsdl:message>
+  <wsdl:message name="IAdminV1Service_forgotPassword_OutputMessage">
+    <wsdl:part name="parameters" element="tns:forgotPasswordResponse" />
+  </wsdl:message>
+  <wsdl:message name="IAdminV1Service_checkForgotPassword_InputMessage">
+    <wsdl:part name="parameters" element="tns:checkForgotPassword" />
+  </wsdl:message>
+  <wsdl:message name="IAdminV1Service_checkForgotPassword_OutputMessage">
+    <wsdl:part name="parameters" element="tns:checkForgotPasswordResponse" />
+  </wsdl:message>
+  <wsdl:message name="IAdminV1Service_changePassword_InputMessage">
+    <wsdl:part name="parameters" element="tns:changePassword" />
+  </wsdl:message>
+  <wsdl:message name="IAdminV1Service_changePassword_OutputMessage">
+    <wsdl:part name="parameters" element="tns:changePasswordResponse" />
+  </wsdl:message>
+  <wsdl:message name="IAdminV1Service_getAdminFilter_InputMessage">
+    <wsdl:part name="parameters" element="tns:getAdminFilter" />
+  </wsdl:message>
+  <wsdl:message name="IAdminV1Service_getAdminFilter_OutputMessage">
+    <wsdl:part name="parameters" element="tns:getAdminFilterResponse" />
+  </wsdl:message>
+  <wsdl:message name="IAdminV1Service_getAdminDetail_InputMessage">
+    <wsdl:part name="parameters" element="tns:getAdminDetail" />
+  </wsdl:message>
+  <wsdl:message name="IAdminV1Service_getAdminDetail_OutputMessage">
+    <wsdl:part name="parameters" element="tns:getAdminDetailResponse" />
+  </wsdl:message>
+  <wsdl:message name="IAdminV1Service_addAdmin_InputMessage">
+    <wsdl:part name="parameters" element="tns:addAdmin" />
+  </wsdl:message>
+  <wsdl:message name="IAdminV1Service_addAdmin_OutputMessage">
+    <wsdl:part name="parameters" element="tns:addAdminResponse" />
+  </wsdl:message>
+  <wsdl:message name="IAdminV1Service_getInvitedAdmin_InputMessage">
+    <wsdl:part name="parameters" element="tns:getInvitedAdmin" />
+  </wsdl:message>
+  <wsdl:message name="IAdminV1Service_getInvitedAdmin_OutputMessage">
+    <wsdl:part name="parameters" element="tns:getInvitedAdminResponse" />
+  </wsdl:message>
+  <wsdl:message name="IAdminV1Service_updateInvitedAdmin_InputMessage">
+    <wsdl:part name="parameters" element="tns:updateInvitedAdmin" />
+  </wsdl:message>
+  <wsdl:message name="IAdminV1Service_updateInvitedAdmin_OutputMessage">
+    <wsdl:part name="parameters" element="tns:updateInvitedAdminResponse" />
+  </wsdl:message>
+  <wsdl:message name="IAdminV1Service_banAdmin_InputMessage">
+    <wsdl:part name="parameters" element="tns:banAdmin" />
+  </wsdl:message>
+  <wsdl:message name="IAdminV1Service_banAdmin_OutputMessage">
+    <wsdl:part name="parameters" element="tns:banAdminResponse" />
+  </wsdl:message>
+  <wsdl:message name="IAdminV1Service_testEmail_InputMessage">
+    <wsdl:part name="parameters" element="tns:testEmail" />
+  </wsdl:message>
+  <wsdl:message name="IAdminV1Service_testEmail_OutputMessage">
+    <wsdl:part name="parameters" element="tns:testEmailResponse" />
+  </wsdl:message>
+  <wsdl:message name="IAdminV1Service_getAdminData_InputMessage">
+    <wsdl:part name="parameters" element="tns:getAdminData" />
+  </wsdl:message>
+  <wsdl:message name="IAdminV1Service_getAdminData_OutputMessage">
+    <wsdl:part name="parameters" element="tns:getAdminDataResponse" />
+  </wsdl:message>
+  <wsdl:message name="IAdminV1Service_updateAdminData_InputMessage">
+    <wsdl:part name="parameters" element="tns:updateAdminData" />
+  </wsdl:message>
+  <wsdl:message name="IAdminV1Service_updateAdminData_OutputMessage">
+    <wsdl:part name="parameters" element="tns:updateAdminDataResponse" />
+  </wsdl:message>
+  <wsdl:message name="IAdminV1Service_updatePassword_InputMessage">
+    <wsdl:part name="parameters" element="tns:updatePassword" />
+  </wsdl:message>
+  <wsdl:message name="IAdminV1Service_updatePassword_OutputMessage">
+    <wsdl:part name="parameters" element="tns:updatePasswordResponse" />
+  </wsdl:message>
+  <wsdl:message name="IAdminV1Service_updateEmailOTP_InputMessage">
+    <wsdl:part name="parameters" element="tns:updateEmailOTP" />
+  </wsdl:message>
+  <wsdl:message name="IAdminV1Service_updateEmailOTP_OutputMessage">
+    <wsdl:part name="parameters" element="tns:updateEmailOTPResponse" />
+  </wsdl:message>
+  <wsdl:message name="IAdminV1Service_updateEmail_InputMessage">
+    <wsdl:part name="parameters" element="tns:updateEmail" />
+  </wsdl:message>
+  <wsdl:message name="IAdminV1Service_updateEmail_OutputMessage">
+    <wsdl:part name="parameters" element="tns:updateEmailResponse" />
+  </wsdl:message>
+  <wsdl:portType name="IAdminV1Service">
+    <wsdl:operation name="Login">
+      <wsdl:input wsaw:Action="http://tempuri.org/IAdminV1Service/Login" message="tns:IAdminV1Service_Login_InputMessage" />
+      <wsdl:output wsaw:Action="http://tempuri.org/IAdminV1Service/LoginResponse" message="tns:IAdminV1Service_Login_OutputMessage" />
+    </wsdl:operation>
+    <wsdl:operation name="LoginVerify">
+      <wsdl:input wsaw:Action="http://tempuri.org/IAdminV1Service/LoginVerify" message="tns:IAdminV1Service_LoginVerify_InputMessage" />
+      <wsdl:output wsaw:Action="http://tempuri.org/IAdminV1Service/LoginVerifyResponse" message="tns:IAdminV1Service_LoginVerify_OutputMessage" />
+    </wsdl:operation>
+    <wsdl:operation name="regenerateOTP">
+      <wsdl:input wsaw:Action="http://tempuri.org/IAdminV1Service/regenerateOTP" message="tns:IAdminV1Service_regenerateOTP_InputMessage" />
+      <wsdl:output wsaw:Action="http://tempuri.org/IAdminV1Service/regenerateOTPResponse" message="tns:IAdminV1Service_regenerateOTP_OutputMessage" />
+    </wsdl:operation>
+    <wsdl:operation name="viewAdmin">
+      <wsdl:input wsaw:Action="http://tempuri.org/IAdminV1Service/viewAdmin" message="tns:IAdminV1Service_viewAdmin_InputMessage" />
+      <wsdl:output wsaw:Action="http://tempuri.org/IAdminV1Service/viewAdminResponse" message="tns:IAdminV1Service_viewAdmin_OutputMessage" />
+    </wsdl:operation>
+    <wsdl:operation name="forgotPassword">
+      <wsdl:input wsaw:Action="http://tempuri.org/IAdminV1Service/forgotPassword" message="tns:IAdminV1Service_forgotPassword_InputMessage" />
+      <wsdl:output wsaw:Action="http://tempuri.org/IAdminV1Service/forgotPasswordResponse" message="tns:IAdminV1Service_forgotPassword_OutputMessage" />
+    </wsdl:operation>
+    <wsdl:operation name="checkForgotPassword">
+      <wsdl:input wsaw:Action="http://tempuri.org/IAdminV1Service/checkForgotPassword" message="tns:IAdminV1Service_checkForgotPassword_InputMessage" />
+      <wsdl:output wsaw:Action="http://tempuri.org/IAdminV1Service/checkForgotPasswordResponse" message="tns:IAdminV1Service_checkForgotPassword_OutputMessage" />
+    </wsdl:operation>
+    <wsdl:operation name="changePassword">
+      <wsdl:input wsaw:Action="http://tempuri.org/IAdminV1Service/changePassword" message="tns:IAdminV1Service_changePassword_InputMessage" />
+      <wsdl:output wsaw:Action="http://tempuri.org/IAdminV1Service/changePasswordResponse" message="tns:IAdminV1Service_changePassword_OutputMessage" />
+    </wsdl:operation>
+    <wsdl:operation name="getAdminFilter">
+      <wsdl:input wsaw:Action="http://tempuri.org/IAdminV1Service/getAdminFilter" message="tns:IAdminV1Service_getAdminFilter_InputMessage" />
+      <wsdl:output wsaw:Action="http://tempuri.org/IAdminV1Service/getAdminFilterResponse" message="tns:IAdminV1Service_getAdminFilter_OutputMessage" />
+    </wsdl:operation>
+    <wsdl:operation name="getAdminDetail">
+      <wsdl:input wsaw:Action="http://tempuri.org/IAdminV1Service/getAdminDetail" message="tns:IAdminV1Service_getAdminDetail_InputMessage" />
+      <wsdl:output wsaw:Action="http://tempuri.org/IAdminV1Service/getAdminDetailResponse" message="tns:IAdminV1Service_getAdminDetail_OutputMessage" />
+    </wsdl:operation>
+    <wsdl:operation name="addAdmin">
+      <wsdl:input wsaw:Action="http://tempuri.org/IAdminV1Service/addAdmin" message="tns:IAdminV1Service_addAdmin_InputMessage" />
+      <wsdl:output wsaw:Action="http://tempuri.org/IAdminV1Service/addAdminResponse" message="tns:IAdminV1Service_addAdmin_OutputMessage" />
+    </wsdl:operation>
+    <wsdl:operation name="getInvitedAdmin">
+      <wsdl:input wsaw:Action="http://tempuri.org/IAdminV1Service/getInvitedAdmin" message="tns:IAdminV1Service_getInvitedAdmin_InputMessage" />
+      <wsdl:output wsaw:Action="http://tempuri.org/IAdminV1Service/getInvitedAdminResponse" message="tns:IAdminV1Service_getInvitedAdmin_OutputMessage" />
+    </wsdl:operation>
+    <wsdl:operation name="updateInvitedAdmin">
+      <wsdl:input wsaw:Action="http://tempuri.org/IAdminV1Service/updateInvitedAdmin" message="tns:IAdminV1Service_updateInvitedAdmin_InputMessage" />
+      <wsdl:output wsaw:Action="http://tempuri.org/IAdminV1Service/updateInvitedAdminResponse" message="tns:IAdminV1Service_updateInvitedAdmin_OutputMessage" />
+    </wsdl:operation>
+    <wsdl:operation name="banAdmin">
+      <wsdl:input wsaw:Action="http://tempuri.org/IAdminV1Service/banAdmin" message="tns:IAdminV1Service_banAdmin_InputMessage" />
+      <wsdl:output wsaw:Action="http://tempuri.org/IAdminV1Service/banAdminResponse" message="tns:IAdminV1Service_banAdmin_OutputMessage" />
+    </wsdl:operation>
+    <wsdl:operation name="testEmail">
+      <wsdl:input wsaw:Action="http://tempuri.org/IAdminV1Service/testEmail" message="tns:IAdminV1Service_testEmail_InputMessage" />
+      <wsdl:output wsaw:Action="http://tempuri.org/IAdminV1Service/testEmailResponse" message="tns:IAdminV1Service_testEmail_OutputMessage" />
+    </wsdl:operation>
+    <wsdl:operation name="getAdminData">
+      <wsdl:input wsaw:Action="http://tempuri.org/IAdminV1Service/getAdminData" message="tns:IAdminV1Service_getAdminData_InputMessage" />
+      <wsdl:output wsaw:Action="http://tempuri.org/IAdminV1Service/getAdminDataResponse" message="tns:IAdminV1Service_getAdminData_OutputMessage" />
+    </wsdl:operation>
+    <wsdl:operation name="updateAdminData">
+      <wsdl:input wsaw:Action="http://tempuri.org/IAdminV1Service/updateAdminData" message="tns:IAdminV1Service_updateAdminData_InputMessage" />
+      <wsdl:output wsaw:Action="http://tempuri.org/IAdminV1Service/updateAdminDataResponse" message="tns:IAdminV1Service_updateAdminData_OutputMessage" />
+    </wsdl:operation>
+    <wsdl:operation name="updatePassword">
+      <wsdl:input wsaw:Action="http://tempuri.org/IAdminV1Service/updatePassword" message="tns:IAdminV1Service_updatePassword_InputMessage" />
+      <wsdl:output wsaw:Action="http://tempuri.org/IAdminV1Service/updatePasswordResponse" message="tns:IAdminV1Service_updatePassword_OutputMessage" />
+    </wsdl:operation>
+    <wsdl:operation name="updateEmailOTP">
+      <wsdl:input wsaw:Action="http://tempuri.org/IAdminV1Service/updateEmailOTP" message="tns:IAdminV1Service_updateEmailOTP_InputMessage" />
+      <wsdl:output wsaw:Action="http://tempuri.org/IAdminV1Service/updateEmailOTPResponse" message="tns:IAdminV1Service_updateEmailOTP_OutputMessage" />
+    </wsdl:operation>
+    <wsdl:operation name="updateEmail">
+      <wsdl:input wsaw:Action="http://tempuri.org/IAdminV1Service/updateEmail" message="tns:IAdminV1Service_updateEmail_InputMessage" />
+      <wsdl:output wsaw:Action="http://tempuri.org/IAdminV1Service/updateEmailResponse" message="tns:IAdminV1Service_updateEmail_OutputMessage" />
+    </wsdl:operation>
+  </wsdl:portType>
+  <wsdl:binding name="BasicHttpBinding_IAdminV1Service" type="tns:IAdminV1Service">
+    <soap:binding transport="http://schemas.xmlsoap.org/soap/http" />
+    <wsdl:operation name="Login">
+      <soap:operation soapAction="http://tempuri.org/IAdminV1Service/Login" style="document" />
+      <wsdl:input>
+        <soap:body use="literal" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="LoginVerify">
+      <soap:operation soapAction="http://tempuri.org/IAdminV1Service/LoginVerify" style="document" />
+      <wsdl:input>
+        <soap:body use="literal" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="regenerateOTP">
+      <soap:operation soapAction="http://tempuri.org/IAdminV1Service/regenerateOTP" style="document" />
+      <wsdl:input>
+        <soap:body use="literal" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="viewAdmin">
+      <soap:operation soapAction="http://tempuri.org/IAdminV1Service/viewAdmin" style="document" />
+      <wsdl:input>
+        <soap:body use="literal" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="forgotPassword">
+      <soap:operation soapAction="http://tempuri.org/IAdminV1Service/forgotPassword" style="document" />
+      <wsdl:input>
+        <soap:body use="literal" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="checkForgotPassword">
+      <soap:operation soapAction="http://tempuri.org/IAdminV1Service/checkForgotPassword" style="document" />
+      <wsdl:input>
+        <soap:body use="literal" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="changePassword">
+      <soap:operation soapAction="http://tempuri.org/IAdminV1Service/changePassword" style="document" />
+      <wsdl:input>
+        <soap:body use="literal" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="getAdminFilter">
+      <soap:operation soapAction="http://tempuri.org/IAdminV1Service/getAdminFilter" style="document" />
+      <wsdl:input>
+        <soap:body use="literal" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="getAdminDetail">
+      <soap:operation soapAction="http://tempuri.org/IAdminV1Service/getAdminDetail" style="document" />
+      <wsdl:input>
+        <soap:body use="literal" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="addAdmin">
+      <soap:operation soapAction="http://tempuri.org/IAdminV1Service/addAdmin" style="document" />
+      <wsdl:input>
+        <soap:body use="literal" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="getInvitedAdmin">
+      <soap:operation soapAction="http://tempuri.org/IAdminV1Service/getInvitedAdmin" style="document" />
+      <wsdl:input>
+        <soap:body use="literal" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="updateInvitedAdmin">
+      <soap:operation soapAction="http://tempuri.org/IAdminV1Service/updateInvitedAdmin" style="document" />
+      <wsdl:input>
+        <soap:body use="literal" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="banAdmin">
+      <soap:operation soapAction="http://tempuri.org/IAdminV1Service/banAdmin" style="document" />
+      <wsdl:input>
+        <soap:body use="literal" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="testEmail">
+      <soap:operation soapAction="http://tempuri.org/IAdminV1Service/testEmail" style="document" />
+      <wsdl:input>
+        <soap:body use="literal" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="getAdminData">
+      <soap:operation soapAction="http://tempuri.org/IAdminV1Service/getAdminData" style="document" />
+      <wsdl:input>
+        <soap:body use="literal" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="updateAdminData">
+      <soap:operation soapAction="http://tempuri.org/IAdminV1Service/updateAdminData" style="document" />
+      <wsdl:input>
+        <soap:body use="literal" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="updatePassword">
+      <soap:operation soapAction="http://tempuri.org/IAdminV1Service/updatePassword" style="document" />
+      <wsdl:input>
+        <soap:body use="literal" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="updateEmailOTP">
+      <soap:operation soapAction="http://tempuri.org/IAdminV1Service/updateEmailOTP" style="document" />
+      <wsdl:input>
+        <soap:body use="literal" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="updateEmail">
+      <soap:operation soapAction="http://tempuri.org/IAdminV1Service/updateEmail" style="document" />
+      <wsdl:input>
+        <soap:body use="literal" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+  </wsdl:binding>
+  <wsdl:service name="AdminV1Service">
+    <wsdl:port name="BasicHttpBinding_IAdminV1Service" binding="tns:BasicHttpBinding_IAdminV1Service">
+      <soap:address location="http://localhost:50434/Script/Service/Admin/v1/AdminV1Service.svc" />
+    </wsdl:port>
+  </wsdl:service>
+</wsdl:definitions>

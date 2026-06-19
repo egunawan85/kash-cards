@@ -1,0 +1,2527 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<edmx:Edmx Version="3.0" xmlns:edmx="http://schemas.microsoft.com/ado/2009/11/edmx">
+  <!-- EF Runtime content -->
+  <edmx:Runtime>
+    <!-- SSDL content -->
+    <edmx:StorageModels>
+    <Schema Namespace="DBModel.Store" Provider="System.Data.SqlClient" ProviderManifestToken="2012.Azure" Alias="Self" xmlns:store="http://schemas.microsoft.com/ado/2007/12/edm/EntityStoreSchemaGenerator" xmlns:customannotation="http://schemas.microsoft.com/ado/2013/11/edm/customannotation" xmlns="http://schemas.microsoft.com/ado/2009/11/edm/ssdl">
+        <EntityType Name="tblH_Admin_Login">
+          <Key>
+            <PropertyRef Name="ID" />
+          </Key>
+          <Property Name="ID" Type="nvarchar" MaxLength="50" Nullable="false" />
+          <Property Name="AdminID" Type="nvarchar" MaxLength="50" />
+          <Property Name="Code" Type="nvarchar" MaxLength="50" />
+          <Property Name="Longitude" Type="nvarchar(max)" />
+          <Property Name="Latitude" Type="nvarchar(max)" />
+          <Property Name="Altitude" Type="nvarchar(max)" />
+          <Property Name="IPAddress" Type="nvarchar(max)" />
+          <Property Name="DateCreated" Type="datetime" />
+          <Property Name="DateExpired" Type="datetime" />
+          <Property Name="isVerify" Type="int" />
+          <Property Name="DeviceType" Type="nvarchar" MaxLength="50" />
+          <Property Name="DeviceName" Type="nvarchar(max)" />
+          <Property Name="Manufacturer" Type="nvarchar(max)" />
+          <Property Name="Brand" Type="nvarchar(max)" />
+          <Property Name="Model" Type="nvarchar(max)" />
+          <Property Name="IMEI" Type="nvarchar(max)" />
+          <Property Name="MEID" Type="nvarchar(max)" />
+          <Property Name="Param1" Type="nvarchar(max)" />
+          <Property Name="Param2" Type="nvarchar(max)" />
+          <Property Name="Param3" Type="nvarchar(max)" />
+        </EntityType>
+        <EntityType Name="tblH_Admin_OTP">
+          <Key>
+            <PropertyRef Name="ID" />
+          </Key>
+          <Property Name="ID" Type="bigint" StoreGeneratedPattern="Identity" Nullable="false" />
+          <Property Name="OTPID" Type="nvarchar" MaxLength="50" Nullable="false" />
+          <Property Name="AdminID" Type="nvarchar" MaxLength="50" />
+          <Property Name="MerchantID" Type="nvarchar" MaxLength="50" />
+          <Property Name="Name" Type="nvarchar" MaxLength="50" />
+          <Property Name="Code" Type="nvarchar" MaxLength="50" />
+          <Property Name="Longitude" Type="nvarchar(max)" />
+          <Property Name="Latitude" Type="nvarchar(max)" />
+          <Property Name="Altitude" Type="nvarchar(max)" />
+          <Property Name="IPAddress" Type="nvarchar(max)" />
+          <Property Name="DateCreated" Type="datetime" />
+          <Property Name="DateExpired" Type="datetime" />
+          <Property Name="isVerify" Type="int" />
+          <Property Name="DeviceType" Type="nvarchar" MaxLength="50" />
+          <Property Name="DeviceName" Type="nvarchar(max)" />
+          <Property Name="Manufacturer" Type="nvarchar(max)" />
+          <Property Name="Brand" Type="nvarchar(max)" />
+          <Property Name="Model" Type="nvarchar(max)" />
+          <Property Name="IMEI" Type="nvarchar(max)" />
+          <Property Name="MEID" Type="nvarchar(max)" />
+          <Property Name="Param1" Type="nvarchar(max)" />
+          <Property Name="Param2" Type="nvarchar(max)" />
+          <Property Name="Param3" Type="nvarchar(max)" />
+        </EntityType>
+        <EntityType Name="tblH_API_Log">
+          <Key>
+            <PropertyRef Name="ID" />
+          </Key>
+          <Property Name="ID" Type="bigint" StoreGeneratedPattern="Identity" Nullable="false" />
+          <Property Name="Type" Type="nvarchar" MaxLength="50" />
+          <Property Name="Request" Type="nvarchar(max)" />
+          <Property Name="RequestDate" Type="datetime" />
+          <Property Name="Response" Type="nvarchar(max)" />
+          <Property Name="ResponseDate" Type="datetime" />
+        </EntityType>
+        <EntityType Name="tblH_Partner_Webhook">
+          <Key>
+            <PropertyRef Name="ID" />
+          </Key>
+          <Property Name="ID" Type="bigint" StoreGeneratedPattern="Identity" Nullable="false" />
+          <Property Name="Type" Type="nvarchar" MaxLength="50" />
+          <Property Name="Header" Type="nvarchar(max)" />
+          <Property Name="Request" Type="nvarchar(max)" />
+          <Property Name="RequestDate" Type="datetime" />
+          <Property Name="Response" Type="nvarchar(max)" />
+          <Property Name="ResponseDate" Type="datetime" />
+        </EntityType>
+        <EntityType Name="tblH_Partner_Webhook_ID">
+          <Key>
+            <PropertyRef Name="ID" />
+          </Key>
+          <Property Name="ID" Type="bigint" StoreGeneratedPattern="Identity" Nullable="false" />
+          <Property Name="Type" Type="nvarchar" MaxLength="50" />
+          <Property Name="Header" Type="nvarchar(max)" />
+          <Property Name="TXID" Type="nvarchar(max)" />
+          <Property Name="Request" Type="nvarchar(max)" />
+          <Property Name="RequestDate" Type="datetime" />
+        </EntityType>
+        <EntityType Name="tblH_User_Balance">
+          <Key>
+            <PropertyRef Name="ID" />
+          </Key>
+          <Property Name="ID" Type="bigint" StoreGeneratedPattern="Identity" Nullable="false" />
+          <Property Name="UserID" Type="nvarchar" MaxLength="50" />
+          <Property Name="BalanceID" Type="nvarchar" MaxLength="50" />
+          <Property Name="TransactionID" Type="nvarchar" MaxLength="50" />
+          <Property Name="Type" Type="nvarchar" MaxLength="50" />
+          <Property Name="BalancePrevious" Type="decimal" Precision="18" Scale="9" />
+          <Property Name="Amount" Type="decimal" Precision="18" Scale="9" />
+          <Property Name="Commision" Type="decimal" Precision="18" Scale="9" />
+          <Property Name="CommisionInPercentage" Type="float" />
+          <Property Name="Balance" Type="decimal" Precision="18" Scale="9" />
+          <Property Name="BalanceHold" Type="decimal" Precision="18" Scale="9" />
+          <Property Name="CreatedDate" Type="datetime" />
+          <Property Name="Status" Type="nvarchar" MaxLength="50" />
+        </EntityType>
+        <EntityType Name="tblH_User_Login">
+          <Key>
+            <PropertyRef Name="ID" />
+          </Key>
+          <Property Name="ID" Type="nvarchar" MaxLength="50" Nullable="false" />
+          <Property Name="UserID" Type="nvarchar" MaxLength="50" />
+          <Property Name="Code" Type="nvarchar" MaxLength="50" />
+          <Property Name="Longitude" Type="nvarchar(max)" />
+          <Property Name="Latitude" Type="nvarchar(max)" />
+          <Property Name="Altitude" Type="nvarchar(max)" />
+          <Property Name="IPAddress" Type="nvarchar(max)" />
+          <Property Name="DateCreated" Type="datetime" />
+          <Property Name="DateExpired" Type="datetime" />
+          <Property Name="isVerify" Type="int" />
+          <Property Name="DeviceType" Type="nvarchar" MaxLength="50" />
+          <Property Name="DeviceName" Type="nvarchar(max)" />
+          <Property Name="Manufacturer" Type="nvarchar(max)" />
+          <Property Name="Brand" Type="nvarchar(max)" />
+          <Property Name="Model" Type="nvarchar(max)" />
+          <Property Name="IMEI" Type="nvarchar(max)" />
+          <Property Name="MEID" Type="nvarchar(max)" />
+          <Property Name="Param1" Type="nvarchar(max)" />
+          <Property Name="Param2" Type="nvarchar(max)" />
+          <Property Name="Param3" Type="nvarchar(max)" />
+        </EntityType>
+        <EntityType Name="tblH_User_OTP">
+          <Key>
+            <PropertyRef Name="ID" />
+          </Key>
+          <Property Name="ID" Type="bigint" StoreGeneratedPattern="Identity" Nullable="false" />
+          <Property Name="OTPID" Type="nvarchar" MaxLength="50" Nullable="false" />
+          <Property Name="UserID" Type="nvarchar" MaxLength="50" />
+          <Property Name="MerchantID" Type="nvarchar" MaxLength="50" />
+          <Property Name="Name" Type="nvarchar" MaxLength="50" />
+          <Property Name="Code" Type="nvarchar" MaxLength="50" />
+          <Property Name="Longitude" Type="nvarchar(max)" />
+          <Property Name="Latitude" Type="nvarchar(max)" />
+          <Property Name="Altitude" Type="nvarchar(max)" />
+          <Property Name="IPAddress" Type="nvarchar(max)" />
+          <Property Name="DateCreated" Type="datetime" />
+          <Property Name="DateExpired" Type="datetime" />
+          <Property Name="isVerify" Type="int" />
+          <Property Name="DeviceType" Type="nvarchar" MaxLength="50" />
+          <Property Name="DeviceName" Type="nvarchar(max)" />
+          <Property Name="Manufacturer" Type="nvarchar(max)" />
+          <Property Name="Brand" Type="nvarchar(max)" />
+          <Property Name="Model" Type="nvarchar(max)" />
+          <Property Name="IMEI" Type="nvarchar(max)" />
+          <Property Name="MEID" Type="nvarchar(max)" />
+          <Property Name="Param1" Type="nvarchar(max)" />
+          <Property Name="Param2" Type="nvarchar(max)" />
+          <Property Name="Param3" Type="nvarchar(max)" />
+        </EntityType>
+        <EntityType Name="tblH_User_Register">
+          <Key>
+            <PropertyRef Name="ID" />
+          </Key>
+          <Property Name="ID" Type="nvarchar" MaxLength="50" Nullable="false" />
+          <Property Name="UserID" Type="nvarchar" MaxLength="50" />
+          <Property Name="Code" Type="nvarchar" MaxLength="50" />
+          <Property Name="Longitude" Type="nvarchar(max)" />
+          <Property Name="Latitude" Type="nvarchar(max)" />
+          <Property Name="Altitude" Type="nvarchar(max)" />
+          <Property Name="IPAddress" Type="nvarchar(max)" />
+          <Property Name="DateCreated" Type="datetime" />
+          <Property Name="DateExpired" Type="datetime" />
+          <Property Name="isVerify" Type="int" />
+          <Property Name="DeviceType" Type="nvarchar" MaxLength="50" />
+          <Property Name="DeviceName" Type="nvarchar(max)" />
+          <Property Name="Manufacturer" Type="nvarchar(max)" />
+          <Property Name="Brand" Type="nvarchar(max)" />
+          <Property Name="Model" Type="nvarchar(max)" />
+          <Property Name="IMEI" Type="nvarchar(max)" />
+          <Property Name="MEID" Type="nvarchar(max)" />
+          <Property Name="Param1" Type="nvarchar(max)" />
+          <Property Name="Param2" Type="nvarchar(max)" />
+          <Property Name="Param3" Type="nvarchar(max)" />
+        </EntityType>
+        <EntityType Name="tblM_Address_Generator">
+          <Key>
+            <PropertyRef Name="ID" />
+          </Key>
+          <Property Name="ID" Type="bigint" StoreGeneratedPattern="Identity" Nullable="false" />
+          <Property Name="Street" Type="nvarchar(max)" />
+          <Property Name="City" Type="nvarchar(max)" />
+          <Property Name="CityCode" Type="nvarchar" MaxLength="50" />
+          <Property Name="State" Type="nvarchar(max)" />
+          <Property Name="PostalCode" Type="nvarchar(max)" />
+          <Property Name="PhoneNumber" Type="nvarchar(max)" />
+          <Property Name="Country" Type="nvarchar(max)" />
+          <Property Name="Latitude" Type="nvarchar(max)" />
+          <Property Name="Longitude" Type="nvarchar(max)" />
+          <Property Name="isActive" Type="int" />
+          <Property Name="isUsed" Type="int" />
+          <Property Name="DateCreated" Type="datetime" />
+          <Property Name="DateUsed" Type="datetime" />
+        </EntityType>
+        <EntityType Name="tblM_Admin">
+          <Key>
+            <PropertyRef Name="AdminID" />
+          </Key>
+          <Property Name="ID" Type="bigint" StoreGeneratedPattern="Identity" Nullable="false" />
+          <Property Name="AdminID" Type="nvarchar" MaxLength="50" Nullable="false" />
+          <Property Name="FirstName" Type="nvarchar(max)" />
+          <Property Name="LastName" Type="nvarchar(max)" />
+          <Property Name="UserName" Type="nvarchar(max)" />
+          <Property Name="Password" Type="nvarchar(max)" />
+          <Property Name="RoleID" Type="nvarchar" MaxLength="50" />
+          <Property Name="PIN" Type="char" MaxLength="6" />
+          <Property Name="CountryID" Type="bigint" />
+          <Property Name="Phone" Type="nvarchar" MaxLength="50" Nullable="false" />
+          <Property Name="Email" Type="nvarchar" MaxLength="50" />
+          <Property Name="Profession" Type="nvarchar" MaxLength="50" />
+          <Property Name="DateJoin" Type="datetime" />
+          <Property Name="isActive" Type="int" />
+          <Property Name="DateActivated" Type="datetime" />
+          <Property Name="isVerified" Type="int" />
+          <Property Name="DateVerified" Type="datetime" />
+          <Property Name="isBanned" Type="int" />
+          <Property Name="DateInvited" Type="datetime" />
+          <Property Name="InvitedBy" Type="nvarchar" MaxLength="50" />
+          <Property Name="DateBanned" Type="datetime" />
+          <Property Name="BannedBy" Type="nvarchar" MaxLength="50" />
+          <Property Name="RegisterVia" Type="nvarchar(max)" />
+          <Property Name="ImageURL" Type="nvarchar(max)" />
+          <Property Name="ThumbnailURL" Type="nvarchar(max)" />
+        </EntityType>
+        <EntityType Name="tblM_Admin_Role">
+          <Key>
+            <PropertyRef Name="RoleID" />
+          </Key>
+          <Property Name="RoleID" Type="nvarchar" MaxLength="50" Nullable="false" />
+          <Property Name="Role" Type="nvarchar" MaxLength="50" />
+          <Property Name="DateCreated" Type="datetime" />
+          <Property Name="CreatedBy" Type="nvarchar" MaxLength="50" />
+          <Property Name="isActive" Type="int" />
+          <Property Name="DeletedBy" Type="nvarchar" MaxLength="50" />
+          <Property Name="DateDeleted" Type="datetime" />
+        </EntityType>
+        <EntityType Name="tblM_Card_Type">
+          <Key>
+            <PropertyRef Name="ID" />
+          </Key>
+          <Property Name="ID" Type="bigint" StoreGeneratedPattern="Identity" Nullable="false" />
+          <Property Name="CardTypeId" Type="bigint" />
+          <Property Name="Organization" Type="nvarchar" MaxLength="50" />
+          <Property Name="Country" Type="nvarchar" MaxLength="50" />
+          <Property Name="BankCardBin" Type="nvarchar" MaxLength="50" />
+          <Property Name="Type" Type="nvarchar" MaxLength="50" />
+          <Property Name="TypeStr" Type="nvarchar" MaxLength="50" />
+          <Property Name="CardName" Type="nvarchar" MaxLength="50" />
+          <Property Name="CardDesc" Type="nvarchar(max)" />
+          <Property Name="CardPrice" Type="nvarchar" MaxLength="50" />
+          <Property Name="CardPriceCurrency" Type="nvarchar" MaxLength="50" />
+          <Property Name="OriginalCardPrice" Type="nvarchar" MaxLength="50" />
+          <Property Name="OriginalCardPriceCurrency" Type="nvarchar" MaxLength="50" />
+          <Property Name="RechargeFeeRate" Type="nvarchar" MaxLength="50" />
+          <Property Name="RechargeFee" Type="nvarchar" MaxLength="50" />
+          <Property Name="OriginalRechargeFeeRate" Type="nvarchar" MaxLength="50" />
+          <Property Name="OriginalRechargeFee" Type="nvarchar" MaxLength="50" />
+          <Property Name="RechargeMinQuota" Type="nvarchar" MaxLength="50" />
+          <Property Name="RechargeMaxQuota" Type="nvarchar" MaxLength="50" />
+          <Property Name="Support" Type="nvarchar(max)" />
+          <Property Name="SupportHolderRegin" Type="nvarchar(max)" />
+          <Property Name="SupportHolderAreaCode" Type="nvarchar(max)" />
+          <Property Name="NeedCardHolder" Type="int" />
+          <Property Name="NeedDepositForActiveCard" Type="int" />
+          <Property Name="DepositAmountMinQuotaForActiveCard" Type="nvarchar" MaxLength="50" />
+          <Property Name="DepositAmountMaxQuotaForActiveCard" Type="nvarchar" MaxLength="50" />
+          <Property Name="FiatCurrency" Type="nvarchar" MaxLength="50" />
+          <Property Name="MaxCount" Type="int" />
+          <Property Name="Status" Type="nvarchar" MaxLength="50" />
+          <Property Name="isActive" Type="int" />
+          <Property Name="DateCreated" Type="datetime" />
+        </EntityType>
+        <EntityType Name="tblM_Card_Type_Recharge">
+          <Key>
+            <PropertyRef Name="CardTypeId" />
+          </Key>
+          <Property Name="CardTypeId" Type="bigint" Nullable="false" />
+          <Property Name="Currency" Type="nvarchar" MaxLength="50" />
+          <Property Name="RechargeMinQuota" Type="nvarchar" MaxLength="50" />
+          <Property Name="RechargeMaxQuota" Type="nvarchar" MaxLength="50" />
+          <Property Name="RechargeFeeRate" Type="nvarchar" MaxLength="50" />
+          <Property Name="RechargeFee" Type="nvarchar" MaxLength="50" />
+          <Property Name="Digital" Type="int" />
+        </EntityType>
+        <EntityType Name="tblM_Cardholder">
+          <Key>
+            <PropertyRef Name="ID" />
+          </Key>
+          <Property Name="ID" Type="nvarchar" MaxLength="50" Nullable="false" />
+          <Property Name="UserID" Type="nvarchar" MaxLength="50" />
+          <Property Name="HolderID" Type="bigint" />
+          <Property Name="CardTypeId" Type="bigint" />
+          <Property Name="AreaCode" Type="nvarchar" MaxLength="50" />
+          <Property Name="Mobile" Type="nvarchar" MaxLength="50" />
+          <Property Name="Email" Type="nvarchar(max)" />
+          <Property Name="FirstName" Type="nvarchar(max)" />
+          <Property Name="LastName" Type="nvarchar(max)" />
+          <Property Name="Birthday" Type="nvarchar" MaxLength="50" />
+          <Property Name="Country" Type="nvarchar" MaxLength="50" />
+          <Property Name="CountryStr" Type="nvarchar(max)" />
+          <Property Name="State" Type="nvarchar" MaxLength="50" />
+          <Property Name="StateStr" Type="nvarchar(max)" />
+          <Property Name="Town" Type="nvarchar" MaxLength="50" />
+          <Property Name="TownStr" Type="nvarchar(max)" />
+          <Property Name="Address" Type="nvarchar(max)" />
+          <Property Name="PostCode" Type="nvarchar" MaxLength="50" />
+          <Property Name="Status" Type="nvarchar" MaxLength="50" />
+          <Property Name="StatusStr" Type="nvarchar" MaxLength="50" />
+          <Property Name="DateCreated" Type="datetime" />
+          <Property Name="isActive" Type="int" />
+          <Property Name="DateModified" Type="datetime" />
+        </EntityType>
+        <EntityType Name="tblM_Country_City">
+          <Key>
+            <PropertyRef Name="ID" />
+          </Key>
+          <Property Name="ID" Type="bigint" StoreGeneratedPattern="Identity" Nullable="false" />
+          <Property Name="Code" Type="nvarchar" MaxLength="50" />
+          <Property Name="City" Type="nvarchar(max)" />
+          <Property Name="RegionCode" Type="nvarchar" MaxLength="50" />
+          <Property Name="isActive" Type="int" />
+          <Property Name="DateCreated" Type="datetime" />
+        </EntityType>
+        <EntityType Name="tblM_Country_Mobile">
+          <Key>
+            <PropertyRef Name="ID" />
+          </Key>
+          <Property Name="ID" Type="bigint" StoreGeneratedPattern="Identity" Nullable="false" />
+          <Property Name="Code" Type="nvarchar" MaxLength="50" />
+          <Property Name="Country" Type="nvarchar(max)" />
+          <Property Name="AreaCode" Type="nvarchar" MaxLength="50" />
+          <Property Name="isActive" Type="int" />
+          <Property Name="DateCreated" Type="datetime" />
+        </EntityType>
+        <EntityType Name="tblM_Country_Region">
+          <Key>
+            <PropertyRef Name="ID" />
+          </Key>
+          <Property Name="ID" Type="bigint" StoreGeneratedPattern="Identity" Nullable="false" />
+          <Property Name="Code" Type="nvarchar" MaxLength="50" />
+          <Property Name="StandardCode" Type="nvarchar" MaxLength="50" />
+          <Property Name="Country" Type="nvarchar(max)" />
+          <Property Name="isActive" Type="int" />
+          <Property Name="DateCreated" Type="datetime" />
+        </EntityType>
+        <EntityType Name="tblM_Crypto_Network">
+          <Key>
+            <PropertyRef Name="ID" />
+          </Key>
+          <Property Name="ID" Type="nvarchar" MaxLength="50" Nullable="false" />
+          <Property Name="Network" Type="nvarchar(max)" />
+          <Property Name="Symbol" Type="nvarchar(max)" />
+          <Property Name="DateCreated" Type="datetime" />
+          <Property Name="CreatedBy" Type="nvarchar" MaxLength="50" />
+          <Property Name="isActive" Type="int" />
+          <Property Name="DeletedBy" Type="nvarchar" MaxLength="50" />
+          <Property Name="DateDeleted" Type="datetime" />
+        </EntityType>
+        <EntityType Name="tblM_Setting">
+          <Key>
+            <PropertyRef Name="ID" />
+          </Key>
+          <Property Name="ID" Type="bigint" StoreGeneratedPattern="Identity" Nullable="false" />
+          <Property Name="Name" Type="nvarchar(max)" />
+          <Property Name="Value" Type="float" />
+          <Property Name="DateCreated" Type="datetime" />
+          <Property Name="Param1" Type="nvarchar(max)" />
+          <Property Name="Param2" Type="nvarchar(max)" />
+          <Property Name="Param3" Type="nvarchar(max)" />
+        </EntityType>
+        <EntityType Name="tblM_Setting_Counter">
+          <Key>
+            <PropertyRef Name="ID" />
+          </Key>
+          <Property Name="ID" Type="bigint" StoreGeneratedPattern="Identity" Nullable="false" />
+          <Property Name="Name" Type="nvarchar(max)" />
+          <Property Name="Value" Type="bigint" />
+          <Property Name="DateCreated" Type="datetime" />
+          <Property Name="Param1" Type="nvarchar(max)" />
+          <Property Name="Param2" Type="nvarchar(max)" />
+          <Property Name="Param3" Type="nvarchar(max)" />
+        </EntityType>
+        <EntityType Name="tblM_User">
+          <Key>
+            <PropertyRef Name="UserID" />
+          </Key>
+          <Property Name="ID" Type="bigint" StoreGeneratedPattern="Identity" Nullable="false" />
+          <Property Name="CompanyID" Type="nvarchar" MaxLength="50" />
+          <Property Name="UserID" Type="nvarchar" MaxLength="50" Nullable="false" />
+          <Property Name="FirstName" Type="nvarchar(max)" />
+          <Property Name="LastName" Type="nvarchar(max)" />
+          <Property Name="UserName" Type="nvarchar(max)" />
+          <Property Name="Password" Type="nvarchar(max)" />
+          <Property Name="RoleID" Type="nvarchar" MaxLength="50" />
+          <Property Name="PIN" Type="char" MaxLength="6" />
+          <Property Name="CountryID" Type="bigint" />
+          <Property Name="Phone" Type="nvarchar" MaxLength="50" />
+          <Property Name="Email" Type="nvarchar" MaxLength="50" />
+          <Property Name="Profession" Type="nvarchar" MaxLength="50" />
+          <Property Name="DateJoin" Type="datetime" />
+          <Property Name="isActive" Type="int" />
+          <Property Name="DateActivated" Type="datetime" />
+          <Property Name="isVerified" Type="int" />
+          <Property Name="DateVerified" Type="datetime" />
+          <Property Name="isBanned" Type="int" />
+          <Property Name="DateInvited" Type="datetime" />
+          <Property Name="InvitedBy" Type="nvarchar" MaxLength="50" />
+          <Property Name="DateBanned" Type="datetime" />
+          <Property Name="BannedBy" Type="nvarchar" MaxLength="50" />
+          <Property Name="RegisterVia" Type="nvarchar(max)" />
+          <Property Name="ImageURL" Type="nvarchar(max)" />
+          <Property Name="ThumbnailURL" Type="nvarchar(max)" />
+          <Property Name="is2FA" Type="int" />
+          <Property Name="Date2FA" Type="datetime" />
+        </EntityType>
+        <EntityType Name="tblM_User_2FA">
+          <Key>
+            <PropertyRef Name="ID" />
+          </Key>
+          <Property Name="ID" Type="bigint" StoreGeneratedPattern="Identity" Nullable="false" />
+          <Property Name="UserID" Type="nvarchar" MaxLength="50" />
+          <Property Name="AccountKey" Type="nvarchar(max)" />
+          <Property Name="ManualEntryKey" Type="nvarchar(max)" />
+          <Property Name="isActive" Type="int" />
+          <Property Name="DateCreated" Type="datetime" />
+        </EntityType>
+        <EntityType Name="tblM_User_Balance">
+          <Key>
+            <PropertyRef Name="ID" />
+          </Key>
+          <Property Name="ID" Type="bigint" StoreGeneratedPattern="Identity" Nullable="false" />
+          <Property Name="BalanceID" Type="nvarchar" MaxLength="50" />
+          <Property Name="UserID" Type="nvarchar" MaxLength="50" />
+          <Property Name="Currency" Type="nvarchar" MaxLength="50" />
+          <Property Name="Balance" Type="decimal" Precision="18" Scale="9" />
+          <Property Name="isActive" Type="int" />
+          <Property Name="DateCreated" Type="datetime" />
+          <Property Name="CreatedBy" Type="nvarchar" MaxLength="50" />
+          <Property Name="DateUpdated" Type="datetime" />
+        </EntityType>
+        <EntityType Name="tblM_User_Crypto_Deposit">
+          <Key>
+            <PropertyRef Name="ID" />
+          </Key>
+          <Property Name="ID" Type="nvarchar" MaxLength="50" Nullable="false" />
+          <Property Name="UserID" Type="nvarchar" MaxLength="50" />
+          <Property Name="PGCryptoID" Type="nvarchar" MaxLength="50" />
+          <Property Name="NetworkID" Type="nvarchar" MaxLength="50" />
+          <Property Name="Address" Type="nvarchar(max)" />
+          <Property Name="Label" Type="nvarchar(max)" />
+          <Property Name="DateCreated" Type="datetime" />
+          <Property Name="CreatedBy" Type="nvarchar" MaxLength="50" />
+          <Property Name="isActive" Type="int" />
+          <Property Name="DeletedBy" Type="nvarchar" MaxLength="50" />
+          <Property Name="DateDeleted" Type="datetime" />
+          <Property Name="Param1" Type="nvarchar(max)" />
+          <Property Name="Param3" Type="nvarchar(max)" />
+          <Property Name="Param2" Type="nvarchar(max)" />
+          <Property Name="Param4" Type="nvarchar(max)" />
+          <Property Name="Param5" Type="nvarchar(max)" />
+        </EntityType>
+        <EntityType Name="tblM_User_Fee">
+          <Key>
+            <PropertyRef Name="ID" />
+          </Key>
+          <Property Name="ID" Type="bigint" StoreGeneratedPattern="Identity" Nullable="false" />
+          <Property Name="CommisionID" Type="nvarchar" MaxLength="50" Nullable="false" />
+          <Property Name="UserID" Type="nvarchar" MaxLength="50" />
+          <Property Name="Fee" Type="float" />
+          <Property Name="DateCreated" Type="datetime" />
+          <Property Name="CreatedBy" Type="nvarchar" MaxLength="50" />
+          <Property Name="DateUpdated" Type="datetime" />
+          <Property Name="UpdatedBy" Type="nvarchar" MaxLength="50" />
+          <Property Name="DateDeleted" Type="datetime" />
+          <Property Name="DeletedBy" Type="nvarchar" MaxLength="50" />
+          <Property Name="Param1" Type="nvarchar(max)" />
+          <Property Name="Param2" Type="nvarchar(max)" />
+          <Property Name="Param3" Type="nvarchar(max)" />
+          <Property Name="Param4" Type="nvarchar(max)" />
+          <Property Name="Param5" Type="nvarchar(max)" />
+        </EntityType>
+        <EntityType Name="tblM_User_Referral">
+          <Key>
+            <PropertyRef Name="ID" />
+          </Key>
+          <Property Name="ID" Type="bigint" StoreGeneratedPattern="Identity" Nullable="false" />
+          <Property Name="UserID" Type="nvarchar" MaxLength="50" />
+          <Property Name="Code" Type="nvarchar" MaxLength="50" />
+          <Property Name="DateCreated" Type="datetime" />
+          <Property Name="CreatedBy" Type="nvarchar" MaxLength="50" />
+          <Property Name="DateUpdated" Type="datetime" />
+          <Property Name="UpdatedBy" Type="nvarchar" MaxLength="50" />
+          <Property Name="DateDeleted" Type="datetime" />
+          <Property Name="DeletedBy" Type="nvarchar" MaxLength="50" />
+          <Property Name="Param1" Type="nvarchar(max)" />
+          <Property Name="Param2" Type="nvarchar(max)" />
+          <Property Name="Param3" Type="nvarchar(max)" />
+          <Property Name="Param4" Type="nvarchar(max)" />
+          <Property Name="Param5" Type="nvarchar(max)" />
+        </EntityType>
+        <EntityType Name="tblM_User_Role">
+          <Key>
+            <PropertyRef Name="RoleID" />
+          </Key>
+          <Property Name="ID" Type="bigint" StoreGeneratedPattern="Identity" Nullable="false" />
+          <Property Name="RoleID" Type="nvarchar" MaxLength="50" Nullable="false" />
+          <Property Name="Role" Type="nvarchar" MaxLength="50" Nullable="false" />
+          <Property Name="Description" Type="nvarchar(max)" />
+          <Property Name="isActive" Type="int" />
+          <Property Name="DateCreated" Type="datetime" />
+          <Property Name="CreatedBy" Type="nvarchar(max)" />
+        </EntityType>
+        <EntityType Name="tblT_Card">
+          <Key>
+            <PropertyRef Name="ID" />
+          </Key>
+          <Property Name="ID" Type="nvarchar" MaxLength="50" Nullable="false" />
+          <Property Name="UserID" Type="nvarchar" MaxLength="50" />
+          <Property Name="CardTypeId" Type="bigint" />
+          <Property Name="OrderNo" Type="nvarchar(max)" />
+          <Property Name="HolderID" Type="bigint" />
+          <Property Name="CardNo" Type="nvarchar(max)" />
+          <Property Name="CardNumber" Type="nvarchar" MaxLength="50" />
+          <Property Name="CVV" Type="nvarchar(max)" />
+          <Property Name="ValidPeriod" Type="nvarchar(max)" />
+          <Property Name="Currency" Type="nvarchar" MaxLength="50" />
+          <Property Name="BaseFee" Type="float" />
+          <Property Name="BaseAmount" Type="float" />
+          <Property Name="Price" Type="float" />
+          <Property Name="InitialDeposit" Type="float" />
+          <Property Name="Fee" Type="float" />
+          <Property Name="FeeInPercentage" Type="float" />
+          <Property Name="Total" Type="float" />
+          <Property Name="ReceivedAmount" Type="float" />
+          <Property Name="ReceivedCurrency" Type="nvarchar" MaxLength="50" />
+          <Property Name="Status" Type="nvarchar" MaxLength="50" />
+          <Property Name="DateCreated" Type="datetime" />
+          <Property Name="DateExpired" Type="datetime" />
+          <Property Name="isActive" Type="int" />
+          <Property Name="DateModified" Type="datetime" />
+          <Property Name="isNeedCardholder" Type="int" />
+          <Property Name="AddressID" Type="nvarchar" MaxLength="50" />
+          <Property Name="Address" Type="nvarchar(max)" />
+          <Property Name="ReceiptURL" Type="nvarchar(max)" />
+          <Property Name="Txhash" Type="nvarchar(max)" />
+          <Property Name="PGCryptoID" Type="nvarchar" MaxLength="50" />
+          <Property Name="Param1" Type="nvarchar(max)" />
+          <Property Name="Param2" Type="nvarchar(max)" />
+          <Property Name="Param3" Type="nvarchar(max)" />
+          <Property Name="Param4" Type="nvarchar(max)" />
+          <Property Name="Param5" Type="nvarchar(max)" />
+        </EntityType>
+        <EntityType Name="tblT_Card_Balance">
+          <Key>
+            <PropertyRef Name="ID" />
+          </Key>
+          <Property Name="ID" Type="nvarchar" MaxLength="50" Nullable="false" />
+          <Property Name="CardNo" Type="nvarchar(max)" />
+          <Property Name="Amount" Type="float" />
+          <Property Name="UsedAmount" Type="float" />
+          <Property Name="Currency" Type="nvarchar" MaxLength="50" />
+        </EntityType>
+        <EntityType Name="tblT_Card_Deposit">
+          <Key>
+            <PropertyRef Name="ID" />
+          </Key>
+          <Property Name="ID" Type="nvarchar" MaxLength="50" Nullable="false" />
+          <Property Name="UserID" Type="nvarchar" MaxLength="50" />
+          <Property Name="OrderNo" Type="nvarchar(max)" />
+          <Property Name="CardNo" Type="nvarchar(max)" />
+          <Property Name="Network" Type="nvarchar" MaxLength="50" />
+          <Property Name="Symbol" Type="nvarchar" MaxLength="50" />
+          <Property Name="Currency" Type="nvarchar" MaxLength="50" />
+          <Property Name="BaseFee" Type="float" />
+          <Property Name="Amount" Type="float" />
+          <Property Name="Fee" Type="float" />
+          <Property Name="FeeInPercentage" Type="float" />
+          <Property Name="Total" Type="float" />
+          <Property Name="ReceivedAmount" Type="float" />
+          <Property Name="Type" Type="nvarchar" MaxLength="50" />
+          <Property Name="Status" Type="nvarchar" MaxLength="50" />
+          <Property Name="Remark" Type="nvarchar" MaxLength="50" />
+          <Property Name="DateTransaction" Type="datetime" />
+          <Property Name="DateReceived" Type="datetime" />
+          <Property Name="DateExpired" Type="datetime" />
+          <Property Name="AddressID" Type="nvarchar" MaxLength="50" />
+          <Property Name="Address" Type="nvarchar(max)" />
+          <Property Name="ReceiptURL" Type="nvarchar(max)" />
+          <Property Name="Txhash" Type="nvarchar(max)" />
+          <Property Name="PGCryptoID" Type="nvarchar" MaxLength="50" />
+          <Property Name="Param1" Type="nvarchar(max)" />
+          <Property Name="Param2" Type="nvarchar(max)" />
+          <Property Name="Param3" Type="nvarchar(max)" />
+          <Property Name="Param4" Type="nvarchar(max)" />
+          <Property Name="Param5" Type="nvarchar(max)" />
+        </EntityType>
+        <EntityType Name="tblT_Card_Transaction">
+          <Key>
+            <PropertyRef Name="ID" />
+          </Key>
+          <Property Name="ID" Type="bigint" StoreGeneratedPattern="Identity" Nullable="false" />
+          <Property Name="CardNo" Type="nvarchar" MaxLength="50" />
+          <Property Name="TradeNo" Type="nvarchar" MaxLength="50" />
+          <Property Name="OriginTradeNo" Type="nvarchar" MaxLength="50" />
+          <Property Name="Currency" Type="nvarchar" MaxLength="50" />
+          <Property Name="Amount" Type="float" />
+          <Property Name="AuthorizedAmount" Type="float" />
+          <Property Name="AuthorizedCurrency" Type="nvarchar" MaxLength="50" />
+          <Property Name="Fee" Type="float" />
+          <Property Name="FeeCurrency" Type="nvarchar" MaxLength="50" />
+          <Property Name="CrossBoardFee" Type="float" />
+          <Property Name="CrossBoardFeeCurrency" Type="nvarchar" MaxLength="50" />
+          <Property Name="SettleAmount" Type="float" />
+          <Property Name="SettleCurrency" Type="nvarchar" MaxLength="50" />
+          <Property Name="SettleDate" Type="datetime" />
+          <Property Name="MerchantName" Type="nvarchar(max)" />
+          <Property Name="Type" Type="nvarchar" MaxLength="50" />
+          <Property Name="TypeStr" Type="nvarchar(max)" />
+          <Property Name="Status" Type="nvarchar" MaxLength="50" />
+          <Property Name="StatusStr" Type="nvarchar(max)" />
+          <Property Name="Description" Type="nvarchar(max)" />
+          <Property Name="TransactionTime" Type="datetime" />
+          <Property Name="Payload" Type="nvarchar(max)" />
+          <Property Name="Param1" Type="nvarchar(max)" />
+          <Property Name="Param2" Type="nvarchar(max)" />
+          <Property Name="Param3" Type="nvarchar(max)" />
+        </EntityType>
+        <EntityType Name="tblT_Card_Transaction_Auth">
+          <Key>
+            <PropertyRef Name="ID" />
+          </Key>
+          <Property Name="ID" Type="bigint" StoreGeneratedPattern="Identity" Nullable="false" />
+          <Property Name="CardNo" Type="nvarchar" MaxLength="50" />
+          <Property Name="TradeNo" Type="nvarchar" MaxLength="50" />
+          <Property Name="OriginTradeNo" Type="nvarchar" MaxLength="50" />
+          <Property Name="Currency" Type="nvarchar" MaxLength="50" />
+          <Property Name="Amount" Type="float" />
+          <Property Name="MerchantName" Type="nvarchar(max)" />
+          <Property Name="Values" Type="nvarchar(max)" />
+          <Property Name="Type" Type="nvarchar" MaxLength="50" />
+          <Property Name="TransactionTime" Type="datetime" />
+          <Property Name="Description" Type="nvarchar(max)" />
+          <Property Name="isSent" Type="int" />
+          <Property Name="Payload" Type="nvarchar(max)" />
+          <Property Name="Param1" Type="nvarchar(max)" />
+          <Property Name="Param2" Type="nvarchar(max)" />
+          <Property Name="Param3" Type="nvarchar(max)" />
+        </EntityType>
+        <EntityType Name="tblT_Commission">
+          <Key>
+            <PropertyRef Name="ID" />
+          </Key>
+          <Property Name="ID" Type="bigint" Nullable="false" />
+          <Property Name="CommisionID" Type="nvarchar" MaxLength="50" Nullable="false" />
+          <Property Name="UserID" Type="nvarchar" MaxLength="50" />
+          <Property Name="TransactionID" Type="nvarchar" MaxLength="50" />
+          <Property Name="Commission" Type="float" />
+          <Property Name="DateCreated" Type="datetime" />
+          <Property Name="CreatedBy" Type="nvarchar" MaxLength="50" />
+          <Property Name="DateUpdated" Type="datetime" />
+          <Property Name="UpdatedBy" Type="nvarchar" MaxLength="50" />
+          <Property Name="DateDeleted" Type="datetime" />
+          <Property Name="DeletedBy" Type="nvarchar" MaxLength="50" />
+          <Property Name="Param1" Type="nvarchar(max)" />
+          <Property Name="Param2" Type="nvarchar(max)" />
+          <Property Name="Param3" Type="nvarchar(max)" />
+          <Property Name="Param4" Type="nvarchar(max)" />
+          <Property Name="Param5" Type="nvarchar(max)" />
+        </EntityType>
+        <EntityType Name="tblT_User_ForgotPassword">
+          <Key>
+            <PropertyRef Name="ID" />
+          </Key>
+          <Property Name="ID" Type="bigint" StoreGeneratedPattern="Identity" Nullable="false" />
+          <Property Name="CompanyID" Type="nvarchar" MaxLength="50" />
+          <Property Name="UserID" Type="nvarchar" MaxLength="50" />
+          <Property Name="Hash" Type="nvarchar" MaxLength="50" />
+          <Property Name="isVerified" Type="int" />
+          <Property Name="DateCreated" Type="datetime" />
+          <Property Name="CreatedBy" Type="nvarchar" MaxLength="50" />
+          <Property Name="isActive" Type="int" />
+          <Property Name="DeletedBy" Type="nvarchar" MaxLength="50" />
+          <Property Name="DateDeleted" Type="datetime" />
+          <Property Name="Param1" Type="nvarchar(max)" />
+          <Property Name="Param2" Type="nvarchar(max)" />
+          <Property Name="Param3" Type="nvarchar(max)" />
+        </EntityType>
+        <!--Errors Found During Generation:
+warning 6002: The table/view 'qrypto-card-dev.dbo.vw_Card' does not have a primary key defined. The key has been inferred and the definition was created as a read-only table/view.-->
+        <EntityType Name="vw_Card">
+          <Key>
+            <PropertyRef Name="ID" />
+          </Key>
+          <Property Name="ID" Type="nvarchar" MaxLength="50" Nullable="false" />
+          <Property Name="UserID" Type="nvarchar" MaxLength="50" />
+          <Property Name="CardTypeId" Type="bigint" />
+          <Property Name="OrderNo" Type="nvarchar(max)" />
+          <Property Name="CardNo" Type="nvarchar(max)" />
+          <Property Name="CardNumber" Type="nvarchar" MaxLength="50" />
+          <Property Name="CVV" Type="nvarchar(max)" />
+          <Property Name="ValidPeriod" Type="nvarchar(max)" />
+          <Property Name="Currency" Type="nvarchar" MaxLength="50" />
+          <Property Name="Price" Type="float" />
+          <Property Name="InitialDeposit" Type="float" />
+          <Property Name="Fee" Type="float" />
+          <Property Name="FeeInPercentage" Type="float" />
+          <Property Name="Total" Type="float" />
+          <Property Name="ReceivedAmount" Type="float" />
+          <Property Name="ReceivedCurrency" Type="nvarchar" MaxLength="50" />
+          <Property Name="Status" Type="nvarchar" MaxLength="50" />
+          <Property Name="DateCreated" Type="datetime" />
+          <Property Name="isActive" Type="int" />
+          <Property Name="DateModified" Type="datetime" />
+          <Property Name="isNeedCardholder" Type="int" />
+          <Property Name="AddressID" Type="nvarchar" MaxLength="50" />
+          <Property Name="Address" Type="nvarchar(max)" />
+          <Property Name="Param1" Type="nvarchar(max)" />
+          <Property Name="Param2" Type="nvarchar(max)" />
+          <Property Name="Param3" Type="nvarchar(max)" />
+          <Property Name="Param4" Type="nvarchar(max)" />
+          <Property Name="Param5" Type="nvarchar(max)" />
+          <Property Name="HolderID" Type="bigint" />
+          <Property Name="AreaCode" Type="nvarchar" MaxLength="50" />
+          <Property Name="Mobile" Type="nvarchar" MaxLength="50" />
+          <Property Name="Email" Type="nvarchar(max)" />
+          <Property Name="FirstName" Type="nvarchar(max)" />
+          <Property Name="LastName" Type="nvarchar(max)" />
+          <Property Name="Birthday" Type="nvarchar" MaxLength="50" />
+          <Property Name="Country" Type="nvarchar" MaxLength="50" />
+          <Property Name="CountryStr" Type="nvarchar(max)" />
+          <Property Name="State" Type="nvarchar" MaxLength="50" />
+          <Property Name="StateStr" Type="nvarchar(max)" />
+          <Property Name="Town" Type="nvarchar" MaxLength="50" />
+          <Property Name="TownStr" Type="nvarchar(max)" />
+          <Property Name="HolderAddress" Type="nvarchar(max)" />
+          <Property Name="PostCode" Type="nvarchar" MaxLength="50" />
+          <Property Name="Organization" Type="nvarchar" MaxLength="50" />
+          <Property Name="Type" Type="nvarchar" MaxLength="50" />
+          <Property Name="CardName" Type="nvarchar" MaxLength="50" />
+          <Property Name="CardDesc" Type="nvarchar(max)" />
+          <Property Name="Support" Type="nvarchar(max)" />
+          <Property Name="RechargeFeeRate" Type="nvarchar" MaxLength="50" />
+          <Property Name="RechargeFee" Type="nvarchar" MaxLength="50" />
+          <Property Name="OriginalRechargeFeeRate" Type="nvarchar" MaxLength="50" />
+          <Property Name="OriginalRechargeFee" Type="nvarchar" MaxLength="50" />
+          <Property Name="DateExpired" Type="datetime" />
+        </EntityType>
+        <!--Errors Found During Generation:
+warning 6002: The table/view 'qrypto-card-dev.sys.database_firewall_rules' does not have a primary key defined. The key has been inferred and the definition was created as a read-only table/view.-->
+        <EntityType Name="database_firewall_rules">
+          <Key>
+            <PropertyRef Name="id" />
+            <PropertyRef Name="name" />
+            <PropertyRef Name="start_ip_address" />
+            <PropertyRef Name="end_ip_address" />
+            <PropertyRef Name="create_date" />
+            <PropertyRef Name="modify_date" />
+          </Key>
+          <Property Name="id" Type="int" StoreGeneratedPattern="Identity" Nullable="false" />
+          <Property Name="name" Type="nvarchar" MaxLength="128" Nullable="false" />
+          <Property Name="start_ip_address" Type="varchar" MaxLength="45" Nullable="false" />
+          <Property Name="end_ip_address" Type="varchar" MaxLength="45" Nullable="false" />
+          <Property Name="create_date" Type="datetime" Nullable="false" />
+          <Property Name="modify_date" Type="datetime" Nullable="false" />
+        </EntityType>
+        <EntityContainer Name="DBModelStoreContainer">
+          <EntitySet Name="tblH_Admin_Login" EntityType="Self.tblH_Admin_Login" Schema="dbo" store:Type="Tables" />
+          <EntitySet Name="tblH_Admin_OTP" EntityType="Self.tblH_Admin_OTP" Schema="dbo" store:Type="Tables" />
+          <EntitySet Name="tblH_API_Log" EntityType="Self.tblH_API_Log" Schema="dbo" store:Type="Tables" />
+          <EntitySet Name="tblH_Partner_Webhook" EntityType="Self.tblH_Partner_Webhook" Schema="dbo" store:Type="Tables" />
+          <EntitySet Name="tblH_Partner_Webhook_ID" EntityType="Self.tblH_Partner_Webhook_ID" Schema="dbo" store:Type="Tables" />
+          <EntitySet Name="tblH_User_Balance" EntityType="Self.tblH_User_Balance" Schema="dbo" store:Type="Tables" />
+          <EntitySet Name="tblH_User_Login" EntityType="Self.tblH_User_Login" Schema="dbo" store:Type="Tables" />
+          <EntitySet Name="tblH_User_OTP" EntityType="Self.tblH_User_OTP" Schema="dbo" store:Type="Tables" />
+          <EntitySet Name="tblH_User_Register" EntityType="Self.tblH_User_Register" Schema="dbo" store:Type="Tables" />
+          <EntitySet Name="tblM_Address_Generator" EntityType="Self.tblM_Address_Generator" Schema="dbo" store:Type="Tables" />
+          <EntitySet Name="tblM_Admin" EntityType="Self.tblM_Admin" Schema="dbo" store:Type="Tables" />
+          <EntitySet Name="tblM_Admin_Role" EntityType="Self.tblM_Admin_Role" Schema="dbo" store:Type="Tables" />
+          <EntitySet Name="tblM_Card_Type" EntityType="Self.tblM_Card_Type" Schema="dbo" store:Type="Tables" />
+          <EntitySet Name="tblM_Card_Type_Recharge" EntityType="Self.tblM_Card_Type_Recharge" Schema="dbo" store:Type="Tables" />
+          <EntitySet Name="tblM_Cardholder" EntityType="Self.tblM_Cardholder" Schema="dbo" store:Type="Tables" />
+          <EntitySet Name="tblM_Country_City" EntityType="Self.tblM_Country_City" Schema="dbo" store:Type="Tables" />
+          <EntitySet Name="tblM_Country_Mobile" EntityType="Self.tblM_Country_Mobile" Schema="dbo" store:Type="Tables" />
+          <EntitySet Name="tblM_Country_Region" EntityType="Self.tblM_Country_Region" Schema="dbo" store:Type="Tables" />
+          <EntitySet Name="tblM_Crypto_Network" EntityType="Self.tblM_Crypto_Network" Schema="dbo" store:Type="Tables" />
+          <EntitySet Name="tblM_Setting" EntityType="Self.tblM_Setting" Schema="dbo" store:Type="Tables" />
+          <EntitySet Name="tblM_Setting_Counter" EntityType="Self.tblM_Setting_Counter" Schema="dbo" store:Type="Tables" />
+          <EntitySet Name="tblM_User" EntityType="Self.tblM_User" Schema="dbo" store:Type="Tables" />
+          <EntitySet Name="tblM_User_2FA" EntityType="Self.tblM_User_2FA" Schema="dbo" store:Type="Tables" />
+          <EntitySet Name="tblM_User_Balance" EntityType="Self.tblM_User_Balance" Schema="dbo" store:Type="Tables" />
+          <EntitySet Name="tblM_User_Crypto_Deposit" EntityType="Self.tblM_User_Crypto_Deposit" Schema="dbo" store:Type="Tables" />
+          <EntitySet Name="tblM_User_Fee" EntityType="Self.tblM_User_Fee" Schema="dbo" store:Type="Tables" />
+          <EntitySet Name="tblM_User_Referral" EntityType="Self.tblM_User_Referral" Schema="dbo" store:Type="Tables" />
+          <EntitySet Name="tblM_User_Role" EntityType="Self.tblM_User_Role" Schema="dbo" store:Type="Tables" />
+          <EntitySet Name="tblT_Card" EntityType="Self.tblT_Card" Schema="dbo" store:Type="Tables" />
+          <EntitySet Name="tblT_Card_Balance" EntityType="Self.tblT_Card_Balance" Schema="dbo" store:Type="Tables" />
+          <EntitySet Name="tblT_Card_Deposit" EntityType="Self.tblT_Card_Deposit" Schema="dbo" store:Type="Tables" />
+          <EntitySet Name="tblT_Card_Transaction" EntityType="Self.tblT_Card_Transaction" Schema="dbo" store:Type="Tables" />
+          <EntitySet Name="tblT_Card_Transaction_Auth" EntityType="Self.tblT_Card_Transaction_Auth" Schema="dbo" store:Type="Tables" />
+          <EntitySet Name="tblT_Commission" EntityType="Self.tblT_Commission" Schema="dbo" store:Type="Tables" />
+          <EntitySet Name="tblT_User_ForgotPassword" EntityType="Self.tblT_User_ForgotPassword" Schema="dbo" store:Type="Tables" />
+          <EntitySet Name="vw_Card" EntityType="Self.vw_Card" store:Type="Views" store:Schema="dbo">
+            <DefiningQuery>SELECT 
+    [vw_Card].[ID] AS [ID], 
+    [vw_Card].[UserID] AS [UserID], 
+    [vw_Card].[CardTypeId] AS [CardTypeId], 
+    [vw_Card].[OrderNo] AS [OrderNo], 
+    [vw_Card].[CardNo] AS [CardNo], 
+    [vw_Card].[CardNumber] AS [CardNumber], 
+    [vw_Card].[CVV] AS [CVV], 
+    [vw_Card].[ValidPeriod] AS [ValidPeriod], 
+    [vw_Card].[Currency] AS [Currency], 
+    [vw_Card].[Price] AS [Price], 
+    [vw_Card].[InitialDeposit] AS [InitialDeposit], 
+    [vw_Card].[Fee] AS [Fee], 
+    [vw_Card].[FeeInPercentage] AS [FeeInPercentage], 
+    [vw_Card].[Total] AS [Total], 
+    [vw_Card].[ReceivedAmount] AS [ReceivedAmount], 
+    [vw_Card].[ReceivedCurrency] AS [ReceivedCurrency], 
+    [vw_Card].[Status] AS [Status], 
+    [vw_Card].[DateCreated] AS [DateCreated], 
+    [vw_Card].[isActive] AS [isActive], 
+    [vw_Card].[DateModified] AS [DateModified], 
+    [vw_Card].[isNeedCardholder] AS [isNeedCardholder], 
+    [vw_Card].[AddressID] AS [AddressID], 
+    [vw_Card].[Address] AS [Address], 
+    [vw_Card].[Param1] AS [Param1], 
+    [vw_Card].[Param2] AS [Param2], 
+    [vw_Card].[Param3] AS [Param3], 
+    [vw_Card].[Param4] AS [Param4], 
+    [vw_Card].[Param5] AS [Param5], 
+    [vw_Card].[HolderID] AS [HolderID], 
+    [vw_Card].[AreaCode] AS [AreaCode], 
+    [vw_Card].[Mobile] AS [Mobile], 
+    [vw_Card].[Email] AS [Email], 
+    [vw_Card].[FirstName] AS [FirstName], 
+    [vw_Card].[LastName] AS [LastName], 
+    [vw_Card].[Birthday] AS [Birthday], 
+    [vw_Card].[Country] AS [Country], 
+    [vw_Card].[CountryStr] AS [CountryStr], 
+    [vw_Card].[State] AS [State], 
+    [vw_Card].[StateStr] AS [StateStr], 
+    [vw_Card].[Town] AS [Town], 
+    [vw_Card].[TownStr] AS [TownStr], 
+    [vw_Card].[HolderAddress] AS [HolderAddress], 
+    [vw_Card].[PostCode] AS [PostCode], 
+    [vw_Card].[Organization] AS [Organization], 
+    [vw_Card].[Type] AS [Type], 
+    [vw_Card].[CardName] AS [CardName], 
+    [vw_Card].[CardDesc] AS [CardDesc], 
+    [vw_Card].[Support] AS [Support], 
+    [vw_Card].[RechargeFeeRate] AS [RechargeFeeRate], 
+    [vw_Card].[RechargeFee] AS [RechargeFee], 
+    [vw_Card].[OriginalRechargeFeeRate] AS [OriginalRechargeFeeRate], 
+    [vw_Card].[OriginalRechargeFee] AS [OriginalRechargeFee], 
+    [vw_Card].[DateExpired] AS [DateExpired]
+    FROM [dbo].[vw_Card] AS [vw_Card]</DefiningQuery>
+          </EntitySet>
+          <EntitySet Name="database_firewall_rules" EntityType="Self.database_firewall_rules" store:Type="Views" store:Schema="sys">
+            <DefiningQuery>SELECT 
+    [database_firewall_rules].[id] AS [id], 
+    [database_firewall_rules].[name] AS [name], 
+    [database_firewall_rules].[start_ip_address] AS [start_ip_address], 
+    [database_firewall_rules].[end_ip_address] AS [end_ip_address], 
+    [database_firewall_rules].[create_date] AS [create_date], 
+    [database_firewall_rules].[modify_date] AS [modify_date]
+    FROM [sys].[database_firewall_rules] AS [database_firewall_rules]</DefiningQuery>
+          </EntitySet>
+        </EntityContainer>
+      </Schema></edmx:StorageModels>
+    <!-- CSDL content -->
+    <edmx:ConceptualModels>
+      <Schema Namespace="DBModel" Alias="Self" annotation:UseStrongSpatialTypes="false" xmlns:annotation="http://schemas.microsoft.com/ado/2009/02/edm/annotation" xmlns:customannotation="http://schemas.microsoft.com/ado/2013/11/edm/customannotation" xmlns="http://schemas.microsoft.com/ado/2009/11/edm">
+        <EntityContainer Name="DBEntities" annotation:LazyLoadingEnabled="true">
+          <EntitySet Name="tblH_Admin_Login" EntityType="DBModel.tblH_Admin_Login" />
+          <EntitySet Name="tblH_Admin_OTP" EntityType="DBModel.tblH_Admin_OTP" />
+          <EntitySet Name="tblH_API_Log" EntityType="DBModel.tblH_API_Log" />
+          <EntitySet Name="tblH_Partner_Webhook" EntityType="DBModel.tblH_Partner_Webhook" />
+          <EntitySet Name="tblH_Partner_Webhook_ID" EntityType="DBModel.tblH_Partner_Webhook_ID" />
+          <EntitySet Name="tblH_User_Balance" EntityType="DBModel.tblH_User_Balance" />
+          <EntitySet Name="tblH_User_Login" EntityType="DBModel.tblH_User_Login" />
+          <EntitySet Name="tblH_User_OTP" EntityType="DBModel.tblH_User_OTP" />
+          <EntitySet Name="tblH_User_Register" EntityType="DBModel.tblH_User_Register" />
+          <EntitySet Name="tblM_Address_Generator" EntityType="DBModel.tblM_Address_Generator" />
+          <EntitySet Name="tblM_Admin" EntityType="DBModel.tblM_Admin" />
+          <EntitySet Name="tblM_Admin_Role" EntityType="DBModel.tblM_Admin_Role" />
+          <EntitySet Name="tblM_Card_Type" EntityType="DBModel.tblM_Card_Type" />
+          <EntitySet Name="tblM_Card_Type_Recharge" EntityType="DBModel.tblM_Card_Type_Recharge" />
+          <EntitySet Name="tblM_Cardholder" EntityType="DBModel.tblM_Cardholder" />
+          <EntitySet Name="tblM_Country_City" EntityType="DBModel.tblM_Country_City" />
+          <EntitySet Name="tblM_Country_Mobile" EntityType="DBModel.tblM_Country_Mobile" />
+          <EntitySet Name="tblM_Country_Region" EntityType="DBModel.tblM_Country_Region" />
+          <EntitySet Name="tblM_Crypto_Network" EntityType="DBModel.tblM_Crypto_Network" />
+          <EntitySet Name="tblM_Setting" EntityType="DBModel.tblM_Setting" />
+          <EntitySet Name="tblM_Setting_Counter" EntityType="DBModel.tblM_Setting_Counter" />
+          <EntitySet Name="tblM_User" EntityType="DBModel.tblM_User" />
+          <EntitySet Name="tblM_User_2FA" EntityType="DBModel.tblM_User_2FA" />
+          <EntitySet Name="tblM_User_Balance" EntityType="DBModel.tblM_User_Balance" />
+          <EntitySet Name="tblM_User_Crypto_Deposit" EntityType="DBModel.tblM_User_Crypto_Deposit" />
+          <EntitySet Name="tblM_User_Fee" EntityType="DBModel.tblM_User_Fee" />
+          <EntitySet Name="tblM_User_Referral" EntityType="DBModel.tblM_User_Referral" />
+          <EntitySet Name="tblM_User_Role" EntityType="DBModel.tblM_User_Role" />
+          <EntitySet Name="tblT_Card" EntityType="DBModel.tblT_Card" />
+          <EntitySet Name="tblT_Card_Balance" EntityType="DBModel.tblT_Card_Balance" />
+          <EntitySet Name="tblT_Card_Deposit" EntityType="DBModel.tblT_Card_Deposit" />
+          <EntitySet Name="tblT_Card_Transaction" EntityType="DBModel.tblT_Card_Transaction" />
+          <EntitySet Name="tblT_Card_Transaction_Auth" EntityType="DBModel.tblT_Card_Transaction_Auth" />
+          <EntitySet Name="tblT_Commission" EntityType="DBModel.tblT_Commission" />
+          <EntitySet Name="tblT_User_ForgotPassword" EntityType="DBModel.tblT_User_ForgotPassword" />
+          <EntitySet Name="vw_Card" EntityType="DBModel.vw_Card" />
+          <EntitySet Name="database_firewall_rules" EntityType="DBModel.database_firewall_rules" />
+        </EntityContainer>
+        <EntityType Name="tblH_Admin_Login">
+          <Key>
+            <PropertyRef Name="ID" />
+          </Key>
+          <Property Name="ID" Type="String" Nullable="false" MaxLength="50" FixedLength="false" Unicode="true" />
+          <Property Name="AdminID" Type="String" MaxLength="50" FixedLength="false" Unicode="true" />
+          <Property Name="Code" Type="String" MaxLength="50" FixedLength="false" Unicode="true" />
+          <Property Name="Longitude" Type="String" MaxLength="Max" FixedLength="false" Unicode="true" />
+          <Property Name="Latitude" Type="String" MaxLength="Max" FixedLength="false" Unicode="true" />
+          <Property Name="Altitude" Type="String" MaxLength="Max" FixedLength="false" Unicode="true" />
+          <Property Name="IPAddress" Type="String" MaxLength="Max" FixedLength="false" Unicode="true" />
+          <Property Name="DateCreated" Type="DateTime" Precision="3" />
+          <Property Name="DateExpired" Type="DateTime" Precision="3" />
+          <Property Name="isVerify" Type="Int32" />
+          <Property Name="DeviceType" Type="String" MaxLength="50" FixedLength="false" Unicode="true" />
+          <Property Name="DeviceName" Type="String" MaxLength="Max" FixedLength="false" Unicode="true" />
+          <Property Name="Manufacturer" Type="String" MaxLength="Max" FixedLength="false" Unicode="true" />
+          <Property Name="Brand" Type="String" MaxLength="Max" FixedLength="false" Unicode="true" />
+          <Property Name="Model" Type="String" MaxLength="Max" FixedLength="false" Unicode="true" />
+          <Property Name="IMEI" Type="String" MaxLength="Max" FixedLength="false" Unicode="true" />
+          <Property Name="MEID" Type="String" MaxLength="Max" FixedLength="false" Unicode="true" />
+          <Property Name="Param1" Type="String" MaxLength="Max" FixedLength="false" Unicode="true" />
+          <Property Name="Param2" Type="String" MaxLength="Max" FixedLength="false" Unicode="true" />
+          <Property Name="Param3" Type="String" MaxLength="Max" FixedLength="false" Unicode="true" />
+        </EntityType>
+        <EntityType Name="tblH_Admin_OTP">
+          <Key>
+            <PropertyRef Name="ID" />
+          </Key>
+          <Property Name="ID" Type="Int64" Nullable="false" annotation:StoreGeneratedPattern="Identity" />
+          <Property Name="OTPID" Type="String" Nullable="false" MaxLength="50" FixedLength="false" Unicode="true" />
+          <Property Name="AdminID" Type="String" MaxLength="50" FixedLength="false" Unicode="true" />
+          <Property Name="MerchantID" Type="String" MaxLength="50" FixedLength="false" Unicode="true" />
+          <Property Name="Name" Type="String" MaxLength="50" FixedLength="false" Unicode="true" />
+          <Property Name="Code" Type="String" MaxLength="50" FixedLength="false" Unicode="true" />
+          <Property Name="Longitude" Type="String" MaxLength="Max" FixedLength="false" Unicode="true" />
+          <Property Name="Latitude" Type="String" MaxLength="Max" FixedLength="false" Unicode="true" />
+          <Property Name="Altitude" Type="String" MaxLength="Max" FixedLength="false" Unicode="true" />
+          <Property Name="IPAddress" Type="String" MaxLength="Max" FixedLength="false" Unicode="true" />
+          <Property Name="DateCreated" Type="DateTime" Precision="3" />
+          <Property Name="DateExpired" Type="DateTime" Precision="3" />
+          <Property Name="isVerify" Type="Int32" />
+          <Property Name="DeviceType" Type="String" MaxLength="50" FixedLength="false" Unicode="true" />
+          <Property Name="DeviceName" Type="String" MaxLength="Max" FixedLength="false" Unicode="true" />
+          <Property Name="Manufacturer" Type="String" MaxLength="Max" FixedLength="false" Unicode="true" />
+          <Property Name="Brand" Type="String" MaxLength="Max" FixedLength="false" Unicode="true" />
+          <Property Name="Model" Type="String" MaxLength="Max" FixedLength="false" Unicode="true" />
+          <Property Name="IMEI" Type="String" MaxLength="Max" FixedLength="false" Unicode="true" />
+          <Property Name="MEID" Type="String" MaxLength="Max" FixedLength="false" Unicode="true" />
+          <Property Name="Param1" Type="String" MaxLength="Max" FixedLength="false" Unicode="true" />
+          <Property Name="Param2" Type="String" MaxLength="Max" FixedLength="false" Unicode="true" />
+          <Property Name="Param3" Type="String" MaxLength="Max" FixedLength="false" Unicode="true" />
+        </EntityType>
+        <EntityType Name="tblH_API_Log">
+          <Key>
+            <PropertyRef Name="ID" />
+          </Key>
+          <Property Name="ID" Type="Int64" Nullable="false" annotation:StoreGeneratedPattern="Identity" />
+          <Property Name="Type" Type="String" MaxLength="50" FixedLength="false" Unicode="true" />
+          <Property Name="Request" Type="String" MaxLength="Max" FixedLength="false" Unicode="true" />
+          <Property Name="RequestDate" Type="DateTime" Precision="3" />
+          <Property Name="Response" Type="String" MaxLength="Max" FixedLength="false" Unicode="true" />
+          <Property Name="ResponseDate" Type="DateTime" Precision="3" />
+        </EntityType>
+        <EntityType Name="tblH_Partner_Webhook">
+          <Key>
+            <PropertyRef Name="ID" />
+          </Key>
+          <Property Name="ID" Type="Int64" Nullable="false" annotation:StoreGeneratedPattern="Identity" />
+          <Property Name="Type" Type="String" MaxLength="50" FixedLength="false" Unicode="true" />
+          <Property Name="Header" Type="String" MaxLength="Max" FixedLength="false" Unicode="true" />
+          <Property Name="Request" Type="String" MaxLength="Max" FixedLength="false" Unicode="true" />
+          <Property Name="RequestDate" Type="DateTime" Precision="3" />
+          <Property Name="Response" Type="String" MaxLength="Max" FixedLength="false" Unicode="true" />
+          <Property Name="ResponseDate" Type="DateTime" Precision="3" />
+        </EntityType>
+        <EntityType Name="tblH_Partner_Webhook_ID">
+          <Key>
+            <PropertyRef Name="ID" />
+          </Key>
+          <Property Name="ID" Type="Int64" Nullable="false" annotation:StoreGeneratedPattern="Identity" />
+          <Property Name="Type" Type="String" MaxLength="50" FixedLength="false" Unicode="true" />
+          <Property Name="Header" Type="String" MaxLength="Max" FixedLength="false" Unicode="true" />
+          <Property Name="TXID" Type="String" MaxLength="Max" FixedLength="false" Unicode="true" />
+          <Property Name="Request" Type="String" MaxLength="Max" FixedLength="false" Unicode="true" />
+          <Property Name="RequestDate" Type="DateTime" Precision="3" />
+        </EntityType>
+        <EntityType Name="tblH_User_Balance">
+          <Key>
+            <PropertyRef Name="ID" />
+          </Key>
+          <Property Name="ID" Type="Int64" Nullable="false" annotation:StoreGeneratedPattern="Identity" />
+          <Property Name="UserID" Type="String" MaxLength="50" FixedLength="false" Unicode="true" />
+          <Property Name="BalanceID" Type="String" MaxLength="50" FixedLength="false" Unicode="true" />
+          <Property Name="TransactionID" Type="String" MaxLength="50" FixedLength="false" Unicode="true" />
+          <Property Name="Type" Type="String" MaxLength="50" FixedLength="false" Unicode="true" />
+          <Property Name="BalancePrevious" Type="Decimal" Precision="18" Scale="9" />
+          <Property Name="Amount" Type="Decimal" Precision="18" Scale="9" />
+          <Property Name="Commision" Type="Decimal" Precision="18" Scale="9" />
+          <Property Name="CommisionInPercentage" Type="Double" />
+          <Property Name="Balance" Type="Decimal" Precision="18" Scale="9" />
+          <Property Name="BalanceHold" Type="Decimal" Precision="18" Scale="9" />
+          <Property Name="CreatedDate" Type="DateTime" Precision="3" />
+          <Property Name="Status" Type="String" MaxLength="50" FixedLength="false" Unicode="true" />
+        </EntityType>
+        <EntityType Name="tblH_User_Login">
+          <Key>
+            <PropertyRef Name="ID" />
+          </Key>
+          <Property Name="ID" Type="String" Nullable="false" MaxLength="50" FixedLength="false" Unicode="true" />
+          <Property Name="UserID" Type="String" MaxLength="50" FixedLength="false" Unicode="true" />
+          <Property Name="Code" Type="String" MaxLength="50" FixedLength="false" Unicode="true" />
+          <Property Name="Longitude" Type="String" MaxLength="Max" FixedLength="false" Unicode="true" />
+          <Property Name="Latitude" Type="String" MaxLength="Max" FixedLength="false" Unicode="true" />
+          <Property Name="Altitude" Type="String" MaxLength="Max" FixedLength="false" Unicode="true" />
+          <Property Name="IPAddress" Type="String" MaxLength="Max" FixedLength="false" Unicode="true" />
+          <Property Name="DateCreated" Type="DateTime" Precision="3" />
+          <Property Name="DateExpired" Type="DateTime" Precision="3" />
+          <Property Name="isVerify" Type="Int32" />
+          <Property Name="DeviceType" Type="String" MaxLength="50" FixedLength="false" Unicode="true" />
+          <Property Name="DeviceName" Type="String" MaxLength="Max" FixedLength="false" Unicode="true" />
+          <Property Name="Manufacturer" Type="String" MaxLength="Max" FixedLength="false" Unicode="true" />
+          <Property Name="Brand" Type="String" MaxLength="Max" FixedLength="false" Unicode="true" />
+          <Property Name="Model" Type="String" MaxLength="Max" FixedLength="false" Unicode="true" />
+          <Property Name="IMEI" Type="String" MaxLength="Max" FixedLength="false" Unicode="true" />
+          <Property Name="MEID" Type="String" MaxLength="Max" FixedLength="false" Unicode="true" />
+          <Property Name="Param1" Type="String" MaxLength="Max" FixedLength="false" Unicode="true" />
+          <Property Name="Param2" Type="String" MaxLength="Max" FixedLength="false" Unicode="true" />
+          <Property Name="Param3" Type="String" MaxLength="Max" FixedLength="false" Unicode="true" />
+        </EntityType>
+        <EntityType Name="tblH_User_OTP">
+          <Key>
+            <PropertyRef Name="ID" />
+          </Key>
+          <Property Name="ID" Type="Int64" Nullable="false" annotation:StoreGeneratedPattern="Identity" />
+          <Property Name="OTPID" Type="String" Nullable="false" MaxLength="50" FixedLength="false" Unicode="true" />
+          <Property Name="UserID" Type="String" MaxLength="50" FixedLength="false" Unicode="true" />
+          <Property Name="MerchantID" Type="String" MaxLength="50" FixedLength="false" Unicode="true" />
+          <Property Name="Name" Type="String" MaxLength="50" FixedLength="false" Unicode="true" />
+          <Property Name="Code" Type="String" MaxLength="50" FixedLength="false" Unicode="true" />
+          <Property Name="Longitude" Type="String" MaxLength="Max" FixedLength="false" Unicode="true" />
+          <Property Name="Latitude" Type="String" MaxLength="Max" FixedLength="false" Unicode="true" />
+          <Property Name="Altitude" Type="String" MaxLength="Max" FixedLength="false" Unicode="true" />
+          <Property Name="IPAddress" Type="String" MaxLength="Max" FixedLength="false" Unicode="true" />
+          <Property Name="DateCreated" Type="DateTime" Precision="3" />
+          <Property Name="DateExpired" Type="DateTime" Precision="3" />
+          <Property Name="isVerify" Type="Int32" />
+          <Property Name="DeviceType" Type="String" MaxLength="50" FixedLength="false" Unicode="true" />
+          <Property Name="DeviceName" Type="String" MaxLength="Max" FixedLength="false" Unicode="true" />
+          <Property Name="Manufacturer" Type="String" MaxLength="Max" FixedLength="false" Unicode="true" />
+          <Property Name="Brand" Type="String" MaxLength="Max" FixedLength="false" Unicode="true" />
+          <Property Name="Model" Type="String" MaxLength="Max" FixedLength="false" Unicode="true" />
+          <Property Name="IMEI" Type="String" MaxLength="Max" FixedLength="false" Unicode="true" />
+          <Property Name="MEID" Type="String" MaxLength="Max" FixedLength="false" Unicode="true" />
+          <Property Name="Param1" Type="String" MaxLength="Max" FixedLength="false" Unicode="true" />
+          <Property Name="Param2" Type="String" MaxLength="Max" FixedLength="false" Unicode="true" />
+          <Property Name="Param3" Type="String" MaxLength="Max" FixedLength="false" Unicode="true" />
+        </EntityType>
+        <EntityType Name="tblH_User_Register">
+          <Key>
+            <PropertyRef Name="ID" />
+          </Key>
+          <Property Name="ID" Type="String" Nullable="false" MaxLength="50" FixedLength="false" Unicode="true" />
+          <Property Name="UserID" Type="String" MaxLength="50" FixedLength="false" Unicode="true" />
+          <Property Name="Code" Type="String" MaxLength="50" FixedLength="false" Unicode="true" />
+          <Property Name="Longitude" Type="String" MaxLength="Max" FixedLength="false" Unicode="true" />
+          <Property Name="Latitude" Type="String" MaxLength="Max" FixedLength="false" Unicode="true" />
+          <Property Name="Altitude" Type="String" MaxLength="Max" FixedLength="false" Unicode="true" />
+          <Property Name="IPAddress" Type="String" MaxLength="Max" FixedLength="false" Unicode="true" />
+          <Property Name="DateCreated" Type="DateTime" Precision="3" />
+          <Property Name="DateExpired" Type="DateTime" Precision="3" />
+          <Property Name="isVerify" Type="Int32" />
+          <Property Name="DeviceType" Type="String" MaxLength="50" FixedLength="false" Unicode="true" />
+          <Property Name="DeviceName" Type="String" MaxLength="Max" FixedLength="false" Unicode="true" />
+          <Property Name="Manufacturer" Type="String" MaxLength="Max" FixedLength="false" Unicode="true" />
+          <Property Name="Brand" Type="String" MaxLength="Max" FixedLength="false" Unicode="true" />
+          <Property Name="Model" Type="String" MaxLength="Max" FixedLength="false" Unicode="true" />
+          <Property Name="IMEI" Type="String" MaxLength="Max" FixedLength="false" Unicode="true" />
+          <Property Name="MEID" Type="String" MaxLength="Max" FixedLength="false" Unicode="true" />
+          <Property Name="Param1" Type="String" MaxLength="Max" FixedLength="false" Unicode="true" />
+          <Property Name="Param2" Type="String" MaxLength="Max" FixedLength="false" Unicode="true" />
+          <Property Name="Param3" Type="String" MaxLength="Max" FixedLength="false" Unicode="true" />
+        </EntityType>
+        <EntityType Name="tblM_Address_Generator">
+          <Key>
+            <PropertyRef Name="ID" />
+          </Key>
+          <Property Name="ID" Type="Int64" Nullable="false" annotation:StoreGeneratedPattern="Identity" />
+          <Property Name="Street" Type="String" MaxLength="Max" FixedLength="false" Unicode="true" />
+          <Property Name="City" Type="String" MaxLength="Max" FixedLength="false" Unicode="true" />
+          <Property Name="CityCode" Type="String" MaxLength="50" FixedLength="false" Unicode="true" />
+          <Property Name="State" Type="String" MaxLength="Max" FixedLength="false" Unicode="true" />
+          <Property Name="PostalCode" Type="String" MaxLength="Max" FixedLength="false" Unicode="true" />
+          <Property Name="PhoneNumber" Type="String" MaxLength="Max" FixedLength="false" Unicode="true" />
+          <Property Name="Country" Type="String" MaxLength="Max" FixedLength="false" Unicode="true" />
+          <Property Name="Latitude" Type="String" MaxLength="Max" FixedLength="false" Unicode="true" />
+          <Property Name="Longitude" Type="String" MaxLength="Max" FixedLength="false" Unicode="true" />
+          <Property Name="isActive" Type="Int32" />
+          <Property Name="isUsed" Type="Int32" />
+          <Property Name="DateCreated" Type="DateTime" Precision="3" />
+          <Property Name="DateUsed" Type="DateTime" Precision="3" />
+        </EntityType>
+        <EntityType Name="tblM_Admin">
+          <Key>
+            <PropertyRef Name="AdminID" />
+          </Key>
+          <Property Name="ID" Type="Int64" Nullable="false" annotation:StoreGeneratedPattern="Identity" />
+          <Property Name="AdminID" Type="String" Nullable="false" MaxLength="50" FixedLength="false" Unicode="true" />
+          <Property Name="FirstName" Type="String" MaxLength="Max" FixedLength="false" Unicode="true" />
+          <Property Name="LastName" Type="String" MaxLength="Max" FixedLength="false" Unicode="true" />
+          <Property Name="UserName" Type="String" MaxLength="Max" FixedLength="false" Unicode="true" />
+          <Property Name="Password" Type="String" MaxLength="Max" FixedLength="false" Unicode="true" />
+          <Property Name="RoleID" Type="String" MaxLength="50" FixedLength="false" Unicode="true" />
+          <Property Name="PIN" Type="String" MaxLength="6" FixedLength="true" Unicode="false" />
+          <Property Name="CountryID" Type="Int64" />
+          <Property Name="Phone" Type="String" Nullable="false" MaxLength="50" FixedLength="false" Unicode="true" />
+          <Property Name="Email" Type="String" MaxLength="50" FixedLength="false" Unicode="true" />
+          <Property Name="Profession" Type="String" MaxLength="50" FixedLength="false" Unicode="true" />
+          <Property Name="DateJoin" Type="DateTime" Precision="3" />
+          <Property Name="isActive" Type="Int32" />
+          <Property Name="DateActivated" Type="DateTime" Precision="3" />
+          <Property Name="isVerified" Type="Int32" />
+          <Property Name="DateVerified" Type="DateTime" Precision="3" />
+          <Property Name="isBanned" Type="Int32" />
+          <Property Name="DateInvited" Type="DateTime" Precision="3" />
+          <Property Name="InvitedBy" Type="String" MaxLength="50" FixedLength="false" Unicode="true" />
+          <Property Name="DateBanned" Type="DateTime" Precision="3" />
+          <Property Name="BannedBy" Type="String" MaxLength="50" FixedLength="false" Unicode="true" />
+          <Property Name="RegisterVia" Type="String" MaxLength="Max" FixedLength="false" Unicode="true" />
+          <Property Name="ImageURL" Type="String" MaxLength="Max" FixedLength="false" Unicode="true" />
+          <Property Name="ThumbnailURL" Type="String" MaxLength="Max" FixedLength="false" Unicode="true" />
+        </EntityType>
+        <EntityType Name="tblM_Admin_Role">
+          <Key>
+            <PropertyRef Name="RoleID" />
+          </Key>
+          <Property Name="RoleID" Type="String" Nullable="false" MaxLength="50" FixedLength="false" Unicode="true" />
+          <Property Name="Role" Type="String" MaxLength="50" FixedLength="false" Unicode="true" />
+          <Property Name="DateCreated" Type="DateTime" Precision="3" />
+          <Property Name="CreatedBy" Type="String" MaxLength="50" FixedLength="false" Unicode="true" />
+          <Property Name="isActive" Type="Int32" />
+          <Property Name="DeletedBy" Type="String" MaxLength="50" FixedLength="false" Unicode="true" />
+          <Property Name="DateDeleted" Type="DateTime" Precision="3" />
+        </EntityType>
+        <EntityType Name="tblM_Card_Type">
+          <Key>
+            <PropertyRef Name="ID" />
+          </Key>
+          <Property Name="ID" Type="Int64" Nullable="false" annotation:StoreGeneratedPattern="Identity" />
+          <Property Name="CardTypeId" Type="Int64" />
+          <Property Name="Organization" Type="String" MaxLength="50" FixedLength="false" Unicode="true" />
+          <Property Name="Country" Type="String" MaxLength="50" FixedLength="false" Unicode="true" />
+          <Property Name="BankCardBin" Type="String" MaxLength="50" FixedLength="false" Unicode="true" />
+          <Property Name="Type" Type="String" MaxLength="50" FixedLength="false" Unicode="true" />
+          <Property Name="TypeStr" Type="String" MaxLength="50" FixedLength="false" Unicode="true" />
+          <Property Name="CardName" Type="String" MaxLength="50" FixedLength="false" Unicode="true" />
+          <Property Name="CardDesc" Type="String" MaxLength="Max" FixedLength="false" Unicode="true" />
+          <Property Name="CardPrice" Type="String" MaxLength="50" FixedLength="false" Unicode="true" />
+          <Property Name="CardPriceCurrency" Type="String" MaxLength="50" FixedLength="false" Unicode="true" />
+          <Property Name="OriginalCardPrice" Type="String" MaxLength="50" FixedLength="false" Unicode="true" />
+          <Property Name="OriginalCardPriceCurrency" Type="String" MaxLength="50" FixedLength="false" Unicode="true" />
+          <Property Name="RechargeFeeRate" Type="String" MaxLength="50" FixedLength="false" Unicode="true" />
+          <Property Name="RechargeFee" Type="String" MaxLength="50" FixedLength="false" Unicode="true" />
+          <Property Name="OriginalRechargeFeeRate" Type="String" MaxLength="50" FixedLength="false" Unicode="true" />
+          <Property Name="OriginalRechargeFee" Type="String" MaxLength="50" FixedLength="false" Unicode="true" />
+          <Property Name="RechargeMinQuota" Type="String" MaxLength="50" FixedLength="false" Unicode="true" />
+          <Property Name="RechargeMaxQuota" Type="String" MaxLength="50" FixedLength="false" Unicode="true" />
+          <Property Name="Support" Type="String" MaxLength="Max" FixedLength="false" Unicode="true" />
+          <Property Name="SupportHolderRegin" Type="String" MaxLength="Max" FixedLength="false" Unicode="true" />
+          <Property Name="SupportHolderAreaCode" Type="String" MaxLength="Max" FixedLength="false" Unicode="true" />
+          <Property Name="NeedCardHolder" Type="Int32" />
+          <Property Name="NeedDepositForActiveCard" Type="Int32" />
+          <Property Name="DepositAmountMinQuotaForActiveCard" Type="String" MaxLength="50" FixedLength="false" Unicode="true" />
+          <Property Name="DepositAmountMaxQuotaForActiveCard" Type="String" MaxLength="50" FixedLength="false" Unicode="true" />
+          <Property Name="FiatCurrency" Type="String" MaxLength="50" FixedLength="false" Unicode="true" />
+          <Property Name="MaxCount" Type="Int32" />
+          <Property Name="Status" Type="String" MaxLength="50" FixedLength="false" Unicode="true" />
+          <Property Name="isActive" Type="Int32" />
+          <Property Name="DateCreated" Type="DateTime" Precision="3" />
+        </EntityType>
+        <EntityType Name="tblM_Card_Type_Recharge">
+          <Key>
+            <PropertyRef Name="CardTypeId" />
+          </Key>
+          <Property Name="CardTypeId" Type="Int64" Nullable="false" />
+          <Property Name="Currency" Type="String" MaxLength="50" FixedLength="false" Unicode="true" />
+          <Property Name="RechargeMinQuota" Type="String" MaxLength="50" FixedLength="false" Unicode="true" />
+          <Property Name="RechargeMaxQuota" Type="String" MaxLength="50" FixedLength="false" Unicode="true" />
+          <Property Name="RechargeFeeRate" Type="String" MaxLength="50" FixedLength="false" Unicode="true" />
+          <Property Name="RechargeFee" Type="String" MaxLength="50" FixedLength="false" Unicode="true" />
+          <Property Name="Digital" Type="Int32" />
+        </EntityType>
+        <EntityType Name="tblM_Cardholder">
+          <Key>
+            <PropertyRef Name="ID" />
+          </Key>
+          <Property Name="ID" Type="String" Nullable="false" MaxLength="50" FixedLength="false" Unicode="true" />
+          <Property Name="UserID" Type="String" MaxLength="50" FixedLength="false" Unicode="true" />
+          <Property Name="HolderID" Type="Int64" />
+          <Property Name="CardTypeId" Type="Int64" />
+          <Property Name="AreaCode" Type="String" MaxLength="50" FixedLength="false" Unicode="true" />
+          <Property Name="Mobile" Type="String" MaxLength="50" FixedLength="false" Unicode="true" />
+          <Property Name="Email" Type="String" MaxLength="Max" FixedLength="false" Unicode="true" />
+          <Property Name="FirstName" Type="String" MaxLength="Max" FixedLength="false" Unicode="true" />
+          <Property Name="LastName" Type="String" MaxLength="Max" FixedLength="false" Unicode="true" />
+          <Property Name="Birthday" Type="String" MaxLength="50" FixedLength="false" Unicode="true" />
+          <Property Name="Country" Type="String" MaxLength="50" FixedLength="false" Unicode="true" />
+          <Property Name="CountryStr" Type="String" MaxLength="Max" FixedLength="false" Unicode="true" />
+          <Property Name="State" Type="String" MaxLength="50" FixedLength="false" Unicode="true" />
+          <Property Name="StateStr" Type="String" MaxLength="Max" FixedLength="false" Unicode="true" />
+          <Property Name="Town" Type="String" MaxLength="50" FixedLength="false" Unicode="true" />
+          <Property Name="TownStr" Type="String" MaxLength="Max" FixedLength="false" Unicode="true" />
+          <Property Name="Address" Type="String" MaxLength="Max" FixedLength="false" Unicode="true" />
+          <Property Name="PostCode" Type="String" MaxLength="50" FixedLength="false" Unicode="true" />
+          <Property Name="Status" Type="String" MaxLength="50" FixedLength="false" Unicode="true" />
+          <Property Name="StatusStr" Type="String" MaxLength="50" FixedLength="false" Unicode="true" />
+          <Property Name="DateCreated" Type="DateTime" Precision="3" />
+          <Property Name="isActive" Type="Int32" />
+          <Property Name="DateModified" Type="DateTime" Precision="3" />
+        </EntityType>
+        <EntityType Name="tblM_Country_City">
+          <Key>
+            <PropertyRef Name="ID" />
+          </Key>
+          <Property Name="ID" Type="Int64" Nullable="false" annotation:StoreGeneratedPattern="Identity" />
+          <Property Name="Code" Type="String" MaxLength="50" FixedLength="false" Unicode="true" />
+          <Property Name="City" Type="String" MaxLength="Max" FixedLength="false" Unicode="true" />
+          <Property Name="RegionCode" Type="String" MaxLength="50" FixedLength="false" Unicode="true" />
+          <Property Name="isActive" Type="Int32" />
+          <Property Name="DateCreated" Type="DateTime" Precision="3" />
+        </EntityType>
+        <EntityType Name="tblM_Country_Mobile">
+          <Key>
+            <PropertyRef Name="ID" />
+          </Key>
+          <Property Name="ID" Type="Int64" Nullable="false" annotation:StoreGeneratedPattern="Identity" />
+          <Property Name="Code" Type="String" MaxLength="50" FixedLength="false" Unicode="true" />
+          <Property Name="Country" Type="String" MaxLength="Max" FixedLength="false" Unicode="true" />
+          <Property Name="AreaCode" Type="String" MaxLength="50" FixedLength="false" Unicode="true" />
+          <Property Name="isActive" Type="Int32" />
+          <Property Name="DateCreated" Type="DateTime" Precision="3" />
+        </EntityType>
+        <EntityType Name="tblM_Country_Region">
+          <Key>
+            <PropertyRef Name="ID" />
+          </Key>
+          <Property Name="ID" Type="Int64" Nullable="false" annotation:StoreGeneratedPattern="Identity" />
+          <Property Name="Code" Type="String" MaxLength="50" FixedLength="false" Unicode="true" />
+          <Property Name="StandardCode" Type="String" MaxLength="50" FixedLength="false" Unicode="true" />
+          <Property Name="Country" Type="String" MaxLength="Max" FixedLength="false" Unicode="true" />
+          <Property Name="isActive" Type="Int32" />
+          <Property Name="DateCreated" Type="DateTime" Precision="3" />
+        </EntityType>
+        <EntityType Name="tblM_Crypto_Network">
+          <Key>
+            <PropertyRef Name="ID" />
+          </Key>
+          <Property Name="ID" Type="String" Nullable="false" MaxLength="50" FixedLength="false" Unicode="true" />
+          <Property Name="Network" Type="String" MaxLength="Max" FixedLength="false" Unicode="true" />
+          <Property Name="Symbol" Type="String" MaxLength="Max" FixedLength="false" Unicode="true" />
+          <Property Name="DateCreated" Type="DateTime" Precision="3" />
+          <Property Name="CreatedBy" Type="String" MaxLength="50" FixedLength="false" Unicode="true" />
+          <Property Name="isActive" Type="Int32" />
+          <Property Name="DeletedBy" Type="String" MaxLength="50" FixedLength="false" Unicode="true" />
+          <Property Name="DateDeleted" Type="DateTime" Precision="3" />
+        </EntityType>
+        <EntityType Name="tblM_Setting">
+          <Key>
+            <PropertyRef Name="ID" />
+          </Key>
+          <Property Name="ID" Type="Int64" Nullable="false" annotation:StoreGeneratedPattern="Identity" />
+          <Property Name="Name" Type="String" MaxLength="Max" FixedLength="false" Unicode="true" />
+          <Property Name="Value" Type="Double" />
+          <Property Name="DateCreated" Type="DateTime" Precision="3" />
+          <Property Name="Param1" Type="String" MaxLength="Max" FixedLength="false" Unicode="true" />
+          <Property Name="Param2" Type="String" MaxLength="Max" FixedLength="false" Unicode="true" />
+          <Property Name="Param3" Type="String" MaxLength="Max" FixedLength="false" Unicode="true" />
+        </EntityType>
+        <EntityType Name="tblM_Setting_Counter">
+          <Key>
+            <PropertyRef Name="ID" />
+          </Key>
+          <Property Name="ID" Type="Int64" Nullable="false" annotation:StoreGeneratedPattern="Identity" />
+          <Property Name="Name" Type="String" MaxLength="Max" FixedLength="false" Unicode="true" />
+          <Property Name="Value" Type="Int64" />
+          <Property Name="DateCreated" Type="DateTime" Precision="3" />
+          <Property Name="Param1" Type="String" MaxLength="Max" FixedLength="false" Unicode="true" />
+          <Property Name="Param2" Type="String" MaxLength="Max" FixedLength="false" Unicode="true" />
+          <Property Name="Param3" Type="String" MaxLength="Max" FixedLength="false" Unicode="true" />
+        </EntityType>
+        <EntityType Name="tblM_User">
+          <Key>
+            <PropertyRef Name="UserID" />
+          </Key>
+          <Property Name="ID" Type="Int64" Nullable="false" annotation:StoreGeneratedPattern="Identity" />
+          <Property Name="CompanyID" Type="String" MaxLength="50" FixedLength="false" Unicode="true" />
+          <Property Name="UserID" Type="String" Nullable="false" MaxLength="50" FixedLength="false" Unicode="true" />
+          <Property Name="FirstName" Type="String" MaxLength="Max" FixedLength="false" Unicode="true" />
+          <Property Name="LastName" Type="String" MaxLength="Max" FixedLength="false" Unicode="true" />
+          <Property Name="UserName" Type="String" MaxLength="Max" FixedLength="false" Unicode="true" />
+          <Property Name="Password" Type="String" MaxLength="Max" FixedLength="false" Unicode="true" />
+          <Property Name="RoleID" Type="String" MaxLength="50" FixedLength="false" Unicode="true" />
+          <Property Name="PIN" Type="String" MaxLength="6" FixedLength="true" Unicode="false" />
+          <Property Name="CountryID" Type="Int64" />
+          <Property Name="Phone" Type="String" MaxLength="50" FixedLength="false" Unicode="true" />
+          <Property Name="Email" Type="String" MaxLength="50" FixedLength="false" Unicode="true" />
+          <Property Name="Profession" Type="String" MaxLength="50" FixedLength="false" Unicode="true" />
+          <Property Name="DateJoin" Type="DateTime" Precision="3" />
+          <Property Name="isActive" Type="Int32" />
+          <Property Name="DateActivated" Type="DateTime" Precision="3" />
+          <Property Name="isVerified" Type="Int32" />
+          <Property Name="DateVerified" Type="DateTime" Precision="3" />
+          <Property Name="isBanned" Type="Int32" />
+          <Property Name="DateInvited" Type="DateTime" Precision="3" />
+          <Property Name="InvitedBy" Type="String" MaxLength="50" FixedLength="false" Unicode="true" />
+          <Property Name="DateBanned" Type="DateTime" Precision="3" />
+          <Property Name="BannedBy" Type="String" MaxLength="50" FixedLength="false" Unicode="true" />
+          <Property Name="RegisterVia" Type="String" MaxLength="Max" FixedLength="false" Unicode="true" />
+          <Property Name="ImageURL" Type="String" MaxLength="Max" FixedLength="false" Unicode="true" />
+          <Property Name="ThumbnailURL" Type="String" MaxLength="Max" FixedLength="false" Unicode="true" />
+          <Property Name="is2FA" Type="Int32" />
+          <Property Name="Date2FA" Type="DateTime" Precision="3" />
+        </EntityType>
+        <EntityType Name="tblM_User_2FA">
+          <Key>
+            <PropertyRef Name="ID" />
+          </Key>
+          <Property Name="ID" Type="Int64" Nullable="false" annotation:StoreGeneratedPattern="Identity" />
+          <Property Name="UserID" Type="String" MaxLength="50" FixedLength="false" Unicode="true" />
+          <Property Name="AccountKey" Type="String" MaxLength="Max" FixedLength="false" Unicode="true" />
+          <Property Name="ManualEntryKey" Type="String" MaxLength="Max" FixedLength="false" Unicode="true" />
+          <Property Name="isActive" Type="Int32" />
+          <Property Name="DateCreated" Type="DateTime" Precision="3" />
+        </EntityType>
+        <EntityType Name="tblM_User_Balance">
+          <Key>
+            <PropertyRef Name="ID" />
+          </Key>
+          <Property Name="ID" Type="Int64" Nullable="false" annotation:StoreGeneratedPattern="Identity" />
+          <Property Name="BalanceID" Type="String" MaxLength="50" FixedLength="false" Unicode="true" />
+          <Property Name="UserID" Type="String" MaxLength="50" FixedLength="false" Unicode="true" />
+          <Property Name="Currency" Type="String" MaxLength="50" FixedLength="false" Unicode="true" />
+          <Property Name="Balance" Type="Decimal" Precision="18" Scale="9" />
+          <Property Name="isActive" Type="Int32" />
+          <Property Name="DateCreated" Type="DateTime" Precision="3" />
+          <Property Name="CreatedBy" Type="String" MaxLength="50" FixedLength="false" Unicode="true" />
+          <Property Name="DateUpdated" Type="DateTime" Precision="3" />
+        </EntityType>
+        <EntityType Name="tblM_User_Crypto_Deposit">
+          <Key>
+            <PropertyRef Name="ID" />
+          </Key>
+          <Property Name="ID" Type="String" Nullable="false" MaxLength="50" FixedLength="false" Unicode="true" />
+          <Property Name="UserID" Type="String" MaxLength="50" FixedLength="false" Unicode="true" />
+          <Property Name="PGCryptoID" Type="String" MaxLength="50" FixedLength="false" Unicode="true" />
+          <Property Name="NetworkID" Type="String" MaxLength="50" FixedLength="false" Unicode="true" />
+          <Property Name="Address" Type="String" MaxLength="Max" FixedLength="false" Unicode="true" />
+          <Property Name="Label" Type="String" MaxLength="Max" FixedLength="false" Unicode="true" />
+          <Property Name="DateCreated" Type="DateTime" Precision="3" />
+          <Property Name="CreatedBy" Type="String" MaxLength="50" FixedLength="false" Unicode="true" />
+          <Property Name="isActive" Type="Int32" />
+          <Property Name="DeletedBy" Type="String" MaxLength="50" FixedLength="false" Unicode="true" />
+          <Property Name="DateDeleted" Type="DateTime" Precision="3" />
+          <Property Name="Param1" Type="String" MaxLength="Max" FixedLength="false" Unicode="true" />
+          <Property Name="Param3" Type="String" MaxLength="Max" FixedLength="false" Unicode="true" />
+          <Property Name="Param2" Type="String" MaxLength="Max" FixedLength="false" Unicode="true" />
+          <Property Name="Param4" Type="String" MaxLength="Max" FixedLength="false" Unicode="true" />
+          <Property Name="Param5" Type="String" MaxLength="Max" FixedLength="false" Unicode="true" />
+        </EntityType>
+        <EntityType Name="tblM_User_Fee">
+          <Key>
+            <PropertyRef Name="ID" />
+          </Key>
+          <Property Name="ID" Type="Int64" Nullable="false" annotation:StoreGeneratedPattern="Identity" />
+          <Property Name="CommisionID" Type="String" Nullable="false" MaxLength="50" FixedLength="false" Unicode="true" />
+          <Property Name="UserID" Type="String" MaxLength="50" FixedLength="false" Unicode="true" />
+          <Property Name="Fee" Type="Double" />
+          <Property Name="DateCreated" Type="DateTime" Precision="3" />
+          <Property Name="CreatedBy" Type="String" MaxLength="50" FixedLength="false" Unicode="true" />
+          <Property Name="DateUpdated" Type="DateTime" Precision="3" />
+          <Property Name="UpdatedBy" Type="String" MaxLength="50" FixedLength="false" Unicode="true" />
+          <Property Name="DateDeleted" Type="DateTime" Precision="3" />
+          <Property Name="DeletedBy" Type="String" MaxLength="50" FixedLength="false" Unicode="true" />
+          <Property Name="Param1" Type="String" MaxLength="Max" FixedLength="false" Unicode="true" />
+          <Property Name="Param2" Type="String" MaxLength="Max" FixedLength="false" Unicode="true" />
+          <Property Name="Param3" Type="String" MaxLength="Max" FixedLength="false" Unicode="true" />
+          <Property Name="Param4" Type="String" MaxLength="Max" FixedLength="false" Unicode="true" />
+          <Property Name="Param5" Type="String" MaxLength="Max" FixedLength="false" Unicode="true" />
+        </EntityType>
+        <EntityType Name="tblM_User_Referral">
+          <Key>
+            <PropertyRef Name="ID" />
+          </Key>
+          <Property Name="ID" Type="Int64" Nullable="false" annotation:StoreGeneratedPattern="Identity" />
+          <Property Name="UserID" Type="String" MaxLength="50" FixedLength="false" Unicode="true" />
+          <Property Name="Code" Type="String" MaxLength="50" FixedLength="false" Unicode="true" />
+          <Property Name="DateCreated" Type="DateTime" Precision="3" />
+          <Property Name="CreatedBy" Type="String" MaxLength="50" FixedLength="false" Unicode="true" />
+          <Property Name="DateUpdated" Type="DateTime" Precision="3" />
+          <Property Name="UpdatedBy" Type="String" MaxLength="50" FixedLength="false" Unicode="true" />
+          <Property Name="DateDeleted" Type="DateTime" Precision="3" />
+          <Property Name="DeletedBy" Type="String" MaxLength="50" FixedLength="false" Unicode="true" />
+          <Property Name="Param1" Type="String" MaxLength="Max" FixedLength="false" Unicode="true" />
+          <Property Name="Param2" Type="String" MaxLength="Max" FixedLength="false" Unicode="true" />
+          <Property Name="Param3" Type="String" MaxLength="Max" FixedLength="false" Unicode="true" />
+          <Property Name="Param4" Type="String" MaxLength="Max" FixedLength="false" Unicode="true" />
+          <Property Name="Param5" Type="String" MaxLength="Max" FixedLength="false" Unicode="true" />
+        </EntityType>
+        <EntityType Name="tblM_User_Role">
+          <Key>
+            <PropertyRef Name="RoleID" />
+          </Key>
+          <Property Name="ID" Type="Int64" Nullable="false" annotation:StoreGeneratedPattern="Identity" />
+          <Property Name="RoleID" Type="String" Nullable="false" MaxLength="50" FixedLength="false" Unicode="true" />
+          <Property Name="Role" Type="String" Nullable="false" MaxLength="50" FixedLength="false" Unicode="true" />
+          <Property Name="Description" Type="String" MaxLength="Max" FixedLength="false" Unicode="true" />
+          <Property Name="isActive" Type="Int32" />
+          <Property Name="DateCreated" Type="DateTime" Precision="3" />
+          <Property Name="CreatedBy" Type="String" MaxLength="Max" FixedLength="false" Unicode="true" />
+        </EntityType>
+        <EntityType Name="tblT_Card">
+          <Key>
+            <PropertyRef Name="ID" />
+          </Key>
+          <Property Name="ID" Type="String" Nullable="false" MaxLength="50" FixedLength="false" Unicode="true" />
+          <Property Name="UserID" Type="String" MaxLength="50" FixedLength="false" Unicode="true" />
+          <Property Name="CardTypeId" Type="Int64" />
+          <Property Name="OrderNo" Type="String" MaxLength="Max" FixedLength="false" Unicode="true" />
+          <Property Name="HolderID" Type="Int64" />
+          <Property Name="CardNo" Type="String" MaxLength="Max" FixedLength="false" Unicode="true" />
+          <Property Name="CardNumber" Type="String" MaxLength="50" FixedLength="false" Unicode="true" />
+          <Property Name="CVV" Type="String" MaxLength="Max" FixedLength="false" Unicode="true" />
+          <Property Name="ValidPeriod" Type="String" MaxLength="Max" FixedLength="false" Unicode="true" />
+          <Property Name="Currency" Type="String" MaxLength="50" FixedLength="false" Unicode="true" />
+          <Property Name="BaseFee" Type="Double" />
+          <Property Name="BaseAmount" Type="Double" />
+          <Property Name="Price" Type="Double" />
+          <Property Name="InitialDeposit" Type="Double" />
+          <Property Name="Fee" Type="Double" />
+          <Property Name="FeeInPercentage" Type="Double" />
+          <Property Name="Total" Type="Double" />
+          <Property Name="ReceivedAmount" Type="Double" />
+          <Property Name="ReceivedCurrency" Type="String" MaxLength="50" FixedLength="false" Unicode="true" />
+          <Property Name="Status" Type="String" MaxLength="50" FixedLength="false" Unicode="true" />
+          <Property Name="DateCreated" Type="DateTime" Precision="3" />
+          <Property Name="DateExpired" Type="DateTime" Precision="3" />
+          <Property Name="isActive" Type="Int32" />
+          <Property Name="DateModified" Type="DateTime" Precision="3" />
+          <Property Name="isNeedCardholder" Type="Int32" />
+          <Property Name="AddressID" Type="String" MaxLength="50" FixedLength="false" Unicode="true" />
+          <Property Name="Address" Type="String" MaxLength="Max" FixedLength="false" Unicode="true" />
+          <Property Name="ReceiptURL" Type="String" MaxLength="Max" FixedLength="false" Unicode="true" />
+          <Property Name="Txhash" Type="String" MaxLength="Max" FixedLength="false" Unicode="true" />
+          <Property Name="PGCryptoID" Type="String" MaxLength="50" FixedLength="false" Unicode="true" />
+          <Property Name="Param1" Type="String" MaxLength="Max" FixedLength="false" Unicode="true" />
+          <Property Name="Param2" Type="String" MaxLength="Max" FixedLength="false" Unicode="true" />
+          <Property Name="Param3" Type="String" MaxLength="Max" FixedLength="false" Unicode="true" />
+          <Property Name="Param4" Type="String" MaxLength="Max" FixedLength="false" Unicode="true" />
+          <Property Name="Param5" Type="String" MaxLength="Max" FixedLength="false" Unicode="true" />
+        </EntityType>
+        <EntityType Name="tblT_Card_Balance">
+          <Key>
+            <PropertyRef Name="ID" />
+          </Key>
+          <Property Name="ID" Type="String" Nullable="false" MaxLength="50" FixedLength="false" Unicode="true" />
+          <Property Name="CardNo" Type="String" MaxLength="Max" FixedLength="false" Unicode="true" />
+          <Property Name="Amount" Type="Double" />
+          <Property Name="UsedAmount" Type="Double" />
+          <Property Name="Currency" Type="String" MaxLength="50" FixedLength="false" Unicode="true" />
+        </EntityType>
+        <EntityType Name="tblT_Card_Deposit">
+          <Key>
+            <PropertyRef Name="ID" />
+          </Key>
+          <Property Name="ID" Type="String" Nullable="false" MaxLength="50" FixedLength="false" Unicode="true" />
+          <Property Name="UserID" Type="String" MaxLength="50" FixedLength="false" Unicode="true" />
+          <Property Name="OrderNo" Type="String" MaxLength="Max" FixedLength="false" Unicode="true" />
+          <Property Name="CardNo" Type="String" MaxLength="Max" FixedLength="false" Unicode="true" />
+          <Property Name="Network" Type="String" MaxLength="50" FixedLength="false" Unicode="true" />
+          <Property Name="Symbol" Type="String" MaxLength="50" FixedLength="false" Unicode="true" />
+          <Property Name="Currency" Type="String" MaxLength="50" FixedLength="false" Unicode="true" />
+          <Property Name="BaseFee" Type="Double" />
+          <Property Name="Amount" Type="Double" />
+          <Property Name="Fee" Type="Double" />
+          <Property Name="FeeInPercentage" Type="Double" />
+          <Property Name="Total" Type="Double" />
+          <Property Name="ReceivedAmount" Type="Double" />
+          <Property Name="Type" Type="String" MaxLength="50" FixedLength="false" Unicode="true" />
+          <Property Name="Status" Type="String" MaxLength="50" FixedLength="false" Unicode="true" />
+          <Property Name="Remark" Type="String" MaxLength="50" FixedLength="false" Unicode="true" />
+          <Property Name="DateTransaction" Type="DateTime" Precision="3" />
+          <Property Name="DateReceived" Type="DateTime" Precision="3" />
+          <Property Name="DateExpired" Type="DateTime" Precision="3" />
+          <Property Name="AddressID" Type="String" MaxLength="50" FixedLength="false" Unicode="true" />
+          <Property Name="Address" Type="String" MaxLength="Max" FixedLength="false" Unicode="true" />
+          <Property Name="ReceiptURL" Type="String" MaxLength="Max" FixedLength="false" Unicode="true" />
+          <Property Name="Txhash" Type="String" MaxLength="Max" FixedLength="false" Unicode="true" />
+          <Property Name="PGCryptoID" Type="String" MaxLength="50" FixedLength="false" Unicode="true" />
+          <Property Name="Param1" Type="String" MaxLength="Max" FixedLength="false" Unicode="true" />
+          <Property Name="Param2" Type="String" MaxLength="Max" FixedLength="false" Unicode="true" />
+          <Property Name="Param3" Type="String" MaxLength="Max" FixedLength="false" Unicode="true" />
+          <Property Name="Param4" Type="String" MaxLength="Max" FixedLength="false" Unicode="true" />
+          <Property Name="Param5" Type="String" MaxLength="Max" FixedLength="false" Unicode="true" />
+        </EntityType>
+        <EntityType Name="tblT_Card_Transaction">
+          <Key>
+            <PropertyRef Name="ID" />
+          </Key>
+          <Property Name="ID" Type="Int64" Nullable="false" annotation:StoreGeneratedPattern="Identity" />
+          <Property Name="CardNo" Type="String" MaxLength="50" FixedLength="false" Unicode="true" />
+          <Property Name="TradeNo" Type="String" MaxLength="50" FixedLength="false" Unicode="true" />
+          <Property Name="OriginTradeNo" Type="String" MaxLength="50" FixedLength="false" Unicode="true" />
+          <Property Name="Currency" Type="String" MaxLength="50" FixedLength="false" Unicode="true" />
+          <Property Name="Amount" Type="Double" />
+          <Property Name="AuthorizedAmount" Type="Double" />
+          <Property Name="AuthorizedCurrency" Type="String" MaxLength="50" FixedLength="false" Unicode="true" />
+          <Property Name="Fee" Type="Double" />
+          <Property Name="FeeCurrency" Type="String" MaxLength="50" FixedLength="false" Unicode="true" />
+          <Property Name="CrossBoardFee" Type="Double" />
+          <Property Name="CrossBoardFeeCurrency" Type="String" MaxLength="50" FixedLength="false" Unicode="true" />
+          <Property Name="SettleAmount" Type="Double" />
+          <Property Name="SettleCurrency" Type="String" MaxLength="50" FixedLength="false" Unicode="true" />
+          <Property Name="SettleDate" Type="DateTime" Precision="3" />
+          <Property Name="MerchantName" Type="String" MaxLength="Max" FixedLength="false" Unicode="true" />
+          <Property Name="Type" Type="String" MaxLength="50" FixedLength="false" Unicode="true" />
+          <Property Name="TypeStr" Type="String" MaxLength="Max" FixedLength="false" Unicode="true" />
+          <Property Name="Status" Type="String" MaxLength="50" FixedLength="false" Unicode="true" />
+          <Property Name="StatusStr" Type="String" MaxLength="Max" FixedLength="false" Unicode="true" />
+          <Property Name="Description" Type="String" MaxLength="Max" FixedLength="false" Unicode="true" />
+          <Property Name="TransactionTime" Type="DateTime" Precision="3" />
+          <Property Name="Payload" Type="String" MaxLength="Max" FixedLength="false" Unicode="true" />
+          <Property Name="Param1" Type="String" MaxLength="Max" FixedLength="false" Unicode="true" />
+          <Property Name="Param2" Type="String" MaxLength="Max" FixedLength="false" Unicode="true" />
+          <Property Name="Param3" Type="String" MaxLength="Max" FixedLength="false" Unicode="true" />
+        </EntityType>
+        <EntityType Name="tblT_Card_Transaction_Auth">
+          <Key>
+            <PropertyRef Name="ID" />
+          </Key>
+          <Property Name="ID" Type="Int64" Nullable="false" annotation:StoreGeneratedPattern="Identity" />
+          <Property Name="CardNo" Type="String" MaxLength="50" FixedLength="false" Unicode="true" />
+          <Property Name="TradeNo" Type="String" MaxLength="50" FixedLength="false" Unicode="true" />
+          <Property Name="OriginTradeNo" Type="String" MaxLength="50" FixedLength="false" Unicode="true" />
+          <Property Name="Currency" Type="String" MaxLength="50" FixedLength="false" Unicode="true" />
+          <Property Name="Amount" Type="Double" />
+          <Property Name="MerchantName" Type="String" MaxLength="Max" FixedLength="false" Unicode="true" />
+          <Property Name="Values" Type="String" MaxLength="Max" FixedLength="false" Unicode="true" />
+          <Property Name="Type" Type="String" MaxLength="50" FixedLength="false" Unicode="true" />
+          <Property Name="TransactionTime" Type="DateTime" Precision="3" />
+          <Property Name="Description" Type="String" MaxLength="Max" FixedLength="false" Unicode="true" />
+          <Property Name="isSent" Type="Int32" />
+          <Property Name="Payload" Type="String" MaxLength="Max" FixedLength="false" Unicode="true" />
+          <Property Name="Param1" Type="String" MaxLength="Max" FixedLength="false" Unicode="true" />
+          <Property Name="Param2" Type="String" MaxLength="Max" FixedLength="false" Unicode="true" />
+          <Property Name="Param3" Type="String" MaxLength="Max" FixedLength="false" Unicode="true" />
+        </EntityType>
+        <EntityType Name="tblT_Commission">
+          <Key>
+            <PropertyRef Name="ID" />
+          </Key>
+          <Property Name="ID" Type="Int64" Nullable="false" />
+          <Property Name="CommisionID" Type="String" Nullable="false" MaxLength="50" FixedLength="false" Unicode="true" />
+          <Property Name="UserID" Type="String" MaxLength="50" FixedLength="false" Unicode="true" />
+          <Property Name="TransactionID" Type="String" MaxLength="50" FixedLength="false" Unicode="true" />
+          <Property Name="Commission" Type="Double" />
+          <Property Name="DateCreated" Type="DateTime" Precision="3" />
+          <Property Name="CreatedBy" Type="String" MaxLength="50" FixedLength="false" Unicode="true" />
+          <Property Name="DateUpdated" Type="DateTime" Precision="3" />
+          <Property Name="UpdatedBy" Type="String" MaxLength="50" FixedLength="false" Unicode="true" />
+          <Property Name="DateDeleted" Type="DateTime" Precision="3" />
+          <Property Name="DeletedBy" Type="String" MaxLength="50" FixedLength="false" Unicode="true" />
+          <Property Name="Param1" Type="String" MaxLength="Max" FixedLength="false" Unicode="true" />
+          <Property Name="Param2" Type="String" MaxLength="Max" FixedLength="false" Unicode="true" />
+          <Property Name="Param3" Type="String" MaxLength="Max" FixedLength="false" Unicode="true" />
+          <Property Name="Param4" Type="String" MaxLength="Max" FixedLength="false" Unicode="true" />
+          <Property Name="Param5" Type="String" MaxLength="Max" FixedLength="false" Unicode="true" />
+        </EntityType>
+        <EntityType Name="tblT_User_ForgotPassword">
+          <Key>
+            <PropertyRef Name="ID" />
+          </Key>
+          <Property Name="ID" Type="Int64" Nullable="false" annotation:StoreGeneratedPattern="Identity" />
+          <Property Name="CompanyID" Type="String" MaxLength="50" FixedLength="false" Unicode="true" />
+          <Property Name="UserID" Type="String" MaxLength="50" FixedLength="false" Unicode="true" />
+          <Property Name="Hash" Type="String" MaxLength="50" FixedLength="false" Unicode="true" />
+          <Property Name="isVerified" Type="Int32" />
+          <Property Name="DateCreated" Type="DateTime" Precision="3" />
+          <Property Name="CreatedBy" Type="String" MaxLength="50" FixedLength="false" Unicode="true" />
+          <Property Name="isActive" Type="Int32" />
+          <Property Name="DeletedBy" Type="String" MaxLength="50" FixedLength="false" Unicode="true" />
+          <Property Name="DateDeleted" Type="DateTime" Precision="3" />
+          <Property Name="Param1" Type="String" MaxLength="Max" FixedLength="false" Unicode="true" />
+          <Property Name="Param2" Type="String" MaxLength="Max" FixedLength="false" Unicode="true" />
+          <Property Name="Param3" Type="String" MaxLength="Max" FixedLength="false" Unicode="true" />
+        </EntityType>
+        <EntityType Name="vw_Card">
+          <Key>
+            <PropertyRef Name="ID" />
+          </Key>
+          <Property Name="ID" Type="String" Nullable="false" MaxLength="50" FixedLength="false" Unicode="true" />
+          <Property Name="UserID" Type="String" MaxLength="50" FixedLength="false" Unicode="true" />
+          <Property Name="CardTypeId" Type="Int64" />
+          <Property Name="OrderNo" Type="String" MaxLength="Max" FixedLength="false" Unicode="true" />
+          <Property Name="CardNo" Type="String" MaxLength="Max" FixedLength="false" Unicode="true" />
+          <Property Name="CardNumber" Type="String" MaxLength="50" FixedLength="false" Unicode="true" />
+          <Property Name="CVV" Type="String" MaxLength="Max" FixedLength="false" Unicode="true" />
+          <Property Name="ValidPeriod" Type="String" MaxLength="Max" FixedLength="false" Unicode="true" />
+          <Property Name="Currency" Type="String" MaxLength="50" FixedLength="false" Unicode="true" />
+          <Property Name="Price" Type="Double" />
+          <Property Name="InitialDeposit" Type="Double" />
+          <Property Name="Fee" Type="Double" />
+          <Property Name="FeeInPercentage" Type="Double" />
+          <Property Name="Total" Type="Double" />
+          <Property Name="ReceivedAmount" Type="Double" />
+          <Property Name="ReceivedCurrency" Type="String" MaxLength="50" FixedLength="false" Unicode="true" />
+          <Property Name="Status" Type="String" MaxLength="50" FixedLength="false" Unicode="true" />
+          <Property Name="DateCreated" Type="DateTime" Precision="3" />
+          <Property Name="isActive" Type="Int32" />
+          <Property Name="DateModified" Type="DateTime" Precision="3" />
+          <Property Name="isNeedCardholder" Type="Int32" />
+          <Property Name="AddressID" Type="String" MaxLength="50" FixedLength="false" Unicode="true" />
+          <Property Name="Address" Type="String" MaxLength="Max" FixedLength="false" Unicode="true" />
+          <Property Name="Param1" Type="String" MaxLength="Max" FixedLength="false" Unicode="true" />
+          <Property Name="Param2" Type="String" MaxLength="Max" FixedLength="false" Unicode="true" />
+          <Property Name="Param3" Type="String" MaxLength="Max" FixedLength="false" Unicode="true" />
+          <Property Name="Param4" Type="String" MaxLength="Max" FixedLength="false" Unicode="true" />
+          <Property Name="Param5" Type="String" MaxLength="Max" FixedLength="false" Unicode="true" />
+          <Property Name="HolderID" Type="Int64" />
+          <Property Name="AreaCode" Type="String" MaxLength="50" FixedLength="false" Unicode="true" />
+          <Property Name="Mobile" Type="String" MaxLength="50" FixedLength="false" Unicode="true" />
+          <Property Name="Email" Type="String" MaxLength="Max" FixedLength="false" Unicode="true" />
+          <Property Name="FirstName" Type="String" MaxLength="Max" FixedLength="false" Unicode="true" />
+          <Property Name="LastName" Type="String" MaxLength="Max" FixedLength="false" Unicode="true" />
+          <Property Name="Birthday" Type="String" MaxLength="50" FixedLength="false" Unicode="true" />
+          <Property Name="Country" Type="String" MaxLength="50" FixedLength="false" Unicode="true" />
+          <Property Name="CountryStr" Type="String" MaxLength="Max" FixedLength="false" Unicode="true" />
+          <Property Name="State" Type="String" MaxLength="50" FixedLength="false" Unicode="true" />
+          <Property Name="StateStr" Type="String" MaxLength="Max" FixedLength="false" Unicode="true" />
+          <Property Name="Town" Type="String" MaxLength="50" FixedLength="false" Unicode="true" />
+          <Property Name="TownStr" Type="String" MaxLength="Max" FixedLength="false" Unicode="true" />
+          <Property Name="HolderAddress" Type="String" MaxLength="Max" FixedLength="false" Unicode="true" />
+          <Property Name="PostCode" Type="String" MaxLength="50" FixedLength="false" Unicode="true" />
+          <Property Name="Organization" Type="String" MaxLength="50" FixedLength="false" Unicode="true" />
+          <Property Name="Type" Type="String" MaxLength="50" FixedLength="false" Unicode="true" />
+          <Property Name="CardName" Type="String" MaxLength="50" FixedLength="false" Unicode="true" />
+          <Property Name="CardDesc" Type="String" MaxLength="Max" FixedLength="false" Unicode="true" />
+          <Property Name="Support" Type="String" MaxLength="Max" FixedLength="false" Unicode="true" />
+          <Property Name="RechargeFeeRate" Type="String" MaxLength="50" FixedLength="false" Unicode="true" />
+          <Property Name="RechargeFee" Type="String" MaxLength="50" FixedLength="false" Unicode="true" />
+          <Property Name="OriginalRechargeFeeRate" Type="String" MaxLength="50" FixedLength="false" Unicode="true" />
+          <Property Name="OriginalRechargeFee" Type="String" MaxLength="50" FixedLength="false" Unicode="true" />
+          <Property Name="DateExpired" Type="DateTime" Precision="3" />
+        </EntityType>
+        <EntityType Name="database_firewall_rules">
+          <Key>
+            <PropertyRef Name="id" />
+            <PropertyRef Name="name" />
+            <PropertyRef Name="start_ip_address" />
+            <PropertyRef Name="end_ip_address" />
+            <PropertyRef Name="create_date" />
+            <PropertyRef Name="modify_date" />
+          </Key>
+          <Property Name="id" Type="Int32" Nullable="false" annotation:StoreGeneratedPattern="Identity" />
+          <Property Name="name" Type="String" Nullable="false" MaxLength="128" FixedLength="false" Unicode="true" />
+          <Property Name="start_ip_address" Type="String" Nullable="false" MaxLength="45" FixedLength="false" Unicode="false" />
+          <Property Name="end_ip_address" Type="String" Nullable="false" MaxLength="45" FixedLength="false" Unicode="false" />
+          <Property Name="create_date" Type="DateTime" Nullable="false" Precision="3" />
+          <Property Name="modify_date" Type="DateTime" Nullable="false" Precision="3" />
+        </EntityType>
+        </Schema>
+    </edmx:ConceptualModels>
+    <!-- C-S mapping content -->
+    <edmx:Mappings>
+      <Mapping Space="C-S" xmlns="http://schemas.microsoft.com/ado/2009/11/mapping/cs">
+        <EntityContainerMapping StorageEntityContainer="DBModelStoreContainer" CdmEntityContainer="DBEntities">
+          <EntitySetMapping Name="tblH_Admin_Login">
+            <EntityTypeMapping TypeName="DBModel.tblH_Admin_Login">
+              <MappingFragment StoreEntitySet="tblH_Admin_Login">
+                <ScalarProperty Name="Param3" ColumnName="Param3" />
+                <ScalarProperty Name="Param2" ColumnName="Param2" />
+                <ScalarProperty Name="Param1" ColumnName="Param1" />
+                <ScalarProperty Name="MEID" ColumnName="MEID" />
+                <ScalarProperty Name="IMEI" ColumnName="IMEI" />
+                <ScalarProperty Name="Model" ColumnName="Model" />
+                <ScalarProperty Name="Brand" ColumnName="Brand" />
+                <ScalarProperty Name="Manufacturer" ColumnName="Manufacturer" />
+                <ScalarProperty Name="DeviceName" ColumnName="DeviceName" />
+                <ScalarProperty Name="DeviceType" ColumnName="DeviceType" />
+                <ScalarProperty Name="isVerify" ColumnName="isVerify" />
+                <ScalarProperty Name="DateExpired" ColumnName="DateExpired" />
+                <ScalarProperty Name="DateCreated" ColumnName="DateCreated" />
+                <ScalarProperty Name="IPAddress" ColumnName="IPAddress" />
+                <ScalarProperty Name="Altitude" ColumnName="Altitude" />
+                <ScalarProperty Name="Latitude" ColumnName="Latitude" />
+                <ScalarProperty Name="Longitude" ColumnName="Longitude" />
+                <ScalarProperty Name="Code" ColumnName="Code" />
+                <ScalarProperty Name="AdminID" ColumnName="AdminID" />
+                <ScalarProperty Name="ID" ColumnName="ID" />
+              </MappingFragment>
+            </EntityTypeMapping>
+          </EntitySetMapping>
+          <EntitySetMapping Name="tblH_Admin_OTP">
+            <EntityTypeMapping TypeName="DBModel.tblH_Admin_OTP">
+              <MappingFragment StoreEntitySet="tblH_Admin_OTP">
+                <ScalarProperty Name="Param3" ColumnName="Param3" />
+                <ScalarProperty Name="Param2" ColumnName="Param2" />
+                <ScalarProperty Name="Param1" ColumnName="Param1" />
+                <ScalarProperty Name="MEID" ColumnName="MEID" />
+                <ScalarProperty Name="IMEI" ColumnName="IMEI" />
+                <ScalarProperty Name="Model" ColumnName="Model" />
+                <ScalarProperty Name="Brand" ColumnName="Brand" />
+                <ScalarProperty Name="Manufacturer" ColumnName="Manufacturer" />
+                <ScalarProperty Name="DeviceName" ColumnName="DeviceName" />
+                <ScalarProperty Name="DeviceType" ColumnName="DeviceType" />
+                <ScalarProperty Name="isVerify" ColumnName="isVerify" />
+                <ScalarProperty Name="DateExpired" ColumnName="DateExpired" />
+                <ScalarProperty Name="DateCreated" ColumnName="DateCreated" />
+                <ScalarProperty Name="IPAddress" ColumnName="IPAddress" />
+                <ScalarProperty Name="Altitude" ColumnName="Altitude" />
+                <ScalarProperty Name="Latitude" ColumnName="Latitude" />
+                <ScalarProperty Name="Longitude" ColumnName="Longitude" />
+                <ScalarProperty Name="Code" ColumnName="Code" />
+                <ScalarProperty Name="Name" ColumnName="Name" />
+                <ScalarProperty Name="MerchantID" ColumnName="MerchantID" />
+                <ScalarProperty Name="AdminID" ColumnName="AdminID" />
+                <ScalarProperty Name="OTPID" ColumnName="OTPID" />
+                <ScalarProperty Name="ID" ColumnName="ID" />
+              </MappingFragment>
+            </EntityTypeMapping>
+          </EntitySetMapping>
+          <EntitySetMapping Name="tblH_API_Log">
+            <EntityTypeMapping TypeName="DBModel.tblH_API_Log">
+              <MappingFragment StoreEntitySet="tblH_API_Log">
+                <ScalarProperty Name="ResponseDate" ColumnName="ResponseDate" />
+                <ScalarProperty Name="Response" ColumnName="Response" />
+                <ScalarProperty Name="RequestDate" ColumnName="RequestDate" />
+                <ScalarProperty Name="Request" ColumnName="Request" />
+                <ScalarProperty Name="Type" ColumnName="Type" />
+                <ScalarProperty Name="ID" ColumnName="ID" />
+              </MappingFragment>
+            </EntityTypeMapping>
+          </EntitySetMapping>
+          <EntitySetMapping Name="tblH_Partner_Webhook">
+            <EntityTypeMapping TypeName="DBModel.tblH_Partner_Webhook">
+              <MappingFragment StoreEntitySet="tblH_Partner_Webhook">
+                <ScalarProperty Name="ResponseDate" ColumnName="ResponseDate" />
+                <ScalarProperty Name="Response" ColumnName="Response" />
+                <ScalarProperty Name="RequestDate" ColumnName="RequestDate" />
+                <ScalarProperty Name="Request" ColumnName="Request" />
+                <ScalarProperty Name="Header" ColumnName="Header" />
+                <ScalarProperty Name="Type" ColumnName="Type" />
+                <ScalarProperty Name="ID" ColumnName="ID" />
+              </MappingFragment>
+            </EntityTypeMapping>
+          </EntitySetMapping>
+          <EntitySetMapping Name="tblH_Partner_Webhook_ID">
+            <EntityTypeMapping TypeName="DBModel.tblH_Partner_Webhook_ID">
+              <MappingFragment StoreEntitySet="tblH_Partner_Webhook_ID">
+                <ScalarProperty Name="RequestDate" ColumnName="RequestDate" />
+                <ScalarProperty Name="Request" ColumnName="Request" />
+                <ScalarProperty Name="TXID" ColumnName="TXID" />
+                <ScalarProperty Name="Header" ColumnName="Header" />
+                <ScalarProperty Name="Type" ColumnName="Type" />
+                <ScalarProperty Name="ID" ColumnName="ID" />
+              </MappingFragment>
+            </EntityTypeMapping>
+          </EntitySetMapping>
+          <EntitySetMapping Name="tblH_User_Balance">
+            <EntityTypeMapping TypeName="DBModel.tblH_User_Balance">
+              <MappingFragment StoreEntitySet="tblH_User_Balance">
+                <ScalarProperty Name="Status" ColumnName="Status" />
+                <ScalarProperty Name="CreatedDate" ColumnName="CreatedDate" />
+                <ScalarProperty Name="BalanceHold" ColumnName="BalanceHold" />
+                <ScalarProperty Name="Balance" ColumnName="Balance" />
+                <ScalarProperty Name="CommisionInPercentage" ColumnName="CommisionInPercentage" />
+                <ScalarProperty Name="Commision" ColumnName="Commision" />
+                <ScalarProperty Name="Amount" ColumnName="Amount" />
+                <ScalarProperty Name="BalancePrevious" ColumnName="BalancePrevious" />
+                <ScalarProperty Name="Type" ColumnName="Type" />
+                <ScalarProperty Name="TransactionID" ColumnName="TransactionID" />
+                <ScalarProperty Name="BalanceID" ColumnName="BalanceID" />
+                <ScalarProperty Name="UserID" ColumnName="UserID" />
+                <ScalarProperty Name="ID" ColumnName="ID" />
+              </MappingFragment>
+            </EntityTypeMapping>
+          </EntitySetMapping>
+          <EntitySetMapping Name="tblH_User_Login">
+            <EntityTypeMapping TypeName="DBModel.tblH_User_Login">
+              <MappingFragment StoreEntitySet="tblH_User_Login">
+                <ScalarProperty Name="Param3" ColumnName="Param3" />
+                <ScalarProperty Name="Param2" ColumnName="Param2" />
+                <ScalarProperty Name="Param1" ColumnName="Param1" />
+                <ScalarProperty Name="MEID" ColumnName="MEID" />
+                <ScalarProperty Name="IMEI" ColumnName="IMEI" />
+                <ScalarProperty Name="Model" ColumnName="Model" />
+                <ScalarProperty Name="Brand" ColumnName="Brand" />
+                <ScalarProperty Name="Manufacturer" ColumnName="Manufacturer" />
+                <ScalarProperty Name="DeviceName" ColumnName="DeviceName" />
+                <ScalarProperty Name="DeviceType" ColumnName="DeviceType" />
+                <ScalarProperty Name="isVerify" ColumnName="isVerify" />
+                <ScalarProperty Name="DateExpired" ColumnName="DateExpired" />
+                <ScalarProperty Name="DateCreated" ColumnName="DateCreated" />
+                <ScalarProperty Name="IPAddress" ColumnName="IPAddress" />
+                <ScalarProperty Name="Altitude" ColumnName="Altitude" />
+                <ScalarProperty Name="Latitude" ColumnName="Latitude" />
+                <ScalarProperty Name="Longitude" ColumnName="Longitude" />
+                <ScalarProperty Name="Code" ColumnName="Code" />
+                <ScalarProperty Name="UserID" ColumnName="UserID" />
+                <ScalarProperty Name="ID" ColumnName="ID" />
+              </MappingFragment>
+            </EntityTypeMapping>
+          </EntitySetMapping>
+          <EntitySetMapping Name="tblH_User_OTP">
+            <EntityTypeMapping TypeName="DBModel.tblH_User_OTP">
+              <MappingFragment StoreEntitySet="tblH_User_OTP">
+                <ScalarProperty Name="Param3" ColumnName="Param3" />
+                <ScalarProperty Name="Param2" ColumnName="Param2" />
+                <ScalarProperty Name="Param1" ColumnName="Param1" />
+                <ScalarProperty Name="MEID" ColumnName="MEID" />
+                <ScalarProperty Name="IMEI" ColumnName="IMEI" />
+                <ScalarProperty Name="Model" ColumnName="Model" />
+                <ScalarProperty Name="Brand" ColumnName="Brand" />
+                <ScalarProperty Name="Manufacturer" ColumnName="Manufacturer" />
+                <ScalarProperty Name="DeviceName" ColumnName="DeviceName" />
+                <ScalarProperty Name="DeviceType" ColumnName="DeviceType" />
+                <ScalarProperty Name="isVerify" ColumnName="isVerify" />
+                <ScalarProperty Name="DateExpired" ColumnName="DateExpired" />
+                <ScalarProperty Name="DateCreated" ColumnName="DateCreated" />
+                <ScalarProperty Name="IPAddress" ColumnName="IPAddress" />
+                <ScalarProperty Name="Altitude" ColumnName="Altitude" />
+                <ScalarProperty Name="Latitude" ColumnName="Latitude" />
+                <ScalarProperty Name="Longitude" ColumnName="Longitude" />
+                <ScalarProperty Name="Code" ColumnName="Code" />
+                <ScalarProperty Name="Name" ColumnName="Name" />
+                <ScalarProperty Name="MerchantID" ColumnName="MerchantID" />
+                <ScalarProperty Name="UserID" ColumnName="UserID" />
+                <ScalarProperty Name="OTPID" ColumnName="OTPID" />
+                <ScalarProperty Name="ID" ColumnName="ID" />
+              </MappingFragment>
+            </EntityTypeMapping>
+          </EntitySetMapping>
+          <EntitySetMapping Name="tblH_User_Register">
+            <EntityTypeMapping TypeName="DBModel.tblH_User_Register">
+              <MappingFragment StoreEntitySet="tblH_User_Register">
+                <ScalarProperty Name="Param3" ColumnName="Param3" />
+                <ScalarProperty Name="Param2" ColumnName="Param2" />
+                <ScalarProperty Name="Param1" ColumnName="Param1" />
+                <ScalarProperty Name="MEID" ColumnName="MEID" />
+                <ScalarProperty Name="IMEI" ColumnName="IMEI" />
+                <ScalarProperty Name="Model" ColumnName="Model" />
+                <ScalarProperty Name="Brand" ColumnName="Brand" />
+                <ScalarProperty Name="Manufacturer" ColumnName="Manufacturer" />
+                <ScalarProperty Name="DeviceName" ColumnName="DeviceName" />
+                <ScalarProperty Name="DeviceType" ColumnName="DeviceType" />
+                <ScalarProperty Name="isVerify" ColumnName="isVerify" />
+                <ScalarProperty Name="DateExpired" ColumnName="DateExpired" />
+                <ScalarProperty Name="DateCreated" ColumnName="DateCreated" />
+                <ScalarProperty Name="IPAddress" ColumnName="IPAddress" />
+                <ScalarProperty Name="Altitude" ColumnName="Altitude" />
+                <ScalarProperty Name="Latitude" ColumnName="Latitude" />
+                <ScalarProperty Name="Longitude" ColumnName="Longitude" />
+                <ScalarProperty Name="Code" ColumnName="Code" />
+                <ScalarProperty Name="UserID" ColumnName="UserID" />
+                <ScalarProperty Name="ID" ColumnName="ID" />
+              </MappingFragment>
+            </EntityTypeMapping>
+          </EntitySetMapping>
+          <EntitySetMapping Name="tblM_Address_Generator">
+            <EntityTypeMapping TypeName="DBModel.tblM_Address_Generator">
+              <MappingFragment StoreEntitySet="tblM_Address_Generator">
+                <ScalarProperty Name="DateUsed" ColumnName="DateUsed" />
+                <ScalarProperty Name="DateCreated" ColumnName="DateCreated" />
+                <ScalarProperty Name="isUsed" ColumnName="isUsed" />
+                <ScalarProperty Name="isActive" ColumnName="isActive" />
+                <ScalarProperty Name="Longitude" ColumnName="Longitude" />
+                <ScalarProperty Name="Latitude" ColumnName="Latitude" />
+                <ScalarProperty Name="Country" ColumnName="Country" />
+                <ScalarProperty Name="PhoneNumber" ColumnName="PhoneNumber" />
+                <ScalarProperty Name="PostalCode" ColumnName="PostalCode" />
+                <ScalarProperty Name="State" ColumnName="State" />
+                <ScalarProperty Name="CityCode" ColumnName="CityCode" />
+                <ScalarProperty Name="City" ColumnName="City" />
+                <ScalarProperty Name="Street" ColumnName="Street" />
+                <ScalarProperty Name="ID" ColumnName="ID" />
+              </MappingFragment>
+            </EntityTypeMapping>
+          </EntitySetMapping>
+          <EntitySetMapping Name="tblM_Admin">
+            <EntityTypeMapping TypeName="DBModel.tblM_Admin">
+              <MappingFragment StoreEntitySet="tblM_Admin">
+                <ScalarProperty Name="ThumbnailURL" ColumnName="ThumbnailURL" />
+                <ScalarProperty Name="ImageURL" ColumnName="ImageURL" />
+                <ScalarProperty Name="RegisterVia" ColumnName="RegisterVia" />
+                <ScalarProperty Name="BannedBy" ColumnName="BannedBy" />
+                <ScalarProperty Name="DateBanned" ColumnName="DateBanned" />
+                <ScalarProperty Name="InvitedBy" ColumnName="InvitedBy" />
+                <ScalarProperty Name="DateInvited" ColumnName="DateInvited" />
+                <ScalarProperty Name="isBanned" ColumnName="isBanned" />
+                <ScalarProperty Name="DateVerified" ColumnName="DateVerified" />
+                <ScalarProperty Name="isVerified" ColumnName="isVerified" />
+                <ScalarProperty Name="DateActivated" ColumnName="DateActivated" />
+                <ScalarProperty Name="isActive" ColumnName="isActive" />
+                <ScalarProperty Name="DateJoin" ColumnName="DateJoin" />
+                <ScalarProperty Name="Profession" ColumnName="Profession" />
+                <ScalarProperty Name="Email" ColumnName="Email" />
+                <ScalarProperty Name="Phone" ColumnName="Phone" />
+                <ScalarProperty Name="CountryID" ColumnName="CountryID" />
+                <ScalarProperty Name="PIN" ColumnName="PIN" />
+                <ScalarProperty Name="RoleID" ColumnName="RoleID" />
+                <ScalarProperty Name="Password" ColumnName="Password" />
+                <ScalarProperty Name="UserName" ColumnName="UserName" />
+                <ScalarProperty Name="LastName" ColumnName="LastName" />
+                <ScalarProperty Name="FirstName" ColumnName="FirstName" />
+                <ScalarProperty Name="AdminID" ColumnName="AdminID" />
+                <ScalarProperty Name="ID" ColumnName="ID" />
+              </MappingFragment>
+            </EntityTypeMapping>
+          </EntitySetMapping>
+          <EntitySetMapping Name="tblM_Admin_Role">
+            <EntityTypeMapping TypeName="DBModel.tblM_Admin_Role">
+              <MappingFragment StoreEntitySet="tblM_Admin_Role">
+                <ScalarProperty Name="DateDeleted" ColumnName="DateDeleted" />
+                <ScalarProperty Name="DeletedBy" ColumnName="DeletedBy" />
+                <ScalarProperty Name="isActive" ColumnName="isActive" />
+                <ScalarProperty Name="CreatedBy" ColumnName="CreatedBy" />
+                <ScalarProperty Name="DateCreated" ColumnName="DateCreated" />
+                <ScalarProperty Name="Role" ColumnName="Role" />
+                <ScalarProperty Name="RoleID" ColumnName="RoleID" />
+              </MappingFragment>
+            </EntityTypeMapping>
+          </EntitySetMapping>
+          <EntitySetMapping Name="tblM_Card_Type">
+            <EntityTypeMapping TypeName="DBModel.tblM_Card_Type">
+              <MappingFragment StoreEntitySet="tblM_Card_Type">
+                <ScalarProperty Name="DateCreated" ColumnName="DateCreated" />
+                <ScalarProperty Name="isActive" ColumnName="isActive" />
+                <ScalarProperty Name="Status" ColumnName="Status" />
+                <ScalarProperty Name="MaxCount" ColumnName="MaxCount" />
+                <ScalarProperty Name="FiatCurrency" ColumnName="FiatCurrency" />
+                <ScalarProperty Name="DepositAmountMaxQuotaForActiveCard" ColumnName="DepositAmountMaxQuotaForActiveCard" />
+                <ScalarProperty Name="DepositAmountMinQuotaForActiveCard" ColumnName="DepositAmountMinQuotaForActiveCard" />
+                <ScalarProperty Name="NeedDepositForActiveCard" ColumnName="NeedDepositForActiveCard" />
+                <ScalarProperty Name="NeedCardHolder" ColumnName="NeedCardHolder" />
+                <ScalarProperty Name="SupportHolderAreaCode" ColumnName="SupportHolderAreaCode" />
+                <ScalarProperty Name="SupportHolderRegin" ColumnName="SupportHolderRegin" />
+                <ScalarProperty Name="Support" ColumnName="Support" />
+                <ScalarProperty Name="RechargeMaxQuota" ColumnName="RechargeMaxQuota" />
+                <ScalarProperty Name="RechargeMinQuota" ColumnName="RechargeMinQuota" />
+                <ScalarProperty Name="OriginalRechargeFee" ColumnName="OriginalRechargeFee" />
+                <ScalarProperty Name="OriginalRechargeFeeRate" ColumnName="OriginalRechargeFeeRate" />
+                <ScalarProperty Name="RechargeFee" ColumnName="RechargeFee" />
+                <ScalarProperty Name="RechargeFeeRate" ColumnName="RechargeFeeRate" />
+                <ScalarProperty Name="OriginalCardPriceCurrency" ColumnName="OriginalCardPriceCurrency" />
+                <ScalarProperty Name="OriginalCardPrice" ColumnName="OriginalCardPrice" />
+                <ScalarProperty Name="CardPriceCurrency" ColumnName="CardPriceCurrency" />
+                <ScalarProperty Name="CardPrice" ColumnName="CardPrice" />
+                <ScalarProperty Name="CardDesc" ColumnName="CardDesc" />
+                <ScalarProperty Name="CardName" ColumnName="CardName" />
+                <ScalarProperty Name="TypeStr" ColumnName="TypeStr" />
+                <ScalarProperty Name="Type" ColumnName="Type" />
+                <ScalarProperty Name="BankCardBin" ColumnName="BankCardBin" />
+                <ScalarProperty Name="Country" ColumnName="Country" />
+                <ScalarProperty Name="Organization" ColumnName="Organization" />
+                <ScalarProperty Name="CardTypeId" ColumnName="CardTypeId" />
+                <ScalarProperty Name="ID" ColumnName="ID" />
+              </MappingFragment>
+            </EntityTypeMapping>
+          </EntitySetMapping>
+          <EntitySetMapping Name="tblM_Card_Type_Recharge">
+            <EntityTypeMapping TypeName="DBModel.tblM_Card_Type_Recharge">
+              <MappingFragment StoreEntitySet="tblM_Card_Type_Recharge">
+                <ScalarProperty Name="Digital" ColumnName="Digital" />
+                <ScalarProperty Name="RechargeFee" ColumnName="RechargeFee" />
+                <ScalarProperty Name="RechargeFeeRate" ColumnName="RechargeFeeRate" />
+                <ScalarProperty Name="RechargeMaxQuota" ColumnName="RechargeMaxQuota" />
+                <ScalarProperty Name="RechargeMinQuota" ColumnName="RechargeMinQuota" />
+                <ScalarProperty Name="Currency" ColumnName="Currency" />
+                <ScalarProperty Name="CardTypeId" ColumnName="CardTypeId" />
+              </MappingFragment>
+            </EntityTypeMapping>
+          </EntitySetMapping>
+          <EntitySetMapping Name="tblM_Cardholder">
+            <EntityTypeMapping TypeName="DBModel.tblM_Cardholder">
+              <MappingFragment StoreEntitySet="tblM_Cardholder">
+                <ScalarProperty Name="DateModified" ColumnName="DateModified" />
+                <ScalarProperty Name="isActive" ColumnName="isActive" />
+                <ScalarProperty Name="DateCreated" ColumnName="DateCreated" />
+                <ScalarProperty Name="StatusStr" ColumnName="StatusStr" />
+                <ScalarProperty Name="Status" ColumnName="Status" />
+                <ScalarProperty Name="PostCode" ColumnName="PostCode" />
+                <ScalarProperty Name="Address" ColumnName="Address" />
+                <ScalarProperty Name="TownStr" ColumnName="TownStr" />
+                <ScalarProperty Name="Town" ColumnName="Town" />
+                <ScalarProperty Name="StateStr" ColumnName="StateStr" />
+                <ScalarProperty Name="State" ColumnName="State" />
+                <ScalarProperty Name="CountryStr" ColumnName="CountryStr" />
+                <ScalarProperty Name="Country" ColumnName="Country" />
+                <ScalarProperty Name="Birthday" ColumnName="Birthday" />
+                <ScalarProperty Name="LastName" ColumnName="LastName" />
+                <ScalarProperty Name="FirstName" ColumnName="FirstName" />
+                <ScalarProperty Name="Email" ColumnName="Email" />
+                <ScalarProperty Name="Mobile" ColumnName="Mobile" />
+                <ScalarProperty Name="AreaCode" ColumnName="AreaCode" />
+                <ScalarProperty Name="CardTypeId" ColumnName="CardTypeId" />
+                <ScalarProperty Name="HolderID" ColumnName="HolderID" />
+                <ScalarProperty Name="UserID" ColumnName="UserID" />
+                <ScalarProperty Name="ID" ColumnName="ID" />
+              </MappingFragment>
+            </EntityTypeMapping>
+          </EntitySetMapping>
+          <EntitySetMapping Name="tblM_Country_City">
+            <EntityTypeMapping TypeName="DBModel.tblM_Country_City">
+              <MappingFragment StoreEntitySet="tblM_Country_City">
+                <ScalarProperty Name="DateCreated" ColumnName="DateCreated" />
+                <ScalarProperty Name="isActive" ColumnName="isActive" />
+                <ScalarProperty Name="RegionCode" ColumnName="RegionCode" />
+                <ScalarProperty Name="City" ColumnName="City" />
+                <ScalarProperty Name="Code" ColumnName="Code" />
+                <ScalarProperty Name="ID" ColumnName="ID" />
+              </MappingFragment>
+            </EntityTypeMapping>
+          </EntitySetMapping>
+          <EntitySetMapping Name="tblM_Country_Mobile">
+            <EntityTypeMapping TypeName="DBModel.tblM_Country_Mobile">
+              <MappingFragment StoreEntitySet="tblM_Country_Mobile">
+                <ScalarProperty Name="DateCreated" ColumnName="DateCreated" />
+                <ScalarProperty Name="isActive" ColumnName="isActive" />
+                <ScalarProperty Name="AreaCode" ColumnName="AreaCode" />
+                <ScalarProperty Name="Country" ColumnName="Country" />
+                <ScalarProperty Name="Code" ColumnName="Code" />
+                <ScalarProperty Name="ID" ColumnName="ID" />
+              </MappingFragment>
+            </EntityTypeMapping>
+          </EntitySetMapping>
+          <EntitySetMapping Name="tblM_Country_Region">
+            <EntityTypeMapping TypeName="DBModel.tblM_Country_Region">
+              <MappingFragment StoreEntitySet="tblM_Country_Region">
+                <ScalarProperty Name="DateCreated" ColumnName="DateCreated" />
+                <ScalarProperty Name="isActive" ColumnName="isActive" />
+                <ScalarProperty Name="Country" ColumnName="Country" />
+                <ScalarProperty Name="StandardCode" ColumnName="StandardCode" />
+                <ScalarProperty Name="Code" ColumnName="Code" />
+                <ScalarProperty Name="ID" ColumnName="ID" />
+              </MappingFragment>
+            </EntityTypeMapping>
+          </EntitySetMapping>
+          <EntitySetMapping Name="tblM_Crypto_Network">
+            <EntityTypeMapping TypeName="DBModel.tblM_Crypto_Network">
+              <MappingFragment StoreEntitySet="tblM_Crypto_Network">
+                <ScalarProperty Name="DateDeleted" ColumnName="DateDeleted" />
+                <ScalarProperty Name="DeletedBy" ColumnName="DeletedBy" />
+                <ScalarProperty Name="isActive" ColumnName="isActive" />
+                <ScalarProperty Name="CreatedBy" ColumnName="CreatedBy" />
+                <ScalarProperty Name="DateCreated" ColumnName="DateCreated" />
+                <ScalarProperty Name="Symbol" ColumnName="Symbol" />
+                <ScalarProperty Name="Network" ColumnName="Network" />
+                <ScalarProperty Name="ID" ColumnName="ID" />
+              </MappingFragment>
+            </EntityTypeMapping>
+          </EntitySetMapping>
+          <EntitySetMapping Name="tblM_Setting">
+            <EntityTypeMapping TypeName="DBModel.tblM_Setting">
+              <MappingFragment StoreEntitySet="tblM_Setting">
+                <ScalarProperty Name="Param3" ColumnName="Param3" />
+                <ScalarProperty Name="Param2" ColumnName="Param2" />
+                <ScalarProperty Name="Param1" ColumnName="Param1" />
+                <ScalarProperty Name="DateCreated" ColumnName="DateCreated" />
+                <ScalarProperty Name="Value" ColumnName="Value" />
+                <ScalarProperty Name="Name" ColumnName="Name" />
+                <ScalarProperty Name="ID" ColumnName="ID" />
+              </MappingFragment>
+            </EntityTypeMapping>
+          </EntitySetMapping>
+          <EntitySetMapping Name="tblM_Setting_Counter">
+            <EntityTypeMapping TypeName="DBModel.tblM_Setting_Counter">
+              <MappingFragment StoreEntitySet="tblM_Setting_Counter">
+                <ScalarProperty Name="Param3" ColumnName="Param3" />
+                <ScalarProperty Name="Param2" ColumnName="Param2" />
+                <ScalarProperty Name="Param1" ColumnName="Param1" />
+                <ScalarProperty Name="DateCreated" ColumnName="DateCreated" />
+                <ScalarProperty Name="Value" ColumnName="Value" />
+                <ScalarProperty Name="Name" ColumnName="Name" />
+                <ScalarProperty Name="ID" ColumnName="ID" />
+              </MappingFragment>
+            </EntityTypeMapping>
+          </EntitySetMapping>
+          <EntitySetMapping Name="tblM_User">
+            <EntityTypeMapping TypeName="DBModel.tblM_User">
+              <MappingFragment StoreEntitySet="tblM_User">
+                <ScalarProperty Name="Date2FA" ColumnName="Date2FA" />
+                <ScalarProperty Name="is2FA" ColumnName="is2FA" />
+                <ScalarProperty Name="ThumbnailURL" ColumnName="ThumbnailURL" />
+                <ScalarProperty Name="ImageURL" ColumnName="ImageURL" />
+                <ScalarProperty Name="RegisterVia" ColumnName="RegisterVia" />
+                <ScalarProperty Name="BannedBy" ColumnName="BannedBy" />
+                <ScalarProperty Name="DateBanned" ColumnName="DateBanned" />
+                <ScalarProperty Name="InvitedBy" ColumnName="InvitedBy" />
+                <ScalarProperty Name="DateInvited" ColumnName="DateInvited" />
+                <ScalarProperty Name="isBanned" ColumnName="isBanned" />
+                <ScalarProperty Name="DateVerified" ColumnName="DateVerified" />
+                <ScalarProperty Name="isVerified" ColumnName="isVerified" />
+                <ScalarProperty Name="DateActivated" ColumnName="DateActivated" />
+                <ScalarProperty Name="isActive" ColumnName="isActive" />
+                <ScalarProperty Name="DateJoin" ColumnName="DateJoin" />
+                <ScalarProperty Name="Profession" ColumnName="Profession" />
+                <ScalarProperty Name="Email" ColumnName="Email" />
+                <ScalarProperty Name="Phone" ColumnName="Phone" />
+                <ScalarProperty Name="CountryID" ColumnName="CountryID" />
+                <ScalarProperty Name="PIN" ColumnName="PIN" />
+                <ScalarProperty Name="RoleID" ColumnName="RoleID" />
+                <ScalarProperty Name="Password" ColumnName="Password" />
+                <ScalarProperty Name="UserName" ColumnName="UserName" />
+                <ScalarProperty Name="LastName" ColumnName="LastName" />
+                <ScalarProperty Name="FirstName" ColumnName="FirstName" />
+                <ScalarProperty Name="UserID" ColumnName="UserID" />
+                <ScalarProperty Name="CompanyID" ColumnName="CompanyID" />
+                <ScalarProperty Name="ID" ColumnName="ID" />
+              </MappingFragment>
+            </EntityTypeMapping>
+          </EntitySetMapping>
+          <EntitySetMapping Name="tblM_User_2FA">
+            <EntityTypeMapping TypeName="DBModel.tblM_User_2FA">
+              <MappingFragment StoreEntitySet="tblM_User_2FA">
+                <ScalarProperty Name="DateCreated" ColumnName="DateCreated" />
+                <ScalarProperty Name="isActive" ColumnName="isActive" />
+                <ScalarProperty Name="ManualEntryKey" ColumnName="ManualEntryKey" />
+                <ScalarProperty Name="AccountKey" ColumnName="AccountKey" />
+                <ScalarProperty Name="UserID" ColumnName="UserID" />
+                <ScalarProperty Name="ID" ColumnName="ID" />
+              </MappingFragment>
+            </EntityTypeMapping>
+          </EntitySetMapping>
+          <EntitySetMapping Name="tblM_User_Balance">
+            <EntityTypeMapping TypeName="DBModel.tblM_User_Balance">
+              <MappingFragment StoreEntitySet="tblM_User_Balance">
+                <ScalarProperty Name="DateUpdated" ColumnName="DateUpdated" />
+                <ScalarProperty Name="CreatedBy" ColumnName="CreatedBy" />
+                <ScalarProperty Name="DateCreated" ColumnName="DateCreated" />
+                <ScalarProperty Name="isActive" ColumnName="isActive" />
+                <ScalarProperty Name="Balance" ColumnName="Balance" />
+                <ScalarProperty Name="Currency" ColumnName="Currency" />
+                <ScalarProperty Name="UserID" ColumnName="UserID" />
+                <ScalarProperty Name="BalanceID" ColumnName="BalanceID" />
+                <ScalarProperty Name="ID" ColumnName="ID" />
+              </MappingFragment>
+            </EntityTypeMapping>
+          </EntitySetMapping>
+          <EntitySetMapping Name="tblM_User_Crypto_Deposit">
+            <EntityTypeMapping TypeName="DBModel.tblM_User_Crypto_Deposit">
+              <MappingFragment StoreEntitySet="tblM_User_Crypto_Deposit">
+                <ScalarProperty Name="Param5" ColumnName="Param5" />
+                <ScalarProperty Name="Param4" ColumnName="Param4" />
+                <ScalarProperty Name="Param2" ColumnName="Param2" />
+                <ScalarProperty Name="Param3" ColumnName="Param3" />
+                <ScalarProperty Name="Param1" ColumnName="Param1" />
+                <ScalarProperty Name="DateDeleted" ColumnName="DateDeleted" />
+                <ScalarProperty Name="DeletedBy" ColumnName="DeletedBy" />
+                <ScalarProperty Name="isActive" ColumnName="isActive" />
+                <ScalarProperty Name="CreatedBy" ColumnName="CreatedBy" />
+                <ScalarProperty Name="DateCreated" ColumnName="DateCreated" />
+                <ScalarProperty Name="Label" ColumnName="Label" />
+                <ScalarProperty Name="Address" ColumnName="Address" />
+                <ScalarProperty Name="NetworkID" ColumnName="NetworkID" />
+                <ScalarProperty Name="PGCryptoID" ColumnName="PGCryptoID" />
+                <ScalarProperty Name="UserID" ColumnName="UserID" />
+                <ScalarProperty Name="ID" ColumnName="ID" />
+              </MappingFragment>
+            </EntityTypeMapping>
+          </EntitySetMapping>
+          <EntitySetMapping Name="tblM_User_Fee">
+            <EntityTypeMapping TypeName="DBModel.tblM_User_Fee">
+              <MappingFragment StoreEntitySet="tblM_User_Fee">
+                <ScalarProperty Name="Param5" ColumnName="Param5" />
+                <ScalarProperty Name="Param4" ColumnName="Param4" />
+                <ScalarProperty Name="Param3" ColumnName="Param3" />
+                <ScalarProperty Name="Param2" ColumnName="Param2" />
+                <ScalarProperty Name="Param1" ColumnName="Param1" />
+                <ScalarProperty Name="DeletedBy" ColumnName="DeletedBy" />
+                <ScalarProperty Name="DateDeleted" ColumnName="DateDeleted" />
+                <ScalarProperty Name="UpdatedBy" ColumnName="UpdatedBy" />
+                <ScalarProperty Name="DateUpdated" ColumnName="DateUpdated" />
+                <ScalarProperty Name="CreatedBy" ColumnName="CreatedBy" />
+                <ScalarProperty Name="DateCreated" ColumnName="DateCreated" />
+                <ScalarProperty Name="Fee" ColumnName="Fee" />
+                <ScalarProperty Name="UserID" ColumnName="UserID" />
+                <ScalarProperty Name="CommisionID" ColumnName="CommisionID" />
+                <ScalarProperty Name="ID" ColumnName="ID" />
+              </MappingFragment>
+            </EntityTypeMapping>
+          </EntitySetMapping>
+          <EntitySetMapping Name="tblM_User_Referral">
+            <EntityTypeMapping TypeName="DBModel.tblM_User_Referral">
+              <MappingFragment StoreEntitySet="tblM_User_Referral">
+                <ScalarProperty Name="Param5" ColumnName="Param5" />
+                <ScalarProperty Name="Param4" ColumnName="Param4" />
+                <ScalarProperty Name="Param3" ColumnName="Param3" />
+                <ScalarProperty Name="Param2" ColumnName="Param2" />
+                <ScalarProperty Name="Param1" ColumnName="Param1" />
+                <ScalarProperty Name="DeletedBy" ColumnName="DeletedBy" />
+                <ScalarProperty Name="DateDeleted" ColumnName="DateDeleted" />
+                <ScalarProperty Name="UpdatedBy" ColumnName="UpdatedBy" />
+                <ScalarProperty Name="DateUpdated" ColumnName="DateUpdated" />
+                <ScalarProperty Name="CreatedBy" ColumnName="CreatedBy" />
+                <ScalarProperty Name="DateCreated" ColumnName="DateCreated" />
+                <ScalarProperty Name="Code" ColumnName="Code" />
+                <ScalarProperty Name="UserID" ColumnName="UserID" />
+                <ScalarProperty Name="ID" ColumnName="ID" />
+              </MappingFragment>
+            </EntityTypeMapping>
+          </EntitySetMapping>
+          <EntitySetMapping Name="tblM_User_Role">
+            <EntityTypeMapping TypeName="DBModel.tblM_User_Role">
+              <MappingFragment StoreEntitySet="tblM_User_Role">
+                <ScalarProperty Name="CreatedBy" ColumnName="CreatedBy" />
+                <ScalarProperty Name="DateCreated" ColumnName="DateCreated" />
+                <ScalarProperty Name="isActive" ColumnName="isActive" />
+                <ScalarProperty Name="Description" ColumnName="Description" />
+                <ScalarProperty Name="Role" ColumnName="Role" />
+                <ScalarProperty Name="RoleID" ColumnName="RoleID" />
+                <ScalarProperty Name="ID" ColumnName="ID" />
+              </MappingFragment>
+            </EntityTypeMapping>
+          </EntitySetMapping>
+          <EntitySetMapping Name="tblT_Card">
+            <EntityTypeMapping TypeName="DBModel.tblT_Card">
+              <MappingFragment StoreEntitySet="tblT_Card">
+                <ScalarProperty Name="Param5" ColumnName="Param5" />
+                <ScalarProperty Name="Param4" ColumnName="Param4" />
+                <ScalarProperty Name="Param3" ColumnName="Param3" />
+                <ScalarProperty Name="Param2" ColumnName="Param2" />
+                <ScalarProperty Name="Param1" ColumnName="Param1" />
+                <ScalarProperty Name="PGCryptoID" ColumnName="PGCryptoID" />
+                <ScalarProperty Name="Txhash" ColumnName="Txhash" />
+                <ScalarProperty Name="ReceiptURL" ColumnName="ReceiptURL" />
+                <ScalarProperty Name="Address" ColumnName="Address" />
+                <ScalarProperty Name="AddressID" ColumnName="AddressID" />
+                <ScalarProperty Name="isNeedCardholder" ColumnName="isNeedCardholder" />
+                <ScalarProperty Name="DateModified" ColumnName="DateModified" />
+                <ScalarProperty Name="isActive" ColumnName="isActive" />
+                <ScalarProperty Name="DateExpired" ColumnName="DateExpired" />
+                <ScalarProperty Name="DateCreated" ColumnName="DateCreated" />
+                <ScalarProperty Name="Status" ColumnName="Status" />
+                <ScalarProperty Name="ReceivedCurrency" ColumnName="ReceivedCurrency" />
+                <ScalarProperty Name="ReceivedAmount" ColumnName="ReceivedAmount" />
+                <ScalarProperty Name="Total" ColumnName="Total" />
+                <ScalarProperty Name="FeeInPercentage" ColumnName="FeeInPercentage" />
+                <ScalarProperty Name="Fee" ColumnName="Fee" />
+                <ScalarProperty Name="InitialDeposit" ColumnName="InitialDeposit" />
+                <ScalarProperty Name="Price" ColumnName="Price" />
+                <ScalarProperty Name="BaseAmount" ColumnName="BaseAmount" />
+                <ScalarProperty Name="BaseFee" ColumnName="BaseFee" />
+                <ScalarProperty Name="Currency" ColumnName="Currency" />
+                <ScalarProperty Name="ValidPeriod" ColumnName="ValidPeriod" />
+                <ScalarProperty Name="CVV" ColumnName="CVV" />
+                <ScalarProperty Name="CardNumber" ColumnName="CardNumber" />
+                <ScalarProperty Name="CardNo" ColumnName="CardNo" />
+                <ScalarProperty Name="HolderID" ColumnName="HolderID" />
+                <ScalarProperty Name="OrderNo" ColumnName="OrderNo" />
+                <ScalarProperty Name="CardTypeId" ColumnName="CardTypeId" />
+                <ScalarProperty Name="UserID" ColumnName="UserID" />
+                <ScalarProperty Name="ID" ColumnName="ID" />
+              </MappingFragment>
+            </EntityTypeMapping>
+          </EntitySetMapping>
+          <EntitySetMapping Name="tblT_Card_Balance">
+            <EntityTypeMapping TypeName="DBModel.tblT_Card_Balance">
+              <MappingFragment StoreEntitySet="tblT_Card_Balance">
+                <ScalarProperty Name="Currency" ColumnName="Currency" />
+                <ScalarProperty Name="UsedAmount" ColumnName="UsedAmount" />
+                <ScalarProperty Name="Amount" ColumnName="Amount" />
+                <ScalarProperty Name="CardNo" ColumnName="CardNo" />
+                <ScalarProperty Name="ID" ColumnName="ID" />
+              </MappingFragment>
+            </EntityTypeMapping>
+          </EntitySetMapping>
+          <EntitySetMapping Name="tblT_Card_Deposit">
+            <EntityTypeMapping TypeName="DBModel.tblT_Card_Deposit">
+              <MappingFragment StoreEntitySet="tblT_Card_Deposit">
+                <ScalarProperty Name="Param5" ColumnName="Param5" />
+                <ScalarProperty Name="Param4" ColumnName="Param4" />
+                <ScalarProperty Name="Param3" ColumnName="Param3" />
+                <ScalarProperty Name="Param2" ColumnName="Param2" />
+                <ScalarProperty Name="Param1" ColumnName="Param1" />
+                <ScalarProperty Name="PGCryptoID" ColumnName="PGCryptoID" />
+                <ScalarProperty Name="Txhash" ColumnName="Txhash" />
+                <ScalarProperty Name="ReceiptURL" ColumnName="ReceiptURL" />
+                <ScalarProperty Name="Address" ColumnName="Address" />
+                <ScalarProperty Name="AddressID" ColumnName="AddressID" />
+                <ScalarProperty Name="DateExpired" ColumnName="DateExpired" />
+                <ScalarProperty Name="DateReceived" ColumnName="DateReceived" />
+                <ScalarProperty Name="DateTransaction" ColumnName="DateTransaction" />
+                <ScalarProperty Name="Remark" ColumnName="Remark" />
+                <ScalarProperty Name="Status" ColumnName="Status" />
+                <ScalarProperty Name="Type" ColumnName="Type" />
+                <ScalarProperty Name="ReceivedAmount" ColumnName="ReceivedAmount" />
+                <ScalarProperty Name="Total" ColumnName="Total" />
+                <ScalarProperty Name="FeeInPercentage" ColumnName="FeeInPercentage" />
+                <ScalarProperty Name="Fee" ColumnName="Fee" />
+                <ScalarProperty Name="Amount" ColumnName="Amount" />
+                <ScalarProperty Name="BaseFee" ColumnName="BaseFee" />
+                <ScalarProperty Name="Currency" ColumnName="Currency" />
+                <ScalarProperty Name="Symbol" ColumnName="Symbol" />
+                <ScalarProperty Name="Network" ColumnName="Network" />
+                <ScalarProperty Name="CardNo" ColumnName="CardNo" />
+                <ScalarProperty Name="OrderNo" ColumnName="OrderNo" />
+                <ScalarProperty Name="UserID" ColumnName="UserID" />
+                <ScalarProperty Name="ID" ColumnName="ID" />
+              </MappingFragment>
+            </EntityTypeMapping>
+          </EntitySetMapping>
+          <EntitySetMapping Name="tblT_Card_Transaction">
+            <EntityTypeMapping TypeName="DBModel.tblT_Card_Transaction">
+              <MappingFragment StoreEntitySet="tblT_Card_Transaction">
+                <ScalarProperty Name="Param3" ColumnName="Param3" />
+                <ScalarProperty Name="Param2" ColumnName="Param2" />
+                <ScalarProperty Name="Param1" ColumnName="Param1" />
+                <ScalarProperty Name="Payload" ColumnName="Payload" />
+                <ScalarProperty Name="TransactionTime" ColumnName="TransactionTime" />
+                <ScalarProperty Name="Description" ColumnName="Description" />
+                <ScalarProperty Name="StatusStr" ColumnName="StatusStr" />
+                <ScalarProperty Name="Status" ColumnName="Status" />
+                <ScalarProperty Name="TypeStr" ColumnName="TypeStr" />
+                <ScalarProperty Name="Type" ColumnName="Type" />
+                <ScalarProperty Name="MerchantName" ColumnName="MerchantName" />
+                <ScalarProperty Name="SettleDate" ColumnName="SettleDate" />
+                <ScalarProperty Name="SettleCurrency" ColumnName="SettleCurrency" />
+                <ScalarProperty Name="SettleAmount" ColumnName="SettleAmount" />
+                <ScalarProperty Name="CrossBoardFeeCurrency" ColumnName="CrossBoardFeeCurrency" />
+                <ScalarProperty Name="CrossBoardFee" ColumnName="CrossBoardFee" />
+                <ScalarProperty Name="FeeCurrency" ColumnName="FeeCurrency" />
+                <ScalarProperty Name="Fee" ColumnName="Fee" />
+                <ScalarProperty Name="AuthorizedCurrency" ColumnName="AuthorizedCurrency" />
+                <ScalarProperty Name="AuthorizedAmount" ColumnName="AuthorizedAmount" />
+                <ScalarProperty Name="Amount" ColumnName="Amount" />
+                <ScalarProperty Name="Currency" ColumnName="Currency" />
+                <ScalarProperty Name="OriginTradeNo" ColumnName="OriginTradeNo" />
+                <ScalarProperty Name="TradeNo" ColumnName="TradeNo" />
+                <ScalarProperty Name="CardNo" ColumnName="CardNo" />
+                <ScalarProperty Name="ID" ColumnName="ID" />
+              </MappingFragment>
+            </EntityTypeMapping>
+          </EntitySetMapping>
+          <EntitySetMapping Name="tblT_Card_Transaction_Auth">
+            <EntityTypeMapping TypeName="DBModel.tblT_Card_Transaction_Auth">
+              <MappingFragment StoreEntitySet="tblT_Card_Transaction_Auth">
+                <ScalarProperty Name="Param3" ColumnName="Param3" />
+                <ScalarProperty Name="Param2" ColumnName="Param2" />
+                <ScalarProperty Name="Param1" ColumnName="Param1" />
+                <ScalarProperty Name="Payload" ColumnName="Payload" />
+                <ScalarProperty Name="isSent" ColumnName="isSent" />
+                <ScalarProperty Name="Description" ColumnName="Description" />
+                <ScalarProperty Name="TransactionTime" ColumnName="TransactionTime" />
+                <ScalarProperty Name="Type" ColumnName="Type" />
+                <ScalarProperty Name="Values" ColumnName="Values" />
+                <ScalarProperty Name="MerchantName" ColumnName="MerchantName" />
+                <ScalarProperty Name="Amount" ColumnName="Amount" />
+                <ScalarProperty Name="Currency" ColumnName="Currency" />
+                <ScalarProperty Name="OriginTradeNo" ColumnName="OriginTradeNo" />
+                <ScalarProperty Name="TradeNo" ColumnName="TradeNo" />
+                <ScalarProperty Name="CardNo" ColumnName="CardNo" />
+                <ScalarProperty Name="ID" ColumnName="ID" />
+              </MappingFragment>
+            </EntityTypeMapping>
+          </EntitySetMapping>
+          <EntitySetMapping Name="tblT_Commission">
+            <EntityTypeMapping TypeName="DBModel.tblT_Commission">
+              <MappingFragment StoreEntitySet="tblT_Commission">
+                <ScalarProperty Name="Param5" ColumnName="Param5" />
+                <ScalarProperty Name="Param4" ColumnName="Param4" />
+                <ScalarProperty Name="Param3" ColumnName="Param3" />
+                <ScalarProperty Name="Param2" ColumnName="Param2" />
+                <ScalarProperty Name="Param1" ColumnName="Param1" />
+                <ScalarProperty Name="DeletedBy" ColumnName="DeletedBy" />
+                <ScalarProperty Name="DateDeleted" ColumnName="DateDeleted" />
+                <ScalarProperty Name="UpdatedBy" ColumnName="UpdatedBy" />
+                <ScalarProperty Name="DateUpdated" ColumnName="DateUpdated" />
+                <ScalarProperty Name="CreatedBy" ColumnName="CreatedBy" />
+                <ScalarProperty Name="DateCreated" ColumnName="DateCreated" />
+                <ScalarProperty Name="Commission" ColumnName="Commission" />
+                <ScalarProperty Name="TransactionID" ColumnName="TransactionID" />
+                <ScalarProperty Name="UserID" ColumnName="UserID" />
+                <ScalarProperty Name="CommisionID" ColumnName="CommisionID" />
+                <ScalarProperty Name="ID" ColumnName="ID" />
+              </MappingFragment>
+            </EntityTypeMapping>
+          </EntitySetMapping>
+          <EntitySetMapping Name="tblT_User_ForgotPassword">
+            <EntityTypeMapping TypeName="DBModel.tblT_User_ForgotPassword">
+              <MappingFragment StoreEntitySet="tblT_User_ForgotPassword">
+                <ScalarProperty Name="Param3" ColumnName="Param3" />
+                <ScalarProperty Name="Param2" ColumnName="Param2" />
+                <ScalarProperty Name="Param1" ColumnName="Param1" />
+                <ScalarProperty Name="DateDeleted" ColumnName="DateDeleted" />
+                <ScalarProperty Name="DeletedBy" ColumnName="DeletedBy" />
+                <ScalarProperty Name="isActive" ColumnName="isActive" />
+                <ScalarProperty Name="CreatedBy" ColumnName="CreatedBy" />
+                <ScalarProperty Name="DateCreated" ColumnName="DateCreated" />
+                <ScalarProperty Name="isVerified" ColumnName="isVerified" />
+                <ScalarProperty Name="Hash" ColumnName="Hash" />
+                <ScalarProperty Name="UserID" ColumnName="UserID" />
+                <ScalarProperty Name="CompanyID" ColumnName="CompanyID" />
+                <ScalarProperty Name="ID" ColumnName="ID" />
+              </MappingFragment>
+            </EntityTypeMapping>
+          </EntitySetMapping>
+          <EntitySetMapping Name="vw_Card">
+            <EntityTypeMapping TypeName="DBModel.vw_Card">
+              <MappingFragment StoreEntitySet="vw_Card">
+                <ScalarProperty Name="DateExpired" ColumnName="DateExpired" />
+                <ScalarProperty Name="OriginalRechargeFee" ColumnName="OriginalRechargeFee" />
+                <ScalarProperty Name="OriginalRechargeFeeRate" ColumnName="OriginalRechargeFeeRate" />
+                <ScalarProperty Name="RechargeFee" ColumnName="RechargeFee" />
+                <ScalarProperty Name="RechargeFeeRate" ColumnName="RechargeFeeRate" />
+                <ScalarProperty Name="Support" ColumnName="Support" />
+                <ScalarProperty Name="CardDesc" ColumnName="CardDesc" />
+                <ScalarProperty Name="CardName" ColumnName="CardName" />
+                <ScalarProperty Name="Type" ColumnName="Type" />
+                <ScalarProperty Name="Organization" ColumnName="Organization" />
+                <ScalarProperty Name="PostCode" ColumnName="PostCode" />
+                <ScalarProperty Name="HolderAddress" ColumnName="HolderAddress" />
+                <ScalarProperty Name="TownStr" ColumnName="TownStr" />
+                <ScalarProperty Name="Town" ColumnName="Town" />
+                <ScalarProperty Name="StateStr" ColumnName="StateStr" />
+                <ScalarProperty Name="State" ColumnName="State" />
+                <ScalarProperty Name="CountryStr" ColumnName="CountryStr" />
+                <ScalarProperty Name="Country" ColumnName="Country" />
+                <ScalarProperty Name="Birthday" ColumnName="Birthday" />
+                <ScalarProperty Name="LastName" ColumnName="LastName" />
+                <ScalarProperty Name="FirstName" ColumnName="FirstName" />
+                <ScalarProperty Name="Email" ColumnName="Email" />
+                <ScalarProperty Name="Mobile" ColumnName="Mobile" />
+                <ScalarProperty Name="AreaCode" ColumnName="AreaCode" />
+                <ScalarProperty Name="HolderID" ColumnName="HolderID" />
+                <ScalarProperty Name="Param5" ColumnName="Param5" />
+                <ScalarProperty Name="Param4" ColumnName="Param4" />
+                <ScalarProperty Name="Param3" ColumnName="Param3" />
+                <ScalarProperty Name="Param2" ColumnName="Param2" />
+                <ScalarProperty Name="Param1" ColumnName="Param1" />
+                <ScalarProperty Name="Address" ColumnName="Address" />
+                <ScalarProperty Name="AddressID" ColumnName="AddressID" />
+                <ScalarProperty Name="isNeedCardholder" ColumnName="isNeedCardholder" />
+                <ScalarProperty Name="DateModified" ColumnName="DateModified" />
+                <ScalarProperty Name="isActive" ColumnName="isActive" />
+                <ScalarProperty Name="DateCreated" ColumnName="DateCreated" />
+                <ScalarProperty Name="Status" ColumnName="Status" />
+                <ScalarProperty Name="ReceivedCurrency" ColumnName="ReceivedCurrency" />
+                <ScalarProperty Name="ReceivedAmount" ColumnName="ReceivedAmount" />
+                <ScalarProperty Name="Total" ColumnName="Total" />
+                <ScalarProperty Name="FeeInPercentage" ColumnName="FeeInPercentage" />
+                <ScalarProperty Name="Fee" ColumnName="Fee" />
+                <ScalarProperty Name="InitialDeposit" ColumnName="InitialDeposit" />
+                <ScalarProperty Name="Price" ColumnName="Price" />
+                <ScalarProperty Name="Currency" ColumnName="Currency" />
+                <ScalarProperty Name="ValidPeriod" ColumnName="ValidPeriod" />
+                <ScalarProperty Name="CVV" ColumnName="CVV" />
+                <ScalarProperty Name="CardNumber" ColumnName="CardNumber" />
+                <ScalarProperty Name="CardNo" ColumnName="CardNo" />
+                <ScalarProperty Name="OrderNo" ColumnName="OrderNo" />
+                <ScalarProperty Name="CardTypeId" ColumnName="CardTypeId" />
+                <ScalarProperty Name="UserID" ColumnName="UserID" />
+                <ScalarProperty Name="ID" ColumnName="ID" />
+              </MappingFragment>
+            </EntityTypeMapping>
+          </EntitySetMapping>
+          <EntitySetMapping Name="database_firewall_rules">
+            <EntityTypeMapping TypeName="DBModel.database_firewall_rules">
+              <MappingFragment StoreEntitySet="database_firewall_rules">
+                <ScalarProperty Name="modify_date" ColumnName="modify_date" />
+                <ScalarProperty Name="create_date" ColumnName="create_date" />
+                <ScalarProperty Name="end_ip_address" ColumnName="end_ip_address" />
+                <ScalarProperty Name="start_ip_address" ColumnName="start_ip_address" />
+                <ScalarProperty Name="name" ColumnName="name" />
+                <ScalarProperty Name="id" ColumnName="id" />
+              </MappingFragment>
+            </EntityTypeMapping>
+          </EntitySetMapping>
+        </EntityContainerMapping>
+      </Mapping>
+    </edmx:Mappings>
+  </edmx:Runtime>
+  <!-- EF Designer content (DO NOT EDIT MANUALLY BELOW HERE) -->
+  <Designer xmlns="http://schemas.microsoft.com/ado/2009/11/edmx">
+    <Connection>
+      <DesignerInfoPropertySet>
+        <DesignerProperty Name="MetadataArtifactProcessing" Value="EmbedInOutputAssembly" />
+      </DesignerInfoPropertySet>
+    </Connection>
+    <Options>
+      <DesignerInfoPropertySet>
+        <DesignerProperty Name="ValidateOnBuild" Value="true" />
+        <DesignerProperty Name="EnablePluralization" Value="true" />
+        <DesignerProperty Name="IncludeForeignKeysInModel" Value="true" />
+        <DesignerProperty Name="UseLegacyProvider" Value="false" />
+        <DesignerProperty Name="CodeGenerationStrategy" Value="None" />
+      </DesignerInfoPropertySet>
+    </Options>
+    <!-- Diagram content (shape and connector positions) -->
+    <Diagrams></Diagrams>
+  </Designer>
+</edmx:Edmx>

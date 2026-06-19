@@ -1,0 +1,469 @@
+﻿<Project ToolsVersion="15.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+    <ProductVersion>
+    </ProductVersion>
+    <SchemaVersion>2.0</SchemaVersion>
+    <ProjectGuid>{16ED496B-A12F-479E-A244-DF11CD0ABD5D}</ProjectGuid>
+    <ProjectTypeGuids>{349c5851-65df-11da-9384-00065b846f21};{fae04ec0-301f-11d3-bf4b-00c04f79efbc}</ProjectTypeGuids>
+    <OutputType>Library</OutputType>
+    <AppDesignerFolder>Properties</AppDesignerFolder>
+    <RootNamespace>QryptoCard.INT</RootNamespace>
+    <AssemblyName>QryptoCard.INT</AssemblyName>
+    <TargetFrameworkVersion>v4.6.2</TargetFrameworkVersion>
+    <WcfConfigValidationEnabled>True</WcfConfigValidationEnabled>
+    <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
+    <UseIISExpress>true</UseIISExpress>
+    <Use64BitIISExpress />
+    <IISExpressSSLPort />
+    <IISExpressAnonymousAuthentication />
+    <IISExpressWindowsAuthentication />
+    <IISExpressUseClassicPipelineMode />
+    <UseGlobalApplicationHostFile />
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>full</DebugType>
+    <Optimize>false</Optimize>
+    <OutputPath>bin\</OutputPath>
+    <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+    <DebugType>pdbonly</DebugType>
+    <Optimize>true</Optimize>
+    <OutputPath>bin\</OutputPath>
+    <DefineConstants>TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="BouncyCastle.Crypto, Version=1.8.1.0, Culture=neutral, PublicKeyToken=0e99375e54769942">
+      <HintPath>..\packages\BouncyCastle.Crypto.dll.1.8.1\lib\BouncyCastle.Crypto.dll</HintPath>
+    </Reference>
+    <Reference Include="BouncyCastle.Cryptography, Version=2.0.0.0, Culture=neutral, PublicKeyToken=072edcf4a5328938, processorArchitecture=MSIL">
+      <HintPath>..\packages\BouncyCastle.Cryptography.2.5.0\lib\net461\BouncyCastle.Cryptography.dll</HintPath>
+    </Reference>
+    <Reference Include="EntityFramework, Version=6.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089, processorArchitecture=MSIL">
+      <HintPath>..\packages\EntityFramework.6.2.0\lib\net45\EntityFramework.dll</HintPath>
+    </Reference>
+    <Reference Include="EntityFramework.SqlServer, Version=6.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089, processorArchitecture=MSIL">
+      <HintPath>..\packages\EntityFramework.6.2.0\lib\net45\EntityFramework.SqlServer.dll</HintPath>
+    </Reference>
+    <Reference Include="MailKit, Version=4.10.0.0, Culture=neutral, PublicKeyToken=4e064fe7c44a8f1b, processorArchitecture=MSIL">
+      <HintPath>..\packages\MailKit.4.10.0\lib\net462\MailKit.dll</HintPath>
+    </Reference>
+    <Reference Include="Microsoft.CSharp" />
+    <Reference Include="MimeKit, Version=4.10.0.0, Culture=neutral, PublicKeyToken=bede1c8a46c66814, processorArchitecture=MSIL">
+      <HintPath>..\packages\MimeKit.4.10.0\lib\net462\MimeKit.dll</HintPath>
+    </Reference>
+    <Reference Include="Newtonsoft.Json, Version=13.0.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed, processorArchitecture=MSIL">
+      <HintPath>..\packages\Newtonsoft.Json.13.0.3\lib\net45\Newtonsoft.Json.dll</HintPath>
+    </Reference>
+    <Reference Include="System.Buffers, Version=4.0.4.0, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51, processorArchitecture=MSIL">
+      <HintPath>..\packages\System.Buffers.4.6.0\lib\net462\System.Buffers.dll</HintPath>
+    </Reference>
+    <Reference Include="System.ComponentModel.DataAnnotations" />
+    <Reference Include="System.Data.DataSetExtensions" />
+    <Reference Include="System.Formats.Asn1, Version=8.0.0.1, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51, processorArchitecture=MSIL">
+      <HintPath>..\packages\System.Formats.Asn1.8.0.1\lib\net462\System.Formats.Asn1.dll</HintPath>
+    </Reference>
+    <Reference Include="System.Memory, Version=4.0.2.0, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51, processorArchitecture=MSIL">
+      <HintPath>..\packages\System.Memory.4.6.0\lib\net462\System.Memory.dll</HintPath>
+    </Reference>
+    <Reference Include="System.Net.Http, Version=4.1.1.3, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
+      <HintPath>..\packages\System.Net.Http.4.3.4\lib\net46\System.Net.Http.dll</HintPath>
+    </Reference>
+    <Reference Include="System.Numerics" />
+    <Reference Include="System.Numerics.Vectors, Version=4.1.5.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
+      <HintPath>..\packages\System.Numerics.Vectors.4.6.0\lib\net462\System.Numerics.Vectors.dll</HintPath>
+    </Reference>
+    <Reference Include="System.Runtime.CompilerServices.Unsafe, Version=6.0.1.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
+      <HintPath>..\packages\System.Runtime.CompilerServices.Unsafe.6.1.0\lib\net462\System.Runtime.CompilerServices.Unsafe.dll</HintPath>
+    </Reference>
+    <Reference Include="System.Security" />
+    <Reference Include="System.Security.Cryptography.Algorithms, Version=4.1.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
+      <HintPath>..\packages\System.Security.Cryptography.Algorithms.4.3.0\lib\net461\System.Security.Cryptography.Algorithms.dll</HintPath>
+    </Reference>
+    <Reference Include="System.Security.Cryptography.Encoding, Version=4.0.1.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
+      <HintPath>..\packages\System.Security.Cryptography.Encoding.4.3.0\lib\net46\System.Security.Cryptography.Encoding.dll</HintPath>
+    </Reference>
+    <Reference Include="System.Security.Cryptography.Primitives, Version=4.0.1.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
+      <HintPath>..\packages\System.Security.Cryptography.Primitives.4.3.0\lib\net46\System.Security.Cryptography.Primitives.dll</HintPath>
+    </Reference>
+    <Reference Include="System.Security.Cryptography.X509Certificates, Version=4.1.1.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
+      <HintPath>..\packages\System.Security.Cryptography.X509Certificates.4.3.0\lib\net461\System.Security.Cryptography.X509Certificates.dll</HintPath>
+    </Reference>
+    <Reference Include="System.Threading.Tasks.Extensions, Version=4.2.1.0, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51, processorArchitecture=MSIL">
+      <HintPath>..\packages\System.Threading.Tasks.Extensions.4.6.0\lib\net462\System.Threading.Tasks.Extensions.dll</HintPath>
+    </Reference>
+    <Reference Include="System.ValueTuple, Version=4.0.3.0, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51, processorArchitecture=MSIL">
+      <HintPath>..\packages\System.ValueTuple.4.5.0\lib\net461\System.ValueTuple.dll</HintPath>
+    </Reference>
+    <Reference Include="System.Web.DynamicData" />
+    <Reference Include="System.Web.Entity" />
+    <Reference Include="System.Web.ApplicationServices" />
+    <Reference Include="System" />
+    <Reference Include="System.Configuration" />
+    <Reference Include="System.Core" />
+    <Reference Include="System.Data" />
+    <Reference Include="System.Drawing" />
+    <Reference Include="System.EnterpriseServices" />
+    <Reference Include="System.Runtime.Serialization" />
+    <Reference Include="System.ServiceModel" />
+    <Reference Include="System.ServiceModel.Web" />
+    <Reference Include="System.Web" />
+    <Reference Include="System.Web.Extensions" />
+    <Reference Include="System.Web.Services" />
+    <Reference Include="System.Xml" />
+    <Reference Include="System.Xml.Linq" />
+  </ItemGroup>
+  <ItemGroup>
+    <Content Include="Content\Email\Admin\ForgotPassword.html" />
+    <Content Include="Content\Email\Admin\InvitedAccount.html" />
+    <Content Include="Content\Email\ForgotPassword.html" />
+    <Content Include="Content\Email\InvitedAccount.html" />
+    <Content Include="Content\Email\Invoice.html" />
+    <Content Include="Content\Email\Invoice2.html" />
+    <Content Include="Content\Email\Invoice3.html" />
+    <Content Include="Content\Email\Invoice4.html" />
+    <Content Include="Content\Email\Invoice5.html" />
+    <Content Include="Content\Email\InvoiceBackup.html" />
+    <Content Include="Content\Email\SecurityCode.html" />
+    <Content Include="Content\Email\VerifyAccount.html" />
+    <Content Include="Content\Email\VerifyAccountCode.html" />
+    <Content Include="DB.Context.tt">
+      <Generator>TextTemplatingFileGenerator</Generator>
+      <LastGenOutput>DB.Context.cs</LastGenOutput>
+      <DependentUpon>DB.edmx</DependentUpon>
+    </Content>
+    <Content Include="DB.tt">
+      <Generator>TextTemplatingFileGenerator</Generator>
+      <DependentUpon>DB.edmx</DependentUpon>
+      <LastGenOutput>DB.cs</LastGenOutput>
+    </Content>
+    <Content Include="Script\Service\Admin\v1\AdminV1Service.svc" />
+    <Content Include="Script\Service\Admin\v1\AutomationV1Service.svc" />
+    <Content Include="Script\Service\Admin\v1\CardV1Service.svc" />
+    <Content Include="Script\Service\Admin\v1\DashboardV1Service.svc" />
+    <Content Include="Script\Service\Admin\v1\SettingV1Service.svc" />
+    <Content Include="Script\Service\Admin\v1\UserV1Service.svc" />
+    <Content Include="Script\Service\API\v1\CardV1Service.svc" />
+    <Content Include="Script\Service\App\v1\CardV1Service.svc" />
+    <Content Include="Script\Service\App\v1\UserV1Service.svc" />
+    <Content Include="Script\Service\ManualService.svc" />
+    <Content Include="Script\Service\SecurityService.svc" />
+    <Content Include="Service1.svc" />
+    <Content Include="Web.config" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="database_firewall_rules.cs">
+      <DependentUpon>DB.tt</DependentUpon>
+    </Compile>
+    <Compile Include="DB.Context.cs">
+      <AutoGen>True</AutoGen>
+      <DesignTime>True</DesignTime>
+      <DependentUpon>DB.Context.tt</DependentUpon>
+    </Compile>
+    <Compile Include="DB.cs">
+      <AutoGen>True</AutoGen>
+      <DesignTime>True</DesignTime>
+      <DependentUpon>DB.tt</DependentUpon>
+    </Compile>
+    <Compile Include="DB.Designer.cs">
+      <AutoGen>True</AutoGen>
+      <DesignTime>True</DesignTime>
+      <DependentUpon>DB.edmx</DependentUpon>
+    </Compile>
+    <Compile Include="Model\Service\AdminFilterModel.cs" />
+    <Compile Include="Model\Service\CardBalanceModel.cs" />
+    <Compile Include="Model\Service\CardFilterModel.cs" />
+    <Compile Include="Model\Service\DashboardAdminModel.cs" />
+    <Compile Include="Model\Service\DashboardModel.cs" />
+    <Compile Include="Model\Service\DepositFilterModel.cs" />
+    <Compile Include="Model\Service\OutputModel.cs" />
+    <Compile Include="Model\Service\OutputPaginationModel.cs" />
+    <Compile Include="Model\Service\PaginationModel.cs" />
+    <Compile Include="Model\Service\PasswordChangeModel.cs" />
+    <Compile Include="Model\Service\RoleModel.cs" />
+    <Compile Include="Model\Service\StatusModel.cs" />
+    <Compile Include="Model\WasabiCard\WCAccountInfoResponseModel.cs" />
+    <Compile Include="Model\WasabiCard\WCCancelCardRequestModel.cs" />
+    <Compile Include="Model\WasabiCard\WCCancelCardResponseModel.cs" />
+    <Compile Include="Model\WasabiCard\WCCardInfoSensitiveResponseModel.cs" />
+    <Compile Include="Model\WasabiCard\WCCardInfoSensitiveRequestModel.cs" />
+    <Compile Include="Model\WasabiCard\WCCardInfoRequestModel.cs" />
+    <Compile Include="Model\WasabiCard\WCCardInfoResponseModel.cs" />
+    <Compile Include="Model\WasabiCard\WCCardTransactionRequestModel.cs" />
+    <Compile Include="Model\WasabiCard\WCCardTransactionResponseModel.cs" />
+    <Compile Include="Model\WasabiCard\WCCardTypeResponseModel.cs" />
+    <Compile Include="Model\WasabiCard\WCCityListRequestModel.cs" />
+    <Compile Include="Model\WasabiCard\WCCreateHolderRequestModel.cs" />
+    <Compile Include="Model\WasabiCard\WCCreateHolderResponseModel.cs" />
+    <Compile Include="Model\WasabiCard\WCDepositCardRequestModel.cs" />
+    <Compile Include="Model\WasabiCard\WCDepositCardResponseModel.cs" />
+    <Compile Include="Model\WasabiCard\WCGetHolderRequestModel.cs" />
+    <Compile Include="Model\WasabiCard\WCGetHolderResponseModel.cs" />
+    <Compile Include="Model\WasabiCard\WCOpenCardRequestModel.cs" />
+    <Compile Include="Model\WasabiCard\WCOpenCardResponseModel.cs" />
+    <Compile Include="Model\WasabiCard\WCOpenCardWithHolderRequestModel.cs" />
+    <Compile Include="Model\WasabiCard\WCOpenCardWithHolderResponseModel.cs" />
+    <Compile Include="Script\Gateway\WasabiCard\WasabiCardService.cs" />
+    <Compile Include="Script\Service\Admin\v1\AdminV1Service.svc.cs">
+      <DependentUpon>AdminV1Service.svc</DependentUpon>
+    </Compile>
+    <Compile Include="Script\Service\Admin\v1\AutomationV1Service.svc.cs">
+      <DependentUpon>AutomationV1Service.svc</DependentUpon>
+    </Compile>
+    <Compile Include="Script\Service\Admin\v1\CardV1Service.svc.cs">
+      <DependentUpon>CardV1Service.svc</DependentUpon>
+    </Compile>
+    <Compile Include="Script\Service\Admin\v1\DashboardV1Service.svc.cs">
+      <DependentUpon>DashboardV1Service.svc</DependentUpon>
+    </Compile>
+    <Compile Include="Script\Service\Admin\v1\IAdminV1Service.cs" />
+    <Compile Include="Script\Service\Admin\v1\IAutomationV1Service.cs" />
+    <Compile Include="Script\Service\Admin\v1\ICardV1Service.cs" />
+    <Compile Include="Script\Service\Admin\v1\IDashboardV1Service.cs" />
+    <Compile Include="Script\Service\Admin\v1\ISettingV1Service.cs" />
+    <Compile Include="Script\Service\Admin\v1\IUserV1Service.cs" />
+    <Compile Include="Script\Service\Admin\v1\SettingV1Service.svc.cs">
+      <DependentUpon>SettingV1Service.svc</DependentUpon>
+    </Compile>
+    <Compile Include="Script\Service\Admin\v1\UserV1Service.svc.cs">
+      <DependentUpon>UserV1Service.svc</DependentUpon>
+    </Compile>
+    <Compile Include="Script\Service\API\v1\CardV1Service.svc.cs">
+      <DependentUpon>CardV1Service.svc</DependentUpon>
+    </Compile>
+    <Compile Include="Script\Service\API\v1\ICardV1Service.cs" />
+    <Compile Include="Script\Service\App\v1\CardV1Service.svc.cs">
+      <DependentUpon>CardV1Service.svc</DependentUpon>
+    </Compile>
+    <Compile Include="Script\Service\App\v1\ICardV1Service.cs" />
+    <Compile Include="Script\Service\App\v1\IUserV1Service.cs" />
+    <Compile Include="Script\Service\App\v1\UserV1Service.svc.cs">
+      <DependentUpon>UserV1Service.svc</DependentUpon>
+    </Compile>
+    <Compile Include="Script\Service\Common.cs" />
+    <Compile Include="Model\KeyModel.cs" />
+    <Compile Include="Model\PGCrypto\AddressStaticModel.cs" />
+    <Compile Include="Model\PGCrypto\CoinModel.cs" />
+    <Compile Include="Model\PGCrypto\CustomerModel.cs" />
+    <Compile Include="Model\PGCrypto\InvoiceModel.cs" />
+    <Compile Include="Model\PGCrypto\NetworkModel.cs" />
+    <Compile Include="Model\PGCrypto\PGOutputModel.cs" />
+    <Compile Include="Model\PGCrypto\ProductModel.cs" />
+    <Compile Include="Model\PGCrypto\TokenModel.cs" />
+    <Compile Include="Model\PGCrypto\TransactionModel.cs" />
+    <Compile Include="Script\Gateway\PGCrypto\PGCryptoService.cs" />
+    <Compile Include="Script\Service\IManualService.cs" />
+    <Compile Include="Script\Service\ISecurityService.cs" />
+    <Compile Include="Script\Service\ManualService.svc.cs">
+      <DependentUpon>ManualService.svc</DependentUpon>
+    </Compile>
+    <Compile Include="Script\Service\NotificationMailkitService.cs" />
+    <Compile Include="Script\Service\NotificationService.cs" />
+    <Compile Include="Script\Service\NotificationSMTPService.cs" />
+    <Compile Include="Script\Service\SecurityService.svc.cs">
+      <DependentUpon>SecurityService.svc</DependentUpon>
+    </Compile>
+    <Compile Include="Service1.svc.cs">
+      <DependentUpon>Service1.svc</DependentUpon>
+    </Compile>
+    <Compile Include="IService1.cs" />
+    <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="tblH_Admin_Login.cs">
+      <DependentUpon>DB.tt</DependentUpon>
+    </Compile>
+    <Compile Include="tblH_Admin_OTP.cs">
+      <DependentUpon>DB.tt</DependentUpon>
+    </Compile>
+    <Compile Include="tblH_API_Log.cs">
+      <DependentUpon>DB.tt</DependentUpon>
+    </Compile>
+    <Compile Include="tblH_Partner_Webhook.cs">
+      <DependentUpon>DB.tt</DependentUpon>
+    </Compile>
+    <Compile Include="tblH_Partner_Webhook_ID.cs">
+      <DependentUpon>DB.tt</DependentUpon>
+    </Compile>
+    <Compile Include="tblH_User_Balance.cs">
+      <DependentUpon>DB.tt</DependentUpon>
+    </Compile>
+    <Compile Include="tblH_User_Login.cs">
+      <DependentUpon>DB.tt</DependentUpon>
+    </Compile>
+    <Compile Include="tblH_User_OTP.cs">
+      <DependentUpon>DB.tt</DependentUpon>
+    </Compile>
+    <Compile Include="tblH_User_Register.cs">
+      <DependentUpon>DB.tt</DependentUpon>
+    </Compile>
+    <Compile Include="tblM_Address_Generator.cs">
+      <DependentUpon>DB.tt</DependentUpon>
+    </Compile>
+    <Compile Include="tblM_Admin.cs">
+      <DependentUpon>DB.tt</DependentUpon>
+    </Compile>
+    <Compile Include="tblM_Admin_Role.cs">
+      <DependentUpon>DB.tt</DependentUpon>
+    </Compile>
+    <Compile Include="tblM_Cardholder.cs">
+      <DependentUpon>DB.tt</DependentUpon>
+    </Compile>
+    <Compile Include="tblM_Card_Type.cs">
+      <DependentUpon>DB.tt</DependentUpon>
+    </Compile>
+    <Compile Include="tblM_Card_Type_Recharge.cs">
+      <DependentUpon>DB.tt</DependentUpon>
+    </Compile>
+    <Compile Include="tblM_Country_City.cs">
+      <DependentUpon>DB.tt</DependentUpon>
+    </Compile>
+    <Compile Include="tblM_Country_Mobile.cs">
+      <DependentUpon>DB.tt</DependentUpon>
+    </Compile>
+    <Compile Include="tblM_Country_Region.cs">
+      <DependentUpon>DB.tt</DependentUpon>
+    </Compile>
+    <Compile Include="tblM_Crypto_Network.cs">
+      <DependentUpon>DB.tt</DependentUpon>
+    </Compile>
+    <Compile Include="tblM_Setting.cs">
+      <DependentUpon>DB.tt</DependentUpon>
+    </Compile>
+    <Compile Include="tblM_Setting_Counter.cs">
+      <DependentUpon>DB.tt</DependentUpon>
+    </Compile>
+    <Compile Include="tblM_User.cs">
+      <DependentUpon>DB.tt</DependentUpon>
+    </Compile>
+    <Compile Include="tblM_User_2FA.cs">
+      <DependentUpon>DB.tt</DependentUpon>
+    </Compile>
+    <Compile Include="tblM_User_API.cs">
+      <DependentUpon>DB.tt</DependentUpon>
+    </Compile>
+    <Compile Include="tblM_User_Balance.cs">
+      <DependentUpon>DB.tt</DependentUpon>
+    </Compile>
+    <Compile Include="tblM_User_Commission.cs">
+      <DependentUpon>DB.tt</DependentUpon>
+    </Compile>
+    <Compile Include="tblM_User_Crypto_Deposit.cs">
+      <DependentUpon>DB.tt</DependentUpon>
+    </Compile>
+    <Compile Include="tblM_User_Fee.cs">
+      <DependentUpon>DB.tt</DependentUpon>
+    </Compile>
+    <Compile Include="tblM_User_Referral.cs">
+      <DependentUpon>DB.tt</DependentUpon>
+    </Compile>
+    <Compile Include="tblM_User_Role.cs">
+      <DependentUpon>DB.tt</DependentUpon>
+    </Compile>
+    <Compile Include="tblT_Admin_ForgotPassword.cs">
+      <DependentUpon>DB.tt</DependentUpon>
+    </Compile>
+    <Compile Include="tblT_Card.cs">
+      <DependentUpon>DB.tt</DependentUpon>
+    </Compile>
+    <Compile Include="tblT_Card_Balance.cs">
+      <DependentUpon>DB.tt</DependentUpon>
+    </Compile>
+    <Compile Include="tblT_Card_Deposit.cs">
+      <DependentUpon>DB.tt</DependentUpon>
+    </Compile>
+    <Compile Include="tblT_Card_Transaction.cs">
+      <DependentUpon>DB.tt</DependentUpon>
+    </Compile>
+    <Compile Include="tblT_Card_Transaction_Auth.cs">
+      <DependentUpon>DB.tt</DependentUpon>
+    </Compile>
+    <Compile Include="tblT_Commission.cs">
+      <DependentUpon>DB.tt</DependentUpon>
+    </Compile>
+    <Compile Include="tblT_User_ForgotPassword.cs">
+      <DependentUpon>DB.tt</DependentUpon>
+    </Compile>
+    <Compile Include="vw_Admin.cs">
+      <DependentUpon>DB.tt</DependentUpon>
+    </Compile>
+    <Compile Include="vw_Card.cs">
+      <DependentUpon>DB.tt</DependentUpon>
+    </Compile>
+    <Compile Include="vw_Card_Deposit.cs">
+      <DependentUpon>DB.tt</DependentUpon>
+    </Compile>
+    <Compile Include="vw_User_Commission.cs">
+      <DependentUpon>DB.tt</DependentUpon>
+    </Compile>
+    <Compile Include="vw_User_Fee.cs">
+      <DependentUpon>DB.tt</DependentUpon>
+    </Compile>
+  </ItemGroup>
+  <ItemGroup>
+    <Folder Include="App_Data\" />
+  </ItemGroup>
+  <ItemGroup>
+    <EntityDeploy Include="DB.edmx">
+      <Generator>EntityModelCodeGenerator</Generator>
+      <LastGenOutput>DB.Designer.cs</LastGenOutput>
+    </EntityDeploy>
+    <Content Include="DB.edmx.diagram">
+      <DependentUpon>DB.edmx</DependentUpon>
+    </Content>
+    <None Include="packages.config" />
+    <None Include="Web.Debug.config">
+      <DependentUpon>Web.config</DependentUpon>
+    </None>
+    <None Include="Web.Release.config">
+      <DependentUpon>Web.config</DependentUpon>
+    </None>
+  </ItemGroup>
+  <ItemGroup>
+    <Service Include="{508349B6-6B84-4DF5-91F0-309BEEBAD82D}" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\QryptoCard.Sec\QryptoCard.Sec.csproj">
+      <Project>{a7615b89-8f06-4fb4-8298-6cd0ea76b7ad}</Project>
+      <Name>QryptoCard.Sec</Name>
+    </ProjectReference>
+  </ItemGroup>
+  <PropertyGroup>
+    <VisualStudioVersion Condition="'$(VisualStudioVersion)' == ''">10.0</VisualStudioVersion>
+    <VSToolsPath Condition="'$(VSToolsPath)' == ''">$(MSBuildExtensionsPath32)\Microsoft\VisualStudio\v$(VisualStudioVersion)</VSToolsPath>
+  </PropertyGroup>
+  <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
+  <Import Project="$(VSToolsPath)\WebApplications\Microsoft.WebApplication.targets" Condition="'$(VSToolsPath)' != ''" />
+  <Import Project="$(MSBuildExtensionsPath32)\Microsoft\VisualStudio\v10.0\WebApplications\Microsoft.WebApplication.targets" Condition="false" />
+  <ProjectExtensions>
+    <VisualStudio>
+      <FlavorProperties GUID="{349c5851-65df-11da-9384-00065b846f21}">
+        <WebProjectProperties>
+          <UseIIS>True</UseIIS>
+          <AutoAssignPort>True</AutoAssignPort>
+          <DevelopmentServerPort>50434</DevelopmentServerPort>
+          <DevelopmentServerVPath>/</DevelopmentServerVPath>
+          <IISUrl>http://localhost:50434/</IISUrl>
+          <NTLMAuthentication>False</NTLMAuthentication>
+          <UseCustomServer>False</UseCustomServer>
+          <CustomServerUrl>
+          </CustomServerUrl>
+          <SaveServerSettingsInUserFile>False</SaveServerSettingsInUserFile>
+        </WebProjectProperties>
+      </FlavorProperties>
+    </VisualStudio>
+  </ProjectExtensions>
+  <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
+       Other similar extension points exist, see Microsoft.Common.targets.
+  <Target Name="BeforeBuild">
+  </Target>
+  <Target Name="AfterBuild">
+  </Target>
+  -->
+</Project>

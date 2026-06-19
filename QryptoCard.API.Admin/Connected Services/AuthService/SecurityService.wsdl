@@ -1,0 +1,247 @@
+<?xml version="1.0" encoding="utf-8"?>
+<wsdl:definitions xmlns:wsam="http://www.w3.org/2007/05/addressing/metadata" xmlns:wsx="http://schemas.xmlsoap.org/ws/2004/09/mex" xmlns:wsap="http://schemas.xmlsoap.org/ws/2004/08/addressing/policy" xmlns:msc="http://schemas.microsoft.com/ws/2005/12/wsdl/contract" xmlns:wsp="http://schemas.xmlsoap.org/ws/2004/09/policy" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:soap="http://schemas.xmlsoap.org/wsdl/soap/" xmlns:wsu="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-utility-1.0.xsd" xmlns:soap12="http://schemas.xmlsoap.org/wsdl/soap12/" xmlns:soapenc="http://schemas.xmlsoap.org/soap/encoding/" xmlns:tns="http://tempuri.org/" xmlns:wsa10="http://www.w3.org/2005/08/addressing" xmlns:wsaw="http://www.w3.org/2006/05/addressing/wsdl" xmlns:wsa="http://schemas.xmlsoap.org/ws/2004/08/addressing" name="SecurityService" targetNamespace="http://tempuri.org/" xmlns:wsdl="http://schemas.xmlsoap.org/wsdl/">
+  <wsdl:types>
+    <xsd:schema targetNamespace="http://tempuri.org/Imports">
+      <xsd:import schemaLocation="http://localhost:50434/Script/Service/SecurityService.svc?xsd=xsd0" namespace="http://tempuri.org/" />
+      <xsd:import schemaLocation="http://localhost:50434/Script/Service/SecurityService.svc?xsd=xsd1" namespace="http://schemas.microsoft.com/2003/10/Serialization/" />
+    </xsd:schema>
+  </wsdl:types>
+  <wsdl:message name="ISecurityService_validateUser_InputMessage">
+    <wsdl:part name="parameters" element="tns:validateUser" />
+  </wsdl:message>
+  <wsdl:message name="ISecurityService_validateUser_OutputMessage">
+    <wsdl:part name="parameters" element="tns:validateUserResponse" />
+  </wsdl:message>
+  <wsdl:message name="ISecurityService_validateAdmin_InputMessage">
+    <wsdl:part name="parameters" element="tns:validateAdmin" />
+  </wsdl:message>
+  <wsdl:message name="ISecurityService_validateAdmin_OutputMessage">
+    <wsdl:part name="parameters" element="tns:validateAdminResponse" />
+  </wsdl:message>
+  <wsdl:message name="ISecurityService_base64Encode_InputMessage">
+    <wsdl:part name="parameters" element="tns:base64Encode" />
+  </wsdl:message>
+  <wsdl:message name="ISecurityService_base64Encode_OutputMessage">
+    <wsdl:part name="parameters" element="tns:base64EncodeResponse" />
+  </wsdl:message>
+  <wsdl:message name="ISecurityService_base64Decode_InputMessage">
+    <wsdl:part name="parameters" element="tns:base64Decode" />
+  </wsdl:message>
+  <wsdl:message name="ISecurityService_base64Decode_OutputMessage">
+    <wsdl:part name="parameters" element="tns:base64DecodeResponse" />
+  </wsdl:message>
+  <wsdl:message name="ISecurityService_encryptapp_InputMessage">
+    <wsdl:part name="parameters" element="tns:encryptapp" />
+  </wsdl:message>
+  <wsdl:message name="ISecurityService_encryptapp_OutputMessage">
+    <wsdl:part name="parameters" element="tns:encryptappResponse" />
+  </wsdl:message>
+  <wsdl:message name="ISecurityService_decryptapp_InputMessage">
+    <wsdl:part name="parameters" element="tns:decryptapp" />
+  </wsdl:message>
+  <wsdl:message name="ISecurityService_decryptapp_OutputMessage">
+    <wsdl:part name="parameters" element="tns:decryptappResponse" />
+  </wsdl:message>
+  <wsdl:message name="ISecurityService_encryptdb_InputMessage">
+    <wsdl:part name="parameters" element="tns:encryptdb" />
+  </wsdl:message>
+  <wsdl:message name="ISecurityService_encryptdb_OutputMessage">
+    <wsdl:part name="parameters" element="tns:encryptdbResponse" />
+  </wsdl:message>
+  <wsdl:message name="ISecurityService_decryptdb_InputMessage">
+    <wsdl:part name="parameters" element="tns:decryptdb" />
+  </wsdl:message>
+  <wsdl:message name="ISecurityService_decryptdb_OutputMessage">
+    <wsdl:part name="parameters" element="tns:decryptdbResponse" />
+  </wsdl:message>
+  <wsdl:message name="ISecurityService_dbtoapp_InputMessage">
+    <wsdl:part name="parameters" element="tns:dbtoapp" />
+  </wsdl:message>
+  <wsdl:message name="ISecurityService_dbtoapp_OutputMessage">
+    <wsdl:part name="parameters" element="tns:dbtoappResponse" />
+  </wsdl:message>
+  <wsdl:message name="ISecurityService_apptodb_InputMessage">
+    <wsdl:part name="parameters" element="tns:apptodb" />
+  </wsdl:message>
+  <wsdl:message name="ISecurityService_apptodb_OutputMessage">
+    <wsdl:part name="parameters" element="tns:apptodbResponse" />
+  </wsdl:message>
+  <wsdl:message name="ISecurityService_signRSA_InputMessage">
+    <wsdl:part name="parameters" element="tns:signRSA" />
+  </wsdl:message>
+  <wsdl:message name="ISecurityService_signRSA_OutputMessage">
+    <wsdl:part name="parameters" element="tns:signRSAResponse" />
+  </wsdl:message>
+  <wsdl:message name="ISecurityService_decryptRSA_InputMessage">
+    <wsdl:part name="parameters" element="tns:decryptRSA" />
+  </wsdl:message>
+  <wsdl:message name="ISecurityService_decryptRSA_OutputMessage">
+    <wsdl:part name="parameters" element="tns:decryptRSAResponse" />
+  </wsdl:message>
+  <wsdl:portType name="ISecurityService">
+    <wsdl:operation name="validateUser">
+      <wsdl:input wsaw:Action="http://tempuri.org/ISecurityService/validateUser" message="tns:ISecurityService_validateUser_InputMessage" />
+      <wsdl:output wsaw:Action="http://tempuri.org/ISecurityService/validateUserResponse" message="tns:ISecurityService_validateUser_OutputMessage" />
+    </wsdl:operation>
+    <wsdl:operation name="validateAdmin">
+      <wsdl:input wsaw:Action="http://tempuri.org/ISecurityService/validateAdmin" message="tns:ISecurityService_validateAdmin_InputMessage" />
+      <wsdl:output wsaw:Action="http://tempuri.org/ISecurityService/validateAdminResponse" message="tns:ISecurityService_validateAdmin_OutputMessage" />
+    </wsdl:operation>
+    <wsdl:operation name="base64Encode">
+      <wsdl:input wsaw:Action="http://tempuri.org/ISecurityService/base64Encode" message="tns:ISecurityService_base64Encode_InputMessage" />
+      <wsdl:output wsaw:Action="http://tempuri.org/ISecurityService/base64EncodeResponse" message="tns:ISecurityService_base64Encode_OutputMessage" />
+    </wsdl:operation>
+    <wsdl:operation name="base64Decode">
+      <wsdl:input wsaw:Action="http://tempuri.org/ISecurityService/base64Decode" message="tns:ISecurityService_base64Decode_InputMessage" />
+      <wsdl:output wsaw:Action="http://tempuri.org/ISecurityService/base64DecodeResponse" message="tns:ISecurityService_base64Decode_OutputMessage" />
+    </wsdl:operation>
+    <wsdl:operation name="encryptapp">
+      <wsdl:input wsaw:Action="http://tempuri.org/ISecurityService/encryptapp" message="tns:ISecurityService_encryptapp_InputMessage" />
+      <wsdl:output wsaw:Action="http://tempuri.org/ISecurityService/encryptappResponse" message="tns:ISecurityService_encryptapp_OutputMessage" />
+    </wsdl:operation>
+    <wsdl:operation name="decryptapp">
+      <wsdl:input wsaw:Action="http://tempuri.org/ISecurityService/decryptapp" message="tns:ISecurityService_decryptapp_InputMessage" />
+      <wsdl:output wsaw:Action="http://tempuri.org/ISecurityService/decryptappResponse" message="tns:ISecurityService_decryptapp_OutputMessage" />
+    </wsdl:operation>
+    <wsdl:operation name="encryptdb">
+      <wsdl:input wsaw:Action="http://tempuri.org/ISecurityService/encryptdb" message="tns:ISecurityService_encryptdb_InputMessage" />
+      <wsdl:output wsaw:Action="http://tempuri.org/ISecurityService/encryptdbResponse" message="tns:ISecurityService_encryptdb_OutputMessage" />
+    </wsdl:operation>
+    <wsdl:operation name="decryptdb">
+      <wsdl:input wsaw:Action="http://tempuri.org/ISecurityService/decryptdb" message="tns:ISecurityService_decryptdb_InputMessage" />
+      <wsdl:output wsaw:Action="http://tempuri.org/ISecurityService/decryptdbResponse" message="tns:ISecurityService_decryptdb_OutputMessage" />
+    </wsdl:operation>
+    <wsdl:operation name="dbtoapp">
+      <wsdl:input wsaw:Action="http://tempuri.org/ISecurityService/dbtoapp" message="tns:ISecurityService_dbtoapp_InputMessage" />
+      <wsdl:output wsaw:Action="http://tempuri.org/ISecurityService/dbtoappResponse" message="tns:ISecurityService_dbtoapp_OutputMessage" />
+    </wsdl:operation>
+    <wsdl:operation name="apptodb">
+      <wsdl:input wsaw:Action="http://tempuri.org/ISecurityService/apptodb" message="tns:ISecurityService_apptodb_InputMessage" />
+      <wsdl:output wsaw:Action="http://tempuri.org/ISecurityService/apptodbResponse" message="tns:ISecurityService_apptodb_OutputMessage" />
+    </wsdl:operation>
+    <wsdl:operation name="signRSA">
+      <wsdl:input wsaw:Action="http://tempuri.org/ISecurityService/signRSA" message="tns:ISecurityService_signRSA_InputMessage" />
+      <wsdl:output wsaw:Action="http://tempuri.org/ISecurityService/signRSAResponse" message="tns:ISecurityService_signRSA_OutputMessage" />
+    </wsdl:operation>
+    <wsdl:operation name="decryptRSA">
+      <wsdl:input wsaw:Action="http://tempuri.org/ISecurityService/decryptRSA" message="tns:ISecurityService_decryptRSA_InputMessage" />
+      <wsdl:output wsaw:Action="http://tempuri.org/ISecurityService/decryptRSAResponse" message="tns:ISecurityService_decryptRSA_OutputMessage" />
+    </wsdl:operation>
+  </wsdl:portType>
+  <wsdl:binding name="BasicHttpBinding_ISecurityService" type="tns:ISecurityService">
+    <soap:binding transport="http://schemas.xmlsoap.org/soap/http" />
+    <wsdl:operation name="validateUser">
+      <soap:operation soapAction="http://tempuri.org/ISecurityService/validateUser" style="document" />
+      <wsdl:input>
+        <soap:body use="literal" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="validateAdmin">
+      <soap:operation soapAction="http://tempuri.org/ISecurityService/validateAdmin" style="document" />
+      <wsdl:input>
+        <soap:body use="literal" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="base64Encode">
+      <soap:operation soapAction="http://tempuri.org/ISecurityService/base64Encode" style="document" />
+      <wsdl:input>
+        <soap:body use="literal" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="base64Decode">
+      <soap:operation soapAction="http://tempuri.org/ISecurityService/base64Decode" style="document" />
+      <wsdl:input>
+        <soap:body use="literal" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="encryptapp">
+      <soap:operation soapAction="http://tempuri.org/ISecurityService/encryptapp" style="document" />
+      <wsdl:input>
+        <soap:body use="literal" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="decryptapp">
+      <soap:operation soapAction="http://tempuri.org/ISecurityService/decryptapp" style="document" />
+      <wsdl:input>
+        <soap:body use="literal" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="encryptdb">
+      <soap:operation soapAction="http://tempuri.org/ISecurityService/encryptdb" style="document" />
+      <wsdl:input>
+        <soap:body use="literal" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="decryptdb">
+      <soap:operation soapAction="http://tempuri.org/ISecurityService/decryptdb" style="document" />
+      <wsdl:input>
+        <soap:body use="literal" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="dbtoapp">
+      <soap:operation soapAction="http://tempuri.org/ISecurityService/dbtoapp" style="document" />
+      <wsdl:input>
+        <soap:body use="literal" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="apptodb">
+      <soap:operation soapAction="http://tempuri.org/ISecurityService/apptodb" style="document" />
+      <wsdl:input>
+        <soap:body use="literal" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="signRSA">
+      <soap:operation soapAction="http://tempuri.org/ISecurityService/signRSA" style="document" />
+      <wsdl:input>
+        <soap:body use="literal" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="decryptRSA">
+      <soap:operation soapAction="http://tempuri.org/ISecurityService/decryptRSA" style="document" />
+      <wsdl:input>
+        <soap:body use="literal" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+  </wsdl:binding>
+  <wsdl:service name="SecurityService">
+    <wsdl:port name="BasicHttpBinding_ISecurityService" binding="tns:BasicHttpBinding_ISecurityService">
+      <soap:address location="http://localhost:50434/Script/Service/SecurityService.svc" />
+    </wsdl:port>
+  </wsdl:service>
+</wsdl:definitions>

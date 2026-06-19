@@ -1,0 +1,332 @@
+﻿<!DOCTYPE html>
+<html style="padding: 0; margin: 0; font-family: Inter, Helvetica, 'sans-serif';">
+<head>
+    <meta charset="utf-8">
+    <title></title>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Inter:300,400,500,600,700">
+    <link href="https://data-script.octopath.cloud/script/plugins/global/plugins.bundle.css" rel="stylesheet" type="text/css">
+    <link href="https://data-script.octopath.cloud/script/css/style.bundle.css" rel="stylesheet" type="text/css">
+</head>
+<body class="auth-bg" style="padding: 0; margin: 0; font-family: Inter, Helvetica, 'sans-serif';">
+    <!--begin::Theme mode setup on page load-->
+    <script>var defaultThemeMode = "light"; var themeMode; if (document.documentElement) { if (document.documentElement.hasAttribute("data-bs-theme-mode")) { themeMode = document.documentElement.getAttribute("data-bs-theme-mode"); } else { if (localStorage.getItem("data-bs-theme") !== null) { themeMode = localStorage.getItem("data-bs-theme"); } else { themeMode = defaultThemeMode; } } if (themeMode === "system") { themeMode = window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light"; } document.documentElement.setAttribute("data-bs-theme", themeMode); }</script>
+    <!--end::Theme mode setup on page load-->
+    <!--begin::Main-->
+    <!--begin::Root-->
+    <div class="d-flex flex-column flex-root">
+        <!--begin::Wrapper-->
+        <div class="d-flex flex-column flex-column-fluid">
+            <!--begin::Body-->
+            <div class="scroll-y flex-column-fluid px-10 py-10" data-kt-scroll="true" data-kt-scroll-activate="true" data-kt-scroll-height="auto" data-kt-scroll-dependencies="#kt_app_header_nav" data-kt-scroll-offset="5px" data-kt-scroll-save-state="true" style="background-color:#D5D9E2; --kt-scrollbar-color: #d9d0cc; --kt-scrollbar-hover-color: #d9d0cc">
+                <!--begin::Email template-->
+                <style>
+                    a:hover {
+                        color: #009ef7;
+                    }
+                </style>
+                <br>
+                <br>
+                <div id="#kt_app_body_content" style="background-color:#D5D9E2; font-family:Arial,Helvetica,sans-serif; line-height: 1.5; min-height: 100%; font-weight: normal; font-size: 15px; color: #2F3044; margin:0; padding:0; width:100%;">
+                    <div style="background-color: #ffffff;padding: 45px 0 34px 0;border-radius: 24px;margin: 40px auto;max-width: 600px;">
+                        <table align="center" border="0" cellpadding="0" cellspacing="0" width="100%"
+                               style="border-collapse: collapse;caption-side: bottom;">
+                            <tbody style="">
+                                <tr style="">
+                                    <td style="padding-bottom: 10px;">
+                                        <div style="margin: 0 60px 0 60px;">
+                                            <div class="mb-5"
+                                                 style="margin-bottom: 1.25rem!important;">
+                                                <span id="lblPay" class="text-gray-800 fw-semibold fs-6" style="margin-bottom: -10px;font-size: 1.075rem!important;font-weight: 500!important;color: var(--bs-text-gray-800)!important;">Pay to {merchant}</span>
+
+                                                <div class="d-flex align-items-center flex-equal fw-row me-4"
+                                                     style="flex-grow: 1;flex-basis: 0;flex-shrink: 0;display: flex!important;align-items: center!important;margin-right: 1rem!important;">
+                                                    <span style="color: #252f4a;font-size: 2.75rem;font-weight: 600;">{cry}</span>
+                                                    &nbsp;&nbsp;
+                                                    <span style="color: #252f4a;font-size: 2.75rem;font-weight: 600;">{amt}</span>
+                                                </div>
+                                                <span id="lblPay" class="text-gray-800 fw-semibold fs-6" style="font-size: 1.075rem!important;font-weight: 500!important;color: var(--bs-text-gray-800)!important;">Due {expdate}</span>
+
+                                            </div>
+                                            <hr />
+                                            <div class="mb-7"
+                                                 style="margin-bottom: 1.75rem!important; margin-top:20px">
+                                                <div class="row"
+                                                     style="margin: 5px;--bs-gutter-x: 1.5rem;--bs-gutter-y: 0;display: flex;flex-wrap: wrap;margin-top: calc(-1 * var(--bs-gutter-y));margin-right: calc(-.5 * var(--bs-gutter-x));margin-left: calc(-.5 * var(--bs-gutter-x));">
+                                                    <div class="col-md-2"
+                                                         style="flex-shrink: 0;width: 16.66666667%;max-width: 100%;padding-right: calc(var(--bs-gutter-x) * .5);padding-left: calc(var(--bs-gutter-x) * .5);margin-top: var(--bs-gutter-y);flex: 0 0 auto;">
+                                                        <div class="fw-semibold pe-10 text-gray-600 fs-6 mb-2"
+                                                             style="margin-bottom: .5rem!important;padding-right: 2.5rem!important;font-size: 1.075rem!important;font-weight: 500!important;color: var(--bs-text-gray-600)!important;">
+                                                            To
+                                                        </div>
+                                                        <div class="fw-semibold pe-10 text-gray-600 fs-6"
+                                                             style="padding-right: 2.5rem!important;font-size: 1.075rem!important;font-weight: 500!important;color: var(--bs-text-gray-600)!important;">
+                                                            From
+                                                        </div>
+                                                    </div>
+                                                    <div class="col-md-10"
+                                                         style="flex-shrink: 0;width: 83.33333333%;max-width: 100%;padding-right: calc(var(--bs-gutter-x) * .5);padding-left: calc(var(--bs-gutter-x) * .5);margin-top: var(--bs-gutter-y);flex: 0 0 auto;">
+                                                        <div class="fw-bold fs-6 text-gray-800 mb-2"
+                                                             style="margin-bottom: .5rem!important;font-size: 1.075rem!important;font-weight: 600!important;color: var(--bs-text-gray-800)!important;">
+                                                            <span style="">{to}</span>
+                                                        </div>
+                                                        <div class="fw-bold fs-6 text-gray-800"
+                                                             style="font-size: 1.075rem!important;font-weight: 600!important;color: var(--bs-text-gray-800)!important;">
+                                                            <span style="">{from}</span>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <center style="">
+                                                <a href="{url}" target="_blank"
+                                                   style="background-color: #50cd89;border-radius: 6px;display: block;padding: 11px 19px;color: #FFFFFF;font-size: 14px;font-weight: 500;font-family: Arial,Helvetica,sans-serif;text-decoration: none;transition: color .2s ease;">
+                                                    Pay
+                                                    this invoice
+                                                </a>
+                                            </center>
+                                        </div>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    <div style="background-color: #ffffff;padding: 45px 0 34px 0;border-radius: 24px;margin: 40px auto;max-width: 600px;margin-bottom: 1.25rem!important;"
+                         class="mb-5">
+                        <table align="center" border="0" cellpadding="0" cellspacing="0" width="100%"
+                               style="border-collapse: collapse;caption-side: bottom;">
+                            <tbody style="">
+                                <tr style="">
+                                    <td style="padding-bottom: 10px;">
+                                        <div style="margin: 0 60px 34px 60px;">
+                                            <div
+                                                 style="">
+                                                <span class="fs-3 fw-bold text-gray-800" runat="server" id="spanCurrency" style="font-size: 1.35rem!important;font-weight: 600!important;color: var(--bs-text-gray-800)!important;"> Invoice #{inv}</span>
+                                                <br style="">
+                                                <br style="">
+                                            </div>
+                                            <div class="flex-grow-1"
+                                                 style="flex-grow: 1!important;">
+                                                <div class="table-responsive"
+                                                     style="overflow-x: auto;-webkit-overflow-scrolling: touch;">
+                                                    <table class="table"
+                                                           style="caption-side: bottom;border-collapse: collapse;--bs-table-color-type: initial;--bs-table-bg-type: initial;--bs-table-color-state: initial;--bs-table-bg-state: initial;--bs-table-color: var(--bs-body-color);--bs-table-bg: transparent;--bs-table-border-color: var(--bs-border-color);--bs-table-accent-bg: transparent;--bs-table-striped-color: var(--bs-body-color);--bs-table-striped-bg: rgba(var(--bs-gray-100-rgb), 0.75);--bs-table-active-color: var(--bs-body-color);--bs-table-active-bg: var(--bs-gray-100);--bs-table-hover-color: var(--bs-body-color);--bs-table-hover-bg: var(--bs-gray-100);width: 100%;margin-bottom: 1rem;vertical-align: top;border-color: var(--bs-table-border-color);">
+                                                        <tbody style="border-width: 0;vertical-align: inherit;">
+                                                            <tr class="fw-bold text-gray-700 fs-5 text-end"
+                                                                style="text-transform: inherit;font-weight: 600!important;font-size: 1.15rem!important;color: var(--bs-text-gray-700)!important;height: inherit;min-height: inherit;padding-left: 0;text-align: right!important;">
+                                                                <th class="d-flex fs-5"
+                                                                    style="text-align: -webkit-match-parent;padding: .25rem .25rem;color: inherit;background-color: var(--bs-table-bg);box-shadow: inset 0 0 0 9999px var(--bs-table-bg-state,var(--bs-table-bg-type,var(--bs-table-accent-bg)));text-transform: inherit;font-weight: inherit;font-size: 1.15rem!important;height: inherit;min-height: inherit;padding-left: 0;display: flex!important;">
+                                                                    <div class="d-flex flex-column align-items-start"
+                                                                         style="display: flex!important;flex-direction: column!important;align-items: flex-start!important;">
+                                                                        <span style="">{prd1}</span>
+                                                                        <!--<span style="font-size: 13px;font-weight: 500;color: #A1A5B7;font-family: Arial,Helvetica,sans-serif;">{qty1}</span>-->
+                                                                    </div>
+                                                                </th>
+                                                                <td class="fs-5 text-gray-900 fw-bolder"
+                                                                    style="padding: .25rem .25rem;color: var(--bs-text-gray-900)!important;background-color: var(--bs-table-bg);box-shadow: inset 0 0 0 9999px var(--bs-table-bg-state,var(--bs-table-bg-type,var(--bs-table-accent-bg)));text-transform: inherit;font-weight: 700!important;font-size: 1.15rem!important;height: inherit;min-height: inherit;padding-right: 0;">
+                                                                    <span style="">{prc1}</span>
+                                                                </td>
+                                                            </tr>
+                                                            <tr {hd2} class="fw-bold text-gray-700 fs-5 text-end"
+                                                                style="text-transform: inherit;font-weight: 600!important;font-size: 1.15rem!important;color: var(--bs-text-gray-700)!important;height: inherit;min-height: inherit;text-align: right!important;">
+                                                                <th class="d-flex fs-5"
+                                                                    style="text-align: -webkit-match-parent;padding: .25rem .25rem;color: inherit;background-color: var(--bs-table-bg);box-shadow: inset 0 0 0 9999px var(--bs-table-bg-state,var(--bs-table-bg-type,var(--bs-table-accent-bg)));text-transform: inherit;font-weight: inherit;font-size: 1.15rem!important;height: inherit;min-height: inherit;padding-left: 0;display: flex!important;">
+                                                                    <div class="d-flex flex-column align-items-start"
+                                                                         style="display: flex!important;flex-direction: column!important;align-items: flex-start!important;">
+                                                                        <span style="">{prd2}</span>
+                                                                        <!--<span style="font-size: 13px;font-weight: 500;color: #A1A5B7;font-family: Arial,Helvetica,sans-serif;">{qty2}</span>-->
+                                                                    </div>
+                                                                </th>
+                                                                <td class="fs-5 text-gray-900 fw-bolder"
+                                                                    style="padding: .25rem .25rem;color: var(--bs-text-gray-900)!important;background-color: var(--bs-table-bg);box-shadow: inset 0 0 0 9999px var(--bs-table-bg-state,var(--bs-table-bg-type,var(--bs-table-accent-bg)));text-transform: inherit;font-weight: 700!important;font-size: 1.15rem!important;height: inherit;min-height: inherit;padding-right: 0;">
+                                                                    <span style="">{prc2}</span>
+                                                                </td>
+                                                            </tr>
+                                                            <tr {hd3} class="fw-bold text-gray-700 fs-5 text-end"
+                                                                style="text-transform: inherit;font-weight: 600!important;font-size: 1.15rem!important;color: var(--bs-text-gray-700)!important;height: inherit;min-height: inherit;text-align: right!important;">
+                                                                <th class="d-flex fs-5"
+                                                                    style="text-align: -webkit-match-parent;padding: .25rem .25rem;color: inherit;background-color: var(--bs-table-bg);box-shadow: inset 0 0 0 9999px var(--bs-table-bg-state,var(--bs-table-bg-type,var(--bs-table-accent-bg)));text-transform: inherit;font-weight: inherit;font-size: 1.15rem!important;height: inherit;min-height: inherit;padding-left: 0;display: flex!important;">
+                                                                    <div class="d-flex flex-column align-items-start"
+                                                                         style="display: flex!important;flex-direction: column!important;align-items: flex-start!important;">
+                                                                        <span style="">{prd3}</span>
+                                                                        <!--<span style="font-size: 13px;font-weight: 500;color: #A1A5B7;font-family: Arial,Helvetica,sans-serif;">{qty3}</span>-->
+                                                                    </div>
+                                                                </th>
+                                                                <td class="fs-5 text-gray-900 fw-bolder"
+                                                                    style="padding: .25rem .25rem;color: var(--bs-text-gray-900)!important;background-color: var(--bs-table-bg);box-shadow: inset 0 0 0 9999px var(--bs-table-bg-state,var(--bs-table-bg-type,var(--bs-table-accent-bg)));text-transform: inherit;font-weight: 700!important;font-size: 1.15rem!important;height: inherit;min-height: inherit;padding-right: 0;">
+                                                                    <span style="">{prc3}</span>
+                                                                </td>
+                                                            </tr>
+                                                            <tr {hd4} class="fw-bold text-gray-700 fs-5 text-end"
+                                                                style="text-transform: inherit;font-weight: 600!important;font-size: 1.15rem!important;color: var(--bs-text-gray-700)!important;height: inherit;min-height: inherit;text-align: right!important;">
+                                                                <th class="d-flex fs-5"
+                                                                    style="text-align: -webkit-match-parent;padding: .25rem .25rem;color: inherit;background-color: var(--bs-table-bg);box-shadow: inset 0 0 0 9999px var(--bs-table-bg-state,var(--bs-table-bg-type,var(--bs-table-accent-bg)));text-transform: inherit;font-weight: inherit;font-size: 1.15rem!important;height: inherit;min-height: inherit;padding-left: 0;display: flex!important;">
+                                                                    <div class="d-flex flex-column align-items-start"
+                                                                         style="display: flex!important;flex-direction: column!important;align-items: flex-start!important;">
+                                                                        <span style="">{prd4}</span>
+                                                                        <!--<span style="font-size: 13px;font-weight: 500;color: #A1A5B7;font-family: Arial,Helvetica,sans-serif;">{qty4}</span>-->
+                                                                    </div>
+                                                                </th>
+                                                                <td class="fs-5 text-gray-900 fw-bolder"
+                                                                    style="padding: .25rem .25rem;color: var(--bs-text-gray-900)!important;background-color: var(--bs-table-bg);box-shadow: inset 0 0 0 9999px var(--bs-table-bg-state,var(--bs-table-bg-type,var(--bs-table-accent-bg)));text-transform: inherit;font-weight: 700!important;font-size: 1.15rem!important;height: inherit;min-height: inherit;padding-right: 0;">
+                                                                    <span style="">{prc4}</span>
+                                                                </td>
+                                                            </tr>
+                                                            
+                                                        </tbody>
+                                                    </table>
+                                                </div>
+                                                <hr />
+                                                <div class="table-responsive"
+                                                     style="overflow-x: auto;-webkit-overflow-scrolling: touch;margin-bottom: .5rem!important; margin-top:20px">
+                                                    <table class="table"
+                                                           style="caption-side: bottom;border-collapse: collapse;--bs-table-color-type: initial;--bs-table-bg-type: initial;--bs-table-color-state: initial;--bs-table-bg-state: initial;--bs-table-color: var(--bs-body-color);--bs-table-bg: transparent;--bs-table-border-color: var(--bs-border-color);--bs-table-accent-bg: transparent;--bs-table-striped-color: var(--bs-body-color);--bs-table-striped-bg: rgba(var(--bs-gray-100-rgb), 0.75);--bs-table-active-color: var(--bs-body-color);--bs-table-active-bg: var(--bs-gray-100);--bs-table-hover-color: var(--bs-body-color);--bs-table-hover-bg: var(--bs-gray-100);width: 100%;margin-bottom: .5rem;vertical-align: top;border-color: var(--bs-table-border-color);">
+                                                        <tbody style="border-width: 0;vertical-align: inherit;">
+                                                            <tr class="fw-bold text-gray-700 fs-5 text-end"
+                                                                style="text-transform: inherit;font-weight: 600!important;font-size: 1.15rem!important;color: var(--bs-text-gray-700)!important;height: inherit;min-height: inherit;padding-left: 0;text-align: right!important;">
+                                                                <th class="d-flex fs-5"
+                                                                    style="text-align: -webkit-match-parent;padding: .25rem .25rem;color: inherit;background-color: var(--bs-table-bg);box-shadow: inset 0 0 0 9999px var(--bs-table-bg-state,var(--bs-table-bg-type,var(--bs-table-accent-bg)));text-transform: inherit;font-weight: inherit;font-size: 1.15rem!important;height: inherit;min-height: inherit;padding-left: 0;display: flex!important;">
+                                                                    <div class="fw-semibold pe-10 text-gray-600 fs-6"
+                                                                         style="padding-right: 2.5rem!important;font-size: 1.075rem!important;font-weight: 500!important;color: var(--bs-text-gray-600)!important;">
+                                                                        Subtotal
+                                                                    </div>
+                                                                </th>
+                                                                <td class="fs-5 text-gray-900 fw-bolder"
+                                                                    style="padding: .25rem .25rem;color: var(--bs-text-gray-900)!important;background-color: var(--bs-table-bg);box-shadow: inset 0 0 0 9999px var(--bs-table-bg-state,var(--bs-table-bg-type,var(--bs-table-accent-bg)));text-transform: inherit;font-weight: 700!important;font-size: 1.15rem!important;height: inherit;min-height: inherit;padding-right: 0;">
+                                                                    <div class="text-end fw-bold fs-6 text-gray-800"
+                                                                         style="font-size: 1.075rem!important;font-weight: 600!important;text-align: right!important;color: var(--bs-text-gray-800)!important;">
+                                                                        <span style="">{stotal}</span>
+                                                                    </div>
+                                                                </td>
+                                                            </tr>
+                                                            <tr {hd2} class="fw-bold text-gray-700 fs-5 text-end"
+                                                                style="text-transform: inherit;font-weight: 600!important;font-size: 1.15rem!important;color: var(--bs-text-gray-700)!important;height: inherit;min-height: inherit;text-align: right!important;">
+                                                                <th class="d-flex fs-5"
+                                                                    style="text-align: -webkit-match-parent;padding: .25rem .25rem;color: inherit;background-color: var(--bs-table-bg);box-shadow: inset 0 0 0 9999px var(--bs-table-bg-state,var(--bs-table-bg-type,var(--bs-table-accent-bg)));text-transform: inherit;font-weight: inherit;font-size: 1.15rem!important;height: inherit;min-height: inherit;padding-left: 0;display: flex!important;">
+                                                                    <div class="fw-semibold pe-10 text-gray-600 fs-6"
+                                                                         style="padding-right: 2.5rem!important;font-size: 1.075rem!important;font-weight: 500!important;color: var(--bs-text-gray-600)!important;">
+                                                                        Discount
+                                                                    </div>
+                                                                </th>
+                                                                <td class="fs-5 text-gray-900 fw-bolder"
+                                                                    style="padding: .25rem .25rem;color: var(--bs-text-gray-900)!important;background-color: var(--bs-table-bg);box-shadow: inset 0 0 0 9999px var(--bs-table-bg-state,var(--bs-table-bg-type,var(--bs-table-accent-bg)));text-transform: inherit;font-weight: 700!important;font-size: 1.15rem!important;height: inherit;min-height: inherit;padding-right: 0;">
+                                                                    <div class="text-end fw-bold fs-6 text-gray-800"
+                                                                         style="font-size: 1.075rem!important;font-weight: 600!important;text-align: right!important;color: var(--bs-text-gray-800)!important;">
+                                                                        <span style="">{disc}</span>
+                                                                    </div>
+                                                                </td>
+                                                            </tr>
+                                                            <tr {hd3} class="fw-bold text-gray-700 fs-5 text-end"
+                                                                style="text-transform: inherit;font-weight: 600!important;font-size: 1.15rem!important;color: var(--bs-text-gray-700)!important;height: inherit;min-height: inherit;text-align: right!important;">
+                                                                <th class="d-flex fs-5"
+                                                                    style="text-align: -webkit-match-parent;padding: .25rem .25rem;color: inherit;background-color: var(--bs-table-bg);box-shadow: inset 0 0 0 9999px var(--bs-table-bg-state,var(--bs-table-bg-type,var(--bs-table-accent-bg)));text-transform: inherit;font-weight: inherit;font-size: 1.15rem!important;height: inherit;min-height: inherit;padding-left: 0;display: flex!important;">
+                                                                    <div class="fw-semibold pe-10 text-gray-600 fs-6"
+                                                                         style="padding-right: 2.5rem!important;font-size: 1.075rem!important;font-weight: 500!important;color: var(--bs-text-gray-600)!important;">
+                                                                        Tax
+                                                                    </div>
+                                                                </th>
+                                                                <td class="fs-5 text-gray-900 fw-bolder"
+                                                                    style="padding: .25rem .25rem;color: var(--bs-text-gray-900)!important;background-color: var(--bs-table-bg);box-shadow: inset 0 0 0 9999px var(--bs-table-bg-state,var(--bs-table-bg-type,var(--bs-table-accent-bg)));text-transform: inherit;font-weight: 700!important;font-size: 1.15rem!important;height: inherit;min-height: inherit;padding-right: 0;">
+                                                                    <div class="text-end fw-bold fs-6 text-gray-800"
+                                                                         style="font-size: 1.075rem!important;font-weight: 600!important;text-align: right!important;color: var(--bs-text-gray-800)!important;">
+                                                                        <span style="">{tax}</span>
+                                                                    </div>
+                                                                </td>
+                                                            </tr>
+                                                            <tr {hd4} class="fw-bold text-gray-700 fs-5 text-end"
+                                                                style="text-transform: inherit;font-weight: 600!important;font-size: 1.15rem!important;color: var(--bs-text-gray-700)!important;height: inherit;min-height: inherit;text-align: right!important;">
+                                                                <th class="d-flex fs-5"
+                                                                    style="text-align: -webkit-match-parent;padding: .25rem .25rem;color: inherit;background-color: var(--bs-table-bg);box-shadow: inset 0 0 0 9999px var(--bs-table-bg-state,var(--bs-table-bg-type,var(--bs-table-accent-bg)));text-transform: inherit;font-weight: inherit;font-size: 1.15rem!important;height: inherit;min-height: inherit;padding-left: 0;display: flex!important;">
+                                                                    <div class="fs-6 text-gray-900 fw-bolder"
+                                                                         style="font-size: 1.075rem!important;font-weight: 700!important;color: var(--bs-text-gray-900)!important;">
+                                                                        Total
+                                                                    </div>
+                                                                </th>
+                                                                <td class="fs-5 text-gray-900 fw-bolder"
+                                                                    style="padding: .25rem .25rem;color: var(--bs-text-gray-900)!important;background-color: var(--bs-table-bg);box-shadow: inset 0 0 0 9999px var(--bs-table-bg-state,var(--bs-table-bg-type,var(--bs-table-accent-bg)));text-transform: inherit;font-weight: 700!important;font-size: 1.15rem!important;height: inherit;min-height: inherit;padding-right: 0;">
+                                                                    <div class="fs-6 text-gray-900 fw-bolder"
+                                                                         style="font-size: 1.075rem!important;font-weight: 700!important;color: var(--bs-text-gray-900)!important;">
+                                                                        <span style="">{total}</span>
+                                                                    </div>
+                                                                </td>
+                                                            </tr>
+                                                        </tbody>
+                                                    </table>
+                                                </div>
+
+                                                <!--<div class="d-flex justify-content-end"
+                                                     style="display: flex!important;justify-content: flex-end!important;">
+                                                    <div class="mw-300px"
+                                                         style="max-width: 300px!important;">
+                                                        <div class="d-flex flex-stack mb-3"
+                                                             style="justify-content: space-between;align-items: center;display: flex!important;margin-bottom: .75rem!important;">
+                                                            <div class="fw-semibold pe-10 text-gray-600 fs-6"
+                                                                 style="padding-right: 2.5rem!important;font-size: 1.075rem!important;font-weight: 500!important;color: var(--bs-text-gray-600)!important;">
+                                                                Subtotal
+                                                            </div>
+                                                            <div class="text-end fw-bold fs-6 text-gray-800"
+                                                                 style="font-size: 1.075rem!important;font-weight: 600!important;text-align: right!important;color: var(--bs-text-gray-800)!important;">
+                                                                <span style="">{stotal}</span>
+                                                            </div>
+                                                        </div>
+                                                        <div class="d-flex flex-stack mb-3"
+                                                             style="justify-content: space-between;align-items: center;display: flex!important;margin-bottom: .75rem!important;">
+                                                            <div class="fw-semibold pe-10 text-gray-600 fs-6"
+                                                                 style="padding-right: 2.5rem!important;font-size: 1.075rem!important;font-weight: 500!important;color: var(--bs-text-gray-600)!important;">
+                                                                Discount
+                                                            </div>
+                                                            <div class="text-end fw-bold fs-6 text-gray-800"
+                                                                 style="font-size: 1.075rem!important;font-weight: 600!important;text-align: right!important;color: var(--bs-text-gray-800)!important;">
+                                                                <span style="">{disc}</span>
+                                                            </div>
+                                                        </div>
+                                                        <div class="d-flex flex-stack mb-3"
+                                                             style="justify-content: space-between;align-items: center;display: flex!important;margin-bottom: .75rem!important;">
+                                                            <div class="fw-semibold pe-10 text-gray-600 fs-6"
+                                                                 style="padding-right: 2.5rem!important;font-size: 1.075rem!important;font-weight: 500!important;color: var(--bs-text-gray-600)!important;">
+                                                                Tax
+                                                            </div>
+                                                            <div class="text-end fw-bold fs-6 text-gray-800"
+                                                                 style="font-size: 1.075rem!important;font-weight: 600!important;text-align: right!important;color: var(--bs-text-gray-800)!important;">
+                                                                <span style="">{tax}</span>
+                                                            </div>
+                                                        </div>
+                                                        <div class="d-flex flex-stack"
+                                                             style="justify-content: space-between;align-items: center;display: flex!important;">
+                                                            <div class="fs-6 text-gray-900 fw-bolder"
+                                                                 style="font-size: 1.075rem!important;font-weight: 700!important;color: var(--bs-text-gray-900)!important;">
+                                                                Total
+                                                            </div>
+                                                            <div class="fs-6 text-gray-900 fw-bolder"
+                                                                 style="font-size: 1.075rem!important;font-weight: 700!important;color: var(--bs-text-gray-900)!important;">
+                                                                <span style="">{total}</span>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>-->
+                                            </div>
+
+                                        </div>
+                                    </td>
+                                </tr>
+                                <tr style="">
+                                    <td align="center"
+                                        style="font-size: 13px;text-align: center;font-weight: 500;color: #A1A5B7;font-family: Arial,Helvetica,sans-serif;">
+                                        <p style="margin-top: 0;margin-bottom: 1rem;">
+                                            &copy; Copyright Qrypto.
+                                        </p>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                <br>
+                <br>
+                <br>
+                <br>
+            </div>
+        </div>
+    </div>
+    <script src="https://data-script.octopath.cloud/script/plugins/global/plugins.bundle.js"></script>
+    <script src="https://data-script.octopath.cloud/script/js/scripts.bundle.js"></script>
+</body>
+</html>

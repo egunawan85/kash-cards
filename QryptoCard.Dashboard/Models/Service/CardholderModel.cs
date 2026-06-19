@@ -1,0 +1,34 @@
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Web;
+
+namespace QryptoCard.Dashboard.Models.Service
+{
+    public class CardholderModel
+    {
+        public string ID { get; set; }
+        public string UserID { get; set; }
+        public Nullable<long> HolderID { get; set; }
+        public Nullable<long> CardTypeId { get; set; }
+        public string AreaCode { get; set; }
+        public string Mobile { get; set; }
+        public string Email { get; set; }
+        public string FirstName { get; set; }
+        public string LastName { get; set; }
+        public string Birthday { get; set; }
+        public string Country { get; set; }
+        public string CountryStr { get; set; }
+        public string State { get; set; }
+        public string StateStr { get; set; }
+        public string Town { get; set; }
+        public string TownStr { get; set; }
+        public string Address { get; set; }
+        public string PostCode { get; set; }
+        public string Status { get; set; }
+        public string StatusStr { get; set; }
+        public Nullable<System.DateTime> DateCreated { get; set; }
+        public Nullable<int> isActive { get; set; }
+        public Nullable<System.DateTime> DateModified { get; set; }
+    }
+}

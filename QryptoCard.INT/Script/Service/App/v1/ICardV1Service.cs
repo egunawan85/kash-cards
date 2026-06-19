@@ -1,0 +1,75 @@
+﻿using QryptoCard.INT.Model.Service;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Runtime.Serialization;
+using System.ServiceModel;
+using System.Text;
+
+namespace QryptoCard.INT.Script.Service.App.v1
+{
+    // NOTE: You can use the "Rename" command on the "Refactor" menu to change the interface name "ICardV1Service" in both code and config file together.
+    [ServiceContract]
+    public interface ICardV1Service
+    {
+        [OperationContract]
+        void testAPI();
+        [OperationContract]
+        string getDate();
+
+
+
+
+        [OperationContract]
+        OutputModel CardType(tblM_Card_Type x);
+        [OperationContract]
+        OutputModel getCardTypeById(tblM_Card_Type x);
+        [OperationContract]
+        OutputModel getHolderDetail(string em, tblM_Cardholder x);
+        [OperationContract]
+        OutputModel checkHolderByCardTypeId(string em, tblM_Cardholder x);
+        [OperationContract]
+        OutputModel openCard(string em, tblT_Card x);
+        [OperationContract]
+        OutputModel getCardList(string em, tblT_Card x);
+        [OperationContract]
+        OutputModel getCardListAll(string em, tblT_Card x);
+        [OperationContract]
+        OutputModel getCardDetail(string em, vw_Card x);
+        [OperationContract]
+        OutputModel getCardBalance(string em, tblT_Card x);
+        [OperationContract]
+        OutputModel getCardTransaction(string em, tblT_Card x);
+        [OperationContract]
+        OutputModel getCardTransactionDetail(string em, tblT_Card_Transaction x);
+
+
+
+        [OperationContract]
+        OutputModel depositCard(string em, tblT_Card_Deposit x);
+        [OperationContract]
+        OutputModel getCardDepositDetail(string em, tblT_Card_Deposit x);
+        [OperationContract]
+        OutputModel getCardDepositList(string em, tblT_Card x);
+
+
+        [OperationContract]
+        OutputModel cancelCardTransaction(string em, vw_Card x);
+        [OperationContract]
+        OutputModel cancelDepositTransaction(string em, tblT_Card_Deposit x);
+
+
+
+        [OperationContract]
+        void createCardHolder(string uid, long cardtypeid, string fn, string ln, string em);
+        [OperationContract]
+        void recreateCardHolder(int holderid);
+        
+
+
+
+
+        [OperationContract]
+        void checkCard(string cardNo);
+    }
+}

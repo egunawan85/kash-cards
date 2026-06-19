@@ -1,0 +1,112 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.11.35303.130
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "QryptoCard.API", "QryptoCard.API\QryptoCard.API.csproj", "{1E1422DA-A638-4E60-AE75-E7FC69A0B8C1}"
+	ProjectSection(ProjectDependencies) = postProject
+		{16ED496B-A12F-479E-A244-DF11CD0ABD5D} = {16ED496B-A12F-479E-A244-DF11CD0ABD5D}
+	EndProjectSection
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "QryptoCard.INT", "QryptoCard.INT\QryptoCard.INT.csproj", "{16ED496B-A12F-479E-A244-DF11CD0ABD5D}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "QryptoCard.Sec", "QryptoCard.Sec\QryptoCard.Sec.csproj", "{A7615B89-8F06-4FB4-8298-6CD0EA76B7AD}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "QryptoCard.Scrapper", "QryptoCard.Scrapper\QryptoCard.Scrapper.csproj", "{E254A10F-4F04-4049-89E2-01B6E92C11E5}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "QryptoCard.INT.Callback", "QryptoCard.INT.Callback\QryptoCard.INT.Callback.csproj", "{EE40DAA7-CB5E-4615-9D1D-7D0B39C4A9C8}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "QryptoCard.API.Callback", "QryptoCard.API.Callback\QryptoCard.API.Callback.csproj", "{F3542678-50CA-459F-B67C-23611B9F6EEF}"
+	ProjectSection(ProjectDependencies) = postProject
+		{EE40DAA7-CB5E-4615-9D1D-7D0B39C4A9C8} = {EE40DAA7-CB5E-4615-9D1D-7D0B39C4A9C8}
+	EndProjectSection
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "QryptoCard.Dashboard", "QryptoCard.Dashboard\QryptoCard.Dashboard.csproj", "{A7548E4E-7B66-4C92-AF4C-46DDAB6689A3}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "QryptoCard.INT.Scheduler", "QryptoCard.INT.Scheduler\QryptoCard.INT.Scheduler.csproj", "{EA80D470-2F23-4255-ADA4-9B8A6BCC5225}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "QryptoCard.API.Scheduler", "QryptoCard.API.Scheduler\QryptoCard.API.Scheduler.csproj", "{D1D64238-2C07-4AEC-9F09-06F656A870B0}"
+	ProjectSection(ProjectDependencies) = postProject
+		{EA80D470-2F23-4255-ADA4-9B8A6BCC5225} = {EA80D470-2F23-4255-ADA4-9B8A6BCC5225}
+	EndProjectSection
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "QryptoCard.Dashboard.Admin", "QryptoCard.Dashboard.Admin\QryptoCard.Dashboard.Admin.csproj", "{48193764-C3D8-4940-B1AA-FF89A98B171B}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "QryptoCard.API.Admin", "QryptoCard.API.Admin\QryptoCard.API.Admin.csproj", "{810C6007-31A2-4E08-A852-05EBE288AA82}"
+	ProjectSection(ProjectDependencies) = postProject
+		{16ED496B-A12F-479E-A244-DF11CD0ABD5D} = {16ED496B-A12F-479E-A244-DF11CD0ABD5D}
+	EndProjectSection
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "QryptoCard.APIDocs", "QryptoCard.APIDocs\QryptoCard.APIDocs.csproj", "{BF4E6792-7058-4E52-9D66-7800038A9E34}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "QryptoCard.API.Public", "QryptoCard.API.Public\QryptoCard.API.Public.csproj", "{45035A73-4699-483C-9C02-3FF3B970CC13}"
+	ProjectSection(ProjectDependencies) = postProject
+		{16ED496B-A12F-479E-A244-DF11CD0ABD5D} = {16ED496B-A12F-479E-A244-DF11CD0ABD5D}
+	EndProjectSection
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{1E1422DA-A638-4E60-AE75-E7FC69A0B8C1}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{1E1422DA-A638-4E60-AE75-E7FC69A0B8C1}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{1E1422DA-A638-4E60-AE75-E7FC69A0B8C1}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{1E1422DA-A638-4E60-AE75-E7FC69A0B8C1}.Release|Any CPU.Build.0 = Release|Any CPU
+		{16ED496B-A12F-479E-A244-DF11CD0ABD5D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{16ED496B-A12F-479E-A244-DF11CD0ABD5D}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{16ED496B-A12F-479E-A244-DF11CD0ABD5D}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{16ED496B-A12F-479E-A244-DF11CD0ABD5D}.Release|Any CPU.Build.0 = Release|Any CPU
+		{A7615B89-8F06-4FB4-8298-6CD0EA76B7AD}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A7615B89-8F06-4FB4-8298-6CD0EA76B7AD}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A7615B89-8F06-4FB4-8298-6CD0EA76B7AD}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A7615B89-8F06-4FB4-8298-6CD0EA76B7AD}.Release|Any CPU.Build.0 = Release|Any CPU
+		{E254A10F-4F04-4049-89E2-01B6E92C11E5}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{E254A10F-4F04-4049-89E2-01B6E92C11E5}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{E254A10F-4F04-4049-89E2-01B6E92C11E5}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{E254A10F-4F04-4049-89E2-01B6E92C11E5}.Release|Any CPU.Build.0 = Release|Any CPU
+		{EE40DAA7-CB5E-4615-9D1D-7D0B39C4A9C8}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{EE40DAA7-CB5E-4615-9D1D-7D0B39C4A9C8}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{EE40DAA7-CB5E-4615-9D1D-7D0B39C4A9C8}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{EE40DAA7-CB5E-4615-9D1D-7D0B39C4A9C8}.Release|Any CPU.Build.0 = Release|Any CPU
+		{F3542678-50CA-459F-B67C-23611B9F6EEF}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{F3542678-50CA-459F-B67C-23611B9F6EEF}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{F3542678-50CA-459F-B67C-23611B9F6EEF}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{F3542678-50CA-459F-B67C-23611B9F6EEF}.Release|Any CPU.Build.0 = Release|Any CPU
+		{A7548E4E-7B66-4C92-AF4C-46DDAB6689A3}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A7548E4E-7B66-4C92-AF4C-46DDAB6689A3}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A7548E4E-7B66-4C92-AF4C-46DDAB6689A3}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A7548E4E-7B66-4C92-AF4C-46DDAB6689A3}.Release|Any CPU.Build.0 = Release|Any CPU
+		{EA80D470-2F23-4255-ADA4-9B8A6BCC5225}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{EA80D470-2F23-4255-ADA4-9B8A6BCC5225}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{EA80D470-2F23-4255-ADA4-9B8A6BCC5225}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{EA80D470-2F23-4255-ADA4-9B8A6BCC5225}.Release|Any CPU.Build.0 = Release|Any CPU
+		{D1D64238-2C07-4AEC-9F09-06F656A870B0}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{D1D64238-2C07-4AEC-9F09-06F656A870B0}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{D1D64238-2C07-4AEC-9F09-06F656A870B0}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{D1D64238-2C07-4AEC-9F09-06F656A870B0}.Release|Any CPU.Build.0 = Release|Any CPU
+		{48193764-C3D8-4940-B1AA-FF89A98B171B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{48193764-C3D8-4940-B1AA-FF89A98B171B}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{48193764-C3D8-4940-B1AA-FF89A98B171B}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{48193764-C3D8-4940-B1AA-FF89A98B171B}.Release|Any CPU.Build.0 = Release|Any CPU
+		{810C6007-31A2-4E08-A852-05EBE288AA82}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{810C6007-31A2-4E08-A852-05EBE288AA82}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{810C6007-31A2-4E08-A852-05EBE288AA82}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{810C6007-31A2-4E08-A852-05EBE288AA82}.Release|Any CPU.Build.0 = Release|Any CPU
+		{BF4E6792-7058-4E52-9D66-7800038A9E34}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{BF4E6792-7058-4E52-9D66-7800038A9E34}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{BF4E6792-7058-4E52-9D66-7800038A9E34}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{BF4E6792-7058-4E52-9D66-7800038A9E34}.Release|Any CPU.Build.0 = Release|Any CPU
+		{45035A73-4699-483C-9C02-3FF3B970CC13}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{45035A73-4699-483C-9C02-3FF3B970CC13}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{45035A73-4699-483C-9C02-3FF3B970CC13}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{45035A73-4699-483C-9C02-3FF3B970CC13}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {7CA905BC-4191-4C76-A482-BDA0A9AC1E66}
+	EndGlobalSection
+EndGlobal

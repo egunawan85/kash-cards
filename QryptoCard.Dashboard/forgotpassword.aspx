@@ -1,0 +1,155 @@
+﻿<%@ Page Language="C#" AutoEventWireup="true" CodeBehind="forgotpassword.aspx.cs" Inherits="QryptoCard.Dashboard.forgotpassword" %>
+
+
+<!DOCTYPE html>
+
+<html lang="en">
+<!--begin::Head-->
+<head>
+    <base href="../../../" />
+    <title>Forgot Password - Qrypto Card</title>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta property="og:locale" content="en_US" />
+    <meta property="og:type" content="article" />
+    <link rel="shortcut icon" href="Content/media/favicon.ico" />
+    <!--begin::Fonts(mandatory for all pages)-->
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Inter:300,400,500,600,700" />
+    <!--end::Fonts-->
+    <!--begin::Global Stylesheets Bundle(mandatory for all pages)-->
+    <link href="Content/plugins/global/plugins.bundle.css" rel="stylesheet" type="text/css" />
+    <link href="Content/css/style.bundle.css" rel="stylesheet" type="text/css" />
+    <!--end::Global Stylesheets Bundle-->
+    <script>// Frame-busting to prevent site from being loaded within a frame without permission (click-jacking) if (window.top != window.self) { window.top.location.replace(window.self.location.href); }</script>
+</head>
+<!--end::Head-->
+<!--begin::Body-->
+<body id="kt_body" class="auth-bg bgi-size-cover bgi-attachment-fixed bgi-position-center bgi-no-repeat">
+    <!--begin::Theme mode setup on page load-->
+    <script>var defaultThemeMode = "light"; var themeMode; if (document.documentElement) { if (document.documentElement.hasAttribute("data-bs-theme-mode")) { themeMode = document.documentElement.getAttribute("data-bs-theme-mode"); } else { if (localStorage.getItem("data-bs-theme") !== null) { themeMode = localStorage.getItem("data-bs-theme"); } else { themeMode = defaultThemeMode; } } if (themeMode === "system") { themeMode = window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light"; } document.documentElement.setAttribute("data-bs-theme", themeMode); }</script>
+    <!--end::Theme mode setup on page load-->
+    <!--begin::Main-->
+    <!--begin::Root-->
+    <div class="d-flex flex-column flex-root">
+        <!--begin::Page bg image-->
+        <style>
+            body {
+                background-image: url('Content/media/auth/bg4.jpg');
+            }
+
+            [data-bs-theme="dark"] body {
+                background-image: url('Content/media/auth/bg4-dark.jpg');
+            }
+        </style>
+        <!--end::Page bg image-->
+        <!--begin::Authentication - Sign-in -->
+        <div class="d-flex flex-column flex-column-fluid flex-lg-row">
+            <!--begin::Aside-->
+            <div class="d-flex flex-center w-lg-50 pt-15 pt-lg-0 px-10">
+                <!--begin::Aside-->
+                <div class="d-flex flex-center flex-lg-start flex-column">
+                    <!--begin::Logo-->
+                    <a href="Login.aspx" class="mb-7">
+                        <img alt="Logo" src="Content/media/logos/qrypto-white-large.png" class="h-100px" />
+                    </a>
+                    <!--end::Logo-->
+                    <!--begin::Title-->
+                    <h2 class="text-white fw-normal m-0">Your crypto payment gateway</h2>
+                    <!--end::Title-->
+                </div>
+                <!--begin::Aside-->
+            </div>
+            <!--begin::Aside-->
+            <!--begin::Body-->
+            <div class="d-flex flex-column-fluid flex-lg-row-auto justify-content-center justify-content-lg-end p-12 p-lg-20">
+                <!--begin::Card-->
+                <div class="bg-body d-flex flex-column align-items-stretch flex-center rounded-4 w-md-600px p-20">
+                    <!--begin::Wrapper-->
+                    <div class="d-flex flex-center flex-column flex-column-fluid px-lg-10 pb-15 pb-lg-20">
+                        <!--begin::Form-->
+                        <form runat="server" class="form w-100">
+                            <!--begin::Heading-->
+                            <div class="text-center mb-10">
+                                <!--begin::Title-->
+                                <h1 class="text-gray-900 fw-bolder mb-3">Forgot Password ?</h1>
+                                <!--end::Title-->
+                                <!--begin::Link-->
+                                <div class="text-gray-500 fw-semibold fs-6">Enter your email to reset your password.</div>
+                                <!--end::Link-->
+                            </div>
+                            <!--begin::Heading-->
+                            <div class="alert alert-dismissible bg-light-danger d-flex flex-column flex-sm-row p-5 mb-10" runat="server" id="divfailed" visible="false">
+                                <i class="ki-duotone ki-notification-bing fs-2hx text-danger me-4 mb-5 mb-sm-0"><span class="path1"></span><span class="path2"></span><span class="path3"></span></i>
+                                <div class="d-flex flex-column pe-0 pe-sm-10">
+                                    <h4 class="fw-semibold">Failed</h4>
+                                    <span>
+                                        <asp:Label runat="server" ID="lblFailed" Text="Error message" /></span>
+                                </div>
+                                <button type="button" class="position-absolute position-sm-relative m-2 m-sm-0 top-0 end-0 btn btn-icon ms-sm-auto" runat="server" id="btnfailed" onserverclick="btnfailed_ServerClick">
+                                    <i class="ki-duotone ki-cross fs-1 text-danger"><span class="path1"></span><span class="path2"></span></i>
+                                </button>
+                            </div>
+
+                            <!--begin::Input group=-->
+                            <div class="fv-row mb-8" runat="server" id="divforgot">
+                                <!--begin::Email-->
+                                <input type="text" placeholder="Email" name="email" autocomplete="off" runat="server" id="txtEmail" class="form-control bg-transparent" />
+                                <!--end::Email-->
+                                
+                            </div>
+                            <div class="text-center mb-10" runat="server" id="divfinish" visible="false">
+                                <div class="text-gray-700 fw-semibold fs-5">We have sent you an email to change your password. Please check your email.</div>
+                            </div>
+                            <!--begin::Actions-->
+                            <div class="d-flex flex-wrap justify-content-center pb-lg-0">
+                                <button type="button" id="btnReset" runat="server" onserverclick="btnReset_ServerClick" class="btn btn-primary me-4">
+                                    <!--begin::Indicator label-->
+                                    <span class="indicator-label">Submit</span>
+                                    <!--end::Indicator label-->
+                                </button>
+                                <a href="Login" runat="server" id="btnCancel" class="btn btn-light">Cancel</a>
+                                <a href="Login" runat="server" id="btnLogin" class="btn btn-primary me-4" visible="false">Login</a>
+                            </div>
+                            <!--end::Actions-->
+                        </form>
+                        <!--end::Form-->
+                    </div>
+                    <!--end::Wrapper-->
+                    <!--begin::Footer-->
+                    <div class="d-flex flex-stack px-lg-10">
+                        <!--begin::Languages-->
+                        <div class="me-0">
+                        </div>
+                        <!--end::Languages-->
+                        <!--begin::Links-->
+                        <div class="d-flex fw-semibold text-primary fs-base gap-5">
+                            <a href="#" target="_blank">Terms</a>
+                            <a href="#" target="_blank">Privacy</a>
+                            <a href="#" target="_blank">Contact Us</a>
+                        </div>
+                        <!--end::Links-->
+                    </div>
+                    <!--end::Footer-->
+                </div>
+                <!--end::Card-->
+            </div>
+            <!--end::Body-->
+        </div>
+        <!--end::Authentication - Sign-in-->
+    </div>
+    <!--end::Root-->
+    <!--end::Main-->
+    <!--begin::Javascript-->
+    <script>var hostUrl = "Content/";</script>
+    <!--begin::Global Javascript Bundle(mandatory for all pages)-->
+    <script src='<%= ResolveUrl("~/Content/plugins/global/plugins.bundle.js")%>'></script>
+    <script src='<%= ResolveUrl("~/Content/js/scripts.bundle.js")%>'></script>
+    <!--end::Global Javascript Bundle-->
+    <!--begin::Custom Javascript(used for this page only)-->
+    <%--<script src='<%= ResolveUrl("~/Content/js/custom/authentication/sign-in/general.js")%>'></script>--%>
+    <!--end::Custom Javascript-->
+    <!--end::Javascript-->
+</body>
+<!--end::Body-->
+</html>
+

@@ -1,0 +1,329 @@
+<?xml version="1.0" encoding="utf-8"?>
+<xs:schema xmlns:tns="http://tempuri.org/" elementFormDefault="qualified" targetNamespace="http://tempuri.org/" xmlns:xs="http://www.w3.org/2001/XMLSchema">
+  <xs:import schemaLocation="http://localhost:50434/Script/Service/App/v1/UserV1Service.svc?xsd=xsd2" namespace="http://schemas.datacontract.org/2004/07/QryptoCard.INT.Model.Service" />
+  <xs:import schemaLocation="http://localhost:50434/Script/Service/App/v1/UserV1Service.svc?xsd=xsd3" namespace="http://schemas.datacontract.org/2004/07/QryptoCard.INT" />
+  <xs:element name="getDashboardData">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element minOccurs="0" name="em" nillable="true" type="xs:string" />
+        <xs:element xmlns:q1="http://schemas.datacontract.org/2004/07/QryptoCard.INT.Model.Service" minOccurs="0" name="a" nillable="true" type="q1:DashboardModel" />
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="getDashboardDataResponse">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element xmlns:q2="http://schemas.datacontract.org/2004/07/QryptoCard.INT.Model.Service" minOccurs="0" name="getDashboardDataResult" nillable="true" type="q2:OutputModel" />
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="Register">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element xmlns:q3="http://schemas.datacontract.org/2004/07/QryptoCard.INT" minOccurs="0" name="x" nillable="true" type="q3:tblM_User" />
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="RegisterResponse">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element xmlns:q4="http://schemas.datacontract.org/2004/07/QryptoCard.INT.Model.Service" minOccurs="0" name="RegisterResult" nillable="true" type="q4:OutputModel" />
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="RegisterVerify">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element xmlns:q5="http://schemas.datacontract.org/2004/07/QryptoCard.INT" minOccurs="0" name="x" nillable="true" type="q5:tblH_User_Register" />
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="RegisterVerifyResponse">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element xmlns:q6="http://schemas.datacontract.org/2004/07/QryptoCard.INT.Model.Service" minOccurs="0" name="RegisterVerifyResult" nillable="true" type="q6:OutputModel" />
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="regenerateOTPRegister">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element xmlns:q7="http://schemas.datacontract.org/2004/07/QryptoCard.INT" minOccurs="0" name="x" nillable="true" type="q7:tblH_User_Register" />
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="regenerateOTPRegisterResponse">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element xmlns:q8="http://schemas.datacontract.org/2004/07/QryptoCard.INT.Model.Service" minOccurs="0" name="regenerateOTPRegisterResult" nillable="true" type="q8:OutputModel" />
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="Login">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element xmlns:q9="http://schemas.datacontract.org/2004/07/QryptoCard.INT" minOccurs="0" name="x" nillable="true" type="q9:tblM_User" />
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="LoginResponse">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element xmlns:q10="http://schemas.datacontract.org/2004/07/QryptoCard.INT.Model.Service" minOccurs="0" name="LoginResult" nillable="true" type="q10:OutputModel" />
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="LoginVerify">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element xmlns:q11="http://schemas.datacontract.org/2004/07/QryptoCard.INT" minOccurs="0" name="x" nillable="true" type="q11:tblH_User_Login" />
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="LoginVerifyResponse">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element xmlns:q12="http://schemas.datacontract.org/2004/07/QryptoCard.INT.Model.Service" minOccurs="0" name="LoginVerifyResult" nillable="true" type="q12:OutputModel" />
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="regenerateOTP">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element xmlns:q13="http://schemas.datacontract.org/2004/07/QryptoCard.INT" minOccurs="0" name="x" nillable="true" type="q13:tblH_User_Login" />
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="regenerateOTPResponse">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element xmlns:q14="http://schemas.datacontract.org/2004/07/QryptoCard.INT.Model.Service" minOccurs="0" name="regenerateOTPResult" nillable="true" type="q14:OutputModel" />
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="forgotPassword">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element xmlns:q15="http://schemas.datacontract.org/2004/07/QryptoCard.INT" minOccurs="0" name="x" nillable="true" type="q15:tblM_User" />
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="forgotPasswordResponse">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element xmlns:q16="http://schemas.datacontract.org/2004/07/QryptoCard.INT.Model.Service" minOccurs="0" name="forgotPasswordResult" nillable="true" type="q16:OutputModel" />
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="checkForgotPassword">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element xmlns:q17="http://schemas.datacontract.org/2004/07/QryptoCard.INT" minOccurs="0" name="x" nillable="true" type="q17:tblT_User_ForgotPassword" />
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="checkForgotPasswordResponse">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element xmlns:q18="http://schemas.datacontract.org/2004/07/QryptoCard.INT.Model.Service" minOccurs="0" name="checkForgotPasswordResult" nillable="true" type="q18:OutputModel" />
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="changePassword">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element xmlns:q19="http://schemas.datacontract.org/2004/07/QryptoCard.INT" minOccurs="0" name="x" nillable="true" type="q19:tblT_User_ForgotPassword" />
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="changePasswordResponse">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element xmlns:q20="http://schemas.datacontract.org/2004/07/QryptoCard.INT.Model.Service" minOccurs="0" name="changePasswordResult" nillable="true" type="q20:OutputModel" />
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="testEmail">
+    <xs:complexType>
+      <xs:sequence />
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="testEmailResponse">
+    <xs:complexType>
+      <xs:sequence />
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="getUserData">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element minOccurs="0" name="x" nillable="true" type="xs:string" />
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="getUserDataResponse">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element xmlns:q21="http://schemas.datacontract.org/2004/07/QryptoCard.INT.Model.Service" minOccurs="0" name="getUserDataResult" nillable="true" type="q21:OutputModel" />
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="updateUserData">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element xmlns:q22="http://schemas.datacontract.org/2004/07/QryptoCard.INT" minOccurs="0" name="x" nillable="true" type="q22:tblM_User" />
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="updateUserDataResponse">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element xmlns:q23="http://schemas.datacontract.org/2004/07/QryptoCard.INT.Model.Service" minOccurs="0" name="updateUserDataResult" nillable="true" type="q23:OutputModel" />
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="updatePassword">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element xmlns:q24="http://schemas.datacontract.org/2004/07/QryptoCard.INT.Model.Service" minOccurs="0" name="x" nillable="true" type="q24:PasswordChangeModel" />
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="updatePasswordResponse">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element xmlns:q25="http://schemas.datacontract.org/2004/07/QryptoCard.INT.Model.Service" minOccurs="0" name="updatePasswordResult" nillable="true" type="q25:OutputModel" />
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="updateEmailOTP">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element xmlns:q26="http://schemas.datacontract.org/2004/07/QryptoCard.INT" minOccurs="0" name="x" nillable="true" type="q26:tblM_User" />
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="updateEmailOTPResponse">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element xmlns:q27="http://schemas.datacontract.org/2004/07/QryptoCard.INT.Model.Service" minOccurs="0" name="updateEmailOTPResult" nillable="true" type="q27:OutputModel" />
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="updateEmail">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element minOccurs="0" name="em" nillable="true" type="xs:string" />
+        <xs:element xmlns:q28="http://schemas.datacontract.org/2004/07/QryptoCard.INT" minOccurs="0" name="x" nillable="true" type="q28:tblH_User_OTP" />
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="updateEmailResponse">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element xmlns:q29="http://schemas.datacontract.org/2004/07/QryptoCard.INT.Model.Service" minOccurs="0" name="updateEmailResult" nillable="true" type="q29:OutputModel" />
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="enable2FA">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element minOccurs="0" name="em" nillable="true" type="xs:string" />
+        <xs:element xmlns:q30="http://schemas.datacontract.org/2004/07/QryptoCard.INT" minOccurs="0" name="x" nillable="true" type="q30:tblM_User_2FA" />
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="enable2FAResponse">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element xmlns:q31="http://schemas.datacontract.org/2004/07/QryptoCard.INT.Model.Service" minOccurs="0" name="enable2FAResult" nillable="true" type="q31:OutputModel" />
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="get2FA">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element minOccurs="0" name="em" nillable="true" type="xs:string" />
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="get2FAResponse">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element xmlns:q32="http://schemas.datacontract.org/2004/07/QryptoCard.INT.Model.Service" minOccurs="0" name="get2FAResult" nillable="true" type="q32:OutputModel" />
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="getReferralCode">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element minOccurs="0" name="em" nillable="true" type="xs:string" />
+        <xs:element xmlns:q33="http://schemas.datacontract.org/2004/07/QryptoCard.INT" minOccurs="0" name="x" nillable="true" type="q33:tblM_User_Referral" />
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="getReferralCodeResponse">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element xmlns:q34="http://schemas.datacontract.org/2004/07/QryptoCard.INT.Model.Service" minOccurs="0" name="getReferralCodeResult" nillable="true" type="q34:OutputModel" />
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="getBalance">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element minOccurs="0" name="em" nillable="true" type="xs:string" />
+        <xs:element xmlns:q35="http://schemas.datacontract.org/2004/07/QryptoCard.INT" minOccurs="0" name="x" nillable="true" type="q35:tblM_User_Balance" />
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="getBalanceResponse">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element xmlns:q36="http://schemas.datacontract.org/2004/07/QryptoCard.INT.Model.Service" minOccurs="0" name="getBalanceResult" nillable="true" type="q36:OutputModel" />
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="generateKeyOTP">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element minOccurs="0" name="em" nillable="true" type="xs:string" />
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="generateKeyOTPResponse">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element xmlns:q37="http://schemas.datacontract.org/2004/07/QryptoCard.INT.Model.Service" minOccurs="0" name="generateKeyOTPResult" nillable="true" type="q37:OutputModel" />
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="validateKeyOTP">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element minOccurs="0" name="em" nillable="true" type="xs:string" />
+        <xs:element xmlns:q38="http://schemas.datacontract.org/2004/07/QryptoCard.INT" minOccurs="0" name="x" nillable="true" type="q38:tblH_User_OTP" />
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="validateKeyOTPResponse">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element xmlns:q39="http://schemas.datacontract.org/2004/07/QryptoCard.INT.Model.Service" minOccurs="0" name="validateKeyOTPResult" nillable="true" type="q39:OutputModel" />
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="getReferralJoined">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element minOccurs="0" name="em" nillable="true" type="xs:string" />
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="getReferralJoinedResponse">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element xmlns:q40="http://schemas.datacontract.org/2004/07/QryptoCard.INT.Model.Service" minOccurs="0" name="getReferralJoinedResult" nillable="true" type="q40:OutputModel" />
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+</xs:schema>

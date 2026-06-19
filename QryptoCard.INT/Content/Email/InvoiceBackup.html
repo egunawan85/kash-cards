@@ -1,0 +1,184 @@
+﻿<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <title></title>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Inter:300,400,500,600,700" />
+    <link href="https://data-script.octopath.cloud/script/plugins/global/plugins.bundle.css" rel="stylesheet" type="text/css" />
+    <link href="https://data-script.octopath.cloud/script/css/style.bundle.css" rel="stylesheet" type="text/css" />
+</head>
+<body class="auth-bg">
+    <!--begin::Theme mode setup on page load-->
+    <script>var defaultThemeMode = "light"; var themeMode; if (document.documentElement) { if (document.documentElement.hasAttribute("data-bs-theme-mode")) { themeMode = document.documentElement.getAttribute("data-bs-theme-mode"); } else { if (localStorage.getItem("data-bs-theme") !== null) { themeMode = localStorage.getItem("data-bs-theme"); } else { themeMode = defaultThemeMode; } } if (themeMode === "system") { themeMode = window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light"; } document.documentElement.setAttribute("data-bs-theme", themeMode); }</script>
+    <!--end::Theme mode setup on page load-->
+    <!--begin::Main-->
+    <!--begin::Root-->
+    <div class="d-flex flex-column flex-root">
+        <!--begin::Wrapper-->
+        <div class="d-flex flex-column flex-column-fluid">
+            <!--begin::Body-->
+            <div class="scroll-y flex-column-fluid px-10 py-10" data-kt-scroll="true" data-kt-scroll-activate="true" data-kt-scroll-height="auto" data-kt-scroll-dependencies="#kt_app_header_nav" data-kt-scroll-offset="5px" data-kt-scroll-save-state="true" style="background-color:#D5D9E2; --kt-scrollbar-color: #d9d0cc; --kt-scrollbar-hover-color: #d9d0cc">
+                <!--begin::Email template-->
+                <style>
+                    html, body {
+                        padding: 0;
+                        margin: 0;
+                        font-family: Inter, Helvetica, "sans-serif";
+                    }
+
+                    a:hover {
+                        color: #009ef7;
+                    }
+                </style>
+                <br />
+                <br />
+                <div id="#kt_app_body_content" style="background-color:#D5D9E2; font-family:Arial,Helvetica,sans-serif; line-height: 1.5; min-height: 100%; font-weight: normal; font-size: 15px; color: #2F3044; margin:0; padding:0; width:100%;">
+                    <div style="background-color:#ffffff; padding: 45px 0 34px 0; border-radius: 24px; margin:40px auto; max-width: 600px;">
+                        <table align="center" border="0" cellpadding="0" cellspacing="0" width="100%" style="border-collapse:collapse">
+                            <tbody>
+                                <tr>
+                                    <td style="padding-bottom: 10px">
+                                        <div style="margin:0 60px 0 60px">
+                                            <div class="border-bottom mb-5">
+                                                <span id="lblPay" class="text-gray-800 fw-semibold fs-6" style="margin-bottom: -10px">Pay to {merchant}</span>
+
+                                                <div class="d-flex align-items-center flex-equal fw-row me-4">
+                                                    <span style="color:#252f4a; font-size:2.75rem; font-weight: 600;">{cry}</span>
+                                                    &nbsp;&nbsp;
+                                                    <span style="color:#252f4a; font-size:2.75rem; font-weight: 600;">{amt}</span>
+                                                </div>
+                                                <span id="lblPay" class="text-gray-800 fw-semibold fs-6">Due {expdate}</span>
+                                                <br />
+                                                <br />
+                                            </div>
+                                            <div class="mb-7">
+                                                <div class="row" style="margin:5px">
+                                                    <div class="col-md-2">
+                                                        <div class="fw-semibold pe-10 text-gray-600 fs-6 mb-2">To</div>
+                                                        <div class="fw-semibold pe-10 text-gray-600 fs-6">From</div>
+                                                    </div>
+                                                    <div class="col-md-10">
+                                                        <div class="fw-bold fs-6 text-gray-800 mb-2"><span>{to}</span></div>
+                                                        <div class="fw-bold fs-6 text-gray-800"><span>{from}</span></div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <center>
+                                                <a href="{url}" target="_blank" style="background-color:#50cd89; border-radius:6px;display:inline-block; padding:11px 19px; color: #FFFFFF; font-size: 14px; font-weight:500; font-family:Arial,Helvetica,sans-serif; display:block;">Pay this invoice</a>
+                                            </center>
+                                        </div>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    <div style="background-color:#ffffff; padding: 45px 0 34px 0; border-radius: 24px; margin:40px auto; max-width: 600px;" class="mb-5">
+                        <table align="center" border="0" cellpadding="0" cellspacing="0" width="100%" style="border-collapse:collapse">
+                            <tbody>
+                                <tr>
+                                    <td style="padding-bottom: 10px">
+                                        <div style="margin:0 60px 34px 60px">
+                                            <div class="border-bottom">
+                                                <span class="fs-3 fw-bold text-gray-800" runat="server" id="spanCurrency"> Invoice #{inv}</span>
+                                                <br />
+                                                <br />
+                                            </div>
+                                            <div class="flex-grow-1">
+                                                <div class="table-responsive border-bottom mb-5">
+                                                    <table class="table">
+                                                        <tbody>
+                                                            <tr class="fw-bold text-gray-700 fs-5 text-end">
+                                                                <th class="d-flex fs-5">
+                                                                    <div class="d-flex flex-column align-items-start">
+                                                                        <span>{prd1}</span>
+                                                                        <span style="font-size: 13px; font-weight: 500; color: #A1A5B7;font-family:Arial,Helvetica,sans-serif">{qty1}</span>
+                                                                    </div>
+                                                                </th>
+                                                                <td class="fs-5 text-gray-900 fw-bolder"><span>{prc1}</span></td>
+                                                            </tr>
+                                                            <tr {hd2} class="fw-bold text-gray-700 fs-5 text-end">
+                                                                <th class="d-flex fs-5">
+                                                                    <div class="d-flex flex-column align-items-start">
+                                                                        <span>{prd2}</span>
+                                                                        <span style="font-size: 13px; font-weight: 500; color: #A1A5B7;font-family:Arial,Helvetica,sans-serif">{qty2}</span>
+                                                                    </div>
+                                                                </th>
+                                                                <td class="fs-5 text-gray-900 fw-bolder"><span>{prc2}</span></td>
+                                                            </tr>
+                                                            <tr {hd3} class="fw-bold text-gray-700 fs-5 text-end">
+                                                                <th class="d-flex fs-5">
+                                                                    <div class="d-flex flex-column align-items-start">
+                                                                        <span>{prd3}</span>
+                                                                        <span style="font-size: 13px; font-weight: 500; color: #A1A5B7;font-family:Arial,Helvetica,sans-serif">{qty3}</span>
+                                                                    </div>
+                                                                </th>
+                                                                <td class="fs-5 text-gray-900 fw-bolder"><span>{prc3}</span></td>
+                                                            </tr>
+                                                            <tr {hd4} class="fw-bold text-gray-700 fs-5 text-end">
+                                                                <th class="d-flex fs-5">
+                                                                    <div class="d-flex flex-column align-items-start">
+                                                                        <span>{prd4}</span>
+                                                                        <span style="font-size: 13px; font-weight: 500; color: #A1A5B7;font-family:Arial,Helvetica,sans-serif">{qty4}</span>
+                                                                    </div>
+                                                                </th>
+                                                                <td class="fs-5 text-gray-900 fw-bolder"><span>{prc4}</span></td>
+                                                            </tr>
+                                                            <tr {hd5} class="fw-bold text-gray-700 fs-5 text-end">
+                                                                <th class="d-flex fs-5">
+                                                                    <div class="d-flex flex-column align-items-start">
+                                                                        <span>{prd5}</span>
+                                                                        <span style="font-size: 13px; font-weight: 500; color: #A1A5B7;font-family:Arial,Helvetica,sans-serif">{qty5}</span>
+                                                                    </div>
+                                                                </th>
+                                                                <td class="fs-5 text-gray-900 fw-bolder"><span>{prc5}</span></td>
+                                                            </tr>
+                                                        </tbody>
+                                                    </table>
+                                                </div>
+                                                <div class="d-flex justify-content-end">
+                                                    <div class="mw-300px">
+                                                        <div class="d-flex flex-stack mb-3">
+                                                            <div class="fw-semibold pe-10 text-gray-600 fs-6">Subtotal</div>
+                                                            <div class="text-end fw-bold fs-6 text-gray-800"><span>{stotal}</span></div>
+                                                        </div>
+                                                        <div class="d-flex flex-stack mb-3">
+                                                            <div class="fw-semibold pe-10 text-gray-600 fs-6">Discount</div>
+                                                            <div class="text-end fw-bold fs-6 text-gray-800"><span>{disc}</span></div>
+                                                        </div>
+                                                        <div class="d-flex flex-stack mb-3">
+                                                            <div class="fw-semibold pe-10 text-gray-600 fs-6">Tax</div>
+                                                            <div class="text-end fw-bold fs-6 text-gray-800"><span>{tax}</span></div>
+                                                        </div>
+                                                        <div class="d-flex flex-stack">
+                                                            <div class="fs-6 text-gray-900 fw-bolder">Total</div>
+                                                            <div class="fs-6 text-gray-900 fw-bolder"><span>{total}</span></div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                        </div>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td align="center" style="font-size: 13px; text-align:center; font-weight: 500; color: #A1A5B7;font-family:Arial,Helvetica,sans-serif">
+                                        <p>
+                                            &copy; Copyright Qrypto.
+                                        </p>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                <br />
+                <br />
+                <br />
+                <br />
+            </div>
+        </div>
+    </div>
+    <script src="https://data-script.octopath.cloud/script/plugins/global/plugins.bundle.js"></script>
+    <script src="https://data-script.octopath.cloud/script/js/scripts.bundle.js"></script>
+</body>
+</html>
