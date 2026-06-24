@@ -9,8 +9,11 @@ namespace QryptoCard.Sec
 {
     public class Secure
     {
-        private static string DBKey = "k3Yh45Hd4T48453Qr3pToC4rD";
-        private static string APPKey = "k3Yh45Hp9QrypT0C4rD";
+        // Master symmetric keys, read from the environment (never hardcoded). Set these to
+        // the CURRENT values for continuity until the planned cipher/key migration re-keys
+        // stored data. The cipher construction here is unchanged by this commit.
+        private static string DBKey => SecretsConfig.Require("DBKEY");
+        private static string APPKey => SecretsConfig.Require("APPKEY");
 
         public static string Base64Encode(string plainText)
         {
