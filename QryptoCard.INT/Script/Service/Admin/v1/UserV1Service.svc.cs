@@ -28,11 +28,13 @@ namespace QryptoCard.INT.Script.Service.Admin.v1
             return a == null ? null : a.Role;
         }
 
-        // Only Owner/Admin may change financial settings (fees, commissions, prices).
+        // Allowlist: ONLY Owner/Admin may change financial settings (fees, commissions, prices).
+        // Deny-by-default (case/whitespace-insensitive) so an unknown or variant role string can't slip through.
         bool isDeniedFinanceMutation(string em)
         {
-            var role = getRole(em);
-            return role == RoleModel.Signer || role == RoleModel.Approver || role == RoleModel.Viewer || role == null;
+            var role = (getRole(em) ?? "").Trim();
+            return !(role.Equals(RoleModel.Owner, StringComparison.OrdinalIgnoreCase)
+                  || role.Equals(RoleModel.Admin, StringComparison.OrdinalIgnoreCase));
         }
 
         public OutputModel getUser(tblM_User x)
