@@ -47,6 +47,13 @@ namespace QryptoCard.API.Admin
                 return;
             }
 
+            // A valid token with no subject must not authenticate — make the attribute the gate.
+            if (string.IsNullOrEmpty(verify.Subject))
+            {
+                Reject(actionContext);
+                return;
+            }
+
             actionContext.Request.Properties[SubjectPropertyKey]     = verify.Subject;
             actionContext.Request.Properties[SubjectTypePropertyKey] = verify.SubjectType;
             actionContext.Request.Properties[EmailPropertyKey]       = verify.Email;

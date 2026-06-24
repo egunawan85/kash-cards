@@ -72,7 +72,9 @@ namespace QryptoCard.API.Admin
             catch (Exception ex)
             {
                 clientChannel.Abort();
-                return new OutputModel { Status = "error", Message = ex.Message };
+                // Don't surface the WCF channel exception (endpoint/topology) to the caller; log it.
+                System.Diagnostics.Trace.TraceError("Auth channel error: " + ex);
+                return new OutputModel { Status = "error", Message = "Authentication service is unavailable. Please try again." };
             }
         }
 

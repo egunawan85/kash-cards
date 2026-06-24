@@ -63,6 +63,14 @@ namespace QryptoCard.API
                 return;
             }
 
+            // A valid token with no subject must not authenticate — make the attribute the gate
+            // rather than relying on a downstream controller to null-check qc_subject.
+            if (string.IsNullOrEmpty(verify.Subject))
+            {
+                Reject(actionContext);
+                return;
+            }
+
             // Stash for controllers. Keys are stable strings so controller-side
             // helpers don't depend on this assembly's types.
             actionContext.Request.Properties[SubjectPropertyKey]     = verify.Subject;
