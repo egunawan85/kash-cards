@@ -16,6 +16,12 @@ namespace QryptoCard.API.Callback.Controllers.v1
     {
         CallbackV1ServiceClient sr = new CallbackV1ServiceClient();
 
+        public CallbackV1Controller()
+        {
+            // Authenticate calls to the INT money tier with the shared secret.
+            sr.Endpoint.EndpointBehaviors.Add(new QryptoCard.API.Callback.Security.IntAuthClientBehavior());
+        }
+
         private static string Header(string name)
         {
             HttpContext ctx = HttpContext.Current;

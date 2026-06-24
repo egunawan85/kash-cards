@@ -147,6 +147,7 @@
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Service\Gateway\WasabiCard\WasabiCardService.cs" />
     <Compile Include="Service\NotificationService.cs" />
+    <Compile Include="Security\IntAuthBehavior.cs" />
     <Compile Include="Service\v1\CallbackV1Service.svc.cs">
       <DependentUpon>CallbackV1Service.svc</DependentUpon>
     </Compile>

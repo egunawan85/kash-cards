@@ -110,6 +110,7 @@
       <DependentUpon>Reference.svcmap</DependentUpon>
     </Compile>
     <Compile Include="Controllers\v1\CallbackV1Controller.cs" />
+    <Compile Include="Security\IntAuthClientBehavior.cs" />
     <Compile Include="Global.asax.cs">
       <DependentUpon>Global.asax</DependentUpon>
     </Compile>

@@ -16,6 +16,7 @@ namespace QryptoCard.INT.Callback.Service.v1
 {
     // NOTE: You can use the "Rename" command on the "Refactor" menu to change the class name "CallbackV1Service" in code, svc and config file together.
     // NOTE: In order to launch WCF Test Client for testing this service, please select CallbackV1Service.svc or CallbackV1Service.svc.cs at the Solution Explorer and start debugging.
+    [QryptoCard.INT.Callback.Security.IntAuthBehavior]
     public class CallbackV1Service : ICallbackV1Service
     {
         private static string loadRsaPrivateKeyPem()
