@@ -35,14 +35,17 @@ transaction status" endpoint in this codebase and its REST contract is not docum
 
 ## 2. Durable webhook replay idempotency — *Mitigated · Blocker: db*
 
-Both callback paths are idempotent-by-state (they only act on rows in the expected pre-state),
-and the PGCrypto path additionally rejects an already-applied `TransactionID`. That dedup check
-is a best-effort SELECT, not race-proof. The durable form is a **UNIQUE index** on the dedup key
-(`tblT_Card.PGCryptoID` / `tblT_Card_Deposit.PGCryptoID`, and a request/reference id for the
-WasabiCard path) so concurrent duplicates cannot both commit.
+Both callback paths are idempotent-by-state and now claim each order with an **atomic conditional
+update** (`UPDATE ... SET Status=... WHERE ID=... AND Status=<expected>`) before crediting, so a
+concurrent or replayed duplicate finds zero rows affected and bails — no double-refund, no
+double-provision. PGCrypto additionally requires a `TransactionID` and rejects one already
+applied. What remains for the database migration is the **durable belt-and-suspenders**: a UNIQUE
+index on the dedup key (`tblT_Card.PGCryptoID` / `tblT_Card_Deposit.PGCryptoID`, and a
+request/reference id for the WasabiCard path) so duplicates cannot commit even across processes or
+a context that bypasses the conditional claim.
 
-- **To close:** add the unique constraints during the database migration; keep the in-code guard
-  as the fast-path.
+- **To close:** add the unique constraints during the database migration; keep the in-code atomic
+  claim as the fast-path.
 
 ## 3. INT-tier WCF surface relies on network isolation — *Open · Blocker: cloud/db*
 

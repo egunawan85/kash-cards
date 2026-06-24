@@ -194,49 +194,6 @@ namespace QryptoCard.API.Controllers.v1
         }
 
 
-        //[Route("invited/check")]
-        //[HttpPost]
-        //public OutputModel getInvitedAccount(tblM_User x)
-        //{
-        //    try
-        //    {
-        //        trustConnection();
-        //        op = sr.getInvitedUser(x);
-        //        if (op.Status == "success")
-        //            op.Data = JsonConvert.DeserializeObject<UserModel>(op.Data.ToString());
-        //    }
-        //    catch (Exception ex)
-        //    {
-        //        op.Status = "error";
-        //        op.Message = ex.Message;
-        //        op.Data = null;
-        //    }
-
-        //    return op;
-        //}
-
-
-        //[Route("invited/onboarding")]
-        //[HttpPut]
-        //public OutputModel updateInvitedAccount(tblM_User x)
-        //{
-        //    try
-        //    {
-        //        trustConnection();
-        //        op = sr.updateInvitedUser(x);
-        //        //if (op.Status == "success")
-        //        //    op.Data = JsonConvert.DeserializeObject<UserModel>(op.Data.ToString());
-        //    }
-        //    catch (Exception ex)
-        //    {
-        //        op.Status = "error";
-        //        op.Message = ex.Message;
-        //        op.Data = null;
-        //    }
-
-        //    return op;
-        //}
-
         // ---------- auth-token routes ----------
         //
         // Dashboard flow:
