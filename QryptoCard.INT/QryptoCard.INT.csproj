@@ -168,6 +168,7 @@
       <DesignTime>True</DesignTime>
       <DependentUpon>DB.Context.tt</DependentUpon>
     </Compile>
+    <Compile Include="DB.Context.Partial.cs" />
     <Compile Include="DB.cs">
       <AutoGen>True</AutoGen>
       <DesignTime>True</DesignTime>
