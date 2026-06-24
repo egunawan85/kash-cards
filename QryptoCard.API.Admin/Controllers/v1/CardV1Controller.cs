@@ -13,20 +13,11 @@ using System.Web.Http;
 namespace QryptoCard.API.Admin.Controllers.v1
 {
     [RoutePrefix("v1/card")]
-    [BasicAuthentication]
-    public class CardV1Controller : ApiController
+    [BearerAuthentication]
+    public class CardV1Controller : QryptoCardApiController
     {
         CardV1ServiceClient sr = new CardV1ServiceClient();
         OutputModel op = new OutputModel();
-
-        private string getKey()
-        {
-            // Gets header parameters  
-            HttpContext httpContext = HttpContext.Current;
-            string authenticationString = httpContext.Request.Headers["Authorization"];
-            string originalString = Encoding.UTF8.GetString(Convert.FromBase64String(authenticationString.Split(' ')[1]));
-            return originalString.Split(':')[0];
-        }
 
         private void trustConnection()
         {
@@ -130,7 +121,7 @@ namespace QryptoCard.API.Admin.Controllers.v1
             try
             {
                 trustConnection();
-                op = sr.getCardPurchaseFilter(getKey(), x);
+                op = sr.getCardPurchaseFilter(getEmail(), x);
                 if (op.Status == "success")
                     op.Data = JsonConvert.DeserializeObject<List<vw_Card>>(op.Data.ToString());
             }
@@ -151,7 +142,7 @@ namespace QryptoCard.API.Admin.Controllers.v1
             try
             {
                 trustConnection();
-                op = sr.getDepositTrxFilter(getKey(), x);
+                op = sr.getDepositTrxFilter(getEmail(), x);
                 if (op.Status == "success")
                     op.Data = JsonConvert.DeserializeObject<List<DepositModel>>(op.Data.ToString());
             }
@@ -172,7 +163,7 @@ namespace QryptoCard.API.Admin.Controllers.v1
             try
             {
                 trustConnection();
-                op = sr.updateCardPrice(getKey(), x);
+                op = sr.updateCardPrice(getEmail(), x);
                 //if (op.Status == "success")
                 //    op.Data = JsonConvert.DeserializeObject<List<DepositModel>>(op.Data.ToString());
             }
@@ -193,7 +184,7 @@ namespace QryptoCard.API.Admin.Controllers.v1
             try
             {
                 trustConnection();
-                op = sr.updateCardDepositFee(getKey(), x);
+                op = sr.updateCardDepositFee(getEmail(), x);
                 //if (op.Status == "success")
                 //    op.Data = JsonConvert.DeserializeObject<List<DepositModel>>(op.Data.ToString());
             }

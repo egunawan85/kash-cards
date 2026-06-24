@@ -13,19 +13,11 @@ using QryptoCard.API.UserV1Service;
 namespace QryptoCard.API.Controllers.v1
 {
     [RoutePrefix("v1/user")]
-    [BasicAuthentication]
-    public class UserV1Controller : ApiController
+    [BearerAuthentication]
+    public class UserV1Controller : QryptoCardApiController
     {
         UserV1ServiceClient sr = new UserV1ServiceClient();
-        OutputModel op = new OutputModel(); 
-        private string getKey()
-        {
-            // Gets header parameters  
-            HttpContext httpContext = HttpContext.Current;
-            string authenticationString = httpContext.Request.Headers["Authorization"];
-            string originalString = Encoding.UTF8.GetString(Convert.FromBase64String(authenticationString.Split(' ')[1]));
-            return originalString.Split(':')[0];
-        }
+        OutputModel op = new OutputModel();
 
         private void trustConnection()
         {
@@ -45,7 +37,7 @@ namespace QryptoCard.API.Controllers.v1
             {
                 var x = new DashboardModel();
                 trustConnection();
-                op = sr.getDashboardData(getKey(), x);
+                op = sr.getDashboardData(getEmail(), x);
                 if (op.Status == "success")
                     op.Data = JsonConvert.DeserializeObject<DashboardModel>(op.Data.ToString());
             }
@@ -67,7 +59,7 @@ namespace QryptoCard.API.Controllers.v1
             try
             {
                 trustConnection();
-                op = sr.getReferralCode(getKey(), x);
+                op = sr.getReferralCode(getEmail(), x);
                 if (op.Status == "success")
                     op.Data = JsonConvert.DeserializeObject<tblM_User_Referral>(op.Data.ToString());
             }
@@ -88,7 +80,7 @@ namespace QryptoCard.API.Controllers.v1
             try
             {
                 trustConnection();
-                op = sr.getBalance(getKey(), x);
+                op = sr.getBalance(getEmail(), x);
                 if (op.Status == "success")
                     op.Data = JsonConvert.DeserializeObject<tblM_User_Balance>(op.Data.ToString());
             }
@@ -109,7 +101,7 @@ namespace QryptoCard.API.Controllers.v1
             try
             {
                 trustConnection();
-                op = sr.generateKeyOTP(getKey());
+                op = sr.generateKeyOTP(getEmail());
             }
             catch (Exception ex)
             {
@@ -128,7 +120,7 @@ namespace QryptoCard.API.Controllers.v1
             try
             {
                 trustConnection();
-                op = sr.validateKeyOTP(getKey(), x);
+                op = sr.validateKeyOTP(getEmail(), x);
             }
             catch (Exception ex)
             {
@@ -148,7 +140,7 @@ namespace QryptoCard.API.Controllers.v1
             {
                 var x = new DashboardModel();
                 trustConnection();
-                op = sr.getReferralJoined(getKey());
+                op = sr.getReferralJoined(getEmail());
                 if (op.Status == "success")
                     op.Data = JsonConvert.DeserializeObject<List<tblM_User>>(op.Data.ToString());
             }

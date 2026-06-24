@@ -13,20 +13,11 @@ using System.Web.Http;
 namespace QryptoCard.API.Admin.Controllers.v1
 {
     [RoutePrefix("v1/dashboard")]
-    [BasicAuthentication]
-    public class DashboardV1Controller : ApiController
+    [BearerAuthentication]
+    public class DashboardV1Controller : QryptoCardApiController
     {
         DashboardV1ServiceClient sr = new DashboardV1ServiceClient();
         OutputModel op = new OutputModel();
-
-        private string getKey()
-        {
-            // Gets header parameters  
-            HttpContext httpContext = HttpContext.Current;
-            string authenticationString = httpContext.Request.Headers["Authorization"];
-            string originalString = Encoding.UTF8.GetString(Convert.FromBase64String(authenticationString.Split(' ')[1]));
-            return originalString.Split(':')[0];
-        }
 
         private void trustConnection()
         {
