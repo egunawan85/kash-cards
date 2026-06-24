@@ -54,6 +54,38 @@ worktree now, but the migration runs with DB access during the dev shakeout /
 launch. The token tables can be created ahead as an additive migration (no data
 backfill), so this is lighter than the crypto data-migration.
 
+## Resolved implementation decisions (from the code spike)
+
+The code spike pinned down the implementation choices the A-table left open:
+
+- **D-1 — Token tables live OUTSIDE the EDMX.** The model is database-first EDMX
+  (EF6, no migrations); the two relationship-free token tables go in a small
+  separate context (or Dapper), so all token code + Unit tests build now with no DB
+  access and no fragile 4-way EDMX hand-edit. An idempotent `CREATE TABLE` script
+  applies during the shakeout.
+- **D-2 — Reuse the existing login gate.** Login is already two-step
+  (`Login` issues a challenge row → `LoginVerify` checks a code); real OTP +
+  token-mint hook into `LoginVerify`. OTP is required for admins always, and for
+  users only when `is2FA == 1` (per A6).
+- **D-3 — Token in session; DROP the password cookie.** The dashboards currently
+  stash the AES-encrypted password in a 1-month cookie + `SessionLib.Password` —
+  both are removed; the session holds the `at_`/`rt_` tokens instead.
+- **D-4 — Fix the OTP table + a real expiry bug.** `DateExpired` is written but
+  **never enforced** today (harmless only because the code is constant) — enforce it,
+  store only a hash of the code, and add an attempt/lockout counter (column adds are
+  DB-gated; the expiry-enforcement code fix is not).
+- **D-5 — Decoupled from bcrypt** *(your call)*: the mint endpoint validates the
+  current password scheme; the bcrypt migration + forced reset stays at launch.
+- **D-6 — "Deprecate Basic" = user/admin tiers ONLY.** `QryptoCard.API.Public`
+  authenticates partners with `APIKey:SecretKey` (a separate identity) and is left
+  untouched.
+- **D-7 — Minting tier stamps `SubjectType`.** Add an admin auth controller
+  mirroring `AuthV1Controller` so the tier that mints unambiguously sets user/admin.
+
+Deferred deeper spikes (not blocking): whether stored `tblM_User_2FA` TOTP secrets
+are real/usable (DB-gated — TOTP is post-MVP per A5 anyway), and the
+`tblH_Admin_Login` vs `tblH_Admin_OTP` discrepancy (checked during Slice 1).
+
 ## Organized into slices
 
 - **Slice 1 — Restore a real OTP** (un-hardcode, harden, re-enable delivery)
