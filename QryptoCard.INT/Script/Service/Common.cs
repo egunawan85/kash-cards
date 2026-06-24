@@ -25,13 +25,8 @@ namespace QryptoCard.INT.Script.Service
 
         public static string getOTPCode()
         {
-            return "000000";
-            //Random r = new Random();
-            //var z = r.Next(0, 1000000);
-            //if (KeyModel.QRYPTO_ENVIRONMENT == "dev")
-            //    return "000000";
-            //else
-            //    return z.ToString("000000");
+            // Real CSPRNG one-time code (was hardcoded "000000", with a dev bypass also to "000000").
+            return QryptoCard.Sec.OtpCodes.Generate(6);
         }
 
         //public static RSACryptoServiceProvider ImportPrivateKey(string pem)
