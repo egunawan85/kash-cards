@@ -326,7 +326,11 @@ namespace QryptoCard.INT.Callback.Service.v1
 
                 return;
             }
-            catch { }
+            catch (Exception ex)
+            {
+                // Surface failures instead of swallowing them silently (type only, no PII/detail).
+                System.Diagnostics.Trace.TraceError("Wasabi callback processing failed: " + ex.GetType().FullName);
+            }
         }
         public void PGCrypto(PGCryptoModel x)
         {
@@ -472,6 +476,7 @@ namespace QryptoCard.INT.Callback.Service.v1
             }
             catch (Exception ex)
             {
+                System.Diagnostics.Trace.TraceError("PGCrypto callback processing failed: " + ex.GetType().FullName);
             }
 
             return;
