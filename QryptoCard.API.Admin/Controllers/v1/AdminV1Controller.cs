@@ -13,19 +13,11 @@ using System.Web.Http;
 namespace QryptoCard.API.Admin.Controllers.v1
 {
     [RoutePrefix("v1/admin")]
-    [BasicAuthentication]
-    public class AdminV1Controller : ApiController
+    [BearerAuthentication]
+    public class AdminV1Controller : QryptoCardApiController
     {
         AdminV1ServiceClient sr = new AdminV1ServiceClient();
         OutputModel op = new OutputModel();
-        private string getEmail()
-        {
-            // Gets header parameters  
-            HttpContext httpContext = HttpContext.Current;
-            string authenticationString = httpContext.Request.Headers["Authorization"];
-            string originalString = Encoding.UTF8.GetString(Convert.FromBase64String(authenticationString.Split(' ')[1]));
-            return originalString.Split(':')[0];
-        }
 
         private void trustConnection()
         {

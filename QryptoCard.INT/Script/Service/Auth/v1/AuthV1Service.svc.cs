@@ -141,7 +141,7 @@ namespace QryptoCard.INT.Script.Service.Auth.v1
                 {
                     rowsAffected = db.Database.ExecuteSqlCommand(
                         "UPDATE tblH_User_Login SET isVerify = 1, Param1 = {3} " +
-                        "WHERE ID = {0} AND Code = {1} AND isVerify = 0 AND DateExpired > {2} " +
+                        "WHERE ID = {0} AND Code COLLATE Latin1_General_BIN2 = {1} AND isVerify = 0 AND DateExpired > {2} " +
                         "AND (Param2 IS NULL OR Param2 <> 'totp')",
                         otpSessionId, otpCodeHash, otpNow, otpConsumedAt);
                     if (rowsAffected == 0)
@@ -157,7 +157,7 @@ namespace QryptoCard.INT.Script.Service.Auth.v1
                 {
                     rowsAffected = db.Database.ExecuteSqlCommand(
                         "UPDATE tblH_Admin_Login SET isVerify = 1, Param1 = {3} " +
-                        "WHERE ID = {0} AND Code = {1} AND isVerify = 0 AND DateExpired > {2} " +
+                        "WHERE ID = {0} AND Code COLLATE Latin1_General_BIN2 = {1} AND isVerify = 0 AND DateExpired > {2} " +
                         "AND (Param2 IS NULL OR Param2 <> 'totp')",
                         otpSessionId, otpCodeHash, otpNow, otpConsumedAt);
                     if (rowsAffected == 0)
@@ -241,6 +241,12 @@ namespace QryptoCard.INT.Script.Service.Auth.v1
                     tx.Commit();
                 }
 
+                // Serialize the user/admin profile so the dashboard's OTP-login
+                // flow can bootstrap its session in a single call (mirrors what the
+                // legacy /auth/login/verify response returned). Additive — does not
+                // touch the OTP-consume / token-issue / reuse-detection logic above.
+                string profileJson = LookupProfileJson(subjectType, subjectId);
+
                 op.Status  = "success";
                 op.Message = "ok";
                 // Serialize to JSON string — op.Data is typed as object. WCF
@@ -254,7 +260,8 @@ namespace QryptoCard.INT.Script.Service.Auth.v1
                     RefreshToken        = refreshPlaintext,
                     RefreshTokenExpires = refreshRow.DateExpired,
                     Subject             = subjectId,
-                    SubjectType         = subjectType
+                    SubjectType         = subjectType,
+                    Profile             = profileJson
                 }, Formatting.None);
             }
             catch (Exception ex)
@@ -343,7 +350,10 @@ namespace QryptoCard.INT.Script.Service.Auth.v1
                 {
                     var rowsAffected = authDb.Database.ExecuteSqlCommand(
                         "UPDATE tblT_RefreshToken SET ReplacedByID = {0} " +
-                        "WHERE RefreshTokenID = {1} AND ReplacedByID IS NULL",
+                        // AND RevokedAt IS NULL closes a TOCTOU: a refresh() racing a revokeAllForSubject
+                        // (ban) must not mint a fresh pair after the revoke sweep. The raceLost path then
+                        // chain-revokes, so the just-banned session can't be extended.
+                        "WHERE RefreshTokenID = {1} AND ReplacedByID IS NULL AND RevokedAt IS NULL",
                         newRefresh.RefreshTokenID, row.RefreshTokenID);
 
                     if (rowsAffected == 0)
@@ -655,6 +665,46 @@ namespace QryptoCard.INT.Script.Service.Auth.v1
         {
             public int? IsActive;
             public int? IsBanned;
+        }
+
+        // Serializes the profile record the dashboard's OTP-login flow needs,
+        // mirroring the legacy /auth/login/verify response shape: the full tblM_User
+        // row for users, the full vw_Admin row for admins. Both entities carry
+        // credential columns (Password, PIN); they are nulled on the detached
+        // (AsNoTracking) entity before serialization so neither lands on the wire.
+        // The legacy verify serialized them in the clear — this closes that leak
+        // while keeping the field shape the dashboard already deserializes.
+        //
+        // Returns null on a missing row or any error — Profile is additive bootstrap
+        // data, never load-bearing for the token security model, so a profile-lookup
+        // hiccup must not fail the mint.
+        string LookupProfileJson(string subjectType, string subjectId)
+        {
+            try
+            {
+                if (subjectType == SubjectTypeUser)
+                {
+                    var u = db.tblM_User.AsNoTracking().FirstOrDefault(p => p.UserID == subjectId);
+                    if (u == null) return null;
+                    u.Password = null;
+                    u.PIN = null;
+                    return JsonConvert.SerializeObject(u, Formatting.None);
+                }
+                if (subjectType == SubjectTypeAdmin)
+                {
+                    var a = db.vw_Admin.AsNoTracking().FirstOrDefault(p => p.AdminID == subjectId);
+                    if (a == null) return null;
+                    a.Password = null;
+                    a.PIN = null;
+                    return JsonConvert.SerializeObject(a, Formatting.None);
+                }
+                return null;
+            }
+            catch (Exception ex)
+            {
+                LogError("LookupProfileJson", ex);
+                return null;
+            }
         }
 
         SubjectStatus LookupSubjectStatus(string subjectType, string subjectId)

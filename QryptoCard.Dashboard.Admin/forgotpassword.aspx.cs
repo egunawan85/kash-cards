@@ -32,7 +32,6 @@ namespace QryptoCard.Dashboard.Admin
             SessionLib.Current.Phone = string.Empty;
             SessionLib.Current.Role = string.Empty;
             SessionLib.Current.DateJoin = null;
-            SessionLib.Current.Password = string.Empty;
         }
 
         protected void btnfailed_ServerClick(object sender, EventArgs e)

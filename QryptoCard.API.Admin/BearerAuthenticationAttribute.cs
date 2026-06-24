@@ -28,7 +28,7 @@ namespace QryptoCard.API.Admin
             var header = actionContext.Request.Headers.Authorization;
             if (header == null ||
                 !string.Equals(header.Scheme, "Bearer", StringComparison.OrdinalIgnoreCase) ||
-                string.IsNullOrEmpty(header.Parameter))
+                string.IsNullOrWhiteSpace(header.Parameter))
             {
                 Reject(actionContext);
                 return;
@@ -49,6 +49,14 @@ namespace QryptoCard.API.Admin
 
             // A valid token with no subject must not authenticate — make the attribute the gate.
             if (string.IsNullOrEmpty(verify.Subject))
+            {
+                Reject(actionContext);
+                return;
+            }
+
+            // A valid token whose email failed to resolve (transient DB error => null) must not
+            // proceed with a null identity; fail closed rather than call WCF with a null email.
+            if (string.IsNullOrEmpty(verify.Email))
             {
                 Reject(actionContext);
                 return;

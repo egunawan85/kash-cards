@@ -2566,6 +2566,7 @@
     <Compile Include="Models\Service\AdminForgotPasswordModel.cs" />
     <Compile Include="Models\Service\AdminModel.cs" />
     <Compile Include="Models\Service\AdminOTPModel.cs" />
+    <Compile Include="Models\Service\AuthMintResponse.cs" />
     <Compile Include="Models\Service\CardFilterModel.cs" />
     <Compile Include="Models\Service\CardModel.cs" />
     <Compile Include="Models\Service\CardTypeModel.cs" />
@@ -2602,6 +2603,7 @@
     </Compile>
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Services\AdminService.cs" />
+    <Compile Include="Services\AuthClient.cs" />
     <Compile Include="Services\CardService.cs" />
     <Compile Include="Services\DashboardService.cs" />
     <Compile Include="Services\Security.cs" />

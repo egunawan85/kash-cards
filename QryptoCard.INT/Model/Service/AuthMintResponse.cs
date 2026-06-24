@@ -33,5 +33,17 @@ namespace QryptoCard.INT.Model.Service
 
         [DataMember]
         public string SubjectType { get; set; }
+
+        // Serialized user/admin profile record the dashboard needs to bootstrap
+        // its session in a single call — mirrors what the legacy /auth/login/verify
+        // response returned (the tblM_User row for users, the vw_Admin row for
+        // admins). JSON string (op.Data is itself a JSON-string-in-object, and this
+        // nests one more level). Populated only by mintAfterOtpVerify; null on
+        // refresh (the dashboard already has the profile from the original mint).
+        //
+        // Credential columns (Password, PIN) are redacted to null before
+        // serialization — the legacy verify leaked them, this does not.
+        [DataMember]
+        public string Profile { get; set; }
     }
 }

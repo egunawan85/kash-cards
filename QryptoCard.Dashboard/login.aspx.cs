@@ -24,6 +24,10 @@ namespace QryptoCard.Dashboard
 
         public void logout()
         {
+            // Reaching the login page (session timeout / direct nav) must revoke the outstanding
+            // refresh chain server-side, not abandon it live. Mirrors logout.aspx; Revoke() also
+            // clears the local token fields.
+            AuthClient.Revoke();
 
             SessionLib.Current.SessionID = string.Empty;
             SessionLib.Current.UserID = string.Empty;
@@ -31,7 +35,6 @@ namespace QryptoCard.Dashboard
             SessionLib.Current.LastName = string.Empty;
             SessionLib.Current.Email = string.Empty;
             SessionLib.Current.DateJoin = null;
-            SessionLib.Current.Password = string.Empty;
         }
 
         protected void btnfailed_ServerClick(object sender, EventArgs e)
@@ -59,8 +62,10 @@ namespace QryptoCard.Dashboard
                 UserService ad = new UserService();
                 UserModel adm = new UserModel();
                 adm.Email = txtEmail.Value;
+                // Login endpoint still expects the encrypted password; the OTP
+                // step then mints tokens. No longer cache it in session — the
+                // dashboard authenticates with Bearer tokens after mint.
                 adm.Password = Secure.EncryptAPP(txtPassword.Value);
-                Session["QRTYHC"] = adm.Password;
                 var admin = ad.login(adm);
                 if (admin.Status == "success")
                 {
