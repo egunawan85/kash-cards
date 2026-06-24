@@ -17,9 +17,12 @@ namespace QryptoCard.INT.Model
         public static string QRYPTO_URL_FORGOT_PASSWORD = "https://kash.cards/newpassword?id=";
         public static string QRYPTO_ENVIRONMENT => SecretsConfig.GetOptional("QRYPTO_ENVIRONMENT", "dev");
 
-        public static string EMAIL_ADDRESS = "no-reply@qrypto.trade";
-        public static string EMAIL_SMTP_GATEWAY = "smtp.gmail.com";
-        public static int EMAIL_SMTP_PORT = 587;
+        // Email delivery via Postmark SMTP. The From (EMAIL_ADDRESS) must be a Postmark-verified
+        // sender signature; the SMTP login (EMAIL_SMTP_USER, below) is the Postmark Server API
+        // Token, distinct from the From. Non-secret, env-overridable; defaults target Postmark.
+        public static string EMAIL_ADDRESS => SecretsConfig.GetOptional("EMAIL_FROM", "no-reply@kash.cards");
+        public static string EMAIL_SMTP_GATEWAY => SecretsConfig.GetOptional("EMAIL_SMTP_GATEWAY", "smtp.postmarkapp.com");
+        public static int EMAIL_SMTP_PORT => System.Convert.ToInt32(SecretsConfig.GetOptional("EMAIL_SMTP_PORT", "587"));
 
         // --- Secrets / key material (env-only via SecretsConfig; never committed) ---
         public static string PGCRYPTO_API_KEY => SecretsConfig.Require("PGCRYPTO_API_KEY");
@@ -29,6 +32,10 @@ namespace QryptoCard.INT.Model
         public static string WASABICARD_PRIVATE_KEY => SecretsConfig.Require("WASABICARD_PRIVATE_KEY");
         public static string WASABICARD_PRIVATE_KEY_XML => SecretsConfig.Require("WASABICARD_PRIVATE_KEY_XML");
         public static string WASABICARD_WSBPUBLIC_KEY => SecretsConfig.Require("WASABICARD_WSBPUBLIC_KEY");
-        public static string EMAIL_PASSWORD => SecretsConfig.Require("EMAIL_PASSWORD");
+        // Postmark SMTP login — the Server API Token, used as BOTH the SMTP username and password
+        // (Postmark's convention), and kept separate from EMAIL_ADDRESS so the From is a verified
+        // sender signature distinct from the auth credential.
+        public static string EMAIL_SMTP_USER => SecretsConfig.Require("POSTMARK_SERVER_TOKEN");
+        public static string EMAIL_PASSWORD => SecretsConfig.Require("POSTMARK_SERVER_TOKEN");
     }
 }
