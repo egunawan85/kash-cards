@@ -30,6 +30,32 @@ Numbered in **implementation order** — rotation → deployment → hardening:
 - [`01-secret-rotation.md`](01-secret-rotation.md)
 - [`02-redeploy-and-perimeter.md`](02-redeploy-and-perimeter.md)
 - [`03-security-hardening.md`](03-security-hardening.md)
+- [`04-auth-tokens-2fa.md`](04-auth-tokens-2fa.md) — bearer-token & email-OTP/2FA design (broke out of P3·S3; awaiting sign-off)
+
+## Progress (live status)
+
+Legend: ✅ done · 🟡 partial · ⬜ not started · ⏸ deferred (blocked on DB / provider / Azure access)
+
+| Plan / Slice | Status | Where |
+|---|---|---|
+| **P1·S1** — Secret-management foundation (SecretsConfig, secrets out of source, deploy scaffold, guard, tests) | ✅ | **PR #1 (merged)** |
+| **P1·S2** — Emergency provider rotation (Wasabi/Runegate/SQL keys, email→Postmark) | ⏸ | provider actions + at launch |
+| **P1·S3** — Stored creds & internal keys (admin swap; crypto keys → P3·S5) | ⏸ | admin swap needs DB |
+| **P1·S4** — Repo hygiene & history scrub | 🟡 | gitignore + secret guard done (PR #1); secret-scanning/pre-commit + history scrub pending rotation |
+| **P2** — Redeploy & Cloudflare perimeter (VM/KV/tunnel, DB move, deploy scripts) | ⬜ | needs Azure/Cloudflare access; scripts not yet authored |
+| **P2·S6 (added)** — CI pipeline (run tests + secret guard on every push) | 🟡 | xUnit test projects landed (**PR #6**); CI wiring → with deploy prep |
+| **P3·S1** — Forensics & incident response | ⏸ | you run `tmp/forensics.sql` (needs DB) |
+| **P3·S2** — Callback integrity (signature verifiers + verify-before-forward) | ✅ | **PR #2** — T2.4 cross-check & T2.5 Runegate wire-up deferred |
+| **P3·(added)** — INT money-tier hardening (WCF shared-secret auth, metadata lockdown, error logging) | ✅ | **PR #3** — emerged from the PR #2 red-team |
+| **P3·S3** — Auth/authz (real OTP+2FA, IDOR, admin roles, open write endpoint) | 🟡 | IDOR + `enable2FA` scoping (**PR #4**) and admin Owner/Admin role guards (**PR #5**) merged; **bearer-token + email-OTP/2FA broken out → [Plan 4](04-auth-tokens-2fa.md)** |
+| **P3·S4** — Backdoor & money-path cleanup (fee GUID, commission gate, trustConnection, debug endpoints) | 🟡 | `trustConnection`/`testDecrypt` (PR #2/#3), **fee-GUID backdoor removed (PR #4)**; remaining debug endpoints ⬜ |
+| **P3·S5** — Crypto migration & defense-in-depth (AES-GCM, bcrypt, rate-limit, IP resolver) | 🟡 | error logging done (PR #3); AES-GCM/bcrypt migration ⏸ (DB, at launch); rate-limit/IP-resolver ⬜ |
+| **P3·S6** — Verification & red-team | ✅ ongoing | per-PR build + tests + model-diverse external red-team (PRs #2–#5); **formal xUnit test projects — Unit/Integration/Fixtures, 34 tests (PR #6)** |
+| **P4** — Auth tokens & 2FA (opaque bearer tokens, SubjectType, email-OTP → 2FA) | ⬜ | **[Plan 4](04-auth-tokens-2fa.md)** — design proposal, awaiting sign-off |
+
+**Shipped:** PR #1–#6 all **merged** — secrets foundation (#1), callback signature verification (#2), INT money-tier WCF auth (#3), IDOR + fee-backdoor + `enable2FA` scoping (#4), admin Owner/Admin role guards (#5), formal xUnit test projects (#6). Every money/auth change red-teamed (model-diverse Opus + Sonnet); the red-team caught — and we fixed before merge — a real **critical** (a broken WCF role-guard contract that denied all admins) and a **medium** (denylist → fail-closed allowlist).
+
+**Why things are deferred:** anything needing **DB access** (forensics, the crypto/bcrypt data migration, replay idempotency with a unique index) or **provider/Azure access** (rotation, deploy) is staged but not executable in Band A (code-only) — those run with your access, mostly at launch.
 
 ## Sister-project patterns we inherit (the house style)
 

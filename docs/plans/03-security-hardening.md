@@ -79,16 +79,20 @@ validation, and swallows all exceptions.
 
 ## Slice 3 — Authentication & authorization
 
-- **T3.1 — Real OTP + enforced 2FA + email delivery.** Replace the hardcoded
+> **Status:** T3.2 (IDOR) and T3.3 (admin roles) **shipped** — PR #4 and PR #5. T3.1
+> (real OTP + enforced 2FA + email delivery) and the bearer-token model are broken out
+> to **[Plan 4](04-auth-tokens-2fa.md)**. T3.4 (open write endpoint) still ⬜.
+
+- **T3.1 — Real OTP + enforced 2FA + email delivery.** *(→ [Plan 4](04-auth-tokens-2fa.md).)* Replace the hardcoded
   `getOTPCode()` → `"000000"` with real generation, and **enforce verified-OTP/session
   state on every protected call**, not just at login; add login lockout. **Note (from
   spike):** the user-facing OTP/reset emails are currently **commented out**, so OTP
   can't actually reach users — this task includes **re-enabling them via Postmark**
   (D14). Reference `runegate/.../TotpService.cs` + `LoginLockout.cs`.
-- **T3.2 — Fix the IDORs.** Every by-ID balance/card/transaction read and write must
+- **T3.2 — Fix the IDORs.** ✅ **(PR #4.)** Every by-ID balance/card/transaction read and write must
   filter by the authenticated user's ID (currently computed but unused), so one user
   can't read or touch another's data via guessable sequential IDs.
-- **T3.3 — Admin role enforcement.** Add real role checks to the admin
+- **T3.3 — Admin role enforcement.** ✅ **(PR #5.)** Add real role checks to the admin
   fee/commission/price/invite endpoints, and fix `addAdmin` repurposing the password
   field as the role string. Reference the sister bearer-token tier separation.
 - **T3.4 — Secure the open write endpoint.** Add authentication (or remove) the
@@ -134,6 +138,11 @@ validation, and swallows all exceptions.
   PII don't leak into traces while forgery campaigns stay correlatable.
 
 ## Slice 6 — Verification & red-team
+
+> **Status:** ✅ ongoing — every money/auth PR (#2–#5) went through build + tests +
+> model-diverse external red-team, which caught and fixed a real critical and a medium
+> before merge. The ad-hoc PowerShell checks are now **formal xUnit projects**
+> (Unit/Integration/Fixtures, PR #6): `dotnet test QryptoCard.Tests.sln`.
 
 - **T6.1 — Build + test.** Build the solution and test projects, run the existing
   suite (report pass/fail/skip), and author new tests for the settled fixes:

@@ -51,6 +51,7 @@ reachable from the public internet in the meantime.
 - **Slice 3 — Database migration (BACPAC)**
 - **Slice 4 — Cloudflare perimeter** (incl. interim callback IP-lock)
 - **Slice 5 — Cutover & decommission**
+- **Slice 6 — CI pipeline** (build + tests + secret guard on every push)
 
 ## Execution model — dev shakeout, then prod (D4 / D11)
 
@@ -165,6 +166,23 @@ Driven by the idempotent `cloudflare-setup.sh` pattern.
 - **T5.3 — Decommission.** After a retention window, tear down the old host and old
   Azure SQL, and confirm the old credentials are fully dead. Closes out the
   compromised infrastructure for good.
+
+---
+
+## Slice 6 — CI pipeline
+
+The xUnit test projects (`QryptoCard.Tests` — Unit/Integration/Fixtures, PR #6) and the
+`deploy/scripts/check-no-secrets.sh` guard already exist; this slice runs them automatically.
+
+- **T6.1 — Build + test on push.** GitHub Actions on a Windows runner: restore + build
+  `QryptoCard.sln` (MSBuild) and run `dotnet test QryptoCard.Tests.sln`; fail on any test
+  failure. The DB-gated Integration tests stay skipped in CI (no `KC_TEST_DB`) and run in
+  the dev shakeout.
+- **T6.2 — Secret + hygiene guard.** Run `check-no-secrets.sh` plus a secret-scanner (e.g.
+  gitleaks) on every push/PR and block on a hit — completing the Plan 1·S4 repo hygiene
+  (grep-guard + scanning) that was deferred pending rotation.
+- **T6.3 — Branch protection.** Require the build/test/guard checks before a PR can merge to
+  `main`, matching the sister "clean CI before launch" go-live gate.
 
 ---
 
