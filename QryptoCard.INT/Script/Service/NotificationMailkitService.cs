@@ -318,7 +318,7 @@ namespace QryptoCard.INT.Script.Service
                 {
                     client.Connect(KeyModel.EMAIL_SMTP_GATEWAY, KeyModel.EMAIL_SMTP_PORT);
                     client.AuthenticationMechanisms.Remove("XOAUTH2"); // no OAuth2 token
-                    client.Authenticate(KeyModel.EMAIL_ADDRESS, KeyModel.EMAIL_PASSWORD);
+                    client.Authenticate(KeyModel.EMAIL_SMTP_USER, KeyModel.EMAIL_PASSWORD);
                     client.Send(message);
                     client.Disconnect(true);
                 }
@@ -374,7 +374,7 @@ namespace QryptoCard.INT.Script.Service
                 {
                     client.Connect(KeyModel.EMAIL_SMTP_GATEWAY, KeyModel.EMAIL_SMTP_PORT);
                     client.AuthenticationMechanisms.Remove("XOAUTH2"); // no OAuth2 token
-                    client.Authenticate(KeyModel.EMAIL_ADDRESS, KeyModel.EMAIL_PASSWORD);
+                    client.Authenticate(KeyModel.EMAIL_SMTP_USER, KeyModel.EMAIL_PASSWORD);
                     client.Send(message);
                     client.Disconnect(true);
                 }
@@ -421,7 +421,7 @@ namespace QryptoCard.INT.Script.Service
                 {
                     client.Connect(KeyModel.EMAIL_SMTP_GATEWAY, KeyModel.EMAIL_SMTP_PORT);
                     client.AuthenticationMechanisms.Remove("XOAUTH2"); // no OAuth2 token
-                    client.Authenticate(KeyModel.EMAIL_ADDRESS, KeyModel.EMAIL_PASSWORD);
+                    client.Authenticate(KeyModel.EMAIL_SMTP_USER, KeyModel.EMAIL_PASSWORD);
                     client.Send(message);
                     client.Disconnect(true);
                 }
@@ -468,7 +468,7 @@ namespace QryptoCard.INT.Script.Service
                 {
                     client.Connect(KeyModel.EMAIL_SMTP_GATEWAY, KeyModel.EMAIL_SMTP_PORT);
                     client.AuthenticationMechanisms.Remove("XOAUTH2"); // no OAuth2 token
-                    client.Authenticate(KeyModel.EMAIL_ADDRESS, KeyModel.EMAIL_PASSWORD);
+                    client.Authenticate(KeyModel.EMAIL_SMTP_USER, KeyModel.EMAIL_PASSWORD);
                     client.Send(message);
                     client.Disconnect(true);
                 }
@@ -516,7 +516,7 @@ namespace QryptoCard.INT.Script.Service
                 {
                     client.Connect(KeyModel.EMAIL_SMTP_GATEWAY, KeyModel.EMAIL_SMTP_PORT);
                     client.AuthenticationMechanisms.Remove("XOAUTH2"); // no OAuth2 token
-                    client.Authenticate(KeyModel.EMAIL_ADDRESS, KeyModel.EMAIL_PASSWORD);
+                    client.Authenticate(KeyModel.EMAIL_SMTP_USER, KeyModel.EMAIL_PASSWORD);
                     client.Send(message);
                     client.Disconnect(true);
                 }
@@ -563,7 +563,7 @@ namespace QryptoCard.INT.Script.Service
                 {
                     client.Connect(KeyModel.EMAIL_SMTP_GATEWAY, KeyModel.EMAIL_SMTP_PORT);
                     client.AuthenticationMechanisms.Remove("XOAUTH2"); // no OAuth2 token
-                    client.Authenticate(KeyModel.EMAIL_ADDRESS, KeyModel.EMAIL_PASSWORD);
+                    client.Authenticate(KeyModel.EMAIL_SMTP_USER, KeyModel.EMAIL_PASSWORD);
                     client.Send(message);
                     client.Disconnect(true);
                 }

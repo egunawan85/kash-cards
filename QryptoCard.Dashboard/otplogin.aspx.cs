@@ -72,38 +72,45 @@ namespace QryptoCard.Dashboard
                 return;
             }
 
-            UserService ad = new UserService();
-            UserAuthOTPModel z = new UserAuthOTPModel();
-            z.ID = Session["OTPIDC"].ToString();
-            z.Code = icode1.Value + icode2.Value + icode3.Value + icode4.Value + icode5.Value + icode6.Value;
+            // Replace loginVerify(z) with AuthClient.MintAfterOtpVerify. Login.aspx
+            // already POSTed (email, password) to /v1/auth/login and stashed OTPIDC;
+            // here we collect the 6-digit OTP and call /v1/auth/mint-after-otp, which
+            // verifies the OTP and mints the (access, refresh) token pair. The mint
+            // response carries a Profile field — the JSON-serialized user record
+            // (Password + PIN nulled) — matching what loginVerify returned, so the
+            // SessionLib population shape is unchanged.
+            var otpId = Session["OTPIDC"].ToString();
+            var otpCode = icode1.Value + icode2.Value + icode3.Value + icode4.Value + icode5.Value + icode6.Value;
 
-            var admin = ad.loginVerify(z);
-            if (admin.Status == "success")
+            var mintOp = AuthClient.MintAfterOtpVerify(otpId, otpCode);
+            if (mintOp.Status == "success")
             {
                 enableButton();
-                var dt = JsonConvert.DeserializeObject<UserModel>(admin.Data.ToString());
+                var resp = JsonConvert.DeserializeObject<AuthMintResponse>(mintOp.Data.ToString());
+                if (resp == null || string.IsNullOrEmpty(resp.Profile))
+                {
+                    divfailed.Visible = true;
+                    lblFailed.Text = "Login completed but profile data missing";
+                    return;
+                }
+                // AuthClient.MintAfterOtpVerify already populated SessionLib's token
+                // fields. Now populate the profile fields from resp.Profile.
+                var dt = JsonConvert.DeserializeObject<UserModel>(resp.Profile);
                 SessionLib.Current.SessionID = dt.UserID;
                 SessionLib.Current.UserID = dt.UserID;
                 SessionLib.Current.FirstName = dt.FirstName;
                 SessionLib.Current.LastName = dt.LastName;
                 SessionLib.Current.Email = dt.Email;
                 SessionLib.Current.DateJoin = dt.DateJoin;
-                SessionLib.Current.Password = Session["QRTYHC"].ToString();
                 Session["QRTYHC"] = null;
                 Session["OTPIDC"] = null;
-                //if (dt.Email == "reagen@qrypto.trade")
-                //{
-                //    setCookies(JsonConvert.SerializeObject(dt));
-                //}
-                setCookies(JsonConvert.SerializeObject(dt));
-                //checkRole();
                 Response.Redirect("Dashboard");
             }
             else
             {
                 enableButton();
                 divfailed.Visible = true;
-                lblFailed.Text = admin.Message;
+                lblFailed.Text = mintOp.Message;
             }
 
         }
@@ -137,17 +144,6 @@ namespace QryptoCard.Dashboard
         protected void btnsuccess_ServerClick(object sender, EventArgs e)
         {
             divsuccess.Visible = false;
-        }
-
-        public void setCookies(string x)
-        {
-            Response.Cookies["QryptoCardData"].Value = x;
-            Response.Cookies["QryptoCardData"].Expires = DateTime.Now.AddMonths(1);
-            Response.Cookies["QryptoCardEmail"].Value = SessionLib.Current.Email;
-            Response.Cookies["QryptoCardEmail"].Expires = DateTime.Now.AddMonths(1);
-            Response.Cookies["QryptoCardPassword"].Value = SessionLib.Current.Password;
-            Response.Cookies["QryptoCardPassword"].Expires = DateTime.Now.AddMonths(1);
-            return;
         }
     }
 }

@@ -154,6 +154,7 @@
     <Content Include="Script\Service\API\v1\CardV1Service.svc" />
     <Content Include="Script\Service\App\v1\CardV1Service.svc" />
     <Content Include="Script\Service\App\v1\UserV1Service.svc" />
+    <Content Include="Script\Service\Auth\v1\AuthV1Service.svc" />
     <Content Include="Script\Service\ManualService.svc" />
     <Content Include="Script\Service\SecurityService.svc" />
     <Content Include="Service1.svc" />
@@ -168,6 +169,7 @@
       <DesignTime>True</DesignTime>
       <DependentUpon>DB.Context.tt</DependentUpon>
     </Compile>
+    <Compile Include="DB.Context.Partial.cs" />
     <Compile Include="DB.cs">
       <AutoGen>True</AutoGen>
       <DesignTime>True</DesignTime>
@@ -178,6 +180,15 @@
       <DesignTime>True</DesignTime>
       <DependentUpon>DB.edmx</DependentUpon>
     </Compile>
+    <Compile Include="Script\Service\Auth\v1\AuthDbContext.cs" />
+    <Compile Include="Script\Service\Auth\v1\tblT_AuthToken.cs" />
+    <Compile Include="Script\Service\Auth\v1\tblT_RefreshToken.cs" />
+    <Compile Include="Script\Service\Auth\v1\tblH_Auth_Log.cs" />
+    <Compile Include="Script\Service\Auth\v1\IAuthV1Service.cs" />
+    <Compile Include="Script\Service\Auth\v1\AuthV1Service.svc.cs" />
+    <Compile Include="Script\Service\WcfSourceIp.cs" />
+    <Compile Include="Model\Service\AuthMintResponse.cs" />
+    <Compile Include="Model\Service\AuthVerifyResponse.cs" />
     <Compile Include="Model\Service\AdminFilterModel.cs" />
     <Compile Include="Model\Service\CardBalanceModel.cs" />
     <Compile Include="Model\Service\CardFilterModel.cs" />

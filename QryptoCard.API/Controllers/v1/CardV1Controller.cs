@@ -13,20 +13,11 @@ using System.Web.Http;
 namespace QryptoCard.API.Controllers.v1
 {
     [RoutePrefix("v1/card")]
-    [BasicAuthentication]
-    public class CardV1Controller : ApiController
+    [BearerAuthentication]
+    public class CardV1Controller : QryptoCardApiController
     {
         CardV1ServiceClient sr = new CardV1ServiceClient();
         OutputModel op = new OutputModel();
-
-        private string getKey()
-        {
-            // Gets header parameters  
-            HttpContext httpContext = HttpContext.Current;
-            string authenticationString = httpContext.Request.Headers["Authorization"];
-            string originalString = Encoding.UTF8.GetString(Convert.FromBase64String(authenticationString.Split(' ')[1]));
-            return originalString.Split(':')[0];
-        }
 
         private void trustConnection()
         {
@@ -90,7 +81,7 @@ namespace QryptoCard.API.Controllers.v1
             try
             {
                 trustConnection();
-                op = sr.getHolderDetail(getKey(), x);
+                op = sr.getHolderDetail(getEmail(), x);
                 if (op.Status == "success")
                     op.Data = JsonConvert.DeserializeObject<tblM_Cardholder>(op.Data.ToString());
             }
@@ -112,7 +103,7 @@ namespace QryptoCard.API.Controllers.v1
             try
             {
                 trustConnection();
-                op = sr.checkHolderByCardTypeId(getKey(), x);
+                op = sr.checkHolderByCardTypeId(getEmail(), x);
                 if (op.Status == "success")
                     op.Data = JsonConvert.DeserializeObject<tblM_Cardholder>(op.Data.ToString());
             }
@@ -134,7 +125,7 @@ namespace QryptoCard.API.Controllers.v1
             try
             {
                 trustConnection();
-                op = sr.openCard(getKey(), x);
+                op = sr.openCard(getEmail(), x);
                 if (op.Status == "success")
                     op.Data = JsonConvert.DeserializeObject<tblT_Card>(op.Data.ToString());
             }
@@ -156,7 +147,7 @@ namespace QryptoCard.API.Controllers.v1
             try
             {
                 trustConnection();
-                op = sr.getCardList(getKey(), x);
+                op = sr.getCardList(getEmail(), x);
                 if (op.Status == "success")
                     op.Data = JsonConvert.DeserializeObject<List<vw_Card>>(op.Data.ToString());
             }
@@ -177,7 +168,7 @@ namespace QryptoCard.API.Controllers.v1
             try
             {
                 trustConnection();
-                op = sr.getCardListAll(getKey(), x);
+                op = sr.getCardListAll(getEmail(), x);
                 if (op.Status == "success")
                     op.Data = JsonConvert.DeserializeObject<List<vw_Card>>(op.Data.ToString());
             }
@@ -199,7 +190,7 @@ namespace QryptoCard.API.Controllers.v1
             try
             {
                 trustConnection();
-                op = sr.getCardDetail(getKey(), x);
+                op = sr.getCardDetail(getEmail(), x);
                 if (op.Status == "success")
                     op.Data = JsonConvert.DeserializeObject<vw_Card>(op.Data.ToString());
             }
@@ -220,7 +211,7 @@ namespace QryptoCard.API.Controllers.v1
             try
             {
                 trustConnection();
-                op = sr.cancelCardTransaction(getKey(), x);
+                op = sr.cancelCardTransaction(getEmail(), x);
                 //if (op.Status == "success")
                 //    op.Data = JsonConvert.DeserializeObject<vw_Card>(op.Data.ToString());
             }
@@ -241,7 +232,7 @@ namespace QryptoCard.API.Controllers.v1
             try
             {
                 trustConnection();
-                op = sr.depositCard(getKey(), x);
+                op = sr.depositCard(getEmail(), x);
                 if (op.Status == "success")
                     op.Data = JsonConvert.DeserializeObject<tblT_Card_Deposit>(op.Data.ToString());
             }
@@ -262,7 +253,7 @@ namespace QryptoCard.API.Controllers.v1
             try
             {
                 trustConnection();
-                op = sr.getCardDepositDetail(getKey(), x);
+                op = sr.getCardDepositDetail(getEmail(), x);
                 if (op.Status == "success")
                     op.Data = JsonConvert.DeserializeObject<tblT_Card_Deposit>(op.Data.ToString());
             }
@@ -283,7 +274,7 @@ namespace QryptoCard.API.Controllers.v1
             try
             {
                 trustConnection();
-                op = sr.getCardDepositList(getKey(), x);
+                op = sr.getCardDepositList(getEmail(), x);
                 if (op.Status == "success")
                     op.Data = JsonConvert.DeserializeObject<List<tblT_Card_Deposit>>(op.Data.ToString());
             }
@@ -304,7 +295,7 @@ namespace QryptoCard.API.Controllers.v1
             try
             {
                 trustConnection();
-                op = sr.cancelDepositTransaction(getKey(), x);
+                op = sr.cancelDepositTransaction(getEmail(), x);
                 //if (op.Status == "success")
                 //    op.Data = JsonConvert.DeserializeObject<vw_Card>(op.Data.ToString());
             }
@@ -325,7 +316,7 @@ namespace QryptoCard.API.Controllers.v1
             try
             {
                 trustConnection();
-                op = sr.getCardTransaction(getKey(), x);
+                op = sr.getCardTransaction(getEmail(), x);
                 if (op.Status == "success")
                     op.Data = JsonConvert.DeserializeObject<List<tblT_Card_Transaction>>(op.Data.ToString());
             }
@@ -346,7 +337,7 @@ namespace QryptoCard.API.Controllers.v1
             try
             {
                 trustConnection();
-                op = sr.getCardTransactionDetail(getKey(), x);
+                op = sr.getCardTransactionDetail(getEmail(), x);
                 if (op.Status == "success")
                     op.Data = JsonConvert.DeserializeObject<tblT_Card_Transaction>(op.Data.ToString());
             }

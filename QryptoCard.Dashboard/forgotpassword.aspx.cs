@@ -29,7 +29,6 @@ namespace QryptoCard.Dashboard
             SessionLib.Current.LastName = string.Empty;
             SessionLib.Current.Email = string.Empty;
             SessionLib.Current.DateJoin = null;
-            SessionLib.Current.Password = string.Empty;
         }
 
         protected void btnfailed_ServerClick(object sender, EventArgs e)

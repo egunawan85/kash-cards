@@ -28,7 +28,54 @@
     <Reference Include="BouncyCastle.Cryptography">
       <HintPath>..\packages\BouncyCastle.Cryptography.2.5.0\lib\net461\BouncyCastle.Cryptography.dll</HintPath>
     </Reference>
+    <!--
+      Real INT WCF service classes are instantiated directly in the DB-backed integration
+      tests (e.g. new UserV1Service().RegisterVerify(...)). The services field-initialise
+      `new DBEntities()` reading name=DBEntities from App.config (pointed at LocalDB below),
+      so the INT assembly + EF6 must be referenced here too. Same legacy-net462-DLL-from-
+      net48-consumer arrangement as the Fixtures project.
+    -->
+    <Reference Include="QryptoCard.INT">
+      <HintPath>..\QryptoCard.INT\bin\QryptoCard.INT.dll</HintPath>
+    </Reference>
+    <!--
+      The BearerAuthenticationAttribute + AuthTokenSecurity seam live in the API web
+      projects (not in the INT tier). Reference their build output directly, plus
+      ASP.NET Web API for HttpActionContext, so the bearer end-to-end test can drive
+      the real attribute against the real (LocalDB-backed) AuthV1Service.verify.
+    -->
+    <Reference Include="QryptoCard.API">
+      <HintPath>..\QryptoCard.API\bin\QryptoCard.API.dll</HintPath>
+    </Reference>
+    <Reference Include="QryptoCard.API.Admin">
+      <HintPath>..\QryptoCard.API.Admin\bin\QryptoCard.API.Admin.dll</HintPath>
+    </Reference>
+    <Reference Include="System.Web.Http">
+      <HintPath>..\packages\Microsoft.AspNet.WebApi.Core.5.2.9\lib\net45\System.Web.Http.dll</HintPath>
+    </Reference>
+    <Reference Include="System.Net.Http.Formatting">
+      <HintPath>..\packages\Microsoft.AspNet.WebApi.Client.5.2.9\lib\net45\System.Net.Http.Formatting.dll</HintPath>
+    </Reference>
+    <Reference Include="System.Net.Http" />
+    <Reference Include="EntityFramework">
+      <HintPath>..\packages\EntityFramework.6.2.0\lib\net45\EntityFramework.dll</HintPath>
+    </Reference>
+    <Reference Include="EntityFramework.SqlServer">
+      <HintPath>..\packages\EntityFramework.6.2.0\lib\net45\EntityFramework.SqlServer.dll</HintPath>
+    </Reference>
+    <Reference Include="System.Data" />
+    <Reference Include="System.Data.Entity" />
     <ProjectReference Include="..\QryptoCard.Tests.Fixtures\QryptoCard.Tests.Fixtures.csproj" />
+  </ItemGroup>
+
+  <!--
+    DB-backed tests instantiate WCF services that read name=DBEntities from the test-host's
+    app config; App.config supplies a LocalDB DBEntities connection string. The EF-generated
+    schema (init.sql) is referenced from source by the fixture's repo-root walk-up, so it is
+    not copied to the output directory.
+  -->
+  <ItemGroup>
+    <None Include="App.config" />
   </ItemGroup>
 
 </Project>

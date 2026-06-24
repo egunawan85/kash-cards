@@ -41,7 +41,6 @@ namespace QryptoCard.Dashboard
             SessionLib.Current.LastName = string.Empty;
             SessionLib.Current.Email = string.Empty;
             SessionLib.Current.DateJoin = null;
-            SessionLib.Current.Password = string.Empty;
         }
 
         protected void btnfailed_ServerClick(object sender, EventArgs e)
@@ -125,8 +124,11 @@ namespace QryptoCard.Dashboard
                 //adm.LastName = txtLastName.Value;
                 adm.Email = txtEmail.Value;
                 adm.InvitedBy = txtReferralCode.Value;
+                // Register endpoint still expects the encrypted password. No
+                // longer cached in session — registration completes via the OTP
+                // verify step; the user authenticates with Bearer tokens after a
+                // subsequent login/mint.
                 adm.Password = Secure.EncryptAPP(txtPassword.Value);
-                Session["QRTYHC"] = adm.Password;
                 var admin = ad.register(adm);
                 if (admin.Status == "success")
                 {

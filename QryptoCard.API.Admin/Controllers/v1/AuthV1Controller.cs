@@ -190,5 +190,71 @@ namespace QryptoCard.API.Admin.Controllers.v1
 
             return op;
         }
+
+        // ---------- auth-token routes ----------
+        //
+        // Admin-tier mirror of QryptoCard.API/Controllers/v1/AuthV1Controller.cs.
+        // The URL tier locks the minted SubjectType to "admin" regardless of the
+        // request body. See the user-tier controller for the full flow comment.
+        //
+        // OutputModel is fully qualified to QryptoCard.INT.Model.Service.OutputModel
+        // here (the class' field-level `op` is the proxy-generated AdminV1Service.OutputModel).
+
+        [Route("mint-after-otp")]
+        [HttpPost]
+        public QryptoCard.INT.Model.Service.OutputModel mintAfterOtp(MintAfterOtpRequest req)
+        {
+            if (req == null)
+            {
+                return new QryptoCard.INT.Model.Service.OutputModel
+                {
+                    Status = "failed",
+                    Message = "Invalid OTP code or session"
+                };
+            }
+            // Admin-tier route always mints "admin" tokens regardless of req.SubjectType.
+            return AuthTokenSecurity.MintAfterOtpVerify(req.OtpSessionId, req.OtpCode, "admin");
+        }
+
+        [Route("refresh")]
+        [HttpPost]
+        public QryptoCard.INT.Model.Service.OutputModel refresh(RefreshTokenRequest req)
+        {
+            if (req == null)
+            {
+                return new QryptoCard.INT.Model.Service.OutputModel
+                {
+                    Status = "failed",
+                    Message = "Invalid refresh token"
+                };
+            }
+            return AuthTokenSecurity.Refresh(req.RefreshToken);
+        }
+
+        [Route("revoke")]
+        [HttpPost]
+        public QryptoCard.INT.Model.Service.OutputModel revoke(RefreshTokenRequest req)
+        {
+            // Logout is idempotent — a null body is a no-op success.
+            if (req == null)
+            {
+                return new QryptoCard.INT.Model.Service.OutputModel { Status = "success", Message = "ok" };
+            }
+            return AuthTokenSecurity.Revoke(req.RefreshToken);
+        }
+    }
+
+    // Auth-token request DTOs (Admin-tier mirror of the user tier). Plain POCOs
+    // (no [DataContract]) — ASP.NET Web API JSON deserialization targets.
+    public class MintAfterOtpRequest
+    {
+        public string OtpSessionId { get; set; }
+        public string OtpCode      { get; set; }
+        public string SubjectType  { get; set; }   // "user" | "admin"
+    }
+
+    public class RefreshTokenRequest
+    {
+        public string RefreshToken { get; set; }
     }
 }

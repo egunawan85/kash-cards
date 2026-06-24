@@ -20,13 +20,7 @@ namespace QryptoCard.Dashboard.Admin.Services
             {
                 Common.trustConnection();
                 string path = "/v1/user/list/active";
-                WebClient client = new WebClient();
-                client.Headers["Content-type"] = "application/json";
-                client.Headers[HttpRequestHeader.Authorization] = string.Format("Basic {0}", Security.credentials(SessionLib.Current.Email, SessionLib.Current.Password));
-                //client.Headers[HttpRequestHeader.Authorization] = string.Format("Basic {0}", Security.credentialsNoAuthAdmin());
-                client.Encoding = Encoding.UTF8;
-                ServicePointManager.ServerCertificateValidationCallback += (sender, certificate, chain, sslPolicyErrors) => true;
-                return op = JsonConvert.DeserializeObject<OutputModel>(client.DownloadString(KeyModel.API_URL + path));
+                return op = AuthClient.ExecuteJsonGet(path);
             }
             catch (Exception ex)
             {
@@ -42,13 +36,7 @@ namespace QryptoCard.Dashboard.Admin.Services
             {
                 Common.trustConnection();
                 string path = "/v1/user/commission/list";
-                WebClient client = new WebClient();
-                client.Headers["Content-type"] = "application/json";
-                client.Headers[HttpRequestHeader.Authorization] = string.Format("Basic {0}", Security.credentials(SessionLib.Current.Email, SessionLib.Current.Password));
-                //client.Headers[HttpRequestHeader.Authorization] = string.Format("Basic {0}", Security.credentialsNoAuthAdmin());
-                client.Encoding = Encoding.UTF8;
-                ServicePointManager.ServerCertificateValidationCallback += (sender, certificate, chain, sslPolicyErrors) => true;
-                return op = JsonConvert.DeserializeObject<OutputModel>(client.DownloadString(KeyModel.API_URL + path));
+                return op = AuthClient.ExecuteJsonGet(path);
             }
             catch (Exception ex)
             {
@@ -64,14 +52,7 @@ namespace QryptoCard.Dashboard.Admin.Services
             {
                 Common.trustConnection();
                 string path = "/v1/user/commission";
-                WebClient client = new WebClient();
-                client.Headers["Content-type"] = "application/json";
-                string inputJson = JsonConvert.SerializeObject(adm);
-                client.Headers[HttpRequestHeader.Authorization] = string.Format("Basic {0}", Security.credentials(SessionLib.Current.Email, SessionLib.Current.Password));
-                //client.Headers[HttpRequestHeader.Authorization] = string.Format("Basic {0}", Security.credentialsNoAuthAdmin());
-                client.Encoding = Encoding.UTF8;
-                ServicePointManager.ServerCertificateValidationCallback += (sender, certificate, chain, sslPolicyErrors) => true;
-                return op = JsonConvert.DeserializeObject<OutputModel>(client.UploadString(KeyModel.API_URL + path, "PUT", inputJson));
+                return op = AuthClient.ExecuteJsonPut(path, adm);
             }
             catch (Exception ex)
             {
@@ -87,13 +68,7 @@ namespace QryptoCard.Dashboard.Admin.Services
             {
                 Common.trustConnection();
                 string path = "/v1/user/fee/list";
-                WebClient client = new WebClient();
-                client.Headers["Content-type"] = "application/json";
-                client.Headers[HttpRequestHeader.Authorization] = string.Format("Basic {0}", Security.credentials(SessionLib.Current.Email, SessionLib.Current.Password));
-                //client.Headers[HttpRequestHeader.Authorization] = string.Format("Basic {0}", Security.credentialsNoAuthAdmin());
-                client.Encoding = Encoding.UTF8;
-                ServicePointManager.ServerCertificateValidationCallback += (sender, certificate, chain, sslPolicyErrors) => true;
-                return op = JsonConvert.DeserializeObject<OutputModel>(client.DownloadString(KeyModel.API_URL + path));
+                return op = AuthClient.ExecuteJsonGet(path);
             }
             catch (Exception ex)
             {
@@ -109,14 +84,7 @@ namespace QryptoCard.Dashboard.Admin.Services
             {
                 Common.trustConnection();
                 string path = "/v1/user/fee";
-                WebClient client = new WebClient();
-                client.Headers["Content-type"] = "application/json";
-                string inputJson = JsonConvert.SerializeObject(adm);
-                client.Headers[HttpRequestHeader.Authorization] = string.Format("Basic {0}", Security.credentials(SessionLib.Current.Email, SessionLib.Current.Password));
-                //client.Headers[HttpRequestHeader.Authorization] = string.Format("Basic {0}", Security.credentialsNoAuthAdmin());
-                client.Encoding = Encoding.UTF8;
-                ServicePointManager.ServerCertificateValidationCallback += (sender, certificate, chain, sslPolicyErrors) => true;
-                return op = JsonConvert.DeserializeObject<OutputModel>(client.UploadString(KeyModel.API_URL + path, "PUT", inputJson));
+                return op = AuthClient.ExecuteJsonPut(path, adm);
             }
             catch (Exception ex)
             {

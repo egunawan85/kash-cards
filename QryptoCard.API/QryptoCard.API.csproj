@@ -143,7 +143,10 @@
   <ItemGroup>
     <Compile Include="ApiSecurity.cs" />
     <Compile Include="App_Start\WebApiConfig.cs" />
+    <Compile Include="AuthTokenSecurity.cs" />
     <Compile Include="BasicAuthenticationAttribute.cs" />
+    <Compile Include="BearerAuthenticationAttribute.cs" />
+    <Compile Include="QryptoCardApiController.cs" />
     <Compile Include="Connected Services\AuthService\Reference.cs">
       <AutoGen>True</AutoGen>
       <DesignTime>True</DesignTime>
@@ -174,6 +177,15 @@
     <Compile Include="Models\CardTypeModel.cs" />
     <Compile Include="Models\UserReferralModel.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <!-- AuthTokenSecurity uses ChannelFactory<IAuthV1Service>; the contract type
+         resolves directly from the QryptoCard.INT project reference (no generated
+         WCF proxy). Mirrors the sister project's auth-token wiring. -->
+    <ProjectReference Include="..\QryptoCard.INT\QryptoCard.INT.csproj">
+      <Project>{16ED496B-A12F-479E-A244-DF11CD0ABD5D}</Project>
+      <Name>QryptoCard.INT</Name>
+    </ProjectReference>
   </ItemGroup>
   <ItemGroup>
     <None Include="Connected Services\AutomationService\AutomationV1Service.wsdl" />

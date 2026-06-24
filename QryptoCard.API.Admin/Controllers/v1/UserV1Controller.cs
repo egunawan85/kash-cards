@@ -13,19 +13,11 @@ using System.Web.Http;
 namespace QryptoCard.API.Admin.Controllers.v1
 {
     [RoutePrefix("v1/user")]
-    [BasicAuthentication]
-    public class UserV1Controller : ApiController
+    [BearerAuthentication]
+    public class UserV1Controller : QryptoCardApiController
     {
         UserV1ServiceClient sr = new UserV1ServiceClient();
         OutputModel op = new OutputModel();
-        private string getKey()
-        {
-            // Gets header parameters  
-            HttpContext httpContext = HttpContext.Current;
-            string authenticationString = httpContext.Request.Headers["Authorization"];
-            string originalString = Encoding.UTF8.GetString(Convert.FromBase64String(authenticationString.Split(' ')[1]));
-            return originalString.Split(':')[0];
-        }
 
         private void trustConnection()
         {
@@ -87,7 +79,7 @@ namespace QryptoCard.API.Admin.Controllers.v1
             try
             {
                 trustConnection();
-                op = sr.updateUserCommission(getKey(), x);
+                op = sr.updateUserCommission(getEmail(), x);
                 //if (op.Status == "success")
                 //    op.Data = JsonConvert.DeserializeObject<List<vw_User_Commission>>(op.Data.ToString());
             }
@@ -130,7 +122,7 @@ namespace QryptoCard.API.Admin.Controllers.v1
             try
             {
                 trustConnection();
-                op = sr.updateUserFee(getKey(), x);
+                op = sr.updateUserFee(getEmail(), x);
                 //if (op.Status == "success")
                 //    op.Data = JsonConvert.DeserializeObject<List<vw_User_Commission>>(op.Data.ToString());
             }

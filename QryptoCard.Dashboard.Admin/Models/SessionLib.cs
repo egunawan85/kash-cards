@@ -19,7 +19,13 @@ namespace QryptoCard.Dashboard.Admin.Models
             Phone = string.Empty;
             Role = string.Empty;
             DateJoin = null;
-            Password = string.Empty;
+            // Password REMOVED. Replaced with Bearer-token fields — SessionLib
+            // never holds a plaintext/encrypted credential at rest anymore.
+            AccessToken = string.Empty;
+            RefreshToken = string.Empty;
+            AccessTokenExpires = null;
+            RefreshTokenExpires = null;
+            SubjectType = "admin";
         }
         public static SessionLib Current
         {
@@ -42,8 +48,16 @@ namespace QryptoCard.Dashboard.Admin.Models
         public string UserName { get; set; }
         public string Email { get; set; }
         public string Phone { get; set; }
-        public string Password { get; set; }
         public string Role { get; set; }
         public Nullable<System.DateTime> DateJoin { get; set; }
+
+        // Bearer-token replacements for the deleted Password field. AuthClient
+        // reads/writes these on every authenticated upstream call (silent refresh
+        // on 401, token rotation). The dashboard never displays these fields.
+        public string AccessToken { get; set; }
+        public string RefreshToken { get; set; }
+        public Nullable<System.DateTime> AccessTokenExpires { get; set; }
+        public Nullable<System.DateTime> RefreshTokenExpires { get; set; }
+        public string SubjectType { get; set; }   // "user" | "admin"
     }
 }

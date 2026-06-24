@@ -51,14 +51,6 @@ namespace QryptoCard.Dashboard.Models
                 };
         }
 
-        public static bool checkDefaultPassword()
-        {
-            if (KeyModel.USER_PASSWORD == SessionLib.Current.Password)
-                return false;
-            else
-                return true;
-        }
-
         public static bool checkID()
         {
             //return true;
