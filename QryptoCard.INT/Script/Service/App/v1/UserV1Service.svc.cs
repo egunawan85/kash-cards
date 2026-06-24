@@ -806,7 +806,7 @@ namespace QryptoCard.INT.Script.Service.App.v1
                     var code = Common.getOTPCode();
                     a.Code = QryptoCard.Sec.OtpCodes.Hash(code);
                     a.DateCreated = DateTime.Now;
-                    a.DateExpired = a.DateCreated.Value.AddMinutes(30);
+                    a.DateExpired = a.DateCreated.Value.AddMinutes(15);
                     a.isVerify = 0;
                     db.tblH_User_OTP.Add(a);
                     db.SaveChanges();
@@ -834,7 +834,7 @@ namespace QryptoCard.INT.Script.Service.App.v1
             {
                 string uid = getUserId(em);
 
-                var otp = db.tblH_User_OTP.Where(p => p.isVerify == 0 && p.UserID == uid).FirstOrDefault();
+                var otp = db.tblH_User_OTP.Where(p => p.isVerify == 0 && p.UserID == uid && p.OTPID == x.OTPID).OrderByDescending(p => p.DateCreated).FirstOrDefault();
                 if (otp == null)
                 {
                     op.Status = "failed";
@@ -1023,7 +1023,7 @@ namespace QryptoCard.INT.Script.Service.App.v1
                 var code = Common.getOTPCode();
                 a.Code = QryptoCard.Sec.OtpCodes.Hash(code);
                 a.DateCreated = DateTime.Now;
-                a.DateExpired = a.DateCreated.Value.AddMinutes(30);
+                a.DateExpired = a.DateCreated.Value.AddMinutes(15);
                 a.isVerify = 0;
                 db.tblH_User_OTP.Add(a);
                 db.SaveChanges();

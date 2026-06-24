@@ -312,20 +312,22 @@ namespace QryptoCard.INT.Script.Service
             message.Subject = "Forgot Password Request";
             message.Body = bodyBuilder.ToMessageBody();
 
-            using (var client = new SmtpClient())
+            try
             {
-                client.Connect(KeyModel.EMAIL_SMTP_GATEWAY, KeyModel.EMAIL_SMTP_PORT);
-
-
-                // Note: since we don't have an OAuth2 token, disable
-                // the XOAUTH2 authentication mechanism.
-                client.AuthenticationMechanisms.Remove("XOAUTH2");
-
-                // Note: only needed if the SMTP server requires authentication
-                client.Authenticate(KeyModel.EMAIL_ADDRESS, KeyModel.EMAIL_PASSWORD);
-
-                client.Send(message);
-                client.Disconnect(true);
+                using (var client = new SmtpClient())
+                {
+                    client.Connect(KeyModel.EMAIL_SMTP_GATEWAY, KeyModel.EMAIL_SMTP_PORT);
+                    client.AuthenticationMechanisms.Remove("XOAUTH2"); // no OAuth2 token
+                    client.Authenticate(KeyModel.EMAIL_ADDRESS, KeyModel.EMAIL_PASSWORD);
+                    client.Send(message);
+                    client.Disconnect(true);
+                }
+            }
+            catch (Exception ex)
+            {
+                // Log the real cause server-side; surface a clean message (no SMTP internals to the client).
+                System.Diagnostics.Trace.TraceError("Email send failed: " + ex);
+                throw new Exception("Unable to send email. Please try again.");
             }
             //try
             //{
@@ -366,20 +368,22 @@ namespace QryptoCard.INT.Script.Service
             message.Subject = "Forgot Password Request";
             message.Body = bodyBuilder.ToMessageBody();
 
-            using (var client = new SmtpClient())
+            try
             {
-                client.Connect(KeyModel.EMAIL_SMTP_GATEWAY, KeyModel.EMAIL_SMTP_PORT);
-
-
-                // Note: since we don't have an OAuth2 token, disable
-                // the XOAUTH2 authentication mechanism.
-                client.AuthenticationMechanisms.Remove("XOAUTH2");
-
-                // Note: only needed if the SMTP server requires authentication
-                client.Authenticate(KeyModel.EMAIL_ADDRESS, KeyModel.EMAIL_PASSWORD);
-
-                client.Send(message);
-                client.Disconnect(true);
+                using (var client = new SmtpClient())
+                {
+                    client.Connect(KeyModel.EMAIL_SMTP_GATEWAY, KeyModel.EMAIL_SMTP_PORT);
+                    client.AuthenticationMechanisms.Remove("XOAUTH2"); // no OAuth2 token
+                    client.Authenticate(KeyModel.EMAIL_ADDRESS, KeyModel.EMAIL_PASSWORD);
+                    client.Send(message);
+                    client.Disconnect(true);
+                }
+            }
+            catch (Exception ex)
+            {
+                // Log the real cause server-side; surface a clean message (no SMTP internals to the client).
+                System.Diagnostics.Trace.TraceError("Email send failed: " + ex);
+                throw new Exception("Unable to send email. Please try again.");
             }
 
         }
@@ -411,20 +415,22 @@ namespace QryptoCard.INT.Script.Service
             message.Subject = "Security Code";
             message.Body = bodyBuilder.ToMessageBody();
 
-            using (var client = new SmtpClient())
+            try
             {
-                client.Connect(KeyModel.EMAIL_SMTP_GATEWAY, KeyModel.EMAIL_SMTP_PORT);
-
-
-                // Note: since we don't have an OAuth2 token, disable
-                // the XOAUTH2 authentication mechanism.
-                client.AuthenticationMechanisms.Remove("XOAUTH2");
-
-                // Note: only needed if the SMTP server requires authentication
-                client.Authenticate(KeyModel.EMAIL_ADDRESS, KeyModel.EMAIL_PASSWORD);
-
-                client.Send(message);
-                client.Disconnect(true);
+                using (var client = new SmtpClient())
+                {
+                    client.Connect(KeyModel.EMAIL_SMTP_GATEWAY, KeyModel.EMAIL_SMTP_PORT);
+                    client.AuthenticationMechanisms.Remove("XOAUTH2"); // no OAuth2 token
+                    client.Authenticate(KeyModel.EMAIL_ADDRESS, KeyModel.EMAIL_PASSWORD);
+                    client.Send(message);
+                    client.Disconnect(true);
+                }
+            }
+            catch (Exception ex)
+            {
+                // Log the real cause server-side; surface a clean message (no SMTP internals to the client).
+                System.Diagnostics.Trace.TraceError("Email send failed: " + ex);
+                throw new Exception("Unable to send email. Please try again.");
             }
 
         }
@@ -456,20 +462,22 @@ namespace QryptoCard.INT.Script.Service
             message.Subject = invitator + " invited you to join " + company + " in Qrypto Card";
             message.Body = bodyBuilder.ToMessageBody();
 
-            using (var client = new SmtpClient())
+            try
             {
-                client.Connect(KeyModel.EMAIL_SMTP_GATEWAY, KeyModel.EMAIL_SMTP_PORT);
-
-
-                // Note: since we don't have an OAuth2 token, disable
-                // the XOAUTH2 authentication mechanism.
-                client.AuthenticationMechanisms.Remove("XOAUTH2");
-
-                // Note: only needed if the SMTP server requires authentication
-                client.Authenticate(KeyModel.EMAIL_ADDRESS, KeyModel.EMAIL_PASSWORD);
-
-                client.Send(message);
-                client.Disconnect(true);
+                using (var client = new SmtpClient())
+                {
+                    client.Connect(KeyModel.EMAIL_SMTP_GATEWAY, KeyModel.EMAIL_SMTP_PORT);
+                    client.AuthenticationMechanisms.Remove("XOAUTH2"); // no OAuth2 token
+                    client.Authenticate(KeyModel.EMAIL_ADDRESS, KeyModel.EMAIL_PASSWORD);
+                    client.Send(message);
+                    client.Disconnect(true);
+                }
+            }
+            catch (Exception ex)
+            {
+                // Log the real cause server-side; surface a clean message (no SMTP internals to the client).
+                System.Diagnostics.Trace.TraceError("Email send failed: " + ex);
+                throw new Exception("Unable to send email. Please try again.");
             }
         }
 
@@ -502,20 +510,22 @@ namespace QryptoCard.INT.Script.Service
             message.Subject = invitator + " invited you to join Qrypto Card Administrator!";
             message.Body = bodyBuilder.ToMessageBody();
 
-            using (var client = new SmtpClient())
+            try
             {
-                client.Connect(KeyModel.EMAIL_SMTP_GATEWAY, KeyModel.EMAIL_SMTP_PORT);
-
-
-                // Note: since we don't have an OAuth2 token, disable
-                // the XOAUTH2 authentication mechanism.
-                client.AuthenticationMechanisms.Remove("XOAUTH2");
-
-                // Note: only needed if the SMTP server requires authentication
-                client.Authenticate(KeyModel.EMAIL_ADDRESS, KeyModel.EMAIL_PASSWORD);
-
-                client.Send(message);
-                client.Disconnect(true);
+                using (var client = new SmtpClient())
+                {
+                    client.Connect(KeyModel.EMAIL_SMTP_GATEWAY, KeyModel.EMAIL_SMTP_PORT);
+                    client.AuthenticationMechanisms.Remove("XOAUTH2"); // no OAuth2 token
+                    client.Authenticate(KeyModel.EMAIL_ADDRESS, KeyModel.EMAIL_PASSWORD);
+                    client.Send(message);
+                    client.Disconnect(true);
+                }
+            }
+            catch (Exception ex)
+            {
+                // Log the real cause server-side; surface a clean message (no SMTP internals to the client).
+                System.Diagnostics.Trace.TraceError("Email send failed: " + ex);
+                throw new Exception("Unable to send email. Please try again.");
             }
         }
 
@@ -547,20 +557,22 @@ namespace QryptoCard.INT.Script.Service
             message.Subject = "Welcome to Kash.Now!";
             message.Body = bodyBuilder.ToMessageBody();
 
-            using (var client = new SmtpClient())
+            try
             {
-                client.Connect(KeyModel.EMAIL_SMTP_GATEWAY, KeyModel.EMAIL_SMTP_PORT);
-
-
-                // Note: since we don't have an OAuth2 token, disable
-                // the XOAUTH2 authentication mechanism.
-                client.AuthenticationMechanisms.Remove("XOAUTH2");
-
-                // Note: only needed if the SMTP server requires authentication
-                client.Authenticate(KeyModel.EMAIL_ADDRESS, KeyModel.EMAIL_PASSWORD);
-
-                client.Send(message);
-                client.Disconnect(true);
+                using (var client = new SmtpClient())
+                {
+                    client.Connect(KeyModel.EMAIL_SMTP_GATEWAY, KeyModel.EMAIL_SMTP_PORT);
+                    client.AuthenticationMechanisms.Remove("XOAUTH2"); // no OAuth2 token
+                    client.Authenticate(KeyModel.EMAIL_ADDRESS, KeyModel.EMAIL_PASSWORD);
+                    client.Send(message);
+                    client.Disconnect(true);
+                }
+            }
+            catch (Exception ex)
+            {
+                // Log the real cause server-side; surface a clean message (no SMTP internals to the client).
+                System.Diagnostics.Trace.TraceError("Email send failed: " + ex);
+                throw new Exception("Unable to send email. Please try again.");
             }
 
 

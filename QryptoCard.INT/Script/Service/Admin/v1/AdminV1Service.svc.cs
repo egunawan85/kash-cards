@@ -749,7 +749,7 @@ namespace QryptoCard.INT.Script.Service.Admin.v1
                     var code = Common.getOTPCode();
                     a.Code = QryptoCard.Sec.OtpCodes.Hash(code);
                     a.DateCreated = DateTime.Now;
-                    a.DateExpired = a.DateCreated.Value.AddMinutes(30);
+                    a.DateExpired = a.DateCreated.Value.AddMinutes(15);
                     a.isVerify = 0;
                     db.tblH_Admin_OTP.Add(a);
                     db.SaveChanges();
@@ -777,7 +777,7 @@ namespace QryptoCard.INT.Script.Service.Admin.v1
             {
                 string uid = getAdminId(em);
 
-                var otp = db.tblH_Admin_OTP.Where(p => p.isVerify == 0 && p.AdminID == uid).FirstOrDefault();
+                var otp = db.tblH_Admin_OTP.Where(p => p.isVerify == 0 && p.AdminID == uid && p.OTPID == x.OTPID).OrderByDescending(p => p.DateCreated).FirstOrDefault();
                 if (otp == null)
                 {
                     op.Status = "failed";
