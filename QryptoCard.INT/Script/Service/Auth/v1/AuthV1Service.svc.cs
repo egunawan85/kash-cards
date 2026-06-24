@@ -141,7 +141,7 @@ namespace QryptoCard.INT.Script.Service.Auth.v1
                 {
                     rowsAffected = db.Database.ExecuteSqlCommand(
                         "UPDATE tblH_User_Login SET isVerify = 1, Param1 = {3} " +
-                        "WHERE ID = {0} AND Code = {1} AND isVerify = 0 AND DateExpired > {2} " +
+                        "WHERE ID = {0} AND Code COLLATE Latin1_General_BIN2 = {1} AND isVerify = 0 AND DateExpired > {2} " +
                         "AND (Param2 IS NULL OR Param2 <> 'totp')",
                         otpSessionId, otpCodeHash, otpNow, otpConsumedAt);
                     if (rowsAffected == 0)
@@ -157,7 +157,7 @@ namespace QryptoCard.INT.Script.Service.Auth.v1
                 {
                     rowsAffected = db.Database.ExecuteSqlCommand(
                         "UPDATE tblH_Admin_Login SET isVerify = 1, Param1 = {3} " +
-                        "WHERE ID = {0} AND Code = {1} AND isVerify = 0 AND DateExpired > {2} " +
+                        "WHERE ID = {0} AND Code COLLATE Latin1_General_BIN2 = {1} AND isVerify = 0 AND DateExpired > {2} " +
                         "AND (Param2 IS NULL OR Param2 <> 'totp')",
                         otpSessionId, otpCodeHash, otpNow, otpConsumedAt);
                     if (rowsAffected == 0)
@@ -350,7 +350,10 @@ namespace QryptoCard.INT.Script.Service.Auth.v1
                 {
                     var rowsAffected = authDb.Database.ExecuteSqlCommand(
                         "UPDATE tblT_RefreshToken SET ReplacedByID = {0} " +
-                        "WHERE RefreshTokenID = {1} AND ReplacedByID IS NULL",
+                        // AND RevokedAt IS NULL closes a TOCTOU: a refresh() racing a revokeAllForSubject
+                        // (ban) must not mint a fresh pair after the revoke sweep. The raceLost path then
+                        // chain-revokes, so the just-banned session can't be extended.
+                        "WHERE RefreshTokenID = {1} AND ReplacedByID IS NULL AND RevokedAt IS NULL",
                         newRefresh.RefreshTokenID, row.RefreshTokenID);
 
                     if (rowsAffected == 0)

@@ -40,7 +40,7 @@ namespace QryptoCard.API
             var header = actionContext.Request.Headers.Authorization;
             if (header == null ||
                 !string.Equals(header.Scheme, "Bearer", StringComparison.OrdinalIgnoreCase) ||
-                string.IsNullOrEmpty(header.Parameter))
+                string.IsNullOrWhiteSpace(header.Parameter))
             {
                 Reject(actionContext);
                 return;
