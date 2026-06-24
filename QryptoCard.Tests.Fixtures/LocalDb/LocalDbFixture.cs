@@ -112,6 +112,7 @@ namespace QryptoCard.Tests.Fixtures.LocalDb
 
             CreateDatabase();
             ApplySchema();
+            ApplyTokenSchema();
             SeedData();
         }
 
@@ -219,6 +220,17 @@ namespace QryptoCard.Tests.Fixtures.LocalDb
         }
 
         void ApplySchema() => RunScriptFile(ResolveTestDataPath("init.sql"));
+
+        // The opaque-Bearer-token tables (tblT_AuthToken, tblT_RefreshToken,
+        // tblH_Auth_Log) are owned by the deploy DDL, not the EF-generated
+        // init.sql (AuthDbContext is code-first with SetInitializer null — it
+        // never creates its own schema). Apply the same idempotent deploy script
+        // the production redeploy runs so AuthV1Service integration tests have
+        // the tables to read/write against.
+        void ApplyTokenSchema() => RunScriptFile(ResolveTokenSchemaPath());
+
+        static string ResolveTokenSchemaPath()
+            => ResolveRepoFilePath("deploy", "sql", "create-token-tables.sql");
 
         void RunScriptFile(string path)
         {
