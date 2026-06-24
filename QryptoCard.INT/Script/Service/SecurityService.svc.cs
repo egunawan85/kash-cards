@@ -234,12 +234,12 @@ namespace QryptoCard.INT.Script.Service
 
         private static string loadRsaPrivateKeyPem()
         {
-            return "<RSAKeyValue><Modulus>vn+RrVd5OrRdHO+v9nxmL49QF1GBIwpR44HAcb6RtCpnZ8EIDulOJYzsx9VWWYKAAgz4GYi2uK9XgQJNfGBa+3Eell/fVVbgQ67o61sBKZzW+ri7PB7eCnSJSBuec5Y0W4vgAStxglgxDH1D5Am75EIgsxoen2vPNkxyvm4ykPM=</Modulus><Exponent>AQAB</Exponent><P>9MaBDwqdFg0YVbjs2h7F6aF3hQSoL8Tu0zWLAKP5hc/PszRTxNpfxRuepEIYEUCwUZgVkAOMGoR8KfrTXu3rZQ==</P><Q>xzvjlXC5gfrBRaMgyaW+jqXcFONgHJi/oJ349LpMzmLoZI33IGiSFFS7IxSACKn9IcWz/T/HgP35dDPne+fBdw==</Q><DP>6bdgI2yO8S8vvSoFfX9Emf+Cj5ASxwnSv/iv8Lyg1BPIzeN42M1qBFqK72vsbwzFTiNY81lvvSIjLDJDALFLwQ==</DP><DQ>wsoYAYTbqmxKyFXseZp2C6u32ChSUMM7H8Mzo7n93A8x3RY71tDGeeA5stuZLl9coMdV6bWQzdoCKY2Rtj/pkw==</DQ><InverseQ>qukYhSY7U7LZIZ+t2ecjci8jgnYlbaJonS3f/v8hlAFUclKdHC2plGJ4dIshJEBrp9gGUN5TGWtRcMqIS+PJyg==</InverseQ><D>tDVf7Rg74ZHwJ8iCsG08Ca/MN1LuE+TWVJ9RGwkJMuOOULNl2R1RxOoMsHobpq9yQv5b0WPoXsvYvn0cKhXI2kI/OrinvrxxY9+8uZ127E6q6pCZgYOX0/EEAluhCG9Rt3vIA79em2idCDJcGiLyyqNL9b4/UffqM7hnNO65yDk=</D></RSAKeyValue>";
+            return QryptoCard.INT.Model.KeyModel.WASABICARD_PRIVATE_KEY_XML;
         }
 
         private static string loadRsaPrivateKeyProdPem()
         {
-            return "<RSAKeyValue><Modulus>uilEwX9pTUYjW1GFAHmtjQcQdssVgbHfsl9cMfmi4ymLShTSNlB3NkeBg8OStbaDfVtSIU5QTiGEzrMzjTL7sfFKKCZ3ODy62zD1vkx8nqwPd0UlfCDCED43lHYAheTO2O+AblONr15FRAjRCol6TZn1FHM4bbi3KhAVN7aWczc=</Modulus><Exponent>AQAB</Exponent><P>2sJaGMvZEo8N4WVDr6c0xow1ejqNZHvDGB+fWwkDbd6sEose8jU5KWp7TmMEUPBbkChjNqjk5omedIRVZckuJQ==</P><Q>2dpHPwV74uzNfuSr6VL0Fb1ue0Y/6Eab21yHAjaI9pQL9pbvX07R8aRyUQHX7gYUOqem3xcfnabUzBY6t073Kw==</Q><DP>UYyoJ5w+VMPNadvlKqMLcoSsHt+a+/2DEggf0MEAbUHYJaWFKMecgor2YpdY8Y9YotnbenHluudMkaUPbL1dnQ==</DP><DQ>W1+SQnyqWaO5DWAcOuDwP64UiOAOLf5voLJObj8xczrlSahE/lSw+glfaVq8lrk2AuQOucOZHya6Wl94gSo9wQ==</DQ><InverseQ>cNzDiLoHrpPHxK0bBK4bZYPWocdTU7T6RfZCi7IzySBFLRihTOOp5ecvn3EfjgvwPbHPz0Bk9lw+Ieo/n8gGzg==</InverseQ><D>tV0PRxRCGq6CM60vzk687fA78f/YbApGzRhqUaXLM1R+ByZRxeiOu6reWuhmPfIaGD6nvRr20aeGI3oidyV8Xy4+QF+C7fGzRradKztnli9do4isAEc5jBgqkhA7sNeE6eiFeTODAS0Z+wWqB09BOQ9eHsMBVD2AIQnxjObVTkE=</D></RSAKeyValue>";
+            return QryptoCard.INT.Model.KeyModel.WASABICARD_PRIVATE_KEY_XML;
         }
     }
 }

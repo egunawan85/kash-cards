@@ -20,7 +20,7 @@ namespace QryptoCard.INT.Callback.Service.v1
     {
         private static string loadRsaPrivateKeyPem()
         {
-            return "<RSAKeyValue><Modulus>vn+RrVd5OrRdHO+v9nxmL49QF1GBIwpR44HAcb6RtCpnZ8EIDulOJYzsx9VWWYKAAgz4GYi2uK9XgQJNfGBa+3Eell/fVVbgQ67o61sBKZzW+ri7PB7eCnSJSBuec5Y0W4vgAStxglgxDH1D5Am75EIgsxoen2vPNkxyvm4ykPM=</Modulus><Exponent>AQAB</Exponent><P>9MaBDwqdFg0YVbjs2h7F6aF3hQSoL8Tu0zWLAKP5hc/PszRTxNpfxRuepEIYEUCwUZgVkAOMGoR8KfrTXu3rZQ==</P><Q>xzvjlXC5gfrBRaMgyaW+jqXcFONgHJi/oJ349LpMzmLoZI33IGiSFFS7IxSACKn9IcWz/T/HgP35dDPne+fBdw==</Q><DP>6bdgI2yO8S8vvSoFfX9Emf+Cj5ASxwnSv/iv8Lyg1BPIzeN42M1qBFqK72vsbwzFTiNY81lvvSIjLDJDALFLwQ==</DP><DQ>wsoYAYTbqmxKyFXseZp2C6u32ChSUMM7H8Mzo7n93A8x3RY71tDGeeA5stuZLl9coMdV6bWQzdoCKY2Rtj/pkw==</DQ><InverseQ>qukYhSY7U7LZIZ+t2ecjci8jgnYlbaJonS3f/v8hlAFUclKdHC2plGJ4dIshJEBrp9gGUN5TGWtRcMqIS+PJyg==</InverseQ><D>tDVf7Rg74ZHwJ8iCsG08Ca/MN1LuE+TWVJ9RGwkJMuOOULNl2R1RxOoMsHobpq9yQv5b0WPoXsvYvn0cKhXI2kI/OrinvrxxY9+8uZ127E6q6pCZgYOX0/EEAluhCG9Rt3vIA79em2idCDJcGiLyyqNL9b4/UffqM7hnNO65yDk=</D></RSAKeyValue>";
+            return QryptoCard.INT.Callback.Model.KeyModel.WASABICARD_PRIVATE_KEY_XML;
         }
 
         private static string decrypt(string strText, string privateKey)
