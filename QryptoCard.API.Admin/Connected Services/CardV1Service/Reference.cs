@@ -1771,16 +1771,16 @@ namespace QryptoCard.API.Admin.CardV1Service {
         System.Threading.Tasks.Task<QryptoCard.API.Admin.CardV1Service.OutputModel> getDepositTrxFilterAsync(string em, QryptoCard.API.Admin.CardV1Service.DepositFilterModel fil);
         
         [System.ServiceModel.OperationContractAttribute(Action="http://tempuri.org/ICardV1Service/updateCardPrice", ReplyAction="http://tempuri.org/ICardV1Service/updateCardPriceResponse")]
-        QryptoCard.API.Admin.CardV1Service.OutputModel updateCardPrice(QryptoCard.API.Admin.CardV1Service.tblM_Card_Type x);
+        QryptoCard.API.Admin.CardV1Service.OutputModel updateCardPrice(string em, QryptoCard.API.Admin.CardV1Service.tblM_Card_Type x);
         
         [System.ServiceModel.OperationContractAttribute(Action="http://tempuri.org/ICardV1Service/updateCardPrice", ReplyAction="http://tempuri.org/ICardV1Service/updateCardPriceResponse")]
-        System.Threading.Tasks.Task<QryptoCard.API.Admin.CardV1Service.OutputModel> updateCardPriceAsync(QryptoCard.API.Admin.CardV1Service.tblM_Card_Type x);
+        System.Threading.Tasks.Task<QryptoCard.API.Admin.CardV1Service.OutputModel> updateCardPriceAsync(string em, QryptoCard.API.Admin.CardV1Service.tblM_Card_Type x);
         
         [System.ServiceModel.OperationContractAttribute(Action="http://tempuri.org/ICardV1Service/updateCardDepositFee", ReplyAction="http://tempuri.org/ICardV1Service/updateCardDepositFeeResponse")]
-        QryptoCard.API.Admin.CardV1Service.OutputModel updateCardDepositFee(QryptoCard.API.Admin.CardV1Service.tblM_Card_Type x);
+        QryptoCard.API.Admin.CardV1Service.OutputModel updateCardDepositFee(string em, QryptoCard.API.Admin.CardV1Service.tblM_Card_Type x);
         
         [System.ServiceModel.OperationContractAttribute(Action="http://tempuri.org/ICardV1Service/updateCardDepositFee", ReplyAction="http://tempuri.org/ICardV1Service/updateCardDepositFeeResponse")]
-        System.Threading.Tasks.Task<QryptoCard.API.Admin.CardV1Service.OutputModel> updateCardDepositFeeAsync(QryptoCard.API.Admin.CardV1Service.tblM_Card_Type x);
+        System.Threading.Tasks.Task<QryptoCard.API.Admin.CardV1Service.OutputModel> updateCardDepositFeeAsync(string em, QryptoCard.API.Admin.CardV1Service.tblM_Card_Type x);
     }
     
     [System.CodeDom.Compiler.GeneratedCodeAttribute("System.ServiceModel", "4.0.0.0")]
@@ -1858,20 +1858,20 @@ namespace QryptoCard.API.Admin.CardV1Service {
             return base.Channel.getDepositTrxFilterAsync(em, fil);
         }
         
-        public QryptoCard.API.Admin.CardV1Service.OutputModel updateCardPrice(QryptoCard.API.Admin.CardV1Service.tblM_Card_Type x) {
-            return base.Channel.updateCardPrice(x);
+        public QryptoCard.API.Admin.CardV1Service.OutputModel updateCardPrice(string em, QryptoCard.API.Admin.CardV1Service.tblM_Card_Type x) {
+            return base.Channel.updateCardPrice(em, x);
         }
         
-        public System.Threading.Tasks.Task<QryptoCard.API.Admin.CardV1Service.OutputModel> updateCardPriceAsync(QryptoCard.API.Admin.CardV1Service.tblM_Card_Type x) {
-            return base.Channel.updateCardPriceAsync(x);
+        public System.Threading.Tasks.Task<QryptoCard.API.Admin.CardV1Service.OutputModel> updateCardPriceAsync(string em, QryptoCard.API.Admin.CardV1Service.tblM_Card_Type x) {
+            return base.Channel.updateCardPriceAsync(em, x);
         }
         
-        public QryptoCard.API.Admin.CardV1Service.OutputModel updateCardDepositFee(QryptoCard.API.Admin.CardV1Service.tblM_Card_Type x) {
-            return base.Channel.updateCardDepositFee(x);
+        public QryptoCard.API.Admin.CardV1Service.OutputModel updateCardDepositFee(string em, QryptoCard.API.Admin.CardV1Service.tblM_Card_Type x) {
+            return base.Channel.updateCardDepositFee(em, x);
         }
         
-        public System.Threading.Tasks.Task<QryptoCard.API.Admin.CardV1Service.OutputModel> updateCardDepositFeeAsync(QryptoCard.API.Admin.CardV1Service.tblM_Card_Type x) {
-            return base.Channel.updateCardDepositFeeAsync(x);
+        public System.Threading.Tasks.Task<QryptoCard.API.Admin.CardV1Service.OutputModel> updateCardDepositFeeAsync(string em, QryptoCard.API.Admin.CardV1Service.tblM_Card_Type x) {
+            return base.Channel.updateCardDepositFeeAsync(em, x);
         }
     }
 }

@@ -26,8 +26,8 @@ namespace QryptoCard.INT.Script.Service.Admin.v1
         OutputModel getDepositTrxFilter(string em, DepositFilterModel fil);
 
         [OperationContract]
-        OutputModel updateCardPrice(tblM_Card_Type x);
+        OutputModel updateCardPrice(string em, tblM_Card_Type x);
         [OperationContract]
-        OutputModel updateCardDepositFee(tblM_Card_Type x);
+        OutputModel updateCardDepositFee(string em, tblM_Card_Type x);
     }
 }

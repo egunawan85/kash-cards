@@ -17,10 +17,10 @@ namespace QryptoCard.INT.Script.Service.Admin.v1
         [OperationContract]
         OutputModel getUserCommissionList(vw_User_Commission x);
         [OperationContract]
-        OutputModel updateUserCommission(tblM_User_Commission x);
+        OutputModel updateUserCommission(string em, tblM_User_Commission x);
         [OperationContract]
         OutputModel getUserFeeList(vw_User_Fee x);
         [OperationContract]
-        OutputModel updateUserFee(tblM_User_Fee x);
+        OutputModel updateUserFee(string em, tblM_User_Fee x);
     }
 }
