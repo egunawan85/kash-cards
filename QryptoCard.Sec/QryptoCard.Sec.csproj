@@ -51,6 +51,10 @@
     <Compile Include="WasabiSignatureVerifier.cs" />
     <Compile Include="SharedSecretAuth.cs" />
     <Compile Include="OtpCodes.cs" />
+    <Compile Include="AuthTokens.cs" />
+    <Compile Include="TokenModels.cs" />
+    <Compile Include="ITokenStore.cs" />
+    <Compile Include="TokenService.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>
