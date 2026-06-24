@@ -22,6 +22,19 @@ namespace QryptoCard.INT.Script.Service.Admin.v1
             return a.AdminID;
         }
 
+        string getRole(string em)
+        {
+            var a = db.vw_Admin.Where(p => p.Email == em).FirstOrDefault();
+            return a == null ? null : a.Role;
+        }
+
+        // Only Owner/Admin may change financial settings (fees, commissions, prices).
+        bool isDeniedFinanceMutation(string em)
+        {
+            var role = getRole(em);
+            return role == RoleModel.Signer || role == RoleModel.Approver || role == RoleModel.Viewer || role == null;
+        }
+
         public OutputModel getUser(tblM_User x)
         {
             try
@@ -62,10 +75,17 @@ namespace QryptoCard.INT.Script.Service.Admin.v1
             return op;
         }
 
-        public OutputModel updateUserCommission(tblM_User_Commission x)
+        public OutputModel updateUserCommission(string em, tblM_User_Commission x)
         {
             try
             {
+                if (isDeniedFinanceMutation(em))
+                {
+                    op.Status = "failed";
+                    op.Message = "You are not authorized to perform this action";
+                    return op;
+                }
+
                 var data = db.tblM_User_Commission.Where(p => p.ID == x.ID && p.UserID == x.UserID).FirstOrDefault();
                 if (data != null)
                 {
@@ -109,10 +129,17 @@ namespace QryptoCard.INT.Script.Service.Admin.v1
             return op;
         }
 
-        public OutputModel updateUserFee(tblM_User_Fee x)
+        public OutputModel updateUserFee(string em, tblM_User_Fee x)
         {
             try
             {
+                if (isDeniedFinanceMutation(em))
+                {
+                    op.Status = "failed";
+                    op.Message = "You are not authorized to perform this action";
+                    return op;
+                }
+
                 var data = db.tblM_User_Fee.Where(p => p.ID == x.ID && p.UserID == x.UserID).FirstOrDefault();
                 if (data != null)
                 {
