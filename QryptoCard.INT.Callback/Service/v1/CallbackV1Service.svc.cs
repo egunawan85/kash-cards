@@ -48,8 +48,10 @@ namespace QryptoCard.INT.Callback.Service.v1
             }
         }
 
-        public string testDecrypt(string x)
-        { 
+        // Internal-only: decrypt a WasabiCard sensitive payload field with our RSA private key.
+        // Not exposed as a WCF operation (was previously a public decryption oracle).
+        private string decryptSensitive(string x)
+        {
             return decrypt(x, loadRsaPrivateKeyPem());
         }
 
@@ -213,7 +215,7 @@ namespace QryptoCard.INT.Callback.Service.v1
                                     qqq.cardNo = cr.CardNo;
                                     var ressen = WasabiCardService.getCardInfoSensitive(qqq);
 
-                                    cr.CardNumber = testDecrypt(ressen.data.cardNumber);
+                                    cr.CardNumber = decryptSensitive(ressen.data.cardNumber);
                                     cr.CVV = ressen.data.cvv;
                                     cr.ValidPeriod = ressen.data.expireDate;
                                     db.SaveChanges();

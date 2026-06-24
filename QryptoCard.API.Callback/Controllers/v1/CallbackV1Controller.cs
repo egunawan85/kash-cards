@@ -1,9 +1,7 @@
-﻿using Newtonsoft.Json;
+using Newtonsoft.Json;
 using QryptoCard.API.Callback.CallbackV1Service;
 using QryptoCard.API.Callback.Models;
-using System;
-using System.Collections.Generic;
-using System.Linq;
+using QryptoCard.Sec;
 using System.Net;
 using System.Net.Http;
 using System.Text;
@@ -17,78 +15,65 @@ namespace QryptoCard.API.Callback.Controllers.v1
     public class CallbackV1Controller : ApiController
     {
         CallbackV1ServiceClient sr = new CallbackV1ServiceClient();
-        //OutputModel op = new OutputModel();
 
-        private string getWSBCategory()
+        private static string Header(string name)
         {
-            // Gets header parameters  
-            HttpContext httpContext = HttpContext.Current;
-            return httpContext.Request.Headers["X-WSB-CATEGORY"];
-        }
-        private string getWSBSignature()
-        {
-            // Gets header parameters  
-            HttpContext httpContext = HttpContext.Current;
-            return httpContext.Request.Headers["X-WSB-SIGNATURE"];
-        }
-        private string getWSBRequestID()
-        {
-            // Gets header parameters  
-            HttpContext httpContext = HttpContext.Current;
-            return httpContext.Request.Headers["X-WSB-REQUEST-ID"];
+            HttpContext ctx = HttpContext.Current;
+            return ctx != null ? ctx.Request.Headers[name] : null;
         }
 
-        private void trustConnection()
-        {
-            ServicePointManager.ServerCertificateValidationCallback +=
-                (se, cert, chain, sslerror) =>
-                {
-                    return true;
-                };
-        }
-
+        // WasabiCard signs the exact raw request body (SHA256withRSA), base64 in X-WSB-SIGNATURE,
+        // verified with the platform public key. Verify BEFORE any parse or forward to the INT tier.
         [Route("wasabicard")]
         [HttpPost]
-        public async Task<HttpResponseMessage> wasabi(object x)
+        public async Task<HttpResponseMessage> wasabi()
         {
-            try
-            {
-                trustConnection();
-                var z = x.ToString();
-                sr.Wasabi(getWSBCategory(), getWSBSignature(), getWSBRequestID(), x.ToString());
+            byte[] rawBody = await Request.Content.ReadAsByteArrayAsync() ?? new byte[0];
+            if (rawBody.Length == 0) return Request.CreateResponse(HttpStatusCode.Unauthorized);
 
-                WasabiResponseModel responseModel = new WasabiResponseModel();
-                responseModel.success = true;
-                responseModel.msg = "success";
-                responseModel.code = 200;
+            string signature = Header("X-WSB-SIGNATURE");
+            if (!WasabiSignatureVerifier.Verify(signature, rawBody, SecretsConfig.Require("WASABICARD_WSBPUBLIC_KEY")))
+                return Request.CreateResponse(HttpStatusCode.Unauthorized);
 
-                var response = new HttpResponseMessage();
-                response.EnsureSuccessStatusCode();
-                response.StatusCode = HttpStatusCode.OK;
-                response.Content = new StringContent(JsonConvert.SerializeObject(responseModel), Encoding.UTF8, "application/json");
-                return response;
-            }
-            catch (Exception ex)
-            {
-            }
+            // Verified: forward the EXACT bytes received (not a re-serialized copy) to the INT tier.
+            sr.Wasabi(Header("X-WSB-CATEGORY"), signature, Header("X-WSB-REQUEST-ID"),
+                      Encoding.UTF8.GetString(rawBody));
 
-            return null;
+            WasabiResponseModel responseModel = new WasabiResponseModel { success = true, msg = "success", code = 200 };
+            HttpResponseMessage response = Request.CreateResponse(HttpStatusCode.OK);
+            response.Content = new StringContent(JsonConvert.SerializeObject(responseModel), Encoding.UTF8, "application/json");
+            return response;
         }
 
+        // Runegate/PGCrypto signs "t=<unix>,v1=hex(HMAC-SHA256(secret,'<ts>.<rawBody>'))" in
+        // X-Runegate-Signature. Verify over the raw bytes BEFORE parsing or crediting.
         [Route("pgcrypto")]
         [HttpPost]
-        public void pgcrypto([FromBody] PGCryptoModel x)
+        public async Task<HttpResponseMessage> pgcrypto()
         {
+            byte[] rawBody = await Request.Content.ReadAsByteArrayAsync() ?? new byte[0];
+            if (rawBody.Length == 0) return Request.CreateResponse(HttpStatusCode.Unauthorized);
+
+            string signature = Header("X-Runegate-Signature");
+            if (!RunegateWebhookVerifier.Verify(signature, rawBody, SecretsConfig.Require("PGCRYPTO_WEBHOOK_SECRET")))
+                return Request.CreateResponse(HttpStatusCode.Unauthorized);
+
+            PGCryptoModel model;
             try
             {
-                trustConnection();
-                sr.PGCrypto(x);
+                model = JsonConvert.DeserializeObject<PGCryptoModel>(Encoding.UTF8.GetString(rawBody));
             }
-            catch (Exception ex)
+            catch (JsonException)
             {
+                return Request.CreateResponse(HttpStatusCode.BadRequest);
             }
+            if (model == null)
+                return Request.CreateResponse(HttpStatusCode.BadRequest);
 
-            return;
+            // Verified: forward to the INT tier. (Downstream error propagation and replay
+            // idempotency are tracked as coupled follow-up hardening of the INT callback tier.)
+            sr.PGCrypto(model);
+            return Request.CreateResponse(HttpStatusCode.OK);
         }
     }
 }
