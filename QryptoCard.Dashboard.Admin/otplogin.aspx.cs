@@ -72,16 +72,27 @@ namespace QryptoCard.Dashboard.Admin
                 return;
             }
 
-            AdminService ad = new AdminService();
-            AdminAuthOTPModel z = new AdminAuthOTPModel();
-            z.ID = Session["OTPIDCA"].ToString();
-            z.Code = icode1.Value + icode2.Value + icode3.Value + icode4.Value + icode5.Value + icode6.Value;
+            var otpId = Session["OTPIDCA"].ToString();
+            var otpCode = icode1.Value + icode2.Value + icode3.Value + icode4.Value + icode5.Value + icode6.Value;
 
-            var admin = ad.loginVerify(z);
-            if (admin.Status == "success")
+            // Replaces ad.loginVerify(z): /v1/auth/mint-after-otp verifies the OTP
+            // and mints the (access, refresh) token pair. AuthClient.MintAfterOtpVerify
+            // already stored the tokens in SessionLib on success; the Profile field
+            // (JSON-serialized vw_Admin, Password + PIN nulled) carries the same
+            // shape the legacy loginVerify returned, so the session population below
+            // is unchanged minus the deleted Password write.
+            var mintOp = AuthClient.MintAfterOtpVerify(otpId, otpCode);
+            if (mintOp.Status == "success")
             {
                 enableButton();
-                var dt = JsonConvert.DeserializeObject<AdminModel>(admin.Data.ToString());
+                var resp = JsonConvert.DeserializeObject<AuthMintResponse>(mintOp.Data.ToString());
+                if (resp == null || string.IsNullOrEmpty(resp.Profile))
+                {
+                    divfailed.Visible = true;
+                    lblFailed.Text = "Login completed but profile data missing";
+                    return;
+                }
+                var dt = JsonConvert.DeserializeObject<AdminModel>(resp.Profile);
                 SessionLib.Current.SessionID = dt.AdminID;
                 SessionLib.Current.AdminID = dt.AdminID;
                 SessionLib.Current.FirstName = dt.FirstName;
@@ -89,22 +100,14 @@ namespace QryptoCard.Dashboard.Admin
                 SessionLib.Current.Email = dt.Email;
                 SessionLib.Current.Role = dt.Role;
                 SessionLib.Current.DateJoin = dt.DateJoin;
-                SessionLib.Current.Password = Session["QRTYHCA"].ToString();
-                Session["QRTYHCA"] = null;
                 Session["OTPIDCA"] = null;
-                //if (dt.Email == "reagen@qrypto.trade")
-                //{
-                //    setCookies(JsonConvert.SerializeObject(dt));
-                //}
-                setCookies(JsonConvert.SerializeObject(dt));
-                //checkRole();
                 Response.Redirect("Default");
             }
             else
             {
                 enableButton();
                 divfailed.Visible = true;
-                lblFailed.Text = admin.Message;
+                lblFailed.Text = mintOp.Message;
             }
 
         }
@@ -138,17 +141,6 @@ namespace QryptoCard.Dashboard.Admin
         protected void btnsuccess_ServerClick(object sender, EventArgs e)
         {
             divsuccess.Visible = false;
-        }
-
-        public void setCookies(string x)
-        {
-            Response.Cookies["QryptoCardAdminData"].Value = x;
-            Response.Cookies["QryptoCardAdminData"].Expires = DateTime.Now.AddMonths(1);
-            Response.Cookies["QryptoCardAdminEmail"].Value = SessionLib.Current.Email;
-            Response.Cookies["QryptoCardAdminEmail"].Expires = DateTime.Now.AddMonths(1);
-            Response.Cookies["QryptoCardAdminPassword"].Value = SessionLib.Current.Password;
-            Response.Cookies["QryptoCardAdminPassword"].Expires = DateTime.Now.AddMonths(1);
-            return;
         }
     }
 }

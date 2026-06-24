@@ -18,10 +18,6 @@ namespace QryptoCard.Dashboard.Admin.Services
         {
             return Convert.ToBase64String(Encoding.ASCII.GetBytes(KeyModel.ADMIN_EMAIL + ":" + KeyModel.ADMIN_PASSWORD));
         }
-        public static string credentials()
-        {
-            return Convert.ToBase64String(Encoding.ASCII.GetBytes(SessionLib.Current.Email + ":" + SessionLib.Current.Password));
-        }
         public static string credentials(string phone, string password)
         {
             return Convert.ToBase64String(Encoding.ASCII.GetBytes(phone + ":" + password));
