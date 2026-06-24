@@ -80,12 +80,17 @@ namespace QryptoCard.INT.TokenStore
             }
         }
 
-        public void RevokeRefresh(string tokenHash, DateTime at)
+        public bool TryRevokeRefresh(string tokenHash, DateTime at)
         {
             using (var db = new TokenDbContext(_conn))
             {
-                var row = db.RefreshTokens.FirstOrDefault(t => t.TokenHash == tokenHash);
-                if (row != null && row.RevokedAt == null) { row.RevokedAt = at; db.SaveChanges(); }
+                // Atomic check-and-set: the WHERE makes the revoke single-winner under concurrency,
+                // so only the caller that flips RevokedAt (rowcount 1) may rotate — no double-spend.
+                int rows = db.Database.ExecuteSqlCommand(
+                    "UPDATE dbo.tblT_RefreshToken SET RevokedAt = @at WHERE TokenHash = @hash AND RevokedAt IS NULL",
+                    new System.Data.SqlClient.SqlParameter("@at", at),
+                    new System.Data.SqlClient.SqlParameter("@hash", tokenHash));
+                return rows == 1;
             }
         }
     }

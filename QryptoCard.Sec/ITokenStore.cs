@@ -14,6 +14,8 @@ namespace QryptoCard.Sec
         TokenRecord FindAccess(string tokenHash);
         TokenRecord FindRefresh(string tokenHash);
         void RevokeAccess(string tokenHash, DateTime at);
-        void RevokeRefresh(string tokenHash, DateTime at);
+        /// <summary>Atomically revoke an active refresh row; returns true only if THIS call flipped
+        /// it (single-winner under concurrency, so refresh rotation can't double-spend).</summary>
+        bool TryRevokeRefresh(string tokenHash, DateTime at);
     }
 }

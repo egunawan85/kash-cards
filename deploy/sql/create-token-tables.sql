@@ -12,9 +12,9 @@ BEGIN
         TokenHash   NVARCHAR(64)  NOT NULL,
         SubjectId   NVARCHAR(64)  NOT NULL,
         SubjectType NVARCHAR(10)  NOT NULL,
-        CreatedAt   DATETIME      NOT NULL,
-        ExpiresAt   DATETIME      NULL,
-        RevokedAt   DATETIME      NULL
+        CreatedAt   DATETIME2(3)  NOT NULL,
+        ExpiresAt   DATETIME2(3)  NULL,
+        RevokedAt   DATETIME2(3)  NULL
     );
     CREATE UNIQUE INDEX UX_tblT_AuthToken_TokenHash ON dbo.tblT_AuthToken (TokenHash);
 END;
@@ -27,9 +27,9 @@ BEGIN
         TokenHash   NVARCHAR(64)  NOT NULL,
         SubjectId   NVARCHAR(64)  NOT NULL,
         SubjectType NVARCHAR(10)  NOT NULL,
-        CreatedAt   DATETIME      NOT NULL,
-        ExpiresAt   DATETIME      NULL,
-        RevokedAt   DATETIME      NULL
+        CreatedAt   DATETIME2(3)  NOT NULL,
+        ExpiresAt   DATETIME2(3)  NULL,
+        RevokedAt   DATETIME2(3)  NULL
     );
     CREATE UNIQUE INDEX UX_tblT_RefreshToken_TokenHash ON dbo.tblT_RefreshToken (TokenHash);
 END;

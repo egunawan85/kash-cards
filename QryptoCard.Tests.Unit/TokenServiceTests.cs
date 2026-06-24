@@ -17,7 +17,12 @@ namespace QryptoCard.Tests.Unit
             public TokenRecord FindAccess(string h) { TokenRecord r; return Access.TryGetValue(h, out r) ? r : null; }
             public TokenRecord FindRefresh(string h) { TokenRecord r; return Refresh.TryGetValue(h, out r) ? r : null; }
             public void RevokeAccess(string h, DateTime at) { if (Access.ContainsKey(h)) Access[h].RevokedAt = at; }
-            public void RevokeRefresh(string h, DateTime at) { if (Refresh.ContainsKey(h)) Refresh[h].RevokedAt = at; }
+            public bool TryRevokeRefresh(string h, DateTime at)
+            {
+                TokenRecord r;
+                if (Refresh.TryGetValue(h, out r) && r.RevokedAt == null) { r.RevokedAt = at; return true; }
+                return false; // already consumed -> lost the race
+            }
         }
 
         private static readonly DateTime Now = new DateTime(2026, 1, 1, 12, 0, 0);

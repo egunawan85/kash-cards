@@ -66,13 +66,15 @@ namespace QryptoCard.Sec
             string hash = AuthTokens.Hash(refreshToken);
             TokenRecord rec = _store.FindRefresh(hash);
             if (rec == null || !AuthTokens.IsActive(rec.ExpiresAt, rec.RevokedAt, now)) return null;
-            _store.RevokeRefresh(hash, now);                    // rotation: a refresh token is single-use
+            // Atomic single-use consume: only the caller that actually flips RevokedAt proceeds, so
+            // two concurrent refreshes of the same token cannot both mint (no double-spend / replay).
+            if (!_store.TryRevokeRefresh(hash, now)) return null;
             return Issue(rec.SubjectId, rec.SubjectType, now);
         }
 
         public void RevokeAccess(string accessToken, DateTime now)
         {
-            if (string.IsNullOrEmpty(accessToken)) return;
+            if (string.IsNullOrEmpty(accessToken) || !accessToken.StartsWith(AuthTokens.AccessPrefix)) return;
             _store.RevokeAccess(AuthTokens.Hash(accessToken), now);
         }
     }
