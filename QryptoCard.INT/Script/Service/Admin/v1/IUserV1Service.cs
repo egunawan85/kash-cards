@@ -13,13 +13,13 @@ namespace QryptoCard.INT.Script.Service.Admin.v1
     public interface IUserV1Service
     {
         [OperationContract]
-        OutputModel getUser(tblM_User x);
+        OutputModel getUser(string em, tblM_User x);
         [OperationContract]
-        OutputModel getUserCommissionList(vw_User_Commission x);
+        OutputModel getUserCommissionList(string em, vw_User_Commission x);
         [OperationContract]
         OutputModel updateUserCommission(string em, tblM_User_Commission x);
         [OperationContract]
-        OutputModel getUserFeeList(vw_User_Fee x);
+        OutputModel getUserFeeList(string em, vw_User_Fee x);
         [OperationContract]
         OutputModel updateUserFee(string em, tblM_User_Fee x);
     }

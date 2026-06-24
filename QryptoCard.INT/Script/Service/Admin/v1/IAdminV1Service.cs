@@ -48,14 +48,14 @@ namespace QryptoCard.INT.Script.Service.Admin.v1
 
 
         [OperationContract]
-        OutputModel getAdminData(string x);
+        OutputModel getAdminData(string em, string x);
 
         [OperationContract]
-        OutputModel updateAdminData(tblM_Admin x);
+        OutputModel updateAdminData(string em, tblM_Admin x);
         [OperationContract]
-        OutputModel updatePassword(PasswordChangeModel x);
+        OutputModel updatePassword(string em, PasswordChangeModel x);
         [OperationContract]
-        OutputModel updateEmailOTP(tblM_Admin x);
+        OutputModel updateEmailOTP(string em, tblM_Admin x);
         [OperationContract]
         OutputModel updateEmail(string em, tblH_Admin_OTP x);
     }

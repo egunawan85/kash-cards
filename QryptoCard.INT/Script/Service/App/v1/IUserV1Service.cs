@@ -37,13 +37,13 @@ namespace QryptoCard.INT.Script.Service.App.v1
         [OperationContract]
         void testEmail();
         [OperationContract]
-        OutputModel getUserData(string x);
+        OutputModel getUserData(string em, string x);
         [OperationContract]
-        OutputModel updateUserData(tblM_User x);
+        OutputModel updateUserData(string em, tblM_User x);
         [OperationContract]
-        OutputModel updatePassword(PasswordChangeModel x);
+        OutputModel updatePassword(string em, PasswordChangeModel x);
         [OperationContract]
-        OutputModel updateEmailOTP(tblM_User x);
+        OutputModel updateEmailOTP(string em, tblM_User x);
         [OperationContract]
         OutputModel updateEmail(string em, tblH_User_OTP x);
         [OperationContract]

@@ -651,11 +651,15 @@ namespace QryptoCard.INT.Script.Service.App.v1
         }
 
 
-        public OutputModel getUserData(string x)
+        public OutputModel getUserData(string em, string x)
         {
             try
             {
-                var data = db.tblM_User.Where(p => p.UserID == x).FirstOrDefault();
+                // IDOR fix: the row returned is always the authenticated caller's own
+                // record (UserID derived from em); the client-supplied id is ignored so a
+                // caller cannot read another user's profile.
+                var uid = getUserId(em);
+                var data = db.tblM_User.Where(p => p.UserID == uid).FirstOrDefault();
 
                 if (data == null)
                 {
@@ -678,11 +682,14 @@ namespace QryptoCard.INT.Script.Service.App.v1
             return op;
         }
 
-        public OutputModel updateUserData(tblM_User x)
+        public OutputModel updateUserData(string em, tblM_User x)
         {
             try
             {
-                var data = db.tblM_User.Where(p => p.UserID == x.UserID).FirstOrDefault();
+                // IDOR fix: the record updated is the authenticated caller's own (UserID
+                // from em), never the client-supplied x.UserID.
+                var uid = getUserId(em);
+                var data = db.tblM_User.Where(p => p.UserID == uid).FirstOrDefault();
 
                 if (data == null)
                 {
@@ -723,11 +730,14 @@ namespace QryptoCard.INT.Script.Service.App.v1
             return op;
         }
 
-        public OutputModel updatePassword(PasswordChangeModel x)
+        public OutputModel updatePassword(string em, PasswordChangeModel x)
         {
             try
             {
-                var data = db.tblM_User.Where(p => p.UserID == x.UserID).FirstOrDefault();
+                // IDOR fix: the password changed is the authenticated caller's own (UserID
+                // from em), never the client-supplied x.UserID.
+                var uid = getUserId(em);
+                var data = db.tblM_User.Where(p => p.UserID == uid).FirstOrDefault();
 
                 if (data == null)
                 {
@@ -772,10 +782,15 @@ namespace QryptoCard.INT.Script.Service.App.v1
             return op;
         }
 
-        public OutputModel updateEmailOTP(tblM_User x)
+        public OutputModel updateEmailOTP(string em, tblM_User x)
         {
             try
             {
+                // IDOR fix: the change-email OTP is always issued for the authenticated
+                // caller (UserID from em), never the client-supplied x.UserID, so a caller
+                // cannot start an email change on another account.
+                var uid = getUserId(em);
+
                 var q = db.tblM_User.Where(p => p.Email == x.Email && p.isActive == 1 && p.isVerified == 1 && p.isBanned == 0).FirstOrDefault();
 
                 if (q != null)
@@ -786,7 +801,7 @@ namespace QryptoCard.INT.Script.Service.App.v1
                 }
                 else
                 {
-                    var data = db.tblM_User.Where(p => p.UserID == x.UserID).FirstOrDefault();
+                    var data = db.tblM_User.Where(p => p.UserID == uid).FirstOrDefault();
                     if (data.isActive == 0)
                     {
                         op.Status = "failed";
@@ -803,7 +818,7 @@ namespace QryptoCard.INT.Script.Service.App.v1
 
                     tblH_User_OTP a = new tblH_User_OTP();
                     a.OTPID = Guid.NewGuid().ToString();
-                    a.UserID = x.UserID;
+                    a.UserID = uid;
                     a.Name = "Change Email";
 
                     //Random r = new Random();

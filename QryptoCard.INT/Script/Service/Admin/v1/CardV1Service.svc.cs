@@ -37,6 +37,19 @@ namespace QryptoCard.INT.Script.Service.Admin.v1
                   || role.Equals(RoleModel.Admin, StringComparison.OrdinalIgnoreCase));
         }
 
+        // Allowlist for admin-console reads (all-users card/deposit data): permit only a
+        // recognized admin role. Deny-by-default so an unidentifiable caller (no/unknown
+        // role) cannot pull cross-user data — these endpoints previously had no role gate.
+        bool isDeniedAdminRead(string em)
+        {
+            var role = (getRole(em) ?? "").Trim();
+            return !(role.Equals(RoleModel.Owner, StringComparison.OrdinalIgnoreCase)
+                  || role.Equals(RoleModel.Admin, StringComparison.OrdinalIgnoreCase)
+                  || role.Equals(RoleModel.Approver, StringComparison.OrdinalIgnoreCase)
+                  || role.Equals(RoleModel.Signer, StringComparison.OrdinalIgnoreCase)
+                  || role.Equals(RoleModel.Viewer, StringComparison.OrdinalIgnoreCase));
+        }
+
         public OutputModel CardType(tblM_Card_Type x)
         {
             try
@@ -93,10 +106,17 @@ namespace QryptoCard.INT.Script.Service.Admin.v1
             return op;
         }
 
-        public OutputModel getActiveCard()
+        public OutputModel getActiveCard(string em)
         {
             try
             {
+                if (isDeniedAdminRead(em))
+                {
+                    op.Status = "failed";
+                    op.Message = "You are not authorized to perform this action";
+                    return op;
+                }
+
                 var data = db.vw_Card.Where(p => p.Status == "success").OrderByDescending(p => p.DateCreated).ToList();
 
                 if (data == null)
@@ -120,10 +140,17 @@ namespace QryptoCard.INT.Script.Service.Admin.v1
             return op;
         }
 
-        public OutputModel getCardListAll(vw_Card x)
+        public OutputModel getCardListAll(string em, vw_Card x)
         {
             try
             {
+                if (isDeniedAdminRead(em))
+                {
+                    op.Status = "failed";
+                    op.Message = "You are not authorized to perform this action";
+                    return op;
+                }
+
                 var data = db.vw_Card.OrderByDescending(p => p.DateCreated).ToList();
 
                 if (data == null)
@@ -152,6 +179,13 @@ namespace QryptoCard.INT.Script.Service.Admin.v1
         {
             try
             {
+                if (isDeniedAdminRead(em))
+                {
+                    op.Status = "failed";
+                    op.Message = "You are not authorized to perform this action";
+                    return op;
+                }
+
                 var date = Convert.ToDateTime("1/1/0001 12:00:00 AM");
                 var data = db.vw_Card.OrderByDescending(p => p.DateCreated).ToList();
                 if (fil.CardTypeId != -1)
@@ -199,6 +233,13 @@ namespace QryptoCard.INT.Script.Service.Admin.v1
         {
             try
             {
+                if (isDeniedAdminRead(em))
+                {
+                    op.Status = "failed";
+                    op.Message = "You are not authorized to perform this action";
+                    return op;
+                }
+
                 var date = Convert.ToDateTime("1/1/0001 12:00:00 AM");
                 var data = db.vw_Card_Deposit.OrderByDescending(p => p.DateTransaction).ToList();
                 if (fil.CardNo != "all")

@@ -36,7 +36,7 @@ namespace QryptoCard.API.Admin.Controllers.v1
             {
                 DashboardAdminModel x = new DashboardAdminModel();
                 trustConnection();
-                op = sr.getDashboardData(x);
+                op = sr.getDashboardData(getEmail(), x);
                 if (op.Status == "success")
                     op.Data = JsonConvert.DeserializeObject<DashboardAdminModel>(op.Data.ToString());
             }
@@ -57,7 +57,7 @@ namespace QryptoCard.API.Admin.Controllers.v1
             try
             {
                 trustConnection();
-                op = sr.get10ActiveCardTransaction();
+                op = sr.get10ActiveCardTransaction(getEmail());
                 if (op.Status == "success")
                     op.Data = JsonConvert.DeserializeObject<List<CardModel>>(op.Data.ToString());
             }

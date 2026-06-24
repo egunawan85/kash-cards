@@ -17,9 +17,9 @@ namespace QryptoCard.INT.Script.Service.Admin.v1
         [OperationContract]
         OutputModel getCardTypeById(tblM_Card_Type x);
         [OperationContract]
-        OutputModel getActiveCard();
+        OutputModel getActiveCard(string em);
         [OperationContract]
-        OutputModel getCardListAll(vw_Card x);
+        OutputModel getCardListAll(string em, vw_Card x);
         [OperationContract]
         OutputModel getCardPurchaseFilter(string em, CardFilterModel fil);
         [OperationContract]

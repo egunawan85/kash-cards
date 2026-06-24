@@ -2749,28 +2749,28 @@ namespace QryptoCard.API.UserV1Service {
         System.Threading.Tasks.Task testEmailAsync();
         
         [System.ServiceModel.OperationContractAttribute(Action="http://tempuri.org/IUserV1Service/getUserData", ReplyAction="http://tempuri.org/IUserV1Service/getUserDataResponse")]
-        QryptoCard.API.UserV1Service.OutputModel getUserData(string x);
-        
+        QryptoCard.API.UserV1Service.OutputModel getUserData(string em, string x);
+
         [System.ServiceModel.OperationContractAttribute(Action="http://tempuri.org/IUserV1Service/getUserData", ReplyAction="http://tempuri.org/IUserV1Service/getUserDataResponse")]
-        System.Threading.Tasks.Task<QryptoCard.API.UserV1Service.OutputModel> getUserDataAsync(string x);
-        
+        System.Threading.Tasks.Task<QryptoCard.API.UserV1Service.OutputModel> getUserDataAsync(string em, string x);
+
         [System.ServiceModel.OperationContractAttribute(Action="http://tempuri.org/IUserV1Service/updateUserData", ReplyAction="http://tempuri.org/IUserV1Service/updateUserDataResponse")]
-        QryptoCard.API.UserV1Service.OutputModel updateUserData(QryptoCard.API.UserV1Service.tblM_User x);
-        
+        QryptoCard.API.UserV1Service.OutputModel updateUserData(string em, QryptoCard.API.UserV1Service.tblM_User x);
+
         [System.ServiceModel.OperationContractAttribute(Action="http://tempuri.org/IUserV1Service/updateUserData", ReplyAction="http://tempuri.org/IUserV1Service/updateUserDataResponse")]
-        System.Threading.Tasks.Task<QryptoCard.API.UserV1Service.OutputModel> updateUserDataAsync(QryptoCard.API.UserV1Service.tblM_User x);
-        
+        System.Threading.Tasks.Task<QryptoCard.API.UserV1Service.OutputModel> updateUserDataAsync(string em, QryptoCard.API.UserV1Service.tblM_User x);
+
         [System.ServiceModel.OperationContractAttribute(Action="http://tempuri.org/IUserV1Service/updatePassword", ReplyAction="http://tempuri.org/IUserV1Service/updatePasswordResponse")]
-        QryptoCard.API.UserV1Service.OutputModel updatePassword(QryptoCard.API.UserV1Service.PasswordChangeModel x);
-        
+        QryptoCard.API.UserV1Service.OutputModel updatePassword(string em, QryptoCard.API.UserV1Service.PasswordChangeModel x);
+
         [System.ServiceModel.OperationContractAttribute(Action="http://tempuri.org/IUserV1Service/updatePassword", ReplyAction="http://tempuri.org/IUserV1Service/updatePasswordResponse")]
-        System.Threading.Tasks.Task<QryptoCard.API.UserV1Service.OutputModel> updatePasswordAsync(QryptoCard.API.UserV1Service.PasswordChangeModel x);
-        
+        System.Threading.Tasks.Task<QryptoCard.API.UserV1Service.OutputModel> updatePasswordAsync(string em, QryptoCard.API.UserV1Service.PasswordChangeModel x);
+
         [System.ServiceModel.OperationContractAttribute(Action="http://tempuri.org/IUserV1Service/updateEmailOTP", ReplyAction="http://tempuri.org/IUserV1Service/updateEmailOTPResponse")]
-        QryptoCard.API.UserV1Service.OutputModel updateEmailOTP(QryptoCard.API.UserV1Service.tblM_User x);
-        
+        QryptoCard.API.UserV1Service.OutputModel updateEmailOTP(string em, QryptoCard.API.UserV1Service.tblM_User x);
+
         [System.ServiceModel.OperationContractAttribute(Action="http://tempuri.org/IUserV1Service/updateEmailOTP", ReplyAction="http://tempuri.org/IUserV1Service/updateEmailOTPResponse")]
-        System.Threading.Tasks.Task<QryptoCard.API.UserV1Service.OutputModel> updateEmailOTPAsync(QryptoCard.API.UserV1Service.tblM_User x);
+        System.Threading.Tasks.Task<QryptoCard.API.UserV1Service.OutputModel> updateEmailOTPAsync(string em, QryptoCard.API.UserV1Service.tblM_User x);
         
         [System.ServiceModel.OperationContractAttribute(Action="http://tempuri.org/IUserV1Service/updateEmail", ReplyAction="http://tempuri.org/IUserV1Service/updateEmailResponse")]
         QryptoCard.API.UserV1Service.OutputModel updateEmail(string em, QryptoCard.API.UserV1Service.tblH_User_OTP x);
@@ -2936,36 +2936,36 @@ namespace QryptoCard.API.UserV1Service {
             return base.Channel.testEmailAsync();
         }
         
-        public QryptoCard.API.UserV1Service.OutputModel getUserData(string x) {
-            return base.Channel.getUserData(x);
+        public QryptoCard.API.UserV1Service.OutputModel getUserData(string em, string x) {
+            return base.Channel.getUserData(em, x);
         }
-        
-        public System.Threading.Tasks.Task<QryptoCard.API.UserV1Service.OutputModel> getUserDataAsync(string x) {
-            return base.Channel.getUserDataAsync(x);
+
+        public System.Threading.Tasks.Task<QryptoCard.API.UserV1Service.OutputModel> getUserDataAsync(string em, string x) {
+            return base.Channel.getUserDataAsync(em, x);
         }
-        
-        public QryptoCard.API.UserV1Service.OutputModel updateUserData(QryptoCard.API.UserV1Service.tblM_User x) {
-            return base.Channel.updateUserData(x);
+
+        public QryptoCard.API.UserV1Service.OutputModel updateUserData(string em, QryptoCard.API.UserV1Service.tblM_User x) {
+            return base.Channel.updateUserData(em, x);
         }
-        
-        public System.Threading.Tasks.Task<QryptoCard.API.UserV1Service.OutputModel> updateUserDataAsync(QryptoCard.API.UserV1Service.tblM_User x) {
-            return base.Channel.updateUserDataAsync(x);
+
+        public System.Threading.Tasks.Task<QryptoCard.API.UserV1Service.OutputModel> updateUserDataAsync(string em, QryptoCard.API.UserV1Service.tblM_User x) {
+            return base.Channel.updateUserDataAsync(em, x);
         }
-        
-        public QryptoCard.API.UserV1Service.OutputModel updatePassword(QryptoCard.API.UserV1Service.PasswordChangeModel x) {
-            return base.Channel.updatePassword(x);
+
+        public QryptoCard.API.UserV1Service.OutputModel updatePassword(string em, QryptoCard.API.UserV1Service.PasswordChangeModel x) {
+            return base.Channel.updatePassword(em, x);
         }
-        
-        public System.Threading.Tasks.Task<QryptoCard.API.UserV1Service.OutputModel> updatePasswordAsync(QryptoCard.API.UserV1Service.PasswordChangeModel x) {
-            return base.Channel.updatePasswordAsync(x);
+
+        public System.Threading.Tasks.Task<QryptoCard.API.UserV1Service.OutputModel> updatePasswordAsync(string em, QryptoCard.API.UserV1Service.PasswordChangeModel x) {
+            return base.Channel.updatePasswordAsync(em, x);
         }
-        
-        public QryptoCard.API.UserV1Service.OutputModel updateEmailOTP(QryptoCard.API.UserV1Service.tblM_User x) {
-            return base.Channel.updateEmailOTP(x);
+
+        public QryptoCard.API.UserV1Service.OutputModel updateEmailOTP(string em, QryptoCard.API.UserV1Service.tblM_User x) {
+            return base.Channel.updateEmailOTP(em, x);
         }
-        
-        public System.Threading.Tasks.Task<QryptoCard.API.UserV1Service.OutputModel> updateEmailOTPAsync(QryptoCard.API.UserV1Service.tblM_User x) {
-            return base.Channel.updateEmailOTPAsync(x);
+
+        public System.Threading.Tasks.Task<QryptoCard.API.UserV1Service.OutputModel> updateEmailOTPAsync(string em, QryptoCard.API.UserV1Service.tblM_User x) {
+            return base.Channel.updateEmailOTPAsync(em, x);
         }
         
         public QryptoCard.API.UserV1Service.OutputModel updateEmail(string em, QryptoCard.API.UserV1Service.tblH_User_OTP x) {

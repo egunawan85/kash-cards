@@ -61,15 +61,15 @@ namespace QryptoCard.INT.Script.Service.App.v1
 
 
         [OperationContract]
-        void createCardHolder(string uid, long cardtypeid, string fn, string ln, string em);
+        void createCardHolder(string em, long cardtypeid, string fn, string ln, string holderEmail);
         [OperationContract]
-        void recreateCardHolder(int holderid);
-        
+        void recreateCardHolder(string em, int holderid);
+
 
 
 
 
         [OperationContract]
-        void checkCard(string cardNo);
+        void checkCard(string em, string cardNo);
     }
 }

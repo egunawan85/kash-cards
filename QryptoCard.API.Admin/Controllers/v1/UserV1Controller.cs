@@ -36,7 +36,7 @@ namespace QryptoCard.API.Admin.Controllers.v1
             {
                 trustConnection();
                 var x = new tblM_User();
-                op = sr.getUser(x);
+                op = sr.getUser(getEmail(), x);
                 if (op.Status == "success")
                     op.Data = JsonConvert.DeserializeObject<List<UserModel>>(op.Data.ToString());
             }
@@ -58,7 +58,7 @@ namespace QryptoCard.API.Admin.Controllers.v1
             {
                 trustConnection();
                 var x = new vw_User_Commission();
-                op = sr.getUserCommissionList(x);
+                op = sr.getUserCommissionList(getEmail(), x);
                 if (op.Status == "success")
                     op.Data = JsonConvert.DeserializeObject<List<vw_User_Commission>>(op.Data.ToString());
             }
@@ -101,7 +101,7 @@ namespace QryptoCard.API.Admin.Controllers.v1
             {
                 trustConnection();
                 var x = new vw_User_Fee();
-                op = sr.getUserFeeList(x);
+                op = sr.getUserFeeList(getEmail(), x);
                 if (op.Status == "success")
                     op.Data = JsonConvert.DeserializeObject<List<vw_User_Fee>>(op.Data.ToString());
             }

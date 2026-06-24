@@ -2245,28 +2245,28 @@ namespace QryptoCard.API.Admin.AdminV1Service {
         System.Threading.Tasks.Task testEmailAsync();
         
         [System.ServiceModel.OperationContractAttribute(Action="http://tempuri.org/IAdminV1Service/getAdminData", ReplyAction="http://tempuri.org/IAdminV1Service/getAdminDataResponse")]
-        QryptoCard.API.Admin.AdminV1Service.OutputModel getAdminData(string x);
-        
+        QryptoCard.API.Admin.AdminV1Service.OutputModel getAdminData(string em, string x);
+
         [System.ServiceModel.OperationContractAttribute(Action="http://tempuri.org/IAdminV1Service/getAdminData", ReplyAction="http://tempuri.org/IAdminV1Service/getAdminDataResponse")]
-        System.Threading.Tasks.Task<QryptoCard.API.Admin.AdminV1Service.OutputModel> getAdminDataAsync(string x);
-        
+        System.Threading.Tasks.Task<QryptoCard.API.Admin.AdminV1Service.OutputModel> getAdminDataAsync(string em, string x);
+
         [System.ServiceModel.OperationContractAttribute(Action="http://tempuri.org/IAdminV1Service/updateAdminData", ReplyAction="http://tempuri.org/IAdminV1Service/updateAdminDataResponse")]
-        QryptoCard.API.Admin.AdminV1Service.OutputModel updateAdminData(QryptoCard.API.Admin.AdminV1Service.tblM_Admin x);
-        
+        QryptoCard.API.Admin.AdminV1Service.OutputModel updateAdminData(string em, QryptoCard.API.Admin.AdminV1Service.tblM_Admin x);
+
         [System.ServiceModel.OperationContractAttribute(Action="http://tempuri.org/IAdminV1Service/updateAdminData", ReplyAction="http://tempuri.org/IAdminV1Service/updateAdminDataResponse")]
-        System.Threading.Tasks.Task<QryptoCard.API.Admin.AdminV1Service.OutputModel> updateAdminDataAsync(QryptoCard.API.Admin.AdminV1Service.tblM_Admin x);
-        
+        System.Threading.Tasks.Task<QryptoCard.API.Admin.AdminV1Service.OutputModel> updateAdminDataAsync(string em, QryptoCard.API.Admin.AdminV1Service.tblM_Admin x);
+
         [System.ServiceModel.OperationContractAttribute(Action="http://tempuri.org/IAdminV1Service/updatePassword", ReplyAction="http://tempuri.org/IAdminV1Service/updatePasswordResponse")]
-        QryptoCard.API.Admin.AdminV1Service.OutputModel updatePassword(QryptoCard.API.Admin.AdminV1Service.PasswordChangeModel x);
-        
+        QryptoCard.API.Admin.AdminV1Service.OutputModel updatePassword(string em, QryptoCard.API.Admin.AdminV1Service.PasswordChangeModel x);
+
         [System.ServiceModel.OperationContractAttribute(Action="http://tempuri.org/IAdminV1Service/updatePassword", ReplyAction="http://tempuri.org/IAdminV1Service/updatePasswordResponse")]
-        System.Threading.Tasks.Task<QryptoCard.API.Admin.AdminV1Service.OutputModel> updatePasswordAsync(QryptoCard.API.Admin.AdminV1Service.PasswordChangeModel x);
-        
+        System.Threading.Tasks.Task<QryptoCard.API.Admin.AdminV1Service.OutputModel> updatePasswordAsync(string em, QryptoCard.API.Admin.AdminV1Service.PasswordChangeModel x);
+
         [System.ServiceModel.OperationContractAttribute(Action="http://tempuri.org/IAdminV1Service/updateEmailOTP", ReplyAction="http://tempuri.org/IAdminV1Service/updateEmailOTPResponse")]
-        QryptoCard.API.Admin.AdminV1Service.OutputModel updateEmailOTP(QryptoCard.API.Admin.AdminV1Service.tblM_Admin x);
-        
+        QryptoCard.API.Admin.AdminV1Service.OutputModel updateEmailOTP(string em, QryptoCard.API.Admin.AdminV1Service.tblM_Admin x);
+
         [System.ServiceModel.OperationContractAttribute(Action="http://tempuri.org/IAdminV1Service/updateEmailOTP", ReplyAction="http://tempuri.org/IAdminV1Service/updateEmailOTPResponse")]
-        System.Threading.Tasks.Task<QryptoCard.API.Admin.AdminV1Service.OutputModel> updateEmailOTPAsync(QryptoCard.API.Admin.AdminV1Service.tblM_Admin x);
+        System.Threading.Tasks.Task<QryptoCard.API.Admin.AdminV1Service.OutputModel> updateEmailOTPAsync(string em, QryptoCard.API.Admin.AdminV1Service.tblM_Admin x);
         
         [System.ServiceModel.OperationContractAttribute(Action="http://tempuri.org/IAdminV1Service/updateEmail", ReplyAction="http://tempuri.org/IAdminV1Service/updateEmailResponse")]
         QryptoCard.API.Admin.AdminV1Service.OutputModel updateEmail(string em, QryptoCard.API.Admin.AdminV1Service.tblH_Admin_OTP x);
@@ -2414,36 +2414,36 @@ namespace QryptoCard.API.Admin.AdminV1Service {
             return base.Channel.testEmailAsync();
         }
         
-        public QryptoCard.API.Admin.AdminV1Service.OutputModel getAdminData(string x) {
-            return base.Channel.getAdminData(x);
+        public QryptoCard.API.Admin.AdminV1Service.OutputModel getAdminData(string em, string x) {
+            return base.Channel.getAdminData(em, x);
         }
-        
-        public System.Threading.Tasks.Task<QryptoCard.API.Admin.AdminV1Service.OutputModel> getAdminDataAsync(string x) {
-            return base.Channel.getAdminDataAsync(x);
+
+        public System.Threading.Tasks.Task<QryptoCard.API.Admin.AdminV1Service.OutputModel> getAdminDataAsync(string em, string x) {
+            return base.Channel.getAdminDataAsync(em, x);
         }
-        
-        public QryptoCard.API.Admin.AdminV1Service.OutputModel updateAdminData(QryptoCard.API.Admin.AdminV1Service.tblM_Admin x) {
-            return base.Channel.updateAdminData(x);
+
+        public QryptoCard.API.Admin.AdminV1Service.OutputModel updateAdminData(string em, QryptoCard.API.Admin.AdminV1Service.tblM_Admin x) {
+            return base.Channel.updateAdminData(em, x);
         }
-        
-        public System.Threading.Tasks.Task<QryptoCard.API.Admin.AdminV1Service.OutputModel> updateAdminDataAsync(QryptoCard.API.Admin.AdminV1Service.tblM_Admin x) {
-            return base.Channel.updateAdminDataAsync(x);
+
+        public System.Threading.Tasks.Task<QryptoCard.API.Admin.AdminV1Service.OutputModel> updateAdminDataAsync(string em, QryptoCard.API.Admin.AdminV1Service.tblM_Admin x) {
+            return base.Channel.updateAdminDataAsync(em, x);
         }
-        
-        public QryptoCard.API.Admin.AdminV1Service.OutputModel updatePassword(QryptoCard.API.Admin.AdminV1Service.PasswordChangeModel x) {
-            return base.Channel.updatePassword(x);
+
+        public QryptoCard.API.Admin.AdminV1Service.OutputModel updatePassword(string em, QryptoCard.API.Admin.AdminV1Service.PasswordChangeModel x) {
+            return base.Channel.updatePassword(em, x);
         }
-        
-        public System.Threading.Tasks.Task<QryptoCard.API.Admin.AdminV1Service.OutputModel> updatePasswordAsync(QryptoCard.API.Admin.AdminV1Service.PasswordChangeModel x) {
-            return base.Channel.updatePasswordAsync(x);
+
+        public System.Threading.Tasks.Task<QryptoCard.API.Admin.AdminV1Service.OutputModel> updatePasswordAsync(string em, QryptoCard.API.Admin.AdminV1Service.PasswordChangeModel x) {
+            return base.Channel.updatePasswordAsync(em, x);
         }
-        
-        public QryptoCard.API.Admin.AdminV1Service.OutputModel updateEmailOTP(QryptoCard.API.Admin.AdminV1Service.tblM_Admin x) {
-            return base.Channel.updateEmailOTP(x);
+
+        public QryptoCard.API.Admin.AdminV1Service.OutputModel updateEmailOTP(string em, QryptoCard.API.Admin.AdminV1Service.tblM_Admin x) {
+            return base.Channel.updateEmailOTP(em, x);
         }
-        
-        public System.Threading.Tasks.Task<QryptoCard.API.Admin.AdminV1Service.OutputModel> updateEmailOTPAsync(QryptoCard.API.Admin.AdminV1Service.tblM_Admin x) {
-            return base.Channel.updateEmailOTPAsync(x);
+
+        public System.Threading.Tasks.Task<QryptoCard.API.Admin.AdminV1Service.OutputModel> updateEmailOTPAsync(string em, QryptoCard.API.Admin.AdminV1Service.tblM_Admin x) {
+            return base.Channel.updateEmailOTPAsync(em, x);
         }
         
         public QryptoCard.API.Admin.AdminV1Service.OutputModel updateEmail(string em, QryptoCard.API.Admin.AdminV1Service.tblH_Admin_OTP x) {
