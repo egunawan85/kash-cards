@@ -86,6 +86,33 @@ Deferred deeper spikes (not blocking): whether stored `tblM_User_2FA` TOTP secre
 are real/usable (DB-gated — TOTP is post-MVP per A5 anyway), and the
 `tblH_Admin_Login` vs `tblH_Admin_OTP` discrepancy (checked during Slice 1).
 
+## Revision — wholesale alignment to runegate's proven auth subsystem
+
+Discovered while building the integration harness: runegate ships a complete,
+production-red-teamed implementation of exactly this system, so kash-cards mirrors it
+**wholesale** rather than shipping a simpler first cut. Changes vs the original A1–A9 / D-1…D-7:
+
+- **Token store.** Replace the storage-agnostic `Sec.TokenService` + `ITokenStore` abstraction
+  with runegate's structure: a code-first **`AuthDbContext`** + three tables — **`tblT_AuthToken`**
+  (access; `ParentRefreshTokenID`), **`tblT_RefreshToken`** (refresh; `ReplacedByID` +
+  `RotationChainRoot`), **`tblH_Auth_Log`** (audit ledger). The lifecycle moves to the service tier.
+- **Lifecycle (service).** Mirror runegate's `AuthV1Service`:
+  `mintAfterOtpVerify`/`refresh`/`verify`/`revoke`/`revokeAllForSubject`, with **refresh-token-reuse
+  detection** — presenting an already-`ReplacedByID` token revokes the entire `RotationChainRoot`
+  chain and logs `refresh_token_reuse` (RFC 6819; closes the exact gap the Slice 2 red-team flagged).
+  Atomic rotation via conditional `UPDATE … WHERE ReplacedByID IS NULL`.
+- **Purge worker.** Hourly DELETE of expired rows past a 24h grace (adopted wholesale).
+- **Validation.** A **LocalDB integration harness** (mirroring runegate's `LocalDbFixture` +
+  EF-generated `init.sql`) runs the real service methods against a throwaway SQL Server LocalDB, so
+  the full login → OTP → token → bearer chain, the atomic rotation, and reuse-detection are
+  integration-tested for real — no waiting for the shakeout. Retroactively validates Slice 1 + the
+  IDOR/role stubs.
+
+**Revised order:** harness → rework token store to `AuthDbContext` / 3-table schema → port
+`AuthV1Service` + `BearerAuthAttribute` → wire login mint → integration-test throughout, each
+re-red-teamed. `Sec.AuthTokens` (gen/hash primitives) is kept; the `Sec.TokenService` /
+`ITokenStore` / `EfTokenStore` abstraction from PR #8 is superseded.
+
 ## Organized into slices
 
 - **Slice 1 — Restore a real OTP** (un-hardcode, harden, re-enable delivery)
