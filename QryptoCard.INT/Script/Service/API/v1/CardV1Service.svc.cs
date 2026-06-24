@@ -426,10 +426,7 @@ namespace QryptoCard.INT.Script.Service.API.v1
                     x.Price = Convert.ToDouble(data.CardPrice);
                     //x.InitialDeposit = Convert.ToDouble(data.DepositAmountMinQuotaForActiveCard);
 
-                    if (x.UserID == "59da7833-7d71-4821-be7e-bd1bb2a36510")
-                        x.FeeInPercentage = Convert.ToDouble(2);
-                    else
-                        x.FeeInPercentage = Convert.ToDouble(data.RechargeFeeRate);
+                    x.FeeInPercentage = Convert.ToDouble(data.RechargeFeeRate);
 
                     //var comm = db.tblM_User_Fee.Where(p => p.UserID == x.UserID).FirstOrDefault();
                     //if (comm != null)
@@ -634,9 +631,9 @@ namespace QryptoCard.INT.Script.Service.API.v1
                     return op;
                 }
 
-                var data = db.tblT_Card.Where(p => p.ID == x.ID).FirstOrDefault();
+                var data = db.tblT_Card.Where(p => p.ID == x.ID && p.UserID == uid).FirstOrDefault();
 
-                
+
                 if (data == null)
                 {
                     op.Status = "failed";
@@ -703,7 +700,7 @@ namespace QryptoCard.INT.Script.Service.API.v1
                     op.Message = "ID parameter cannot be null";
                     return op;
                 }
-                var cd = db.tblT_Card.Where(p => p.ID == x.ID).FirstOrDefault();
+                var cd = db.tblT_Card.Where(p => p.ID == x.ID && p.UserID == uid).FirstOrDefault();
                 if (cd == null)
                 {
                     op.Status = "failed";
@@ -746,6 +743,9 @@ namespace QryptoCard.INT.Script.Service.API.v1
                 }
 
                 var data = db.tblT_Card_Transaction.Where(p => p.ID == x.ID).FirstOrDefault();
+                // Authorization: the transaction's card must belong to the caller; else treat as not-found.
+                if (data != null && !db.tblT_Card.Any(c => c.CardNo == data.CardNo && c.UserID == uid))
+                    data = null;
 
                 if (data == null)
                 {
@@ -811,7 +811,7 @@ namespace QryptoCard.INT.Script.Service.API.v1
                 }
                 else
                 {
-                    var card = db.tblT_Card.Where(p => p.ID == x.ID).FirstOrDefault();
+                    var card = db.tblT_Card.Where(p => p.ID == x.ID && p.UserID == uid).FirstOrDefault();
                     if (card == null)
                     {
                         op.Status = "failed";
@@ -822,10 +822,7 @@ namespace QryptoCard.INT.Script.Service.API.v1
                     x.UserID = uid;
 
                     var ct = db.tblM_Card_Type.Where(p => p.CardTypeId == card.CardTypeId).FirstOrDefault();
-                    if (x.UserID == "59da7833-7d71-4821-be7e-bd1bb2a36510")
-                        x.FeeInPercentage = Convert.ToDouble(2);
-                    else
-                        x.FeeInPercentage = Convert.ToDouble(ct.RechargeFeeRate);
+                    x.FeeInPercentage = Convert.ToDouble(ct.RechargeFeeRate);
 
                     x.CardNo = card.CardNo;
                     x.Currency = "USD";
@@ -928,7 +925,7 @@ namespace QryptoCard.INT.Script.Service.API.v1
                     op.Message = "ID parameter cannot be null";
                     return op;
                 }
-                var cd = db.tblT_Card.Where(p => p.ID == x.ID).FirstOrDefault();
+                var cd = db.tblT_Card.Where(p => p.ID == x.ID && p.UserID == uid).FirstOrDefault();
                 if (cd == null)
                 {
                     op.Status = "failed";

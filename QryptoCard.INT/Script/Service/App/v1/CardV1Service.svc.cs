@@ -656,10 +656,7 @@ namespace QryptoCard.INT.Script.Service.App.v1
                     x.Price = Convert.ToDouble(data.CardPrice);
                     //x.InitialDeposit = Convert.ToDouble(data.DepositAmountMinQuotaForActiveCard);
 
-                    if (x.UserID == "59da7833-7d71-4821-be7e-bd1bb2a36510")
-                        x.FeeInPercentage = Convert.ToDouble(2);
-                    else
-                        x.FeeInPercentage = Convert.ToDouble(data.RechargeFeeRate);
+                    x.FeeInPercentage = Convert.ToDouble(data.RechargeFeeRate);
 
                     //var comm = db.tblM_User_Fee.Where(p => p.UserID == x.UserID).FirstOrDefault();
                     //if (comm != null)
@@ -836,6 +833,10 @@ namespace QryptoCard.INT.Script.Service.App.v1
                 var uid = getUserId(em);
 
                 var data = db.tblT_Card_Balance.Where(p => p.ID == x.ID).FirstOrDefault();
+                // Authorization: the balance must belong to a card owned by the caller; otherwise
+                // treat as not-found (no cross-account disclosure).
+                if (data != null && !db.tblT_Card.Any(c => c.CardNo == data.CardNo && c.UserID == uid))
+                    data = null;
 
                 if (data == null)
                 {
@@ -863,6 +864,14 @@ namespace QryptoCard.INT.Script.Service.App.v1
             try
             {
                 var uid = getUserId(em);
+
+                // Authorization: the card must belong to the caller.
+                if (!db.tblT_Card.Any(c => c.CardNo == x.CardNo && c.UserID == uid))
+                {
+                    op.Status = "failed";
+                    op.Message = "Transaction is not found";
+                    return op;
+                }
 
                 var data = db.tblT_Card_Transaction.Where(p => p.CardNo == x.CardNo && (p.Status == "succeed" || p.Status == "success" || p.Status == "authorized")).OrderByDescending(p => p.TransactionTime).Take(20).ToList();
 
@@ -894,6 +903,9 @@ namespace QryptoCard.INT.Script.Service.App.v1
                 var uid = getUserId(em);
 
                 var data = db.tblT_Card_Transaction.Where(p => p.ID == x.ID).FirstOrDefault();
+                // Authorization: the transaction's card must belong to the caller; else treat as not-found.
+                if (data != null && !db.tblT_Card.Any(c => c.CardNo == data.CardNo && c.UserID == uid))
+                    data = null;
 
                 if (data == null)
                 {
@@ -932,7 +944,7 @@ namespace QryptoCard.INT.Script.Service.App.v1
                 }
                 else
                 {
-                    var card = db.tblT_Card.Where(p => p.CardNo == x.CardNo).FirstOrDefault();
+                    var card = db.tblT_Card.Where(p => p.CardNo == x.CardNo && p.UserID == uid).FirstOrDefault();
                     if (card == null)
                     {
                         op.Status = "failed";
@@ -976,10 +988,7 @@ namespace QryptoCard.INT.Script.Service.App.v1
                     x.UserID = uid;
 
                     var ct = db.tblM_Card_Type.Where(p => p.CardTypeId == card.CardTypeId).FirstOrDefault();
-                    if (x.UserID == "59da7833-7d71-4821-be7e-bd1bb2a36510")
-                        x.FeeInPercentage = Convert.ToDouble(2);
-                    else
-                        x.FeeInPercentage = Convert.ToDouble(ct.RechargeFeeRate);
+                    x.FeeInPercentage = Convert.ToDouble(ct.RechargeFeeRate);
 
                     x.Currency = "USD";
                     x.Fee = (Convert.ToDouble(x.FeeInPercentage) / 100) * x.Amount.Value;

@@ -876,7 +876,7 @@ namespace QryptoCard.INT.Script.Service.App.v1
             {
                 string uid = getUserId(em);
 
-                var data = db.tblM_User_2FA.Where(p => p.UserID == x.UserID && p.isActive == 1).FirstOrDefault();
+                var data = db.tblM_User_2FA.Where(p => p.UserID == uid && p.isActive == 1).FirstOrDefault();
                 if (data != null)
                 {
                     op.Status = "failed";
@@ -885,11 +885,12 @@ namespace QryptoCard.INT.Script.Service.App.v1
                 }
                 else
                 {
-                    var user = db.tblM_User.Where(p => p.UserID == x.UserID).FirstOrDefault();
+                    var user = db.tblM_User.Where(p => p.UserID == uid).FirstOrDefault();
                     user.is2FA = 1;
                     user.Date2FA = DateTime.Now;
                     db.SaveChanges();
 
+                    x.UserID = uid;
                     x.AccountKey = Secure.APPtoDB(x.AccountKey);
                     x.ManualEntryKey = Secure.APPtoDB(x.ManualEntryKey);
                     x.DateCreated = user.Date2FA;
