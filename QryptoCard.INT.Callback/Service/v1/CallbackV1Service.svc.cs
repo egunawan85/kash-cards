@@ -16,11 +16,12 @@ namespace QryptoCard.INT.Callback.Service.v1
 {
     // NOTE: You can use the "Rename" command on the "Refactor" menu to change the class name "CallbackV1Service" in code, svc and config file together.
     // NOTE: In order to launch WCF Test Client for testing this service, please select CallbackV1Service.svc or CallbackV1Service.svc.cs at the Solution Explorer and start debugging.
+    [QryptoCard.INT.Callback.Security.IntAuthBehavior]
     public class CallbackV1Service : ICallbackV1Service
     {
         private static string loadRsaPrivateKeyPem()
         {
-            return "<RSAKeyValue><Modulus>vn+RrVd5OrRdHO+v9nxmL49QF1GBIwpR44HAcb6RtCpnZ8EIDulOJYzsx9VWWYKAAgz4GYi2uK9XgQJNfGBa+3Eell/fVVbgQ67o61sBKZzW+ri7PB7eCnSJSBuec5Y0W4vgAStxglgxDH1D5Am75EIgsxoen2vPNkxyvm4ykPM=</Modulus><Exponent>AQAB</Exponent><P>9MaBDwqdFg0YVbjs2h7F6aF3hQSoL8Tu0zWLAKP5hc/PszRTxNpfxRuepEIYEUCwUZgVkAOMGoR8KfrTXu3rZQ==</P><Q>xzvjlXC5gfrBRaMgyaW+jqXcFONgHJi/oJ349LpMzmLoZI33IGiSFFS7IxSACKn9IcWz/T/HgP35dDPne+fBdw==</Q><DP>6bdgI2yO8S8vvSoFfX9Emf+Cj5ASxwnSv/iv8Lyg1BPIzeN42M1qBFqK72vsbwzFTiNY81lvvSIjLDJDALFLwQ==</DP><DQ>wsoYAYTbqmxKyFXseZp2C6u32ChSUMM7H8Mzo7n93A8x3RY71tDGeeA5stuZLl9coMdV6bWQzdoCKY2Rtj/pkw==</DQ><InverseQ>qukYhSY7U7LZIZ+t2ecjci8jgnYlbaJonS3f/v8hlAFUclKdHC2plGJ4dIshJEBrp9gGUN5TGWtRcMqIS+PJyg==</InverseQ><D>tDVf7Rg74ZHwJ8iCsG08Ca/MN1LuE+TWVJ9RGwkJMuOOULNl2R1RxOoMsHobpq9yQv5b0WPoXsvYvn0cKhXI2kI/OrinvrxxY9+8uZ127E6q6pCZgYOX0/EEAluhCG9Rt3vIA79em2idCDJcGiLyyqNL9b4/UffqM7hnNO65yDk=</D></RSAKeyValue>";
+            return QryptoCard.INT.Callback.Model.KeyModel.WASABICARD_PRIVATE_KEY_XML;
         }
 
         private static string decrypt(string strText, string privateKey)
@@ -48,8 +49,10 @@ namespace QryptoCard.INT.Callback.Service.v1
             }
         }
 
-        public string testDecrypt(string x)
-        { 
+        // Internal-only: decrypt a WasabiCard sensitive payload field with our RSA private key.
+        // Not exposed as a WCF operation (was previously a public decryption oracle).
+        private string decryptSensitive(string x)
+        {
             return decrypt(x, loadRsaPrivateKeyPem());
         }
 
@@ -213,7 +216,7 @@ namespace QryptoCard.INT.Callback.Service.v1
                                     qqq.cardNo = cr.CardNo;
                                     var ressen = WasabiCardService.getCardInfoSensitive(qqq);
 
-                                    cr.CardNumber = testDecrypt(ressen.data.cardNumber);
+                                    cr.CardNumber = decryptSensitive(ressen.data.cardNumber);
                                     cr.CVV = ressen.data.cvv;
                                     cr.ValidPeriod = ressen.data.expireDate;
                                     db.SaveChanges();
@@ -323,7 +326,11 @@ namespace QryptoCard.INT.Callback.Service.v1
 
                 return;
             }
-            catch { }
+            catch (Exception ex)
+            {
+                // Surface failures instead of swallowing them silently (type only, no PII/detail).
+                System.Diagnostics.Trace.TraceError("Wasabi callback processing failed: " + ex.GetType().FullName);
+            }
         }
         public void PGCrypto(PGCryptoModel x)
         {
@@ -469,6 +476,7 @@ namespace QryptoCard.INT.Callback.Service.v1
             }
             catch (Exception ex)
             {
+                System.Diagnostics.Trace.TraceError("PGCrypto callback processing failed: " + ex.GetType().FullName);
             }
 
             return;

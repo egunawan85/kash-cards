@@ -39,7 +39,7 @@ namespace QryptoCard.INT.Script.Service
         //        client.AuthenticationMechanisms.Remove("XOAUTH2");
 
         //        // Note: only needed if the SMTP server requires authentication
-        //        client.Authenticate("noreply@kash.now", "3BE8AdF6-023c-4CE2-8993-6684fb975c8a");
+        //        client.Authenticate("noreply@kash.now", "<moved-to-Postmark-in-hardening>");
 
         //        client.Send(message);
         //        client.Disconnect(true);
@@ -93,7 +93,7 @@ namespace QryptoCard.INT.Script.Service
         //        client.AuthenticationMechanisms.Remove("XOAUTH2");
 
         //        // Note: only needed if the SMTP server requires authentication
-        //        client.Authenticate("noreply@kash.now", "3BE8AdF6-023c-4CE2-8993-6684fb975c8a");
+        //        client.Authenticate("noreply@kash.now", "<moved-to-Postmark-in-hardening>");
 
         //        client.Send(message);
         //        client.Disconnect(true);
@@ -138,7 +138,7 @@ namespace QryptoCard.INT.Script.Service
         //        client.AuthenticationMechanisms.Remove("XOAUTH2");
 
         //        // Note: only needed if the SMTP server requires authentication
-        //        client.Authenticate("noreply@kash.now", "3BE8AdF6-023c-4CE2-8993-6684fb975c8a");
+        //        client.Authenticate("noreply@kash.now", "<moved-to-Postmark-in-hardening>");
 
         //        client.Send(message);
         //        client.Disconnect(true);
@@ -183,7 +183,7 @@ namespace QryptoCard.INT.Script.Service
         //        client.AuthenticationMechanisms.Remove("XOAUTH2");
 
         //        // Note: only needed if the SMTP server requires authentication
-        //        client.Authenticate("noreply@kash.now", "3BE8AdF6-023c-4CE2-8993-6684fb975c8a");
+        //        client.Authenticate("noreply@kash.now", "<moved-to-Postmark-in-hardening>");
 
         //        client.Send(message);
         //        client.Disconnect(true);
@@ -229,7 +229,7 @@ namespace QryptoCard.INT.Script.Service
         //        client.AuthenticationMechanisms.Remove("XOAUTH2");
 
         //        // Note: only needed if the SMTP server requires authentication
-        //        client.Authenticate("noreply@kash.now", "3BE8AdF6-023c-4CE2-8993-6684fb975c8a");
+        //        client.Authenticate("noreply@kash.now", "<moved-to-Postmark-in-hardening>");
 
         //        client.Send(message);
         //        client.Disconnect(true);
@@ -274,7 +274,7 @@ namespace QryptoCard.INT.Script.Service
         //        client.AuthenticationMechanisms.Remove("XOAUTH2");
 
         //        // Note: only needed if the SMTP server requires authentication
-        //        client.Authenticate("noreply@kash.now", "3BE8AdF6-023c-4CE2-8993-6684fb975c8a");
+        //        client.Authenticate("noreply@kash.now", "<moved-to-Postmark-in-hardening>");
 
         //        client.Send(message);
         //        client.Disconnect(true);

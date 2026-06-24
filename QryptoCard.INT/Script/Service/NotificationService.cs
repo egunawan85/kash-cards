@@ -22,8 +22,7 @@ namespace QryptoCard.INT.Script.Service
             message.IsBodyHtml = true;
             SmtpClient client = new SmtpClient("smtp.gmail.com", 587); //Gmail smtp    
             System.Net.NetworkCredential basicCredential1 = new
-            System.Net.NetworkCredential("no-reply@qrypto.trade", "olkebbjshtdbzcae");
-            //System.Net.NetworkCredential("syaprilstudio@gmail.com", "jrwxdabkuhuyurhs");
+            System.Net.NetworkCredential("no-reply@qrypto.trade", QryptoCard.Sec.SecretsConfig.Require("EMAIL_PASSWORD"));
             client.EnableSsl = true;
             client.UseDefaultCredentials = false;
             client.Credentials = basicCredential1;
@@ -62,8 +61,7 @@ namespace QryptoCard.INT.Script.Service
             message.IsBodyHtml = true;
             SmtpClient client = new SmtpClient("smtp.gmail.com", 587); //Gmail smtp    
             System.Net.NetworkCredential basicCredential1 = new
-            System.Net.NetworkCredential("no-reply@qrypto.trade", "olkebbjshtdbzcae");
-            //System.Net.NetworkCredential("syaprilstudio@gmail.com", "jrwxdabkuhuyurhs");
+            System.Net.NetworkCredential("no-reply@qrypto.trade", QryptoCard.Sec.SecretsConfig.Require("EMAIL_PASSWORD"));
             client.EnableSsl = true;
             client.UseDefaultCredentials = false;
             client.Credentials = basicCredential1;
@@ -102,8 +100,7 @@ namespace QryptoCard.INT.Script.Service
             message.IsBodyHtml = true;
             SmtpClient client = new SmtpClient("smtp.gmail.com", 587); //Gmail smtp    
             System.Net.NetworkCredential basicCredential1 = new
-            System.Net.NetworkCredential("no-reply@qrypto.trade", "olkebbjshtdbzcae");
-            //System.Net.NetworkCredential("syaprilstudio@gmail.com", "jrwxdabkuhuyurhs");
+            System.Net.NetworkCredential("no-reply@qrypto.trade", QryptoCard.Sec.SecretsConfig.Require("EMAIL_PASSWORD"));
             client.EnableSsl = true;
             client.UseDefaultCredentials = false;
             client.Credentials = basicCredential1;
@@ -142,8 +139,7 @@ namespace QryptoCard.INT.Script.Service
             message.IsBodyHtml = true;
             SmtpClient client = new SmtpClient("smtp.gmail.com", 587); //Gmail smtp    
             System.Net.NetworkCredential basicCredential1 = new
-            System.Net.NetworkCredential("no-reply@qrypto.trade", "olkebbjshtdbzcae");
-            //System.Net.NetworkCredential("syaprilstudio@gmail.com", "jrwxdabkuhuyurhs");
+            System.Net.NetworkCredential("no-reply@qrypto.trade", QryptoCard.Sec.SecretsConfig.Require("EMAIL_PASSWORD"));
             client.EnableSsl = true;
             client.UseDefaultCredentials = false;
             client.Credentials = basicCredential1;
@@ -184,8 +180,7 @@ namespace QryptoCard.INT.Script.Service
             message.IsBodyHtml = true;
             SmtpClient client = new SmtpClient("smtp.gmail.com", 587); //Gmail smtp    
             System.Net.NetworkCredential basicCredential1 = new
-            System.Net.NetworkCredential("no-reply@qrypto.trade", "olkebbjshtdbzcae");
-            //System.Net.NetworkCredential("syaprilstudio@gmail.com", "jrwxdabkuhuyurhs");
+            System.Net.NetworkCredential("no-reply@qrypto.trade", QryptoCard.Sec.SecretsConfig.Require("EMAIL_PASSWORD"));
             client.EnableSsl = true;
             client.UseDefaultCredentials = false;
             client.Credentials = basicCredential1;
@@ -227,8 +222,7 @@ namespace QryptoCard.INT.Script.Service
             message.IsBodyHtml = true;
             SmtpClient client = new SmtpClient("smtp.gmail.com", 587); //Gmail smtp    
             System.Net.NetworkCredential basicCredential1 = new
-            System.Net.NetworkCredential("no-reply@qrypto.trade", "olkebbjshtdbzcae");
-            //System.Net.NetworkCredential("syaprilstudio@gmail.com", "jrwxdabkuhuyurhs");
+            System.Net.NetworkCredential("no-reply@qrypto.trade", QryptoCard.Sec.SecretsConfig.Require("EMAIL_PASSWORD"));
             client.EnableSsl = true;
             client.UseDefaultCredentials = false;
             client.Credentials = basicCredential1;

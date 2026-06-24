@@ -1,1 +1,1 @@
-﻿<%@ ServiceHost Language="C#" Debug="true" Service="QryptoCard.INT.Callback.Service.v1.CallbackV1Service" CodeBehind="CallbackV1Service.svc.cs" %>
+﻿<%@ ServiceHost Language="C#" Debug="false" Service="QryptoCard.INT.Callback.Service.v1.CallbackV1Service" CodeBehind="CallbackV1Service.svc.cs" %>

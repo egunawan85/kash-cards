@@ -13,8 +13,6 @@ namespace QryptoCard.INT.Callback.Service.v1
     public interface ICallbackV1Service
     {
         [OperationContract]
-        string testDecrypt(string x);
-        [OperationContract]
         void Wasabi(string cat, string sign, string req, string a);
         [OperationContract]
         void PGCrypto(PGCryptoModel x);

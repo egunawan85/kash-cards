@@ -110,6 +110,7 @@
       <DependentUpon>Reference.svcmap</DependentUpon>
     </Compile>
     <Compile Include="Controllers\v1\CallbackV1Controller.cs" />
+    <Compile Include="Security\IntAuthClientBehavior.cs" />
     <Compile Include="Global.asax.cs">
       <DependentUpon>Global.asax</DependentUpon>
     </Compile>
@@ -133,6 +134,12 @@
   </ItemGroup>
   <ItemGroup>
     <WCFMetadataStorage Include="Connected Services\CallbackV1Service\" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\QryptoCard.Sec\QryptoCard.Sec.csproj">
+      <Project>{A7615B89-8F06-4FB4-8298-6CD0EA76B7AD}</Project>
+      <Name>QryptoCard.Sec</Name>
+    </ProjectReference>
   </ItemGroup>
   <PropertyGroup>
     <VisualStudioVersion Condition="'$(VisualStudioVersion)' == ''">10.0</VisualStudioVersion>
