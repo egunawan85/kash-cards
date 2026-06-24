@@ -1,13 +1,13 @@
 # Plan 4 — Authentication Tokens & Two-Factor (design proposal)
 
-> **Status: DESIGN PROPOSAL — not started, awaiting sign-off.** This broke out of
-> Plan 3 Slice 3 (the auth/authz slice): the IDOR fixes, fee-backdoor removal, and
-> admin role guards shipped in PR #4/#5, but the *authentication model* itself —
-> real OTP, two-factor, and replacing per-request Basic credentials with revocable
-> bearer tokens — is a distinct architectural change and is planned here.
->
-> Per our workflow, the **Design decisions** below are a hard gate: nothing is
-> implemented until you sign them off.
+> **Status: ✅ DONE — shipped and merged (PR #7–#11).** Real OTP (#7), opaque
+> bearer-token subsystem + LocalDB harness (#8), bearer wiring (#9), dashboard
+> Basic→Bearer + Postmark (#10), consolidated into `main` (#11). Built **wholesale on
+> runegate's auth subsystem** (see the Revision section) and integration-tested against
+> a throwaway SQL Server LocalDB. **Residual:** the OTP per-account rate-limit/lockout
+> (T1.3 / A7) is deferred — it needs an `Attempts` column (DB-gated) and is the top
+> tracked residual, flagged 4× by the external red-teams. The design/decision tables
+> below are kept for reference of what was built.
 
 ## Objective
 

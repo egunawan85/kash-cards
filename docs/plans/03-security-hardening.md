@@ -79,9 +79,14 @@ validation, and swallows all exceptions.
 
 ## Slice 3 — Authentication & authorization
 
-> **Status:** T3.2 (IDOR) and T3.3 (admin roles) **shipped** — PR #4 and PR #5. T3.1
-> (real OTP + enforced 2FA + email delivery) and the bearer-token model are broken out
-> to **[Plan 4](04-auth-tokens-2fa.md)**. T3.4 (open write endpoint) still ⬜.
+> **Status:** T3.1 (real OTP + 2FA + email delivery) **shipped → [Plan 4](04-auth-tokens-2fa.md) ✅ (#7–#11)**.
+> T3.2 (IDOR) shipped #4, then **comprehensively closed in #12** (14 endpoints + admin
+> role-gates — the original #4 only covered balance/transaction reads; a full audit of all
+> 92 `[OperationContract]` methods found the rest). T3.3 (admin roles) #5 + #12.
+> **T3.4 (the unauthenticated `AutomationV1Controller.InsertAddress` write endpoint) is
+> STILL ⬜ — the one forgotten code-doable item.** See the overview's "Open code-doable
+> loose ends" for T4.2/T4.4 (ManualService/SecurityService oracle), T4.3 (trustConnection),
+> T2.4 (callback cross-check).
 
 - **T3.1 — Real OTP + enforced 2FA + email delivery.** *(→ [Plan 4](04-auth-tokens-2fa.md).)* Replace the hardcoded
   `getOTPCode()` → `"000000"` with real generation, and **enforce verified-OTP/session
