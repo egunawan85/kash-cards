@@ -121,23 +121,13 @@ namespace QryptoCard.Dashboard
 
             return firstPart +  " " + secondPart + "** **** " + lastPart;
         }
+        // Neutered under the Bearer migration: credential cookies are no longer
+        // written or trusted, so there is no cookie-based session rehydrate. Always
+        // returns false — callers fall through to forceLogin() when the in-memory
+        // session is empty. Kept as a method so existing call sites still compile.
         public bool checkCookies()
         {
-            //var x = Request.Cookies["QryptoEmail"].Value;
-            if (Request.Cookies["QryptoCardEmail"] != null)
-            {
-                var dt = JsonConvert.DeserializeObject<UserModel>(Request.Cookies["QryptoCardData"].Value);
-                SessionLib.Current.SessionID = dt.UserID;
-                SessionLib.Current.UserID = dt.UserID;
-                SessionLib.Current.FirstName = dt.FirstName;
-                SessionLib.Current.LastName = dt.LastName;
-                SessionLib.Current.Email = Request.Cookies["QryptoCardEmail"].Value;
-                SessionLib.Current.DateJoin = dt.DateJoin;
-                SessionLib.Current.Password = Request.Cookies["QryptoCardPassword"].Value;
-                return true;
-            }
-            else
-                return false;
+            return false;
         }
 
         public void forceLogin()

@@ -88,11 +88,12 @@ namespace QryptoCard.Dashboard
                 SessionLib.Current.LastName = dt.LastName;
                 SessionLib.Current.Email = dt.Email;
                 SessionLib.Current.DateJoin = dt.DateJoin;
-                SessionLib.Current.Password = Session["QRTYHC"].ToString();
+                // Register/verify (legacy, stage-1) does not mint tokens. The user
+                // lands without a Bearer pair; the dashboard's auth gate routes them
+                // to login, where mint-after-otp issues the token pair.
                 Session["QRTYHC"] = null;
                 Session["OTPIDC"] = null;
-                //checkRole();
-                Response.Redirect("dashboard");
+                Response.Redirect("login");
             }
             else
             {

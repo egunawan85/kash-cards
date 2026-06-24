@@ -2590,6 +2590,7 @@
     <Compile Include="Models\Service\CardholderModel.cs" />
     <Compile Include="Models\Service\CardModel.cs" />
     <Compile Include="Models\Service\CardTransactionModel.cs" />
+    <Compile Include="Models\Service\AuthMintResponse.cs" />
     <Compile Include="Models\Service\CardTypeModel.cs" />
     <Compile Include="Models\Service\DashboardModal.cs" />
     <Compile Include="Models\Service\OutputModel.cs" />
@@ -2631,6 +2632,7 @@
     <Compile Include="register.aspx.designer.cs">
       <DependentUpon>register.aspx</DependentUpon>
     </Compile>
+    <Compile Include="Services\AuthClient.cs" />
     <Compile Include="Services\CardService.cs" />
     <Compile Include="Services\Security.cs" />
     <Compile Include="Services\SecurityService.cs" />
