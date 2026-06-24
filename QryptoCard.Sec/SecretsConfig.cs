@@ -72,6 +72,16 @@ namespace QryptoCard.Sec
                     "locally from deploy/secrets/.vault + .env (run deploy/scripts/load-env.ps1).");
         }
 
+        /// <summary>
+        /// TEST-ONLY: clears the per-process secret cache so a test can set an
+        /// environment variable and have the next <see cref="Require"/> re-read it.
+        /// Never call from production code — secrets are immutable per app-pool.
+        /// </summary>
+        public static void ResetCacheForTests()
+        {
+            Cache.Clear();
+        }
+
         private static string ReadOrThrow(string name)
         {
             string value = Environment.GetEnvironmentVariable(name);

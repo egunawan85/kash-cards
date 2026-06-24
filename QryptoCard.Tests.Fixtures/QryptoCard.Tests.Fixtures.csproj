@@ -15,6 +15,27 @@
     <Reference Include="BouncyCastle.Cryptography">
       <HintPath>..\packages\BouncyCastle.Cryptography.2.5.0\lib\net461\BouncyCastle.Cryptography.dll</HintPath>
     </Reference>
+    <!--
+      LocalDbFixture composes a throwaway (localdb)\MSSQLLocalDB database, applies the
+      EF-generated schema (TestData/init.sql), and seeds via EF against the QryptoCard.INT
+      DBEntities. It therefore needs the built INT assembly plus EF6. The INT DLL is a legacy
+      net462 build; an SDK-style net48 consumer references it directly by HintPath (built first
+      via MSBuild). EF version (6.2.0) matches what QryptoCard.INT was compiled against.
+    -->
+    <Reference Include="QryptoCard.INT">
+      <HintPath>..\QryptoCard.INT\bin\QryptoCard.INT.dll</HintPath>
+    </Reference>
+    <Reference Include="EntityFramework">
+      <HintPath>..\packages\EntityFramework.6.2.0\lib\net45\EntityFramework.dll</HintPath>
+    </Reference>
+    <Reference Include="EntityFramework.SqlServer">
+      <HintPath>..\packages\EntityFramework.6.2.0\lib\net45\EntityFramework.SqlServer.dll</HintPath>
+    </Reference>
+    <Reference Include="QryptoCard.Sec">
+      <HintPath>..\QryptoCard.Sec\bin\Debug\QryptoCard.Sec.dll</HintPath>
+    </Reference>
+    <Reference Include="System.Data" />
+    <Reference Include="System.Data.Entity" />
   </ItemGroup>
 
 </Project>
