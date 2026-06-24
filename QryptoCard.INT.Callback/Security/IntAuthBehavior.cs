@@ -4,7 +4,6 @@ using System.ServiceModel;
 using System.ServiceModel.Channels;
 using System.ServiceModel.Description;
 using System.ServiceModel.Dispatcher;
-using System.Text;
 using QryptoCard.Sec;
 
 namespace QryptoCard.INT.Callback.Security
@@ -35,6 +34,7 @@ namespace QryptoCard.INT.Callback.Security
     internal sealed class IntAuthInspector : IDispatchMessageInspector
     {
         public const string HeaderName = "X-Int-Auth";
+        public const string SecretName = "INT_CALLBACK_SHARED_SECRET";
 
         public object AfterReceiveRequest(ref Message request, IClientChannel channel, InstanceContext instanceContext)
         {
@@ -46,23 +46,12 @@ namespace QryptoCard.INT.Callback.Security
                 if (http != null) provided = http.Headers[HeaderName];
             }
 
-            string expected = SecretsConfig.Require("INT_CALLBACK_SHARED_SECRET");
-            if (string.IsNullOrEmpty(provided) || !FixedTimeEquals(provided, expected))
+            if (!SharedSecretAuth.IsAuthorized(provided, SecretName))
                 throw new FaultException("Unauthorized.");
 
             return null;
         }
 
         public void BeforeSendReply(ref Message reply, object correlationState) { }
-
-        private static bool FixedTimeEquals(string a, string b)
-        {
-            byte[] ba = Encoding.UTF8.GetBytes(a);
-            byte[] bb = Encoding.UTF8.GetBytes(b);
-            int diff = ba.Length ^ bb.Length;
-            int n = Math.Min(ba.Length, bb.Length);
-            for (int i = 0; i < n; i++) diff |= ba[i] ^ bb[i];
-            return diff == 0;
-        }
     }
 }
