@@ -23,6 +23,11 @@ namespace QryptoCard.Dashboard.Admin
 
         public void logout()
         {
+            // Reaching the login page (session timeout / direct nav) must revoke the outstanding
+            // refresh chain server-side, not abandon it live. Mirrors logout.aspx; Revoke() also
+            // clears the local token fields.
+            AuthClient.Revoke();
+
             SessionLib.Current.SessionID = string.Empty;
             SessionLib.Current.AdminID = string.Empty;
             SessionLib.Current.FirstName = string.Empty;

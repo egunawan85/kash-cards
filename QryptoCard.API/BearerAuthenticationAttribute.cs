@@ -71,6 +71,14 @@ namespace QryptoCard.API
                 return;
             }
 
+            // A valid token whose email failed to resolve (transient DB error => null) must not
+            // proceed with a null identity; fail closed rather than call WCF with a null email.
+            if (string.IsNullOrEmpty(verify.Email))
+            {
+                Reject(actionContext);
+                return;
+            }
+
             // Stash for controllers. Keys are stable strings so controller-side
             // helpers don't depend on this assembly's types.
             actionContext.Request.Properties[SubjectPropertyKey]     = verify.Subject;

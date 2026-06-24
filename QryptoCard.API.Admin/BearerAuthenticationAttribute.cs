@@ -54,6 +54,14 @@ namespace QryptoCard.API.Admin
                 return;
             }
 
+            // A valid token whose email failed to resolve (transient DB error => null) must not
+            // proceed with a null identity; fail closed rather than call WCF with a null email.
+            if (string.IsNullOrEmpty(verify.Email))
+            {
+                Reject(actionContext);
+                return;
+            }
+
             actionContext.Request.Properties[SubjectPropertyKey]     = verify.Subject;
             actionContext.Request.Properties[SubjectTypePropertyKey] = verify.SubjectType;
             actionContext.Request.Properties[EmailPropertyKey]       = verify.Email;

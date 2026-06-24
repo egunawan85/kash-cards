@@ -149,6 +149,11 @@ namespace QryptoCard.INT.Script.Service.Admin.v1
                 }
                 else
                 {
+                    // Invalidate any still-pending OTP rows for this admin before issuing a new one,
+                    // so a resend supersedes rather than accumulates live codes.
+                    foreach (var stale in db.tblH_Admin_Login.Where(p => p.AdminID == data.AdminID && p.isVerify == 0).ToList())
+                        stale.isVerify = 1;
+
                     tblH_Admin_Login a = new tblH_Admin_Login();
                     a.ID = Guid.NewGuid().ToString();
                     a.AdminID = data.AdminID;
@@ -205,7 +210,7 @@ namespace QryptoCard.INT.Script.Service.Admin.v1
                         return op;
                     }
 
-                    if (data.isBanned == 0)
+                    if (data.isBanned == 1)
                     {
                         op.Status = "failed";
                         op.Message = "Your account has been banned for some reason";
@@ -708,7 +713,7 @@ namespace QryptoCard.INT.Script.Service.Admin.v1
         {
             try
             {
-                var q = db.tblM_Admin.Where(p => p.Email == x.Email && p.isActive == 1 && p.isVerified == 1 && p.isBanned == 1).FirstOrDefault();
+                var q = db.tblM_Admin.Where(p => p.Email == x.Email && p.isActive == 1 && p.isVerified == 1 && p.isBanned == 0).FirstOrDefault();
 
                 if (q != null)
                 {

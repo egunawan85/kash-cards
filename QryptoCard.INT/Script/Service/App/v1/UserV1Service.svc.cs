@@ -310,6 +310,11 @@ namespace QryptoCard.INT.Script.Service.App.v1
                 }
                 else
                 {
+                    // Invalidate any still-pending register-OTP rows for this user before issuing a
+                    // new one, so a resend supersedes rather than accumulates live codes.
+                    foreach (var stale in db.tblH_User_Register.Where(p => p.UserID == data.UserID && p.isVerify == 0).ToList())
+                        stale.isVerify = 1;
+
                     tblH_User_Register a = new tblH_User_Register();
                     a.ID = Guid.NewGuid().ToString();
                     a.UserID = data.UserID;
@@ -467,6 +472,12 @@ namespace QryptoCard.INT.Script.Service.App.v1
                 }
                 else
                 {
+                    // Invalidate any still-pending OTP rows for this user before issuing a new one,
+                    // so an old un-consumed code cannot remain valid alongside the fresh code — a
+                    // resend must supersede, not accumulate, live codes.
+                    foreach (var stale in db.tblH_User_Login.Where(p => p.UserID == data.UserID && p.isVerify == 0).ToList())
+                        stale.isVerify = 1;
+
                     tblH_User_Login a = new tblH_User_Login();
                     a.ID = Guid.NewGuid().ToString();
                     a.UserID = data.UserID;
@@ -765,7 +776,7 @@ namespace QryptoCard.INT.Script.Service.App.v1
         {
             try
             {
-                var q = db.tblM_User.Where(p => p.Email == x.Email && p.isActive == 1 && p.isVerified == 1 && p.isBanned == 1).FirstOrDefault();
+                var q = db.tblM_User.Where(p => p.Email == x.Email && p.isActive == 1 && p.isVerified == 1 && p.isBanned == 0).FirstOrDefault();
 
                 if (q != null)
                 {
