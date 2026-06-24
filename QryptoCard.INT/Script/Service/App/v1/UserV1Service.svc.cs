@@ -146,15 +146,15 @@ namespace QryptoCard.INT.Script.Service.App.v1
                     //else
                     //    s = z.ToString("000000");
 
-                    a.Code = Common.getOTPCode();
+                    var code = Common.getOTPCode();
+                    a.Code = QryptoCard.Sec.OtpCodes.Hash(code);   // store the hash; the plaintext only goes in the email
                     a.DateCreated = DateTime.Now;
                     a.DateExpired = a.DateCreated.Value.AddMinutes(15);
                     a.isVerify = 0;
                     db.tblH_User_Register.Add(a);
                     db.SaveChanges();
 
-                    //NotificationService.sendEmailOTPRegister(u.Email, "There", a.Code);
-                    //NotificationService.sendEmailOTPRegister(u.Email, u.FirstName + " " + u.LastName, a.Code);
+                    NotificationMailkitService.sendEmailOTPRegister(u.Email, u.FirstName + " " + u.LastName, code);
 
                     op.Status = "success";
                     op.Message = "Success generate OTP";
@@ -173,9 +173,9 @@ namespace QryptoCard.INT.Script.Service.App.v1
         {
             try
             {
-                var data = db.tblH_User_Register.Where(p => p.ID == x.ID && p.Code == x.Code && p.isVerify == 0).FirstOrDefault();
+                var data = db.tblH_User_Register.Where(p => p.ID == x.ID && p.isVerify == 0).FirstOrDefault();
 
-                if (data == null)
+                if (data == null || !QryptoCard.Sec.OtpCodes.Verify(x.Code, data.Code) || QryptoCard.Sec.OtpCodes.IsExpired(data.DateExpired, DateTime.Now))
                 {
                     op.Status = "failed";
                     op.Message = "Your session is ended";
@@ -322,7 +322,8 @@ namespace QryptoCard.INT.Script.Service.App.v1
                     //else
                     //    s = z.ToString("000000");
 
-                    a.Code = Common.getOTPCode();
+                    var code = Common.getOTPCode();
+                    a.Code = QryptoCard.Sec.OtpCodes.Hash(code);
                     a.DateCreated = DateTime.Now;
                     a.DateExpired = a.DateCreated.Value.AddMinutes(15);
                     a.isVerify = 0;
@@ -331,7 +332,7 @@ namespace QryptoCard.INT.Script.Service.App.v1
 
                     var u = db.tblM_User.Where(p => p.UserID == a.UserID).FirstOrDefault();
 
-                    //NotificationService.sendEmailOTPRegister(u.Email, u.FirstName + " " + u.LastName, a.Code);
+                    NotificationMailkitService.sendEmailOTPRegister(u.Email, u.FirstName + " " + u.LastName, code);
 
                     op.Status = "success";
                     op.Message = "Success generate OTP";
@@ -394,15 +395,15 @@ namespace QryptoCard.INT.Script.Service.App.v1
                     //else
                     //    s = z.ToString("000000");
 
-                    a.Code = Common.getOTPCode();
+                    var code = Common.getOTPCode();
+                    a.Code = QryptoCard.Sec.OtpCodes.Hash(code);   // store the hash; the plaintext only goes in the email
                     a.DateCreated = DateTime.Now;
                     a.DateExpired = a.DateCreated.Value.AddMinutes(15);
                     a.isVerify = 0;
                     db.tblH_User_Login.Add(a);
                     db.SaveChanges();
 
-                    //NotificationService.sendEmailOTP(data.Email, "There", a.Code);
-                    //NotificationService.sendEmailOTP(data.Email, data.FirstName + " " + data.LastName, a.Code);
+                    NotificationMailkitService.sendEmailOTP(data.Email, data.FirstName + " " + data.LastName, code);
 
                     op.Status = "success";
                     op.Message = "Success generate OTP";
@@ -425,9 +426,9 @@ namespace QryptoCard.INT.Script.Service.App.v1
         {
             try
             {
-                var data = db.tblH_User_Login.Where(p => p.ID == x.ID && p.Code == x.Code && p.isVerify == 0).FirstOrDefault();
+                var data = db.tblH_User_Login.Where(p => p.ID == x.ID && p.isVerify == 0).FirstOrDefault();
 
-                if (data == null)
+                if (data == null || !QryptoCard.Sec.OtpCodes.Verify(x.Code, data.Code) || QryptoCard.Sec.OtpCodes.IsExpired(data.DateExpired, DateTime.Now))
                 {
                     op.Status = "failed";
                     op.Message = "Your session is ended";
@@ -478,7 +479,8 @@ namespace QryptoCard.INT.Script.Service.App.v1
                     //else
                     //    s = z.ToString("000000");
 
-                    a.Code = Common.getOTPCode();
+                    var code = Common.getOTPCode();
+                    a.Code = QryptoCard.Sec.OtpCodes.Hash(code);
                     a.DateCreated = DateTime.Now;
                     a.DateExpired = a.DateCreated.Value.AddMinutes(15);
                     a.isVerify = 0;
@@ -486,8 +488,7 @@ namespace QryptoCard.INT.Script.Service.App.v1
                     db.SaveChanges();
 
                     var u = db.tblM_User.Where(p => p.UserID == a.UserID).FirstOrDefault();
-                    //NotificationService.sendEmailOTP(u.Email, "There", a.Code);
-                    //NotificationService.sendEmailOTP(u.Email, u.FirstName + " " + u.LastName, a.Code);
+                    NotificationMailkitService.sendEmailOTP(u.Email, u.FirstName + " " + u.LastName, code);
 
                     op.Status = "success";
                     op.Message = "Success generate OTP";
@@ -802,7 +803,8 @@ namespace QryptoCard.INT.Script.Service.App.v1
                     //else
                     //    s = z.ToString("000000");
 
-                    a.Code = Common.getOTPCode();
+                    var code = Common.getOTPCode();
+                    a.Code = QryptoCard.Sec.OtpCodes.Hash(code);
                     a.DateCreated = DateTime.Now;
                     a.DateExpired = a.DateCreated.Value.AddMinutes(30);
                     a.isVerify = 0;
@@ -810,8 +812,7 @@ namespace QryptoCard.INT.Script.Service.App.v1
                     db.SaveChanges();
 
                     var u = db.tblM_User.Where(p => p.UserID == a.UserID).FirstOrDefault();
-                    //NotificationService.sendEmailOTP(x.Email, "There", a.Code);
-                    //NotificationService.sendEmailOTP(x.Email, u.FirstName + " " + u.LastName, a.Code);
+                    NotificationMailkitService.sendEmailOTP(x.Email, u.FirstName + " " + u.LastName, code);
 
                     op.Status = "success";
                     op.Message = "Success generate OTP";
@@ -842,7 +843,7 @@ namespace QryptoCard.INT.Script.Service.App.v1
                 }
                 else
                 {
-                    if (otp.Code != x.Code)
+                    if (!QryptoCard.Sec.OtpCodes.Verify(x.Code, otp.Code) || QryptoCard.Sec.OtpCodes.IsExpired(otp.DateExpired, DateTime.Now))
                     {
                         op.Status = "failed";
                         op.Message = "Your OTP is wrong";
@@ -1019,7 +1020,8 @@ namespace QryptoCard.INT.Script.Service.App.v1
                 //else
                 //    s = z.ToString("000000");
 
-                a.Code = Common.getOTPCode();
+                var code = Common.getOTPCode();
+                a.Code = QryptoCard.Sec.OtpCodes.Hash(code);
                 a.DateCreated = DateTime.Now;
                 a.DateExpired = a.DateCreated.Value.AddMinutes(30);
                 a.isVerify = 0;
@@ -1027,8 +1029,7 @@ namespace QryptoCard.INT.Script.Service.App.v1
                 db.SaveChanges();
 
                 var u = db.tblM_User.Where(p => p.UserID == a.UserID).FirstOrDefault();
-                //NotificationService.sendEmailOTP(u.Email, "There", a.Code);
-                //NotificationService.sendEmailOTP(u.Email, u.FirstName + " " + u.LastName, a.Code);
+                NotificationMailkitService.sendEmailOTP(u.Email, u.FirstName + " " + u.LastName, code);
 
                 op.Status = "success";
                 op.Message = "Success generate OTP";
@@ -1057,7 +1058,7 @@ namespace QryptoCard.INT.Script.Service.App.v1
                 }
                 else
                 {
-                    if (otp.Code != x.Code)
+                    if (!QryptoCard.Sec.OtpCodes.Verify(x.Code, otp.Code) || QryptoCard.Sec.OtpCodes.IsExpired(otp.DateExpired, DateTime.Now))
                     {
                         op.Status = "failed";
                         op.Message = "Your OTP is wrong";
