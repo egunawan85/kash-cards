@@ -1713,10 +1713,10 @@ namespace QryptoCard.API.Admin.UserV1Service {
         System.Threading.Tasks.Task<QryptoCard.API.Admin.UserV1Service.OutputModel> getUserCommissionListAsync(QryptoCard.API.Admin.UserV1Service.vw_User_Commission x);
         
         [System.ServiceModel.OperationContractAttribute(Action="http://tempuri.org/IUserV1Service/updateUserCommission", ReplyAction="http://tempuri.org/IUserV1Service/updateUserCommissionResponse")]
-        QryptoCard.API.Admin.UserV1Service.OutputModel updateUserCommission(QryptoCard.API.Admin.UserV1Service.tblM_User_Commission x);
+        QryptoCard.API.Admin.UserV1Service.OutputModel updateUserCommission(string em, QryptoCard.API.Admin.UserV1Service.tblM_User_Commission x);
         
         [System.ServiceModel.OperationContractAttribute(Action="http://tempuri.org/IUserV1Service/updateUserCommission", ReplyAction="http://tempuri.org/IUserV1Service/updateUserCommissionResponse")]
-        System.Threading.Tasks.Task<QryptoCard.API.Admin.UserV1Service.OutputModel> updateUserCommissionAsync(QryptoCard.API.Admin.UserV1Service.tblM_User_Commission x);
+        System.Threading.Tasks.Task<QryptoCard.API.Admin.UserV1Service.OutputModel> updateUserCommissionAsync(string em, QryptoCard.API.Admin.UserV1Service.tblM_User_Commission x);
         
         [System.ServiceModel.OperationContractAttribute(Action="http://tempuri.org/IUserV1Service/getUserFeeList", ReplyAction="http://tempuri.org/IUserV1Service/getUserFeeListResponse")]
         QryptoCard.API.Admin.UserV1Service.OutputModel getUserFeeList(QryptoCard.API.Admin.UserV1Service.vw_User_Fee x);
@@ -1725,10 +1725,10 @@ namespace QryptoCard.API.Admin.UserV1Service {
         System.Threading.Tasks.Task<QryptoCard.API.Admin.UserV1Service.OutputModel> getUserFeeListAsync(QryptoCard.API.Admin.UserV1Service.vw_User_Fee x);
         
         [System.ServiceModel.OperationContractAttribute(Action="http://tempuri.org/IUserV1Service/updateUserFee", ReplyAction="http://tempuri.org/IUserV1Service/updateUserFeeResponse")]
-        QryptoCard.API.Admin.UserV1Service.OutputModel updateUserFee(QryptoCard.API.Admin.UserV1Service.tblM_User_Fee x);
+        QryptoCard.API.Admin.UserV1Service.OutputModel updateUserFee(string em, QryptoCard.API.Admin.UserV1Service.tblM_User_Fee x);
         
         [System.ServiceModel.OperationContractAttribute(Action="http://tempuri.org/IUserV1Service/updateUserFee", ReplyAction="http://tempuri.org/IUserV1Service/updateUserFeeResponse")]
-        System.Threading.Tasks.Task<QryptoCard.API.Admin.UserV1Service.OutputModel> updateUserFeeAsync(QryptoCard.API.Admin.UserV1Service.tblM_User_Fee x);
+        System.Threading.Tasks.Task<QryptoCard.API.Admin.UserV1Service.OutputModel> updateUserFeeAsync(string em, QryptoCard.API.Admin.UserV1Service.tblM_User_Fee x);
     }
     
     [System.CodeDom.Compiler.GeneratedCodeAttribute("System.ServiceModel", "4.0.0.0")]
@@ -1774,12 +1774,12 @@ namespace QryptoCard.API.Admin.UserV1Service {
             return base.Channel.getUserCommissionListAsync(x);
         }
         
-        public QryptoCard.API.Admin.UserV1Service.OutputModel updateUserCommission(QryptoCard.API.Admin.UserV1Service.tblM_User_Commission x) {
-            return base.Channel.updateUserCommission(x);
+        public QryptoCard.API.Admin.UserV1Service.OutputModel updateUserCommission(string em, QryptoCard.API.Admin.UserV1Service.tblM_User_Commission x) {
+            return base.Channel.updateUserCommission(em, x);
         }
         
-        public System.Threading.Tasks.Task<QryptoCard.API.Admin.UserV1Service.OutputModel> updateUserCommissionAsync(QryptoCard.API.Admin.UserV1Service.tblM_User_Commission x) {
-            return base.Channel.updateUserCommissionAsync(x);
+        public System.Threading.Tasks.Task<QryptoCard.API.Admin.UserV1Service.OutputModel> updateUserCommissionAsync(string em, QryptoCard.API.Admin.UserV1Service.tblM_User_Commission x) {
+            return base.Channel.updateUserCommissionAsync(em, x);
         }
         
         public QryptoCard.API.Admin.UserV1Service.OutputModel getUserFeeList(QryptoCard.API.Admin.UserV1Service.vw_User_Fee x) {
@@ -1790,12 +1790,12 @@ namespace QryptoCard.API.Admin.UserV1Service {
             return base.Channel.getUserFeeListAsync(x);
         }
         
-        public QryptoCard.API.Admin.UserV1Service.OutputModel updateUserFee(QryptoCard.API.Admin.UserV1Service.tblM_User_Fee x) {
-            return base.Channel.updateUserFee(x);
+        public QryptoCard.API.Admin.UserV1Service.OutputModel updateUserFee(string em, QryptoCard.API.Admin.UserV1Service.tblM_User_Fee x) {
+            return base.Channel.updateUserFee(em, x);
         }
         
-        public System.Threading.Tasks.Task<QryptoCard.API.Admin.UserV1Service.OutputModel> updateUserFeeAsync(QryptoCard.API.Admin.UserV1Service.tblM_User_Fee x) {
-            return base.Channel.updateUserFeeAsync(x);
+        public System.Threading.Tasks.Task<QryptoCard.API.Admin.UserV1Service.OutputModel> updateUserFeeAsync(string em, QryptoCard.API.Admin.UserV1Service.tblM_User_Fee x) {
+            return base.Channel.updateUserFeeAsync(em, x);
         }
     }
 }

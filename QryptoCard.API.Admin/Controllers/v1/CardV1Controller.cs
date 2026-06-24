@@ -172,7 +172,7 @@ namespace QryptoCard.API.Admin.Controllers.v1
             try
             {
                 trustConnection();
-                op = sr.updateCardPrice(x);
+                op = sr.updateCardPrice(getKey(), x);
                 //if (op.Status == "success")
                 //    op.Data = JsonConvert.DeserializeObject<List<DepositModel>>(op.Data.ToString());
             }
@@ -193,7 +193,7 @@ namespace QryptoCard.API.Admin.Controllers.v1
             try
             {
                 trustConnection();
-                op = sr.updateCardDepositFee(x);
+                op = sr.updateCardDepositFee(getKey(), x);
                 //if (op.Status == "success")
                 //    op.Data = JsonConvert.DeserializeObject<List<DepositModel>>(op.Data.ToString());
             }

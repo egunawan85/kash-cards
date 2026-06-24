@@ -87,7 +87,7 @@ namespace QryptoCard.API.Admin.Controllers.v1
             try
             {
                 trustConnection();
-                op = sr.updateUserCommission(x);
+                op = sr.updateUserCommission(getKey(), x);
                 //if (op.Status == "success")
                 //    op.Data = JsonConvert.DeserializeObject<List<vw_User_Commission>>(op.Data.ToString());
             }
@@ -130,7 +130,7 @@ namespace QryptoCard.API.Admin.Controllers.v1
             try
             {
                 trustConnection();
-                op = sr.updateUserFee(x);
+                op = sr.updateUserFee(getKey(), x);
                 //if (op.Status == "success")
                 //    op.Data = JsonConvert.DeserializeObject<List<vw_User_Commission>>(op.Data.ToString());
             }
