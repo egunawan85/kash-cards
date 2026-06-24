@@ -178,6 +178,9 @@
       <DesignTime>True</DesignTime>
       <DependentUpon>DB.edmx</DependentUpon>
     </Compile>
+    <Compile Include="TokenStore\TokenRows.cs" />
+    <Compile Include="TokenStore\TokenDbContext.cs" />
+    <Compile Include="TokenStore\EfTokenStore.cs" />
     <Compile Include="Model\Service\AdminFilterModel.cs" />
     <Compile Include="Model\Service\CardBalanceModel.cs" />
     <Compile Include="Model\Service\CardFilterModel.cs" />
