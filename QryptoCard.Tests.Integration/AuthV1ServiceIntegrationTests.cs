@@ -118,6 +118,36 @@ namespace QryptoCard.Tests.Integration
             Assert.Equal("failed", op.Status);
         }
 
+        [Fact]
+        public void MintAfterOtpVerify_TotpTaggedSession_IsRejectedAndNotConsumed()
+        {
+            // A session tagged for the TOTP factor (Param2='totp') must NOT be mintable via the
+            // email-OTP path, or a second factor could be downgraded once TOTP enrollment ships.
+            const string code = "135790";
+            string id = Guid.NewGuid().ToString();
+            using (var ctx = _db.NewContext())
+            {
+                ctx.tblH_User_Login.Add(new tblH_User_Login
+                {
+                    ID = id,
+                    UserID = LocalDbFixture.Ids.UserA,
+                    Code = OtpCodes.Hash(code),
+                    DateCreated = DateTime.UtcNow,
+                    DateExpired = DateTime.UtcNow.AddMinutes(15),
+                    isVerify = 0,
+                    Param2 = "totp"
+                });
+                ctx.SaveChanges();
+            }
+
+            var op = NewService().mintAfterOtpVerify(id, code, AuthV1Service.SubjectTypeUser);
+
+            Assert.Equal("failed", op.Status);
+            // Excluded by the filter, not consumed — it stays available for the correct (TOTP) path.
+            using (var ctx = _db.NewContext())
+                Assert.Equal(0, ctx.tblH_User_Login.Single(p => p.ID == id).isVerify);
+        }
+
         // ----- verify -----
 
         [Fact]

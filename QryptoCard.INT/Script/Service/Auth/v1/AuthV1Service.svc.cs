@@ -111,6 +111,11 @@ namespace QryptoCard.INT.Script.Service.Auth.v1
                 }
 
                 var now = DateTime.UtcNow;
+                // OTP sessions are stamped in LOCAL time by the Login/regenerate writers and read in
+                // local time by the legacy LoginVerify; read their expiry on the SAME clock (the token
+                // rows below stay on UtcNow). otpConsumedAt records the consume time for forensics (Param1).
+                var otpNow = DateTime.Now;
+                var otpConsumedAt = otpNow.ToString();
 
                 // OTP codes are stored hashed (OtpCodes.Hash); compare against the
                 // hash of the presented code, never the plaintext.
@@ -135,9 +140,10 @@ namespace QryptoCard.INT.Script.Service.Auth.v1
                 if (subjectType == SubjectTypeUser)
                 {
                     rowsAffected = db.Database.ExecuteSqlCommand(
-                        "UPDATE tblH_User_Login SET isVerify = 1 " +
-                        "WHERE ID = {0} AND Code = {1} AND isVerify = 0 AND DateExpired > {2}",
-                        otpSessionId, otpCodeHash, now);
+                        "UPDATE tblH_User_Login SET isVerify = 1, Param1 = {3} " +
+                        "WHERE ID = {0} AND Code = {1} AND isVerify = 0 AND DateExpired > {2} " +
+                        "AND (Param2 IS NULL OR Param2 <> 'totp')",
+                        otpSessionId, otpCodeHash, otpNow, otpConsumedAt);
                     if (rowsAffected == 0)
                     {
                         op.Status = "failed";
@@ -150,9 +156,10 @@ namespace QryptoCard.INT.Script.Service.Auth.v1
                 else
                 {
                     rowsAffected = db.Database.ExecuteSqlCommand(
-                        "UPDATE tblH_Admin_Login SET isVerify = 1 " +
-                        "WHERE ID = {0} AND Code = {1} AND isVerify = 0 AND DateExpired > {2}",
-                        otpSessionId, otpCodeHash, now);
+                        "UPDATE tblH_Admin_Login SET isVerify = 1, Param1 = {3} " +
+                        "WHERE ID = {0} AND Code = {1} AND isVerify = 0 AND DateExpired > {2} " +
+                        "AND (Param2 IS NULL OR Param2 <> 'totp')",
+                        otpSessionId, otpCodeHash, otpNow, otpConsumedAt);
                     if (rowsAffected == 0)
                     {
                         op.Status = "failed";
