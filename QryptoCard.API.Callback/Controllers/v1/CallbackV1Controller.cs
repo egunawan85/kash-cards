@@ -29,6 +29,7 @@ namespace QryptoCard.API.Callback.Controllers.v1
         public async Task<HttpResponseMessage> wasabi()
         {
             byte[] rawBody = await Request.Content.ReadAsByteArrayAsync() ?? new byte[0];
+            if (rawBody.Length == 0) return Request.CreateResponse(HttpStatusCode.Unauthorized);
 
             string signature = Header("X-WSB-SIGNATURE");
             if (!WasabiSignatureVerifier.Verify(signature, rawBody, SecretsConfig.Require("WASABICARD_WSBPUBLIC_KEY")))
@@ -51,6 +52,7 @@ namespace QryptoCard.API.Callback.Controllers.v1
         public async Task<HttpResponseMessage> pgcrypto()
         {
             byte[] rawBody = await Request.Content.ReadAsByteArrayAsync() ?? new byte[0];
+            if (rawBody.Length == 0) return Request.CreateResponse(HttpStatusCode.Unauthorized);
 
             string signature = Header("X-Runegate-Signature");
             if (!RunegateWebhookVerifier.Verify(signature, rawBody, SecretsConfig.Require("PGCRYPTO_WEBHOOK_SECRET")))
@@ -68,8 +70,8 @@ namespace QryptoCard.API.Callback.Controllers.v1
             if (model == null)
                 return Request.CreateResponse(HttpStatusCode.BadRequest);
 
-            // Verified: forward to the INT tier. Any downstream error surfaces as 500 so the
-            // provider retries (no silent exception swallowing).
+            // Verified: forward to the INT tier. (Downstream error propagation and replay
+            // idempotency are tracked as coupled follow-up hardening of the INT callback tier.)
             sr.PGCrypto(model);
             return Request.CreateResponse(HttpStatusCode.OK);
         }
