@@ -50,6 +50,7 @@
     <Compile Include="RunegateWebhookVerifier.cs" />
     <Compile Include="WasabiSignatureVerifier.cs" />
     <Compile Include="SharedSecretAuth.cs" />
+    <Compile Include="OtpCodes.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>
