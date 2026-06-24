@@ -173,16 +173,16 @@ namespace QryptoCard.API.Admin.DashboardV1Service {
     public interface IDashboardV1Service {
         
         [System.ServiceModel.OperationContractAttribute(Action="http://tempuri.org/IDashboardV1Service/getDashboardData", ReplyAction="http://tempuri.org/IDashboardV1Service/getDashboardDataResponse")]
-        QryptoCard.API.Admin.DashboardV1Service.OutputModel getDashboardData(QryptoCard.API.Admin.DashboardV1Service.DashboardAdminModel a);
-        
+        QryptoCard.API.Admin.DashboardV1Service.OutputModel getDashboardData(string em, QryptoCard.API.Admin.DashboardV1Service.DashboardAdminModel a);
+
         [System.ServiceModel.OperationContractAttribute(Action="http://tempuri.org/IDashboardV1Service/getDashboardData", ReplyAction="http://tempuri.org/IDashboardV1Service/getDashboardDataResponse")]
-        System.Threading.Tasks.Task<QryptoCard.API.Admin.DashboardV1Service.OutputModel> getDashboardDataAsync(QryptoCard.API.Admin.DashboardV1Service.DashboardAdminModel a);
-        
+        System.Threading.Tasks.Task<QryptoCard.API.Admin.DashboardV1Service.OutputModel> getDashboardDataAsync(string em, QryptoCard.API.Admin.DashboardV1Service.DashboardAdminModel a);
+
         [System.ServiceModel.OperationContractAttribute(Action="http://tempuri.org/IDashboardV1Service/get10ActiveCardTransaction", ReplyAction="http://tempuri.org/IDashboardV1Service/get10ActiveCardTransactionResponse")]
-        QryptoCard.API.Admin.DashboardV1Service.OutputModel get10ActiveCardTransaction();
-        
+        QryptoCard.API.Admin.DashboardV1Service.OutputModel get10ActiveCardTransaction(string em);
+
         [System.ServiceModel.OperationContractAttribute(Action="http://tempuri.org/IDashboardV1Service/get10ActiveCardTransaction", ReplyAction="http://tempuri.org/IDashboardV1Service/get10ActiveCardTransactionResponse")]
-        System.Threading.Tasks.Task<QryptoCard.API.Admin.DashboardV1Service.OutputModel> get10ActiveCardTransactionAsync();
+        System.Threading.Tasks.Task<QryptoCard.API.Admin.DashboardV1Service.OutputModel> get10ActiveCardTransactionAsync(string em);
     }
     
     [System.CodeDom.Compiler.GeneratedCodeAttribute("System.ServiceModel", "4.0.0.0")]
@@ -212,20 +212,20 @@ namespace QryptoCard.API.Admin.DashboardV1Service {
                 base(binding, remoteAddress) {
         }
         
-        public QryptoCard.API.Admin.DashboardV1Service.OutputModel getDashboardData(QryptoCard.API.Admin.DashboardV1Service.DashboardAdminModel a) {
-            return base.Channel.getDashboardData(a);
+        public QryptoCard.API.Admin.DashboardV1Service.OutputModel getDashboardData(string em, QryptoCard.API.Admin.DashboardV1Service.DashboardAdminModel a) {
+            return base.Channel.getDashboardData(em, a);
         }
-        
-        public System.Threading.Tasks.Task<QryptoCard.API.Admin.DashboardV1Service.OutputModel> getDashboardDataAsync(QryptoCard.API.Admin.DashboardV1Service.DashboardAdminModel a) {
-            return base.Channel.getDashboardDataAsync(a);
+
+        public System.Threading.Tasks.Task<QryptoCard.API.Admin.DashboardV1Service.OutputModel> getDashboardDataAsync(string em, QryptoCard.API.Admin.DashboardV1Service.DashboardAdminModel a) {
+            return base.Channel.getDashboardDataAsync(em, a);
         }
-        
-        public QryptoCard.API.Admin.DashboardV1Service.OutputModel get10ActiveCardTransaction() {
-            return base.Channel.get10ActiveCardTransaction();
+
+        public QryptoCard.API.Admin.DashboardV1Service.OutputModel get10ActiveCardTransaction(string em) {
+            return base.Channel.get10ActiveCardTransaction(em);
         }
-        
-        public System.Threading.Tasks.Task<QryptoCard.API.Admin.DashboardV1Service.OutputModel> get10ActiveCardTransactionAsync() {
-            return base.Channel.get10ActiveCardTransactionAsync();
+
+        public System.Threading.Tasks.Task<QryptoCard.API.Admin.DashboardV1Service.OutputModel> get10ActiveCardTransactionAsync(string em) {
+            return base.Channel.get10ActiveCardTransactionAsync(em);
         }
     }
 }

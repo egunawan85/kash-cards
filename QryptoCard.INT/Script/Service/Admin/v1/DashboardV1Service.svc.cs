@@ -23,12 +23,39 @@ namespace QryptoCard.INT.Script.Service.Admin.v1
             return a.AdminID;
         }
 
+        string getRole(string em)
+        {
+            var a = db.vw_Admin.Where(p => p.Email == em).FirstOrDefault();
+            return a == null ? null : a.Role;
+        }
+
+        // Allowlist for admin-console reads (all-users aggregate/dashboard data): permit
+        // only a recognized admin role. Deny-by-default so an unidentifiable caller
+        // (no/unknown role) cannot pull cross-user data — these endpoints previously had
+        // no role gate at all.
+        bool isDeniedAdminRead(string em)
+        {
+            var role = (getRole(em) ?? "").Trim();
+            return !(role.Equals(RoleModel.Owner, StringComparison.OrdinalIgnoreCase)
+                  || role.Equals(RoleModel.Admin, StringComparison.OrdinalIgnoreCase)
+                  || role.Equals(RoleModel.Approver, StringComparison.OrdinalIgnoreCase)
+                  || role.Equals(RoleModel.Signer, StringComparison.OrdinalIgnoreCase)
+                  || role.Equals(RoleModel.Viewer, StringComparison.OrdinalIgnoreCase));
+        }
+
         //total deposit card sold user registered
 
-        public OutputModel getDashboardData(DashboardAdminModel a)
+        public OutputModel getDashboardData(string em, DashboardAdminModel a)
         {
             try
             {
+                if (isDeniedAdminRead(em))
+                {
+                    op.Status = "failed";
+                    op.Message = "You are not authorized to perform this action";
+                    return op;
+                }
+
                 DashboardAdminModel x = new DashboardAdminModel();
                 x.TotalCards = 0;
                 x.TotalUsers = 0;
@@ -58,10 +85,16 @@ namespace QryptoCard.INT.Script.Service.Admin.v1
             return op;
         }
 
-        public OutputModel get10ActiveCardTransaction()
+        public OutputModel get10ActiveCardTransaction(string em)
         {
             try
             {
+                if (isDeniedAdminRead(em))
+                {
+                    op.Status = "failed";
+                    op.Message = "You are not authorized to perform this action";
+                    return op;
+                }
 
                 var data = db.vw_Card.OrderByDescending(p => p.DateCreated).Take(10).ToList();
                 if (data.Count != 0)

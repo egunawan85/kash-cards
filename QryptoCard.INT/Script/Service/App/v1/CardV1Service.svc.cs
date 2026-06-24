@@ -430,14 +430,18 @@ namespace QryptoCard.INT.Script.Service.App.v1
             return op;
         }
 
-        public void createCardHolder(string uid, long cardtypeid, string fn, string ln, string em)
+        public void createCardHolder(string em, long cardtypeid, string fn, string ln, string holderEmail)
         {
+            // IDOR fix: the owning UserID is derived from the authenticated caller (em),
+            // never from a client-supplied uid, so a caller can only create a cardholder
+            // under their own account.
+            string uid = getUserId(em);
             var adr = db.tblM_Address_Generator.Where(p => p.isUsed == 0 && p.isActive == 1 && p.CityCode != null).OrderByDescending(p => p.ID).FirstOrDefault();
             if (adr != null)
             {
                 WCCreateHolderRequestModel ho = new WCCreateHolderRequestModel();
                 ho.cardTypeId = cardtypeid;
-                ho.email = em;
+                ho.email = holderEmail;
                 ho.firstName = fn;
                 ho.lastName = ln;
                 ho.address = adr.Street;
@@ -1157,9 +1161,13 @@ namespace QryptoCard.INT.Script.Service.App.v1
         }
 
 
-        public void recreateCardHolder(int holderid)
+        public void recreateCardHolder(string em, int holderid)
         {
-            var data = db.tblM_Cardholder.Where(p => p.HolderID == holderid).FirstOrDefault();
+            // IDOR fix: resolve the caller and only allow recreating a cardholder the
+            // caller owns (UserID == uid). A holder owned by another user is treated as
+            // not found.
+            string uid = getUserId(em);
+            var data = db.tblM_Cardholder.Where(p => p.HolderID == holderid && p.UserID == uid).FirstOrDefault();
             if (data != null)
             {
                 WCCreateHolderRequestModel ho = new WCCreateHolderRequestModel();
@@ -1227,15 +1235,22 @@ namespace QryptoCard.INT.Script.Service.App.v1
             return;
         }
 
-        public void checkCard(string cardNo)
+        public void checkCard(string em, string cardNo)
         {
             try
             {
+                // IDOR fix: only act on a card that belongs to the authenticated caller.
+                // Resolve uid and require the card to be owned by uid before touching the
+                // card processor or mutating the row.
+                string uid = getUserId(em);
+                if (!db.tblT_Card.Any(p => p.CardNo == cardNo && p.UserID == uid))
+                    return;
+
                 var qqq = new WCCardInfoSensitiveRequestModel();
                 qqq.cardNo = cardNo;
                 var res = WasabiCardService.getCardInfoSensitive(qqq);
 
-                
+
 
                 //WCCardInfoRequestModel req = new WCCardInfoRequestModel();
                 //req.cardNo = cardNo;
@@ -1244,7 +1259,7 @@ namespace QryptoCard.INT.Script.Service.App.v1
 
                 var ed = decrypt(res.data.expireDate);
                 var cv = decrypt(res.data.cvv);
-                var cr = db.tblT_Card.Where(p => p.CardNo == cardNo).FirstOrDefault();
+                var cr = db.tblT_Card.Where(p => p.CardNo == cardNo && p.UserID == uid).FirstOrDefault();
                 if (cr != null)
                 {
                     cr.CardNumber = decrypt(res.data.cardNumber);

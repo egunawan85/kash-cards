@@ -78,7 +78,7 @@ namespace QryptoCard.API.Admin.Controllers.v1
             try
             {
                 trustConnection();
-                op = sr.getActiveCard();
+                op = sr.getActiveCard(getEmail());
                 if (op.Status == "success")
                     op.Data = JsonConvert.DeserializeObject<List<vw_Card>>(op.Data.ToString());
             }
@@ -100,7 +100,7 @@ namespace QryptoCard.API.Admin.Controllers.v1
             {
                 trustConnection();
                 var x = new vw_Card();
-                op = sr.getCardListAll(x);
+                op = sr.getCardListAll(getEmail(), x);
                 if (op.Status == "success")
                     op.Data = JsonConvert.DeserializeObject<List<vw_Card>>(op.Data.ToString());
             }

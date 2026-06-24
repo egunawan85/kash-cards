@@ -13,8 +13,8 @@ namespace QryptoCard.INT.Script.Service.Admin.v1
     public interface IDashboardV1Service
     {
         [OperationContract]
-        OutputModel getDashboardData(DashboardAdminModel a);
+        OutputModel getDashboardData(string em, DashboardAdminModel a);
         [OperationContract]
-        OutputModel get10ActiveCardTransaction();
+        OutputModel get10ActiveCardTransaction(string em);
     }
 }

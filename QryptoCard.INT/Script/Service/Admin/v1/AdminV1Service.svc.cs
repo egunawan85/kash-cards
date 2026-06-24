@@ -27,7 +27,17 @@ namespace QryptoCard.INT.Script.Service.Admin.v1
         string getRole(string em)
         {
             var a = db.vw_Admin.Where(p => p.Email == em).FirstOrDefault();
-            return a.Role;
+            return a == null ? null : a.Role;
+        }
+
+        // Allowlist: ONLY Owner/Admin may read/act on other admins' records.
+        // Deny-by-default (case/whitespace-insensitive) so an unknown, null, or variant
+        // role string can't slip through.
+        bool isDeniedAdminManage(string em)
+        {
+            var role = (getRole(em) ?? "").Trim();
+            return !(role.Equals(RoleModel.Owner, StringComparison.OrdinalIgnoreCase)
+                  || role.Equals(RoleModel.Admin, StringComparison.OrdinalIgnoreCase));
         }
 
         public OutputModel Login(tblM_Admin x)
@@ -356,10 +366,8 @@ namespace QryptoCard.INT.Script.Service.Admin.v1
         {
             try
             {
-                string uid = getAdminId(em);
-                string role = getRole(em);
-
-                if (role == RoleModel.Signer || role == RoleModel.Approver || role == RoleModel.Viewer)
+                // Allow-list role gate: only Owner/Admin may view another admin's detail.
+                if (isDeniedAdminManage(em))
                 {
                     op.Status = "failed";
                     op.Message = "You are not authorize to run this endpoint";
@@ -566,9 +574,11 @@ namespace QryptoCard.INT.Script.Service.Admin.v1
                     return op;
                 }
 
-                x.isBanned = 0;
-                x.BannedBy = uid;
-                x.DateBanned = DateTime.Now;
+                // Bug fix: mutate the loaded entity (data), not the inbound wire object (x),
+                // and actually ban (isBanned = 1) rather than clearing the flag.
+                data.isBanned = 1;
+                data.BannedBy = uid;
+                data.DateBanned = DateTime.Now;
                 db.SaveChanges();
 
                 op.Status = "success";
@@ -588,11 +598,15 @@ namespace QryptoCard.INT.Script.Service.Admin.v1
             NotificationService.sendEmailPasswordAdmin("syaprilahshar@gmail.com", "Syapril Ahshar", "askcsdkfjweckcnv");
         }
 
-        public OutputModel getAdminData(string x)
+        public OutputModel getAdminData(string em, string x)
         {
             try
             {
-                var data = db.vw_Admin.Where(p => p.AdminID == x).FirstOrDefault();
+                // IDOR fix: only ever return the authenticated caller's own admin record
+                // (AdminID derived from em); the client-supplied id is ignored so a caller
+                // cannot read another admin's data.
+                string uid = getAdminId(em);
+                var data = db.vw_Admin.Where(p => p.AdminID == uid).FirstOrDefault();
 
                 if (data == null)
                 {
@@ -615,11 +629,14 @@ namespace QryptoCard.INT.Script.Service.Admin.v1
             return op;
         }
 
-        public OutputModel updateAdminData(tblM_Admin x)
+        public OutputModel updateAdminData(string em, tblM_Admin x)
         {
             try
             {
-                var data = db.tblM_Admin.Where(p => p.AdminID == x.AdminID).FirstOrDefault();
+                // IDOR fix: the record updated is the authenticated caller's own (AdminID
+                // from em), never the client-supplied x.AdminID.
+                string uid = getAdminId(em);
+                var data = db.tblM_Admin.Where(p => p.AdminID == uid).FirstOrDefault();
 
                 if (data == null)
                 {
@@ -660,11 +677,14 @@ namespace QryptoCard.INT.Script.Service.Admin.v1
             return op;
         }
 
-        public OutputModel updatePassword(PasswordChangeModel x)
+        public OutputModel updatePassword(string em, PasswordChangeModel x)
         {
             try
             {
-                var data = db.tblM_Admin.Where(p => p.AdminID == x.AdminID).FirstOrDefault();
+                // IDOR fix: the password changed is the authenticated caller's own (AdminID
+                // from em), never the client-supplied x.AdminID.
+                string uid = getAdminId(em);
+                var data = db.tblM_Admin.Where(p => p.AdminID == uid).FirstOrDefault();
 
                 if (data == null)
                 {
@@ -709,10 +729,14 @@ namespace QryptoCard.INT.Script.Service.Admin.v1
             return op;
         }
 
-        public OutputModel updateEmailOTP(tblM_Admin x)
+        public OutputModel updateEmailOTP(string em, tblM_Admin x)
         {
             try
             {
+                // IDOR fix: the change-email OTP is always issued for the authenticated
+                // caller (AdminID from em), never the client-supplied x.AdminID.
+                string uid = getAdminId(em);
+
                 var q = db.tblM_Admin.Where(p => p.Email == x.Email && p.isActive == 1 && p.isVerified == 1 && p.isBanned == 0).FirstOrDefault();
 
                 if (q != null)
@@ -723,7 +747,7 @@ namespace QryptoCard.INT.Script.Service.Admin.v1
                 }
                 else
                 {
-                    var data = db.tblM_Admin.Where(p => p.AdminID == x.AdminID).FirstOrDefault();
+                    var data = db.tblM_Admin.Where(p => p.AdminID == uid).FirstOrDefault();
                     if (data.isActive == 0)
                     {
                         op.Status = "failed";
@@ -740,7 +764,7 @@ namespace QryptoCard.INT.Script.Service.Admin.v1
 
                     tblH_Admin_OTP a = new tblH_Admin_OTP();
                     a.OTPID = Guid.NewGuid().ToString();
-                    a.AdminID = x.AdminID;
+                    a.AdminID = uid;
                     a.Name = "Change Email";
 
                     //Random r = new Random();

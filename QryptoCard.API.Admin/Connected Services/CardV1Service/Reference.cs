@@ -1747,16 +1747,16 @@ namespace QryptoCard.API.Admin.CardV1Service {
         System.Threading.Tasks.Task<QryptoCard.API.Admin.CardV1Service.OutputModel> getCardTypeByIdAsync(QryptoCard.API.Admin.CardV1Service.tblM_Card_Type x);
         
         [System.ServiceModel.OperationContractAttribute(Action="http://tempuri.org/ICardV1Service/getActiveCard", ReplyAction="http://tempuri.org/ICardV1Service/getActiveCardResponse")]
-        QryptoCard.API.Admin.CardV1Service.OutputModel getActiveCard();
-        
+        QryptoCard.API.Admin.CardV1Service.OutputModel getActiveCard(string em);
+
         [System.ServiceModel.OperationContractAttribute(Action="http://tempuri.org/ICardV1Service/getActiveCard", ReplyAction="http://tempuri.org/ICardV1Service/getActiveCardResponse")]
-        System.Threading.Tasks.Task<QryptoCard.API.Admin.CardV1Service.OutputModel> getActiveCardAsync();
-        
+        System.Threading.Tasks.Task<QryptoCard.API.Admin.CardV1Service.OutputModel> getActiveCardAsync(string em);
+
         [System.ServiceModel.OperationContractAttribute(Action="http://tempuri.org/ICardV1Service/getCardListAll", ReplyAction="http://tempuri.org/ICardV1Service/getCardListAllResponse")]
-        QryptoCard.API.Admin.CardV1Service.OutputModel getCardListAll(QryptoCard.API.Admin.CardV1Service.vw_Card x);
-        
+        QryptoCard.API.Admin.CardV1Service.OutputModel getCardListAll(string em, QryptoCard.API.Admin.CardV1Service.vw_Card x);
+
         [System.ServiceModel.OperationContractAttribute(Action="http://tempuri.org/ICardV1Service/getCardListAll", ReplyAction="http://tempuri.org/ICardV1Service/getCardListAllResponse")]
-        System.Threading.Tasks.Task<QryptoCard.API.Admin.CardV1Service.OutputModel> getCardListAllAsync(QryptoCard.API.Admin.CardV1Service.vw_Card x);
+        System.Threading.Tasks.Task<QryptoCard.API.Admin.CardV1Service.OutputModel> getCardListAllAsync(string em, QryptoCard.API.Admin.CardV1Service.vw_Card x);
         
         [System.ServiceModel.OperationContractAttribute(Action="http://tempuri.org/ICardV1Service/getCardPurchaseFilter", ReplyAction="http://tempuri.org/ICardV1Service/getCardPurchaseFilterResponse")]
         QryptoCard.API.Admin.CardV1Service.OutputModel getCardPurchaseFilter(string em, QryptoCard.API.Admin.CardV1Service.CardFilterModel fil);
@@ -1826,20 +1826,20 @@ namespace QryptoCard.API.Admin.CardV1Service {
             return base.Channel.getCardTypeByIdAsync(x);
         }
         
-        public QryptoCard.API.Admin.CardV1Service.OutputModel getActiveCard() {
-            return base.Channel.getActiveCard();
+        public QryptoCard.API.Admin.CardV1Service.OutputModel getActiveCard(string em) {
+            return base.Channel.getActiveCard(em);
         }
-        
-        public System.Threading.Tasks.Task<QryptoCard.API.Admin.CardV1Service.OutputModel> getActiveCardAsync() {
-            return base.Channel.getActiveCardAsync();
+
+        public System.Threading.Tasks.Task<QryptoCard.API.Admin.CardV1Service.OutputModel> getActiveCardAsync(string em) {
+            return base.Channel.getActiveCardAsync(em);
         }
-        
-        public QryptoCard.API.Admin.CardV1Service.OutputModel getCardListAll(QryptoCard.API.Admin.CardV1Service.vw_Card x) {
-            return base.Channel.getCardListAll(x);
+
+        public QryptoCard.API.Admin.CardV1Service.OutputModel getCardListAll(string em, QryptoCard.API.Admin.CardV1Service.vw_Card x) {
+            return base.Channel.getCardListAll(em, x);
         }
-        
-        public System.Threading.Tasks.Task<QryptoCard.API.Admin.CardV1Service.OutputModel> getCardListAllAsync(QryptoCard.API.Admin.CardV1Service.vw_Card x) {
-            return base.Channel.getCardListAllAsync(x);
+
+        public System.Threading.Tasks.Task<QryptoCard.API.Admin.CardV1Service.OutputModel> getCardListAllAsync(string em, QryptoCard.API.Admin.CardV1Service.vw_Card x) {
+            return base.Channel.getCardListAllAsync(em, x);
         }
         
         public QryptoCard.API.Admin.CardV1Service.OutputModel getCardPurchaseFilter(string em, QryptoCard.API.Admin.CardV1Service.CardFilterModel fil) {

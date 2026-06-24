@@ -37,10 +37,30 @@ namespace QryptoCard.INT.Script.Service.Admin.v1
                   || role.Equals(RoleModel.Admin, StringComparison.OrdinalIgnoreCase));
         }
 
-        public OutputModel getUser(tblM_User x)
+        // Allowlist for admin-console reads (all-users data): permit only a recognized
+        // admin role. Deny-by-default so an unidentifiable caller (no/unknown role) cannot
+        // pull cross-user data — these endpoints previously had no role gate at all.
+        bool isDeniedAdminRead(string em)
+        {
+            var role = (getRole(em) ?? "").Trim();
+            return !(role.Equals(RoleModel.Owner, StringComparison.OrdinalIgnoreCase)
+                  || role.Equals(RoleModel.Admin, StringComparison.OrdinalIgnoreCase)
+                  || role.Equals(RoleModel.Approver, StringComparison.OrdinalIgnoreCase)
+                  || role.Equals(RoleModel.Signer, StringComparison.OrdinalIgnoreCase)
+                  || role.Equals(RoleModel.Viewer, StringComparison.OrdinalIgnoreCase));
+        }
+
+        public OutputModel getUser(string em, tblM_User x)
         {
             try
             {
+                if (isDeniedAdminRead(em))
+                {
+                    op.Status = "failed";
+                    op.Message = "You are not authorized to perform this action";
+                    return op;
+                }
+
                 var data = db.tblM_User.Where(p => p.isActive == 1).ToList();
                 for (int i = 0; i < data.Count; i++)
                 {
@@ -59,10 +79,17 @@ namespace QryptoCard.INT.Script.Service.Admin.v1
             return op;
         }
 
-        public OutputModel getUserCommissionList(vw_User_Commission x)
+        public OutputModel getUserCommissionList(string em, vw_User_Commission x)
         {
             try
             {
+                if (isDeniedAdminRead(em))
+                {
+                    op.Status = "failed";
+                    op.Message = "You are not authorized to perform this action";
+                    return op;
+                }
+
                 var data = db.vw_User_Commission.ToList();
 
                 op.Message = "Success retrieve commission";
@@ -113,10 +140,17 @@ namespace QryptoCard.INT.Script.Service.Admin.v1
             return op;
         }
 
-        public OutputModel getUserFeeList(vw_User_Fee x)
+        public OutputModel getUserFeeList(string em, vw_User_Fee x)
         {
             try
             {
+                if (isDeniedAdminRead(em))
+                {
+                    op.Status = "failed";
+                    op.Message = "You are not authorized to perform this action";
+                    return op;
+                }
+
                 var data = db.vw_User_Fee.ToList();
 
                 op.Message = "Success retrieve fee";
