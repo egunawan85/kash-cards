@@ -2,6 +2,11 @@
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 
+// Exposes the AuthTokenSecurity.VerifyImpl test seam to the integration suite so
+// the BearerAuthenticationAttribute can be driven against a real (LocalDB-backed)
+// AuthV1Service without standing up the WCF endpoint.
+[assembly: InternalsVisibleTo("QryptoCard.Tests.Integration")]
+
 // General Information about an assembly is controlled through the following 
 // set of attributes. Change these attribute values to modify the information
 // associated with an assembly.
