@@ -593,11 +593,6 @@ namespace QryptoCard.INT.Script.Service.Admin.v1
             return op;
         }
 
-        public void testEmail()
-        {
-            NotificationService.sendEmailPasswordAdmin("syaprilahshar@gmail.com", "Syapril Ahshar", "askcsdkfjweckcnv");
-        }
-
         public OutputModel getAdminData(string em, string x)
         {
             try

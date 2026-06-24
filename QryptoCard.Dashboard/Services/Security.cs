@@ -10,19 +10,6 @@ namespace QryptoCard.Dashboard.Services
 {
     public class Security
     {
-        public static string credentialsNoAuthAdmin()
-        {
-            return Convert.ToBase64String(Encoding.ASCII.GetBytes(KeyModel.USER_EMAIL + ":" + KeyModel.USER_PASSWORD));
-        }
-        public static string credentialsNoAuthUser()
-        {
-            return Convert.ToBase64String(Encoding.ASCII.GetBytes(KeyModel.USER_EMAIL + ":" + KeyModel.USER_PASSWORD));
-        }
-        public static string credentials(string phone, string password)
-        {
-            return Convert.ToBase64String(Encoding.ASCII.GetBytes(phone + ":" + password));
-        }
-
         public static string EncryptAPP(string data)
         {
             RijndaelManaged rijndaelCipher = new RijndaelManaged();

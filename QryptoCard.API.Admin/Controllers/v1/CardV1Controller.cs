@@ -19,14 +19,6 @@ namespace QryptoCard.API.Admin.Controllers.v1
         CardV1ServiceClient sr = new CardV1ServiceClient();
         OutputModel op = new OutputModel();
 
-        private void trustConnection()
-        {
-            ServicePointManager.ServerCertificateValidationCallback +=
-                (se, cert, chain, sslerror) =>
-                {
-                    return true;
-                };
-        }
 
         [Route("type")]
         [HttpGet]
@@ -35,7 +27,6 @@ namespace QryptoCard.API.Admin.Controllers.v1
             try
             {
                 tblM_Card_Type x = new tblM_Card_Type();
-                trustConnection();
                 op = sr.CardType(x);
                 if (op.Status == "success")
                     op.Data = JsonConvert.DeserializeObject<List<CardTypeModel>>(op.Data.ToString());
@@ -56,7 +47,6 @@ namespace QryptoCard.API.Admin.Controllers.v1
         {
             try
             {
-                trustConnection();
                 op = sr.getCardTypeById(x);
                 if (op.Status == "success")
                     op.Data = JsonConvert.DeserializeObject<CardTypeModel>(op.Data.ToString());
@@ -77,7 +67,6 @@ namespace QryptoCard.API.Admin.Controllers.v1
         {
             try
             {
-                trustConnection();
                 op = sr.getActiveCard(getEmail());
                 if (op.Status == "success")
                     op.Data = JsonConvert.DeserializeObject<List<vw_Card>>(op.Data.ToString());
@@ -98,7 +87,6 @@ namespace QryptoCard.API.Admin.Controllers.v1
         {
             try
             {
-                trustConnection();
                 var x = new vw_Card();
                 op = sr.getCardListAll(getEmail(), x);
                 if (op.Status == "success")
@@ -120,7 +108,6 @@ namespace QryptoCard.API.Admin.Controllers.v1
         {
             try
             {
-                trustConnection();
                 op = sr.getCardPurchaseFilter(getEmail(), x);
                 if (op.Status == "success")
                     op.Data = JsonConvert.DeserializeObject<List<vw_Card>>(op.Data.ToString());
@@ -141,7 +128,6 @@ namespace QryptoCard.API.Admin.Controllers.v1
         {
             try
             {
-                trustConnection();
                 op = sr.getDepositTrxFilter(getEmail(), x);
                 if (op.Status == "success")
                     op.Data = JsonConvert.DeserializeObject<List<DepositModel>>(op.Data.ToString());
@@ -162,7 +148,6 @@ namespace QryptoCard.API.Admin.Controllers.v1
         {
             try
             {
-                trustConnection();
                 op = sr.updateCardPrice(getEmail(), x);
                 //if (op.Status == "success")
                 //    op.Data = JsonConvert.DeserializeObject<List<DepositModel>>(op.Data.ToString());
@@ -183,7 +168,6 @@ namespace QryptoCard.API.Admin.Controllers.v1
         {
             try
             {
-                trustConnection();
                 op = sr.updateCardDepositFee(getEmail(), x);
                 //if (op.Status == "success")
                 //    op.Data = JsonConvert.DeserializeObject<List<DepositModel>>(op.Data.ToString());

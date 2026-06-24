@@ -19,14 +19,6 @@ namespace QryptoCard.API.Admin.Controllers.v1
         AdminV1ServiceClient sr = new AdminV1ServiceClient();
         OutputModel op = new OutputModel();
 
-        private void trustConnection()
-        {
-            ServicePointManager.ServerCertificateValidationCallback +=
-                (se, cert, chain, sslerror) =>
-                {
-                    return true;
-                };
-        }
 
         [Route("list")]
         [HttpPost]
@@ -34,7 +26,6 @@ namespace QryptoCard.API.Admin.Controllers.v1
         {
             try
             {
-                trustConnection();
                 op = sr.getAdminFilter(getEmail(), x);
                 if (op.Status == "success")
                     op.Data = JsonConvert.DeserializeObject<List<AdminModel>>(op.Data.ToString());
@@ -55,7 +46,6 @@ namespace QryptoCard.API.Admin.Controllers.v1
         {
             try
             {
-                trustConnection();
                 op = sr.getAdminDetail(getEmail(), x);
                 if (op.Status == "success")
                     op.Data = JsonConvert.DeserializeObject<AdminModel>(op.Data.ToString());
@@ -76,7 +66,6 @@ namespace QryptoCard.API.Admin.Controllers.v1
         {
             try
             {
-                trustConnection();
                 op = sr.addAdmin(getEmail(), x);
                 //if (op.Status == "success")
                 //    op.Data = JsonConvert.DeserializeObject<List<AdminModel>>(op.Data.ToString());
@@ -97,7 +86,6 @@ namespace QryptoCard.API.Admin.Controllers.v1
         {
             try
             {
-                trustConnection();
                 op = sr.banAdmin(getEmail(), x);
                 //if (op.Status == "success")
                 //    op.Data = JsonConvert.DeserializeObject<List<AdminModel>>(op.Data.ToString());
@@ -118,7 +106,6 @@ namespace QryptoCard.API.Admin.Controllers.v1
         {
             try
             {
-                trustConnection();
                 op = sr.getAdminData(getEmail(), id);
                 if (op.Status == "success")
                     op.Data = JsonConvert.DeserializeObject<AdminModel>(op.Data.ToString());
@@ -139,7 +126,6 @@ namespace QryptoCard.API.Admin.Controllers.v1
         {
             try
             {
-                trustConnection();
                 op = sr.updateAdminData(getEmail(), x);
                 //if (op.Status == "success")
                 //    op.Data = JsonConvert.DeserializeObject<AdminModel>(op.Data.ToString());
@@ -160,7 +146,6 @@ namespace QryptoCard.API.Admin.Controllers.v1
         {
             try
             {
-                trustConnection();
                 op = sr.updatePassword(getEmail(), x);
                 //if (op.Status == "success")
                 //    op.Data = JsonConvert.DeserializeObject<AdminModel>(op.Data.ToString());
@@ -181,7 +166,6 @@ namespace QryptoCard.API.Admin.Controllers.v1
         {
             try
             {
-                trustConnection();
                 op = sr.updateEmailOTP(getEmail(), x);
                 //if (op.Status == "success")
                 //    op.Data = JsonConvert.DeserializeObject<AdminModel>(op.Data.ToString());
@@ -202,7 +186,6 @@ namespace QryptoCard.API.Admin.Controllers.v1
         {
             try
             {
-                trustConnection();
                 op = sr.updateEmail(getEmail(), x);
                 //if (op.Status == "success")
                 //    op.Data = JsonConvert.DeserializeObject<AdminModel>(op.Data.ToString());

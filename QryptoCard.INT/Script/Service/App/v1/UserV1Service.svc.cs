@@ -645,12 +645,6 @@ namespace QryptoCard.INT.Script.Service.App.v1
             return op;
         }
 
-        public void testEmail()
-        {
-            NotificationMailkitService.sendEmailPassword("syaprilahshar@gmail.com", "Syapril Ahshar", "askcsdkfjweckcnv");
-        }
-
-
         public OutputModel getUserData(string em, string x)
         {
             try

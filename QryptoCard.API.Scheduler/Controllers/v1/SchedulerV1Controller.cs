@@ -14,14 +14,6 @@ namespace QryptoCard.API.Scheduler.Controllers.v1
     {
         SchedulerV1ServiceClient sr = new SchedulerV1ServiceClient();
 
-        private void trustConnection()
-        {
-            ServicePointManager.ServerCertificateValidationCallback +=
-                (se, cert, chain, sslerror) =>
-                {
-                    return true;
-                };
-        }
 
         
         [Route("expired/transaction")]
@@ -30,7 +22,6 @@ namespace QryptoCard.API.Scheduler.Controllers.v1
         {
             try
             {
-                trustConnection();
                 sr.checkExpiredTransaction();
             }
             catch (Exception ex)

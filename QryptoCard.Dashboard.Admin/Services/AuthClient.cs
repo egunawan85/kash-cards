@@ -104,7 +104,6 @@ namespace QryptoCard.Dashboard.Admin.Services
         {
             try
             {
-                Common.trustConnection();
                 using (var client = new WebClient())
                 {
                     client.Headers[HttpRequestHeader.ContentType] = "application/json";
@@ -150,7 +149,6 @@ namespace QryptoCard.Dashboard.Admin.Services
             {
                 if (!string.IsNullOrEmpty(refreshToken))
                 {
-                    Common.trustConnection();
                     using (var client = new WebClient())
                     {
                         client.Headers[HttpRequestHeader.ContentType] = "application/json";
@@ -221,7 +219,6 @@ namespace QryptoCard.Dashboard.Admin.Services
         // catches.
         private static string ExecuteOnceRaw(string path, string method, string json)
         {
-            Common.trustConnection();
             using (var client = new WebClient())
             {
                 client.Headers[HttpRequestHeader.Authorization] = "Bearer " + (SessionLib.Current.AccessToken ?? "");
@@ -264,7 +261,6 @@ namespace QryptoCard.Dashboard.Admin.Services
 
                 try
                 {
-                    Common.trustConnection();
                     using (var client = new WebClient())
                     {
                         client.Headers[HttpRequestHeader.ContentType] = "application/json";

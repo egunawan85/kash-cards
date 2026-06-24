@@ -15,14 +15,9 @@ namespace QryptoCard.Dashboard.Models
         public static string DETAIL_URL = "https://dash-dev.kash.cards/card/carddetail?id=";
         public static string DETAIL_OWN_URL = "https://dash-dev.kash.cards/card/mycarddetail?id=";
         public static string TXCARD_URL = "https://dash-dev.kash.cards/txcard?id=";
-        public static string USER_EMAIL = "syapril@qrypto.trade";
 
         // --- Secrets / key material (env-only via SecretsConfig; never committed) ---
         public static string APPKEY => SecretsConfig.Require("APPKEY");
         public static string WASABICARD_PRIVATE_KEY_XML => SecretsConfig.Require("WASABICARD_PRIVATE_KEY_XML");
-
-        // Dead legacy default credential (vestigial; never used on a live path). Externalised
-        // so no credential blob remains in source; slated for deletion with the admin swap.
-        public static string USER_PASSWORD => SecretsConfig.GetOptional("USER_PASSWORD", "");
     }
 }

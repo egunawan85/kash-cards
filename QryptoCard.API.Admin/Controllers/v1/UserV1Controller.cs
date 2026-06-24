@@ -19,14 +19,6 @@ namespace QryptoCard.API.Admin.Controllers.v1
         UserV1ServiceClient sr = new UserV1ServiceClient();
         OutputModel op = new OutputModel();
 
-        private void trustConnection()
-        {
-            ServicePointManager.ServerCertificateValidationCallback +=
-                (se, cert, chain, sslerror) =>
-                {
-                    return true;
-                };
-        }
 
         [Route("list/active")]
         [HttpGet]
@@ -34,7 +26,6 @@ namespace QryptoCard.API.Admin.Controllers.v1
         {
             try
             {
-                trustConnection();
                 var x = new tblM_User();
                 op = sr.getUser(getEmail(), x);
                 if (op.Status == "success")
@@ -56,7 +47,6 @@ namespace QryptoCard.API.Admin.Controllers.v1
         {
             try
             {
-                trustConnection();
                 var x = new vw_User_Commission();
                 op = sr.getUserCommissionList(getEmail(), x);
                 if (op.Status == "success")
@@ -78,7 +68,6 @@ namespace QryptoCard.API.Admin.Controllers.v1
         {
             try
             {
-                trustConnection();
                 op = sr.updateUserCommission(getEmail(), x);
                 //if (op.Status == "success")
                 //    op.Data = JsonConvert.DeserializeObject<List<vw_User_Commission>>(op.Data.ToString());
@@ -99,7 +88,6 @@ namespace QryptoCard.API.Admin.Controllers.v1
         {
             try
             {
-                trustConnection();
                 var x = new vw_User_Fee();
                 op = sr.getUserFeeList(getEmail(), x);
                 if (op.Status == "success")
@@ -121,7 +109,6 @@ namespace QryptoCard.API.Admin.Controllers.v1
         {
             try
             {
-                trustConnection();
                 op = sr.updateUserFee(getEmail(), x);
                 //if (op.Status == "success")
                 //    op.Data = JsonConvert.DeserializeObject<List<vw_User_Commission>>(op.Data.ToString());

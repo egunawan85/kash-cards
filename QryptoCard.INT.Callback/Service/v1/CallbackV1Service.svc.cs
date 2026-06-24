@@ -2,6 +2,7 @@
 using QryptoCard.INT.Callback.Model.PGCrypto;
 using QryptoCard.INT.Callback.Model.WasabiCard;
 using QryptoCard.INT.Callback.Service.Gateway.WasabiCard;
+using QryptoCard.Sec;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -207,7 +208,13 @@ namespace QryptoCard.INT.Callback.Service.v1
                                 qq.cardNo = cr.CardNo;
                                 qq.onlySimpleInfo = false;
                                 var res = WasabiCardService.getCardInfo(qq);
-                                if (res != null)
+                                // Post-verify cross-check (defense-in-depth): WasabiCard must return the
+                                // same card we recorded for this order before we mark it active and read
+                                // its balance. The credited balance is taken from the provider's card-info
+                                // response below, never from the webhook body. On a mismatch/unconfirmed
+                                // result the card stays in OpenCard for a later retry rather than crediting.
+                                if (res != null && res.data != null &&
+                                    WebhookCrossCheckEvaluator.EvaluateCardOpen(cr.CardNo, res.data.cardNo) == CrossCheckOutcome.Confirmed)
                                 {
                                     cr.isActive = 1;
                                     cr.Status = PGStatusModel.Success;
@@ -291,6 +298,31 @@ namespace QryptoCard.INT.Callback.Service.v1
                         {
                             if (cr != null)
                             {
+                                // Post-verify cross-check (defense-in-depth + replay mitigation): a
+                                // deposit-fail refund credits the user's balance, so re-fetch the deposit's
+                                // canonical status from WasabiCard and refund ONLY on an independently-
+                                // confirmed failure with a matching amount. On a mismatch (provider says the
+                                // deposit succeeded) or an unconfirmed/unreachable result, leave the deposit
+                                // InProgress for the provider's retry / operator reconciliation rather than
+                                // crediting a refund that may not be owed.
+                                var canonical = WasabiCardService.getDepositOperation(cr.ID);
+                                var refundOutcome = WebhookCrossCheckEvaluator.EvaluateDepositRefund(
+                                    canonical != null ? canonical.status : null);
+                                if (refundOutcome != CrossCheckOutcome.Confirmed)
+                                {
+                                    System.Diagnostics.Trace.TraceWarning(
+                                        "Wasabi deposit-fail refund withheld (cross-check outcome=" + refundOutcome + ") for order " + cr.ID);
+                                    return;
+                                }
+                                // Advisory only: the refund value is taken from our own record (cr.Total),
+                                // so a provider/webhook amount discrepancy does not change what is credited,
+                                // but it is worth surfacing as a drift signal for reconciliation.
+                                if (canonical != null && !WebhookCrossCheckEvaluator.AmountsMatch(q.amount, canonical.amount))
+                                {
+                                    System.Diagnostics.Trace.TraceWarning(
+                                        "Wasabi deposit-fail amount differs between webhook and provider record for order " + cr.ID);
+                                }
+
                                 cr.Status = PGStatusModel.Failed;
                                 db.SaveChanges();
 
@@ -343,6 +375,19 @@ namespace QryptoCard.INT.Callback.Service.v1
                 log.Type = "PGCrypto";
                 db.tblH_Partner_Webhook.Add(log);
                 db.SaveChanges();
+
+                // Replay guard (defense-in-depth): if this provider transaction was already applied —
+                // its TransactionID is already recorded on a card or deposit — do not process it again.
+                // This stops a replayed (but validly-signed) webhook from being matched against a
+                // *different* Created row that happens to share the same address + amount. The durable
+                // form of this guard is a DB unique index on PGCryptoID, tracked as deferred hardening.
+                if (!string.IsNullOrEmpty(x.TransactionID) &&
+                    (db.tblT_Card.Any(p => p.PGCryptoID == x.TransactionID) ||
+                     db.tblT_Card_Deposit.Any(p => p.PGCryptoID == x.TransactionID)))
+                {
+                    System.Diagnostics.Trace.TraceWarning("PGCrypto callback ignored: TransactionID already processed.");
+                    return;
+                }
 
                 if (x.Symbol == "USDT")
                 {

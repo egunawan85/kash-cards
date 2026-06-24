@@ -25,7 +25,7 @@ namespace QryptoCard.Scrapper.Service
                 clients.DefaultRequestHeaders.Add("User-Agent", "Mozilla/5.0 (X11; Linux x86_64; rv:78.0)   Gecko/20100101 Firefox/78.0");
                 clients.DefaultRequestHeaders.Add("Referer", "https://www.google.com");
 
-                ServicePointManager.SecurityProtocol = SecurityProtocolType.Ssl3 | SecurityProtocolType.Tls | SecurityProtocolType.Tls11 | SecurityProtocolType.Tls12;
+                ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls12;
                 
                 var responses = clients.GetStringAsync("");
                 return responses.ToString();

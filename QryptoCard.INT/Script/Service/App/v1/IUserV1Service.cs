@@ -35,8 +35,6 @@ namespace QryptoCard.INT.Script.Service.App.v1
         [OperationContract]
         OutputModel changePassword(tblT_User_ForgotPassword x);
         [OperationContract]
-        void testEmail();
-        [OperationContract]
         OutputModel getUserData(string em, string x);
         [OperationContract]
         OutputModel updateUserData(string em, tblM_User x);

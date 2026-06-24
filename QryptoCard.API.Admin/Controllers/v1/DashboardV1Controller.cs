@@ -19,14 +19,6 @@ namespace QryptoCard.API.Admin.Controllers.v1
         DashboardV1ServiceClient sr = new DashboardV1ServiceClient();
         OutputModel op = new OutputModel();
 
-        private void trustConnection()
-        {
-            ServicePointManager.ServerCertificateValidationCallback +=
-                (se, cert, chain, sslerror) =>
-                {
-                    return true;
-                };
-        }
 
         [Route("data")]
         [HttpGet]
@@ -35,7 +27,6 @@ namespace QryptoCard.API.Admin.Controllers.v1
             try
             {
                 DashboardAdminModel x = new DashboardAdminModel();
-                trustConnection();
                 op = sr.getDashboardData(getEmail(), x);
                 if (op.Status == "success")
                     op.Data = JsonConvert.DeserializeObject<DashboardAdminModel>(op.Data.ToString());
@@ -56,7 +47,6 @@ namespace QryptoCard.API.Admin.Controllers.v1
         {
             try
             {
-                trustConnection();
                 op = sr.get10ActiveCardTransaction(getEmail());
                 if (op.Status == "success")
                     op.Data = JsonConvert.DeserializeObject<List<CardModel>>(op.Data.ToString());

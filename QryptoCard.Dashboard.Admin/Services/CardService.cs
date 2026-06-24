@@ -18,7 +18,6 @@ namespace QryptoCard.Dashboard.Admin.Services
         {
             try
             {
-                Common.trustConnection();
                 string path = "/v1/card/type";
                 return op = AuthClient.ExecuteJsonGet(path);
             }
@@ -34,7 +33,6 @@ namespace QryptoCard.Dashboard.Admin.Services
         {
             try
             {
-                Common.trustConnection();
                 string path = "/v1/card/type/id";
                 return op = AuthClient.ExecuteJsonPost(path, adm);
             }
@@ -50,7 +48,6 @@ namespace QryptoCard.Dashboard.Admin.Services
         {
             try
             {
-                Common.trustConnection();
                 string path = "/v1/card/type/price";
                 return op = AuthClient.ExecuteJsonPut(path, adm);
             }
@@ -66,7 +63,6 @@ namespace QryptoCard.Dashboard.Admin.Services
         {
             try
             {
-                Common.trustConnection();
                 string path = "/v1/card/type/deposit/fee";
                 return op = AuthClient.ExecuteJsonPut(path, adm);
             }
@@ -82,7 +78,6 @@ namespace QryptoCard.Dashboard.Admin.Services
         {
             try
             {
-                Common.trustConnection();
                 string path = "/v1/card/active";
                 return op = AuthClient.ExecuteJsonGet(path);
             }
@@ -98,7 +93,6 @@ namespace QryptoCard.Dashboard.Admin.Services
         {
             try
             {
-                Common.trustConnection();
                 string path = "/v1/card/all";
                 return op = AuthClient.ExecuteJsonGet(path);
             }
@@ -114,7 +108,6 @@ namespace QryptoCard.Dashboard.Admin.Services
         {
             try
             {
-                Common.trustConnection();
                 string path = "/v1/card/transaction";
                 return op = AuthClient.ExecuteJsonPost(path, adm);
             }
@@ -130,7 +123,6 @@ namespace QryptoCard.Dashboard.Admin.Services
         {
             try
             {
-                Common.trustConnection();
                 string path = "/v1/card/deposit/transaction";
                 return op = AuthClient.ExecuteJsonPost(path, adm);
             }
