@@ -335,7 +335,7 @@ namespace QryptoCard.INT.Script.Service.Admin.v1
                 string uid = getAdminId(em);
                 string role = getRole(em);
 
-                if (role == RoleModel.Signer || role == RoleModel.Approver || role == RoleModel.Viewer)
+                if (isDeniedAdminManage(em))
                 {
                     op.Status = "failed";
                     op.Message = "You are not authorize to run this endpoint";
@@ -402,7 +402,7 @@ namespace QryptoCard.INT.Script.Service.Admin.v1
                 string uid = getAdminId(em);
                 string role = getRole(em);
 
-                if (role == RoleModel.Signer || role == RoleModel.Approver || role == RoleModel.Viewer)
+                if (isDeniedAdminManage(em))
                 {
                     op.Status = "failed";
                     op.Message = "You are not authorize to run this endpoint";
@@ -552,7 +552,7 @@ namespace QryptoCard.INT.Script.Service.Admin.v1
                 string uid = getAdminId(em);
                 string role = getRole(em);
 
-                if (role == RoleModel.Signer || role == RoleModel.Approver || role == RoleModel.Viewer)
+                if (isDeniedAdminManage(em))
                 {
                     op.Status = "failed";
                     op.Message = "You are not authorize to run this endpoint";
