@@ -361,3 +361,17 @@ MigrationBackup/
 
 # Fody - auto-generated XML schema
 FodyWeavers.xsd
+
+# ---- kash-cards: secrets must never be committed (templates are committed) ----
+deploy/secrets/.env
+deploy/secrets/.vault
+deploy/secrets/*.env
+deploy/secrets/*.vault
+!deploy/secrets/*.example
+# key material
+*.pem
+*.pfx
+*.p12
+*.key
+*.local.config
+*.orig
