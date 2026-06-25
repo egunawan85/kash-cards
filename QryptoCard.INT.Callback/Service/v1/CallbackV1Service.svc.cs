@@ -340,25 +340,25 @@ namespace QryptoCard.INT.Callback.Service.v1
                                     return;
                                 }
 
-                                var bal = db.tblM_User_Balance.Where(p => p.UserID == cr.UserID).FirstOrDefault();
-
-                                tblH_User_Balance hbl = new tblH_User_Balance();
-                                hbl.TransactionID = cr.ID;
-                                hbl.BalanceID = bal.BalanceID;
-                                hbl.Type = "Deposit Refund";
-                                hbl.BalancePrevious = bal.Balance;
-                                hbl.Amount = Convert.ToDecimal(cr.Amount);
-                                hbl.Commision = Convert.ToDecimal(cr.Fee);
-                                hbl.CommisionInPercentage = cr.FeeInPercentage;
-
-                                bal.Balance = bal.Balance + Convert.ToDecimal(cr.Total);
-
-                                hbl.Balance = bal.Balance;
-                                hbl.BalanceHold = 0;
-                                hbl.CreatedDate = DateTime.Now;
-
-                                db.tblH_User_Balance.Add(hbl);
-                                db.SaveChanges();
+                                // Route the refund through the shared atomic balance helper: EnsureWallet
+                                // closes the historical null-deref (a user with no balance row), and Credit
+                                // does the conditional UPDATE + ledger write in one Serializable transaction
+                                // instead of the old non-atomic read-modify-write. Credit the settled net
+                                // (cr.Total); record gross (cr.Amount) and fee in the ledger.
+                                WalletService.EnsureWallet(cr.UserID);
+                                var refund = WalletService.Credit(
+                                    cr.UserID,
+                                    Convert.ToDecimal(cr.Total),
+                                    Convert.ToDecimal(cr.Amount),
+                                    Convert.ToDecimal(cr.Fee),
+                                    Convert.ToDouble(cr.FeeInPercentage),
+                                    WalletService.TypeDepositRefund,
+                                    cr.ID);
+                                if (!refund.Success)
+                                {
+                                    System.Diagnostics.Trace.TraceError(
+                                        "Wasabi deposit-fail refund credit failed (" + refund.FailureReason + ") for order " + cr.ID);
+                                }
 
                             }
                         }
