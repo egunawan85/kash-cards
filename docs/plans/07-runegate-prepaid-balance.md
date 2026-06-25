@@ -324,11 +324,30 @@ PGCrypto webhook handler.
 - **C2.a — A failed credit is silently lost (no retry).** `CallbackV1Controller.pgcrypto`
   fire-and-forgets `sr.PGCrypto(...)` and **always returns 200**; the INT handler swallows
   every exception. A DB blip mid-credit → Runegate sees 200, never retries, and the
-  deposit credit **vanishes** (real money). **Decision:** the credit reports
-  success/failure → the controller returns **non-200 on failure so Runegate retries**
-  (T2.3 idempotency makes retries safe), **and** the `tblH_Partner_Webhook` journal is
-  kept for scheduled/manual replay/reconciliation. Changes the callback contract from
-  always-200. *(genuine decision — flagged for sign-off)*
+  deposit credit **vanishes** (real money). **Decision (signed off; refined against the
+  sister gateways):** change the callback contract so the status code reflects the
+  outcome, following the exact runegate / qrypto-omni house pattern rather than a blunt
+  "non-200 on any failure":
+    - **200** on a successful state mutation **and on a deduped duplicate** — a duplicate
+      delivery is *not* a failure; the dedup row proves the prior atomic credit committed,
+      so returning 200 stops the retraining safely (qrypto-omni rolls back + returns 200).
+    - **401 / 400** on signature/validation failure *before* any mutation (forgery /
+      malformed payload) — fail fast, no retry value.
+    - **500 / 503** on an *operational* error (DB blip mid-credit, cross-check unreachable)
+      → Runegate's retry schedule redelivers; T2.3 per-event idempotency makes the retry a
+      no-op once the first attempt actually committed.
+  Keep the `tblH_Partner_Webhook` journal for scheduled/manual replay/reconciliation. The
+  key safety property (from the sisters): **dedup is a DB-level unique constraint +
+  exception-swallow, never app-layer check-then-insert** — the constraint closes the
+  concurrent-retry race the always-200 path silently lost money to. Add a sequential
+  pre-check read of the dedup row (qrypto-omni QO-0081) for slow-200 / manual-resend
+  redeliveries that aren't concurrent. *Confirmed convergent across both sisters:*
+  runegate `PGCrypto.API.Callback/Controllers/v1/PaymentV1Controller.cs` (200-on-success /
+  401-400-on-validation / 500-on-error) + `PaymentV1Service.svc.cs:174-186`
+  (`IsDuplicateKeyException`); qrypto-omni `QryptoOmni.API/Controllers/v1/CallbackV1Controller.cs`
+  + `QryptoOmni.INT/Security/SqlUniqueViolationDetector.cs`; rationale in runegate
+  `audit/bundles/loss-of-funds-webhook.md` §18 (invariant I-2) and qrypto-omni
+  `audit/fix-history/QO-0038.md` / `QO-0081.md`.
 - **C2.b — Dedup via the existing dedup table (resolved by the sister pattern).** Rather
   than a filtered index on the ledger's `TransactionID` (which collides with refund rows
   that reuse it), use the **already-present `tblH_Partner_Webhook_ID` table** keyed on the
