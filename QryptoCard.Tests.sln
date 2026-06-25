@@ -9,6 +9,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "QryptoCard.Tests.Unit", "Qr
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "QryptoCard.Tests.Integration", "QryptoCard.Tests.Integration\QryptoCard.Tests.Integration.csproj", "{B68BF6E9-9DE1-4D1B-94F0-3B926008F0CD}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "QryptoCard.Tests.Smoke", "QryptoCard.Tests.Smoke\QryptoCard.Tests.Smoke.csproj", "{5464F7D8-EF4D-4258-B226-045789E87F15}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -55,6 +57,18 @@ Global
 		{B68BF6E9-9DE1-4D1B-94F0-3B926008F0CD}.Release|x64.Build.0 = Release|Any CPU
 		{B68BF6E9-9DE1-4D1B-94F0-3B926008F0CD}.Release|x86.ActiveCfg = Release|Any CPU
 		{B68BF6E9-9DE1-4D1B-94F0-3B926008F0CD}.Release|x86.Build.0 = Release|Any CPU
+		{5464F7D8-EF4D-4258-B226-045789E87F15}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{5464F7D8-EF4D-4258-B226-045789E87F15}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{5464F7D8-EF4D-4258-B226-045789E87F15}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{5464F7D8-EF4D-4258-B226-045789E87F15}.Debug|x64.Build.0 = Debug|Any CPU
+		{5464F7D8-EF4D-4258-B226-045789E87F15}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{5464F7D8-EF4D-4258-B226-045789E87F15}.Debug|x86.Build.0 = Debug|Any CPU
+		{5464F7D8-EF4D-4258-B226-045789E87F15}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{5464F7D8-EF4D-4258-B226-045789E87F15}.Release|Any CPU.Build.0 = Release|Any CPU
+		{5464F7D8-EF4D-4258-B226-045789E87F15}.Release|x64.ActiveCfg = Release|Any CPU
+		{5464F7D8-EF4D-4258-B226-045789E87F15}.Release|x64.Build.0 = Release|Any CPU
+		{5464F7D8-EF4D-4258-B226-045789E87F15}.Release|x86.ActiveCfg = Release|Any CPU
+		{5464F7D8-EF4D-4258-B226-045789E87F15}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

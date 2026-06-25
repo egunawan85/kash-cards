@@ -375,6 +375,10 @@ deploy/secrets/.vault
 deploy/secrets/*.env
 deploy/secrets/*.vault
 !deploy/secrets/*.example
+
+# ---- kash-cards: filled infra config (subscription id + IPs); templates committed ----
+deploy/config/.env.provision.*
+!deploy/config/.env.provision.*.example
 # key material
 *.pem
 *.pfx

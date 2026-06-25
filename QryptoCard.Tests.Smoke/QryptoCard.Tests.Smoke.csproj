@@ -1,0 +1,32 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    E2E smoke suite mirroring the sister PGCrypto.Tests.Smoke: an over-the-wire
+    HTTP suite that runs against the DEPLOYED endpoints, reading SMOKE_BASE_URL /
+    SMOKE_API_KEY / SMOKE_API_SECRET from the environment (produced by
+    QryptoCard.DevSeed). SDK-style net48 xUnit; runs via `dotnet test`. No app
+    project references — it exercises the public API exactly as a real consumer.
+
+    Tiers (see README): T0 env gate, T1 auth (safe everywhere), T2 read coverage
+    (safe everywhere), T3 mutating lifecycle (gated by SMOKE_ALLOW_MUTATION; dev /
+    sandbox only — in prod this becomes a bounded canary pilot, never the free
+    seed+reap flow).
+  -->
+  <PropertyGroup>
+    <TargetFramework>net48</TargetFramework>
+    <IsPackable>false</IsPackable>
+    <Nullable>disable</Nullable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.11.1" />
+    <PackageReference Include="xunit" Version="2.9.2" />
+    <PackageReference Include="xunit.runner.visualstudio" Version="2.8.2" />
+    <PackageReference Include="Microsoft.NETFramework.ReferenceAssemblies" Version="1.0.3" PrivateAssets="all" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Reference Include="System.Net.Http" />
+  </ItemGroup>
+
+</Project>
