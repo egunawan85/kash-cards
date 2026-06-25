@@ -195,87 +195,15 @@ namespace QryptoCard.INT.Script.Service.App.v1
                     
                     db.SaveChanges();
 
-                    var bal = new tblM_User_Balance();
-                    bal.UserID = u.UserID;
-                    bal.DateCreated = DateTime.Now;
-                    bal.Currency = "USDT";
-                    bal.BalanceID = Guid.NewGuid().ToString();
-                    bal.isActive = 1;
-                    bal.Balance = 0;
-                    db.tblM_User_Balance.Add(bal);
-                    db.SaveChanges();
+                    // Provisioning (wallet, deposit address, referral, commission) is
+                    // decoupled from the verify gate: it runs idempotently and best-effort
+                    // here, and self-repairs on later access or a backfill if anything (e.g.
+                    // the deposit-address gateway) is transiently unavailable. Verify itself
+                    // must always succeed once the OTP is valid — a provisioning hiccup can
+                    // never leave a half-provisioned account or report a spurious error.
+                    UserProvisioningService.EnsureUserProvisioned(u.UserID);
 
                     
-                    if (KeyModel.QRYPTO_ENVIRONMENT == "prod")
-                    {
-
-                        var co = PGCryptoService.getCoin();
-                        var ne = "TRC20";
-                        var coid = co.Where(p => p.Network == ne).Select(p => p.CoinID).FirstOrDefault();
-                        AddressStaticModel q = new AddressStaticModel();
-                        q.CoinID = coid;
-
-                        var nid = "F580A411-0E37-4287-B975-408172A2B4BF";
-                        var uid = u.UserID;
-                        var ck = db.tblM_User_Crypto_Deposit.Where(p => p.NetworkID == nid && p.UserID == u.UserID).FirstOrDefault();
-                        if (ck == null)
-                        {
-                            var sta = PGCryptoService.addressStaticCreation(q);
-
-                            tblM_User_Crypto_Deposit c = new tblM_User_Crypto_Deposit();
-                            c.ID = Guid.NewGuid().ToString();
-                            c.UserID = u.UserID;
-                            c.PGCryptoID = sta.AddressID;
-                            c.NetworkID = nid;
-                            c.Address = sta.Address;
-                            c.DateCreated = DateTime.Now;
-                            c.CreatedBy = "system";
-                            c.isActive = 1;
-                            c.Param1 = JsonConvert.SerializeObject(sta);
-
-                            db.tblM_User_Crypto_Deposit.Add(c);
-                            db.SaveChanges();
-                        }
-                    }
-                    else
-                    {
-                        var addr = new tblM_User_Crypto_Deposit();
-                        addr.UserID = u.UserID;
-                        addr.DateCreated = DateTime.Now;
-                        addr.Address = "T" + Common.RandomString(12);
-                        addr.ID = Guid.NewGuid().ToString();
-                        addr.NetworkID = "F580A411-0E37-4287-B975-408172A2B4BF";
-                        addr.isActive = 1;
-                        db.tblM_User_Crypto_Deposit.Add(addr);
-                        db.SaveChanges();
-
-                    }
-
-                    var reff = new tblM_User_Referral();
-                    reff.UserID = u.UserID;
-                    reff.DateCreated = DateTime.Now;
-                    reff.Code = Common.RandomString(8);
-                    db.tblM_User_Referral.Add(reff);
-                    db.SaveChanges();
-
-                    var comm = new tblM_User_Commission();
-                    comm.UserID = u.UserID;
-                    comm.CommissionID = Guid.NewGuid().ToString();
-                    comm.DateCreated = DateTime.Now;
-
-
-
-                    var f = db.tblM_Setting.Where(p => p.ID == 2).FirstOrDefault();
-                    if (f != null)
-                    {
-                        comm.Commission = f.Value;
-                    }
-                    else
-                        comm.Commission = 0.1;
-
-                    db.tblM_User_Commission.Add(comm);
-                    db.SaveChanges();
-
                     //var c = db.tblM_Company.Where(p => p.CompanyID == u.CompanyID).FirstOrDefault();
                     //c.isVerified = 1;
                     //c.isActive = 1;
@@ -996,7 +924,9 @@ namespace QryptoCard.INT.Script.Service.App.v1
             {
 
                 var uid = getUserId(em);
-                var data = db.tblM_User_Balance.Where(p => p.UserID == uid).FirstOrDefault();
+                // Read the live wallet through the shared accessor, lazily provisioning a
+                // row for users who predate the wallet feature or whose creation failed.
+                var data = WalletService.EnsureWallet(uid);
 
                 if (data == null)
                 {
@@ -1010,6 +940,85 @@ namespace QryptoCard.INT.Script.Service.App.v1
                     op.Status = "success";
                     op.Message = "Success get data";
                 }
+            }
+            catch (Exception ex)
+            {
+                op.Message = ex.Message;
+                op.Status = "error";
+            }
+            return op;
+        }
+
+        // Return the authenticated user's static deposit address (+ network/coin for a QR
+        // payload), provisioning one on first view. Strictly scoped to the caller's own user
+        // (derived from the bearer identity, never a body-supplied id) to prevent IDOR.
+        public OutputModel getDepositAddress(string em)
+        {
+            try
+            {
+                var uid = getUserId(em);
+                var addr = WalletService.EnsureDepositAddress(uid);
+                if (addr == null)
+                {
+                    op.Status = "failed";
+                    op.Message = "No deposit address available";
+                    return op;
+                }
+                op.Data = JsonConvert.SerializeObject(new
+                {
+                    Address = addr.Address,
+                    NetworkID = addr.NetworkID,
+                    Network = "TRC20",
+                    Coin = "USDT"
+                }, Formatting.None);
+                op.Status = "success";
+                op.Message = "Success get deposit address";
+            }
+            catch (Exception ex)
+            {
+                op.Message = ex.Message;
+                op.Status = "error";
+            }
+            return op;
+        }
+
+        // Paginated prepaid-balance ledger for the authenticated user. Scoped to the caller's
+        // own user (IDOR-safe); the internal surrogate ID and BalanceID are not exposed.
+        public OutputModel getLedger(string em, int page, int pageSize)
+        {
+            try
+            {
+                var uid = getUserId(em);
+                if (page < 1) page = 1;
+                if (pageSize < 1 || pageSize > 100) pageSize = 20;
+
+                var q = db.tblH_User_Balance.Where(p => p.UserID == uid);
+                var total = q.Count();
+                var rows = q.OrderByDescending(p => p.ID)
+                    .Skip((page - 1) * pageSize)
+                    .Take(pageSize)
+                    .Select(p => new
+                    {
+                        p.Type,
+                        p.Amount,
+                        p.Commision,
+                        p.BalancePrevious,
+                        p.Balance,
+                        p.TransactionID,
+                        p.Status,
+                        p.CreatedDate
+                    })
+                    .ToList();
+
+                op.Data = JsonConvert.SerializeObject(new
+                {
+                    Page = page,
+                    PageSize = pageSize,
+                    Total = total,
+                    Items = rows
+                }, Formatting.None);
+                op.Status = "success";
+                op.Message = "Success get ledger";
             }
             catch (Exception ex)
             {

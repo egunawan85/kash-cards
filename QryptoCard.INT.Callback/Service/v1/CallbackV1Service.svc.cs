@@ -196,7 +196,7 @@ namespace QryptoCard.INT.Callback.Service.v1
                     {
                         if (q.status == "success")
                         {
-                            var cr = db.tblT_Card.Where(p => p.ID == q.merchantOrderNo && p.Status == PGStatusModel.InProgress).FirstOrDefault();
+                            var cr = db.tblT_Card.Where(p => p.ID == q.merchantOrderNo && (p.Status == PGStatusModel.InProgress || p.Status == PGStatusModel.PendingProvider)).FirstOrDefault();
                             if (cr != null)
                             {
                                 cr.CardNo = q.cardNo;
@@ -255,7 +255,7 @@ namespace QryptoCard.INT.Callback.Service.v1
                     }
                     else if (type == "deposit")
                     {
-                        var cr = db.tblT_Card_Deposit.Where(p => p.ID == q.merchantOrderNo && p.Status == PGStatusModel.InProgress).FirstOrDefault();
+                        var cr = db.tblT_Card_Deposit.Where(p => p.ID == q.merchantOrderNo && (p.Status == PGStatusModel.InProgress || p.Status == PGStatusModel.PendingProvider)).FirstOrDefault();
 
                         if (q.status == "success")
                         {
@@ -324,41 +324,26 @@ namespace QryptoCard.INT.Callback.Service.v1
                                         "Wasabi deposit-fail amount differs between webhook and provider record for order " + cr.ID);
                                 }
 
-                                // Atomically claim the deposit so only ONE delivery credits the refund. A
-                                // concurrent or replayed duplicate (provider at-least-once retry) finds 0 rows
-                                // affected and bails — this InProgress->Failed transition is the in-process
-                                // idempotency gate for the refund, closing the window opened by the cross-check
-                                // call above. (The durable belt-and-suspenders is the deferred PGCryptoID/dedup
-                                // unique index.)
-                                int claimedDeposit = db.Database.ExecuteSqlCommand(
-                                    "UPDATE dbo.tblT_Card_Deposit SET Status = {0} WHERE ID = {1} AND Status = {2}",
-                                    PGStatusModel.Failed, cr.ID, PGStatusModel.InProgress);
-                                if (claimedDeposit != 1)
+                                // Refund atomically: the deposit's claim (InProgress/PendingProvider->Failed)
+                                // and the wallet credit commit or roll back together inside one Serializable
+                                // transaction. The claim is also the idempotency gate — a concurrent or
+                                // replayed delivery finds 0 rows to claim and is a no-op — and folding it into
+                                // the credit closes the crash window that previously could leave a deposit
+                                // Failed-but-unrefunded. EnsureWallet first so a user without a balance row
+                                // (historical null-deref) still gets the refund. Credit the settled net
+                                // (cr.Total); record the fee in the ledger.
+                                WalletService.EnsureWallet(cr.UserID);
+                                var refund = WalletService.CreditRefund(
+                                    cr.UserID,
+                                    Convert.ToDecimal(cr.Total),
+                                    Convert.ToDecimal(cr.Fee),
+                                    Convert.ToDouble(cr.FeeInPercentage),
+                                    cr.ID);
+                                if (!refund.Success && refund.FailureReason != "claim_lost")
                                 {
-                                    System.Diagnostics.Trace.TraceWarning(
-                                        "Wasabi deposit-fail refund skipped: deposit already finalized for order " + cr.ID);
-                                    return;
+                                    System.Diagnostics.Trace.TraceError(
+                                        "Wasabi deposit-fail refund credit failed (" + refund.FailureReason + ") for order " + cr.ID);
                                 }
-
-                                var bal = db.tblM_User_Balance.Where(p => p.UserID == cr.UserID).FirstOrDefault();
-
-                                tblH_User_Balance hbl = new tblH_User_Balance();
-                                hbl.TransactionID = cr.ID;
-                                hbl.BalanceID = bal.BalanceID;
-                                hbl.Type = "Deposit Refund";
-                                hbl.BalancePrevious = bal.Balance;
-                                hbl.Amount = Convert.ToDecimal(cr.Amount);
-                                hbl.Commision = Convert.ToDecimal(cr.Fee);
-                                hbl.CommisionInPercentage = cr.FeeInPercentage;
-
-                                bal.Balance = bal.Balance + Convert.ToDecimal(cr.Total);
-
-                                hbl.Balance = bal.Balance;
-                                hbl.BalanceHold = 0;
-                                hbl.CreatedDate = DateTime.Now;
-
-                                db.tblH_User_Balance.Add(hbl);
-                                db.SaveChanges();
 
                             }
                         }
@@ -378,6 +363,12 @@ namespace QryptoCard.INT.Callback.Service.v1
                 System.Diagnostics.Trace.TraceError("Wasabi callback processing failed: " + ex.GetType().FullName);
             }
         }
+
+        // Anti-dust floor on wallet credits (R12): deposits settling below this net amount are
+        // journalled but not credited, to prevent dust/precision griefing. Card-action minimums
+        // are separate and unchanged.
+        private const decimal PGCryptoCreditFloor = 1m;
+
         public void PGCrypto(PGCryptoModel x)
         {
             try
@@ -399,155 +390,70 @@ namespace QryptoCard.INT.Callback.Service.v1
                     System.Diagnostics.Trace.TraceWarning("PGCrypto callback ignored: missing TransactionID.");
                     return;
                 }
-                // Replay guard (defense-in-depth): if this provider transaction was already applied — its
-                // TransactionID is already recorded on a card or deposit — do not process it again. This
-                // stops a replayed (but validly-signed) webhook from being matched against a *different*
-                // Created row that happens to share the same address + amount. The concurrent race is
-                // closed by the atomic claim on the matched row below; the durable belt-and-suspenders is
-                // a DB unique index on PGCryptoID, tracked as deferred hardening.
-                if (db.tblT_Card.Any(p => p.PGCryptoID == x.TransactionID) ||
-                    db.tblT_Card_Deposit.Any(p => p.PGCryptoID == x.TransactionID))
+                // Wallet-only credit model: every confirmed USDT deposit to a user's static
+                // address credits that user's prepaid balance. There is no order matching and no
+                // direct-to-card provisioning from a deposit — card funding is now a balance debit
+                // on the spend path, so the legacy Address+Total+Created match and its inline
+                // WasabiCard provisioning are removed (R1). Per-event dedup + the credit happen
+                // atomically inside WalletService.CreditDeposit; this method no longer needs the
+                // old card/deposit replay guard.
+
+                // Non-USDT funds sent to the (TRC20/USDT) address are real but unhandled — never
+                // silent-skip; surface for manual handling (C2.d).
+                if (x.Symbol != "USDT")
                 {
-                    System.Diagnostics.Trace.TraceWarning("PGCrypto callback ignored: TransactionID already processed.");
+                    System.Diagnostics.Trace.TraceWarning(
+                        "PGCrypto callback: non-USDT symbol '" + x.Symbol + "' for tx " + x.TransactionID + " — manual handling required.");
                     return;
                 }
 
-                if (x.Symbol == "USDT")
+                // Confirmed-status gate: credit only on a settled/paid deposit. A pre-confirmation
+                // delivery is ignored (no credit); the confirmed delivery carries isPaid == 1.
+                if (x.isPaid != 1)
                 {
-                    var am = Convert.ToDouble(x.Amount);
+                    System.Diagnostics.Trace.TraceWarning(
+                        "PGCrypto callback: unconfirmed deposit (isPaid=" + x.isPaid + ") for tx " + x.TransactionID + " — not credited.");
+                    return;
+                }
 
-                    //static address
-                    var z = db.tblT_Card.Where(p => p.Address == x.Address && p.Total == am && p.Status == PGStatusModel.Created).FirstOrDefault();
-                    if (z != null)
-                    {
-                        // Atomically claim this Created order so concurrent/replayed deliveries cannot both
-                        // provision a card against it. The loser (0 rows affected) bails.
-                        int claimedCard = db.Database.ExecuteSqlCommand(
-                            "UPDATE dbo.tblT_Card SET Status = {0}, Txhash = {1}, ReceiptURL = {2}, PGCryptoID = {3} WHERE ID = {4} AND Status = {5}",
-                            PGStatusModel.Paid, x.ReceiptURL.ToString(), x.ReceiptURL.ToString(), x.TransactionID, z.ID, PGStatusModel.Created);
-                        if (claimedCard != 1)
-                        {
-                            System.Diagnostics.Trace.TraceWarning("PGCrypto card provisioning skipped: order already claimed " + z.ID);
-                            return;
-                        }
-                        // Reflect the claimed state on the tracked entity for the provisioning calls below.
-                        z.Status = PGStatusModel.Paid;
-                        z.Txhash = x.ReceiptURL.ToString();
-                        z.ReceiptURL = x.ReceiptURL.ToString();
-                        z.PGCryptoID = x.TransactionID;
+                // Address ownership: the credited user is derived strictly from OUR record (the
+                // static deposit address -> owning UserID), never from the webhook body.
+                var dep = db.tblM_User_Crypto_Deposit
+                    .FirstOrDefault(p => p.Address == x.Address && p.isActive == 1);
+                if (dep == null)
+                {
+                    // Real funds we cannot attribute to a user — log + alert, never credit.
+                    System.Diagnostics.Trace.TraceError(
+                        "PGCrypto callback: deposit to unknown/inactive address for tx " + x.TransactionID + " — manual handling required.");
+                    return;
+                }
 
-                        //do open card
-                        if (z.HolderID == null)
-                        {
-                            WCOpenCardRequestModel req = new WCOpenCardRequestModel();
-                            req.merchantOrderNo = z.ID;
-                            req.amount = Convert.ToDouble(z.InitialDeposit);
-                            req.cardTypeId = Convert.ToInt32(z.CardTypeId);
+                // Anti-dust floor: the webhook journal row above already records the deposit; we
+                // simply do not credit sub-floor dust (R12). Net is what Runegate settled (R15).
+                decimal net = x.Total ?? 0m;
+                if (net < PGCryptoCreditFloor)
+                {
+                    System.Diagnostics.Trace.TraceWarning(
+                        "PGCrypto callback: sub-floor deposit " + net + " for tx " + x.TransactionID + " — logged, not credited.");
+                    return;
+                }
 
-                            var res = WasabiCardService.openCard(req);
-                            if (res != null)
-                            {
-                                if (res.code == 200)
-                                {
-                                    var cdt = res.data[0];
-                                    z.OrderNo = cdt.orderNo;
-                                    z.BaseAmount = Convert.ToDouble(cdt.amount);
-                                    z.BaseFee = Convert.ToDouble(cdt.fee);
-                                    z.ReceivedCurrency = cdt.receivedCurrency;
-                                    z.Currency = cdt.currency;
-                                    z.ReceivedAmount = req.amount;
-                                    z.Status = PGStatusModel.InProgress;
-                                    z.Param4 = cdt.status;
-                                    z.Param5 = cdt.type;
-                                    z.isActive = 0;
+                // Ensure the wallet exists (lazy-provisioned users), then credit the NET amount and
+                // write the per-event dedup row in ONE atomic transaction — a replayed or
+                // concurrent duplicate rolls back as a no-op. Commission is recorded for
+                // reconciliation; the gross deposit is recoverable as Amount + Commision.
+                WalletService.EnsureWallet(dep.UserID);
+                var credit = WalletService.CreditDeposit(
+                    dep.UserID, net, x.Commision ?? 0m, x.CommisionInPercentage ?? 0d,
+                    x.TransactionID, x.Status, JsonConvert.SerializeObject(x));
 
-                                    db.SaveChanges();
-
-                                }
-                            }
-                        }
-                        else
-                        {
-                            WCOpenCardWithHolderRequestModel req = new WCOpenCardWithHolderRequestModel();
-                            req.merchantOrderNo = z.ID;
-                            req.amount = Convert.ToDouble(z.InitialDeposit);
-                            req.cardTypeId = Convert.ToInt32(z.CardTypeId);
-                            req.holderId = Convert.ToInt32(z.HolderID);
-
-
-                            var res = WasabiCardService.openCardWithHolder(req);
-                            if (res != null)
-                            {
-                                if (res.code == 200)
-                                {
-                                    var cdt = res.data[0];
-                                    z.OrderNo = cdt.orderNo;
-                                    z.BaseAmount = Convert.ToDouble(cdt.amount);
-                                    z.BaseFee = Convert.ToDouble(cdt.fee);
-                                    z.ReceivedCurrency = cdt.receivedCurrency;
-                                    z.Currency = cdt.currency;
-                                    z.ReceivedAmount = req.amount;
-                                    z.Status = PGStatusModel.InProgress;
-                                    z.Param4 = cdt.status;
-                                    z.Param5 = cdt.type;
-                                    z.DateCreated = DateTime.Now;
-                                    z.isActive = 0;
-
-                                    db.SaveChanges();
-
-                                }
-                            }
-                        }
-
-                        return;
-                    }
-
-                    var y = db.tblT_Card_Deposit.Where(p => p.Address == x.Address && p.Total == am && p.Status == PGStatusModel.Created).FirstOrDefault();
-                    if (y != null)
-                    {
-                        // Atomically claim this Created order so concurrent/replayed deliveries cannot both
-                        // process a top-up against it. The loser (0 rows affected) bails.
-                        int claimedDep = db.Database.ExecuteSqlCommand(
-                            "UPDATE dbo.tblT_Card_Deposit SET Status = {0}, Txhash = {1}, ReceiptURL = {2}, PGCryptoID = {3} WHERE ID = {4} AND Status = {5}",
-                            PGStatusModel.Paid, x.ReceiptURL.ToString(), x.ReceiptURL.ToString(), x.TransactionID, y.ID, PGStatusModel.Created);
-                        if (claimedDep != 1)
-                        {
-                            System.Diagnostics.Trace.TraceWarning("PGCrypto deposit provisioning skipped: order already claimed " + y.ID);
-                            return;
-                        }
-                        // Reflect the claimed state on the tracked entity for the provisioning calls below.
-                        y.Status = PGStatusModel.Paid;
-                        y.Txhash = x.ReceiptURL.ToString();
-                        y.ReceiptURL = x.ReceiptURL.ToString();
-                        y.PGCryptoID = x.TransactionID;
-
-                        //do deposit
-                        WCDepositCardRequestModel req = new WCDepositCardRequestModel();
-                        req.merchantOrderNo = y.ID;
-                        req.amount = Convert.ToDouble(y.ReceivedAmount);
-                        req.cardNo = y.CardNo;
-
-                        var res = WasabiCardService.depositCard(req);
-                        if (res != null)
-                        {
-                            if (res.code == 200)
-                            {
-                                var cdt = res.data;
-                                y.OrderNo = cdt.orderNo;
-                                y.BaseFee = Convert.ToDouble(cdt.fee);
-                                y.Currency = cdt.currency;
-                                y.ReceivedAmount = req.amount;
-                                y.Status = PGStatusModel.InProgress;
-                                y.Param4 = cdt.status;
-                                y.Param5 = cdt.type;
-
-                                db.SaveChanges();
-
-                            }
-                        }
-                        return;
-
-                    }
+                if (!credit.Success && credit.FailureReason != "duplicate_event")
+                {
+                    // Operational failure (not a benign duplicate). The webhook journal row enables
+                    // replay/reconciliation; non-200-on-failure so the gateway retries is the
+                    // coupled callback-contract change tracked separately (C2.a).
+                    System.Diagnostics.Trace.TraceError(
+                        "PGCrypto credit failed (" + credit.FailureReason + ") for tx " + x.TransactionID);
                 }
                 //invoice
                 //var z = db.tblT_Transaction.Where(p => p.PGCryptoInvoiceID == x.TransactionID && p.Status == StatusModel.WaitingPayment).FirstOrDefault();
@@ -575,7 +481,12 @@ namespace QryptoCard.INT.Callback.Service.v1
         {
             DBEntities db = new DBEntities();
 
-            var y = db.tblT_Card_Deposit.Where(p => p.ID == tid && p.Status == "paid").FirstOrDefault();
+            // Reconciliation tool for the wallet-only model: only re-provision a deposit that is
+            // PendingProvider — i.e. the balance was ALREADY debited but the provider result was
+            // ambiguous. Re-provisioning such an order does not (and must not) debit again. The
+            // legacy "paid" status is never produced now, and re-funding a completed deposit would
+            // double-fund the card with no second debit, so it is no longer eligible here.
+            var y = db.tblT_Card_Deposit.Where(p => p.ID == tid && p.Status == PGStatusModel.PendingProvider).FirstOrDefault();
             if (y != null)
             {
                 //do deposit

@@ -108,7 +108,7 @@ money path. ✅ = I'll proceed with the recommendation unless you change it;
 | R14 | Schema changes | **Additive only**, shipped as an idempotent `deploy/sql/*.sql` script (same pattern as `create-token-tables.sql`); applied during the dev shakeout. Deltas: dedup unique index on the credit reference (`PGCryptoID`); **unique indexes `tblM_User_Crypto_Deposit(UserID, NetworkID)` + `tblM_User_Balance(UserID, Currency)`** (spike-confirmed missing — see T1.4); a wallet-credit ledger `Type`; optional `BalanceHold` usage. No backfill (other than the one-time address/wallet backfill in T1.2). | EDMX hand-edit / in-band migration | ✅ |
 | R17 | Admin manual balance adjustment | **Out for v1 — read-only admin.** No write to `tblM_User_Balance` exists today (admins adjust commission/fee only); v1 keeps it read-only. A support-correction tool, if needed later, gets its own audited endpoint: role-gated (`isDeniedFinanceMutation` = Owner/Admin), writing a `tblH_User_Balance` ledger row through the same atomic helper (T5.1), never an ad-hoc field edit. | Add a manual credit/debit tool in v1 | ✔ **decided: read-only admin in v1** |
 | R16 | Step-up auth on spend | **No step-up for v1** — spending balance opens/top-ups a card the user already owns (balance is non-withdrawable, R13), so it isn't a crypto-cash-out; this matches today (card actions ride the login bearer token, no re-auth). The sisters' per-transaction human approval (Fireblocks TAP) is for *crypto-out*, which doesn't apply here. Revisit when withdrawal (R13) is built. | Require OTP/2FA step-up before every spend | ✔ **decided: no step-up for v1** (revisit with withdrawal) |
-| R15 | What amount a deposit credits (gross vs. net) | **Credit the webhook `Total` (net = `Amount − Commission`)** in code — never credit more than Runegate settled to the merchant (spike-confirmed in `runegate MONEY_FLOW.md`); record gross `Amount` + `Commission` in the ledger. **Product side:** Runegate's deposit commission is **admin-configurable per merchant** (`tblM_Company_Merchant_Commission`, `Dashboard.Admin/Setting/MerchantCommission.aspx`); **set the kash-cards merchant to 0/near-0** so deposits are face-value and kash-cards' only fee is the existing card `RechargeFeeRate` at spend (R9). Note: Runegate's admin UI currently enforces `0 < commission ≤ 100` (their Issue #489), so a *true* 0 needs either a direct DB set or a one-line relax of `CommissionInput.Validate` (we own Runegate). | Keep a deposit commission / credit gross | ✔ **decided: credit net in code; set Runegate merchant commission to 0/near-0** |
+| R15 | What amount a deposit credits (gross vs. net) | **Credit the webhook `Total` (net = `Amount − Commission`)** in code — never credit more than Runegate settled to the merchant (spike-confirmed in `runegate MONEY_FLOW.md`); record the commission in the ledger. **Ledger-amount convention (resolves the R15-vs-C6.d contradiction):** the ledger `Amount` column stores the **net balance delta**, *not* the gross deposit, so every row satisfies the canonical forensic tamper-check `BalancePrevious + Amount = Balance` (Plan 3 `tmp/forensics.sql`) with one uniform rule across credits, debits, refunds, and reversals. The commission is recorded in the separate `Commision` column and the **gross deposit is recoverable as `Amount + Commision`** — so nothing is lost. (This supersedes the earlier "record gross `Amount`" wording, which is incompatible with the deployed `BalancePrevious + Amount = Balance` invariant for any commissioned credit; the forensic query needs no commission-aware change.) **Product side:** Runegate's deposit commission is **admin-configurable per merchant** (`tblM_Company_Merchant_Commission`, `Dashboard.Admin/Setting/MerchantCommission.aspx`); **set the kash-cards merchant to 0/near-0** so deposits are face-value and kash-cards' only fee is the existing card `RechargeFeeRate` at spend (R9). Note: Runegate's admin UI currently enforces `0 < commission ≤ 100` (their Issue #489), so a *true* 0 needs either a direct DB set or a one-line relax of `CommissionInput.Validate` (we own Runegate). | Keep a deposit commission / credit gross | ✔ **decided: credit net in code; set Runegate merchant commission to 0/near-0** |
 
 ## Runegate gateway facts (confirmed from the gateway source)
 
@@ -324,11 +324,30 @@ PGCrypto webhook handler.
 - **C2.a — A failed credit is silently lost (no retry).** `CallbackV1Controller.pgcrypto`
   fire-and-forgets `sr.PGCrypto(...)` and **always returns 200**; the INT handler swallows
   every exception. A DB blip mid-credit → Runegate sees 200, never retries, and the
-  deposit credit **vanishes** (real money). **Decision:** the credit reports
-  success/failure → the controller returns **non-200 on failure so Runegate retries**
-  (T2.3 idempotency makes retries safe), **and** the `tblH_Partner_Webhook` journal is
-  kept for scheduled/manual replay/reconciliation. Changes the callback contract from
-  always-200. *(genuine decision — flagged for sign-off)*
+  deposit credit **vanishes** (real money). **Decision (signed off; refined against the
+  sister gateways):** change the callback contract so the status code reflects the
+  outcome, following the exact runegate / qrypto-omni house pattern rather than a blunt
+  "non-200 on any failure":
+    - **200** on a successful state mutation **and on a deduped duplicate** — a duplicate
+      delivery is *not* a failure; the dedup row proves the prior atomic credit committed,
+      so returning 200 stops the retraining safely (qrypto-omni rolls back + returns 200).
+    - **401 / 400** on signature/validation failure *before* any mutation (forgery /
+      malformed payload) — fail fast, no retry value.
+    - **500 / 503** on an *operational* error (DB blip mid-credit, cross-check unreachable)
+      → Runegate's retry schedule redelivers; T2.3 per-event idempotency makes the retry a
+      no-op once the first attempt actually committed.
+  Keep the `tblH_Partner_Webhook` journal for scheduled/manual replay/reconciliation. The
+  key safety property (from the sisters): **dedup is a DB-level unique constraint +
+  exception-swallow, never app-layer check-then-insert** — the constraint closes the
+  concurrent-retry race the always-200 path silently lost money to. Add a sequential
+  pre-check read of the dedup row (qrypto-omni QO-0081) for slow-200 / manual-resend
+  redeliveries that aren't concurrent. *Confirmed convergent across both sisters:*
+  runegate `PGCrypto.API.Callback/Controllers/v1/PaymentV1Controller.cs` (200-on-success /
+  401-400-on-validation / 500-on-error) + `PaymentV1Service.svc.cs:174-186`
+  (`IsDuplicateKeyException`); qrypto-omni `QryptoOmni.API/Controllers/v1/CallbackV1Controller.cs`
+  + `QryptoOmni.INT/Security/SqlUniqueViolationDetector.cs`; rationale in runegate
+  `audit/bundles/loss-of-funds-webhook.md` §18 (invariant I-2) and qrypto-omni
+  `audit/fix-history/QO-0038.md` / `QO-0081.md`.
 - **C2.b — Dedup via the existing dedup table (resolved by the sister pattern).** Rather
   than a filtered index on the ledger's `TransactionID` (which collides with refund rows
   that reuse it), use the **already-present `tblH_Partner_Webhook_ID` table** keyed on the
