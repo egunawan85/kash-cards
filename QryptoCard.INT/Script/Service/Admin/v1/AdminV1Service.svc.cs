@@ -238,7 +238,7 @@ namespace QryptoCard.INT.Script.Service.Admin.v1
 
                     var hash = Secure.Base64Encode(q.Hash);
 
-                    NotificationService.sendEmailPasswordAdmin(data.Email, data.FirstName + " " + data.LastName, hash);
+                    NotificationMailkitService.sendEmailPasswordAdmin(data.Email, data.FirstName + " " + data.LastName, hash);
 
                     op.Status = "success";
                     op.Message = "Success generate OTP";
@@ -435,7 +435,7 @@ namespace QryptoCard.INT.Script.Service.Admin.v1
 
                 var hash = Secure.Base64Encode(x.AdminID);
                 var url = "https://admin-dev.qrypto.trade:88/InvitedAccount?id=" + hash;
-                NotificationService.sendEmailAdminInvitation(b.Email, b.InvitedByFirstName + " " + b.InvitedByLastName, x.FirstName + " " + x.LastName, url);
+                NotificationMailkitService.sendEmailAdminInvitation(b.Email, b.InvitedByFirstName + " " + b.InvitedByLastName, x.FirstName + " " + x.LastName, url);
 
                 op.Status = "success";
                 op.Message = "Success invite admin. Please ask admin to check email to verify his/her account.";

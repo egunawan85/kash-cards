@@ -12,28 +12,41 @@ namespace QryptoCard.INT.Callback.Service
     {
         public static void sendEmailFailed(string em, string card, string merchant, string amount, string rx)
         {
-            string to = em; //To address    
-            string from = "no-reply@qrypto.trade"; //From address   
-            MailMessage message = new MailMessage(from, to);
-
-            message.Subject = "Card Transaction Failed";
-            message.Body = sendEmailFailed(card, merchant, amount, rx);
-            message.BodyEncoding = Encoding.UTF8;
-            message.IsBodyHtml = true;
-            SmtpClient client = new SmtpClient("smtp.gmail.com", 587); //Gmail smtp    
-            System.Net.NetworkCredential basicCredential1 = new
-            System.Net.NetworkCredential("no-reply@qrypto.trade", QryptoCard.Sec.SecretsConfig.Require("EMAIL_PASSWORD"));
-            client.EnableSsl = true;
-            client.UseDefaultCredentials = false;
-            client.Credentials = basicCredential1;
+            // Best-effort notification: a failed-card email must never abort callback processing
+            // (the transaction is already persisted) or surface SMTP internals. The ENTIRE
+            // operation — config reads, template load, and send — runs inside the try so a
+            // malformed EMAIL_SMTP_PORT, a missing template, or an SMTP fault all degrade to a
+            // logged no-op rather than propagating.
             try
             {
-                client.Send(message);
-            }
+                // Postmark SMTP. The From must be a Postmark-verified sender signature; the SMTP
+                // login is the Postmark Server API Token used as BOTH username and password
+                // (Postmark's convention). Config is non-secret/env-overridable (defaults target
+                // Postmark); the token is a Require()d secret (also Preload()ed at startup). Read
+                // directly from SecretsConfig so this money-tier callback stays self-contained (no
+                // dependency on the main INT tier / KeyModel).
+                string from = QryptoCard.Sec.SecretsConfig.GetOptional("EMAIL_FROM", "no-reply@kash.cards");
+                string gateway = QryptoCard.Sec.SecretsConfig.GetOptional("EMAIL_SMTP_GATEWAY", "smtp.postmarkapp.com");
+                int port = Convert.ToInt32(QryptoCard.Sec.SecretsConfig.GetOptional("EMAIL_SMTP_PORT", "587"));
+                string token = QryptoCard.Sec.SecretsConfig.Require("POSTMARK_SERVER_TOKEN");
 
+                MailMessage message = new MailMessage(from, em);
+                message.Subject = "Card Transaction Failed";
+                message.Body = sendEmailFailed(card, merchant, amount, rx);
+                message.BodyEncoding = Encoding.UTF8;
+                message.IsBodyHtml = true;
+
+                using (SmtpClient client = new SmtpClient(gateway, port))
+                {
+                    client.EnableSsl = true; // STARTTLS on 587
+                    client.UseDefaultCredentials = false;
+                    client.Credentials = new System.Net.NetworkCredential(token, token);
+                    client.Send(message);
+                }
+            }
             catch (Exception ex)
             {
-                throw ex;
+                System.Diagnostics.Trace.TraceError("Transaction-failed email send failed: " + ex);
             }
         }
 

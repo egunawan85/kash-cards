@@ -482,8 +482,7 @@ namespace QryptoCard.INT.Script.Service.App.v1
 
                     var hash = Secure.Base64Encode(q.Hash);
 
-                    //NotificationService.sendEmailPassword(data.Email, "There", hash);
-                    //NotificationService.sendEmailPassword(data.Email, data.FirstName + " " + data.LastName, hash);
+                    NotificationMailkitService.sendEmailPassword(data.Email, data.FirstName + " " + data.LastName, hash);
 
                     op.Status = "success";
                     op.Message = "Success generate OTP";
