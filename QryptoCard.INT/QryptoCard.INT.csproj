@@ -122,6 +122,7 @@
     <Reference Include="System.Xml.Linq" />
   </ItemGroup>
   <ItemGroup>
+    <Content Include="Global.asax" />
     <Content Include="Content\Email\Admin\ForgotPassword.html" />
     <Content Include="Content\Email\Admin\InvitedAccount.html" />
     <Content Include="Content\Email\ForgotPassword.html" />
@@ -266,9 +267,10 @@
     <Compile Include="Model\PGCrypto\TransactionModel.cs" />
     <Compile Include="Script\Gateway\PGCrypto\PGCryptoService.cs" />
     <Compile Include="Script\Service\ISecurityService.cs" />
+    <Compile Include="Global.asax.cs">
+      <DependentUpon>Global.asax</DependentUpon>
+    </Compile>
     <Compile Include="Script\Service\NotificationMailkitService.cs" />
-    <Compile Include="Script\Service\NotificationService.cs" />
-    <Compile Include="Script\Service\NotificationSMTPService.cs" />
     <Compile Include="Script\Service\SecurityService.svc.cs">
       <DependentUpon>SecurityService.svc</DependentUpon>
     </Compile>
