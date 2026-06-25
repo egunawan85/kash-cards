@@ -48,7 +48,7 @@ log "Phase 2: seed Key Vault from deploy/secrets"
 ENV="$ENV" "$SCRIPT_DIR/scripts/secrets/seed-kv-secrets.sh"
 
 # ── Phase 3: bootstrap the VM (IIS, build tools, SQL Express, app login) ─────
-run_on_vm "$SCRIPT_DIR/scripts/provision/vm-bootstrap.ps1"
+run_on_vm "$SCRIPT_DIR/scripts/provision/vm-bootstrap.ps1" "KvName=$KEYVAULT_NAME Env=$ENV DbName=${DB_NAME:-qrypto-card} DbAppLogin=${DB_APP_LOGIN:-kash_app}"
 
 if [[ "$WITH_DEPLOY" -eq 0 ]]; then
   log "DONE (provision + bootstrap). Re-run with --with-deploy for the app pipeline."
@@ -56,7 +56,11 @@ if [[ "$WITH_DEPLOY" -eq 0 ]]; then
 fi
 
 # ── Phase 4: app + DB + perimeter (build-on-box) ─────────────────────────────
-run_on_vm "$SCRIPT_DIR/scripts/deploy/vm-fetch-source.ps1" "RepoUrl=$REPO_URL Branch=$REPO_BRANCH"
+run_on_vm "$SCRIPT_DIR/scripts/deploy/vm-fetch-source.ps1" "RepoUrl=$REPO_URL Branch=$REPO_BRANCH KvName=$KEYVAULT_NAME"
+# The filled infra config is gitignored, so it isn't in the clone -- push it to the VM
+# (base64 to survive run-command parameter transport) so the deploy scripts can source it.
+CFG_B64=$(base64 -w0 "$CFG")
+run_on_vm "$SCRIPT_DIR/scripts/deploy/vm-write-config.ps1" "ConfigB64=$CFG_B64 Env=$ENV"
 run_on_vm "$SCRIPT_DIR/scripts/deploy/vm-install-sqlpackage.ps1"
 run_on_vm "$SCRIPT_DIR/scripts/deploy/vm-publish-schema.ps1"      # 38 tables -> SQL Express
 run_on_vm "$SCRIPT_DIR/scripts/deploy/deploy-iis.ps1"             # 12 IIS sites + WCF/connstr rewrites

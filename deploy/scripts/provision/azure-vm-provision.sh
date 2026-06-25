@@ -326,8 +326,13 @@ else
   log "generating admin password and storing in KV"
   # Windows complexity: >=1 upper, >=1 lower, >=1 digit, >=1 special, 12+ chars.
   ADMIN_PWD="$(openssl rand -base64 24 | tr -d '/=+' | head -c 20)Aa1!"
-  az keyvault secret set \
-    --vault-name "$KEYVAULT_NAME" --name "$ADMIN_PWD_SECRET" --value "$ADMIN_PWD" >/dev/null
+  # Pass the value via a mode-600 temp file, never on argv (the process arg list is
+  # readable by other local processes). az vm create's --admin-password below is
+  # unavoidable argv, but ARM treats that field as a secureString.
+  pwtmp="$(umask 077 && mktemp)"
+  printf '%s' "$ADMIN_PWD" > "$pwtmp"
+  az keyvault secret set --vault-name "$KEYVAULT_NAME" --name "$ADMIN_PWD_SECRET" --file "$pwtmp" >/dev/null
+  rm -f "$pwtmp"
   ok "admin password stored in KV (secret: $ADMIN_PWD_SECRET)"
 fi
 

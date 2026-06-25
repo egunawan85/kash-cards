@@ -203,7 +203,12 @@ foreach ($int in $internalSites) {
     }
 
     Check "${proj} (:$port): NOT reachable on any non-loopback IP" {
-        if ($nonLoopback.Count -eq 0) { return 'no non-loopback IPs to probe (vacuously closed)' }
+        if ($nonLoopback.Count -eq 0) {
+            # Don't silently PASS: no routable IP means we proved nothing about off-box
+            # reachability (likely a DHCP/NIC misconfig on an Azure VM that should have one).
+            Write-Host '  [!!] no non-loopback IPv4 found -- off-box reachability NOT verified' -ForegroundColor Yellow
+            return 'WARN: no non-loopback IPs to probe (off-box reachability unverified)'
+        }
         $reachable = @()
         foreach ($ip in $nonLoopback) {
             if (Test-TcpOpen -IpAddress $ip -Port $port -TimeoutSec $NetworkTimeoutSec) { $reachable += $ip }

@@ -156,8 +156,8 @@ if ($DbAppLogin -notmatch '^[A-Za-z_][A-Za-z0-9_]{0,62}$') {
 # bracketed identifier ([$DbName]) in T-SQL and never bare. Reject only the
 # characters that could break out of bracket-quoting (']' and the statement
 # terminators) -- everything else is safe inside [...].
-if ($DbName -match '[\]\[;]' -or $DbName.Length -gt 63 -or [string]::IsNullOrWhiteSpace($DbName)) {
-    Stop-Bootstrap "DbName '$DbName' is empty, too long, or contains ']' '[' ';' -- refusing to interpolate into T-SQL"
+if ($DbName -match '[\]\[;'']' -or $DbName.Length -gt 63 -or [string]::IsNullOrWhiteSpace($DbName)) {
+    Stop-Bootstrap "DbName '$DbName' is empty, too long, or contains ']' '[' ';' '' -- refusing to interpolate into T-SQL"
 }
 
 # ===========================================================================

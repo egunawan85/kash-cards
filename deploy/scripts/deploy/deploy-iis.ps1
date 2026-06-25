@@ -184,10 +184,11 @@ function Get-DbPasswordFromKeyVault {
     Write-Step "az login --identity (VM managed identity) for Key Vault access"
     & $az login --identity --output none 2>$null
     if ($LASTEXITCODE -ne 0) { Stop-Deploy "az login --identity failed (exit $LASTEXITCODE)" }
-    Write-Step "pulling DB password (secret 'DB_PASSWORD') from Key Vault $VaultName"
+    # KV secret names cannot contain '_'; seed-kv-secrets.sh stored it as DB-PASSWORD.
+    Write-Step "pulling DB password (secret 'DB-PASSWORD') from Key Vault $VaultName"
     $tmp = New-TemporaryFile
     try {
-        $pw = & $az keyvault secret show --vault-name $VaultName --name 'DB_PASSWORD' `
+        $pw = & $az keyvault secret show --vault-name $VaultName --name 'DB-PASSWORD' `
             --query value --output tsv 2>$tmp
         if ($LASTEXITCODE -ne 0) {
             $err = (Get-Content $tmp -Raw) -replace '\s+$', ''
