@@ -114,6 +114,7 @@ namespace QryptoCard.Tests.Fixtures.LocalDb
             ApplySchema();
             ApplyTokenSchema();
             ApplyWalletIndexes();
+            ApplyWebhookDedupIndex();
             SeedData();
         }
 
@@ -241,6 +242,14 @@ namespace QryptoCard.Tests.Fixtures.LocalDb
 
         static string ResolveWalletIndexesPath()
             => ResolveRepoFilePath("deploy", "sql", "create-wallet-indexes.sql");
+
+        // The per-event webhook dedup unique index — the replay defence the deposit-credit
+        // branch relies on. Applied like the other additive deploy DDL so the dedup tests
+        // exercise the real constraint.
+        void ApplyWebhookDedupIndex() => RunScriptFile(ResolveWebhookDedupIndexPath());
+
+        static string ResolveWebhookDedupIndexPath()
+            => ResolveRepoFilePath("deploy", "sql", "create-webhook-dedup-index.sql");
 
         void RunScriptFile(string path)
         {

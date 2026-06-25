@@ -69,10 +69,31 @@ namespace QryptoCard.INT.Callback.Service
                 type, transactionId, status, "insufficient_balance");
         }
 
+        /// <summary>
+        /// Credit a confirmed inbound deposit, deduped per-event in the SAME transaction as
+        /// the credit. The dedup row (tblH_Partner_Webhook_ID, keyed on TransactionID|Status,
+        /// Type='PGCrypto') is inserted first; a duplicate-key means this exact event already
+        /// credited, so the whole transaction rolls back and returns "duplicate_event" — no
+        /// double credit. Because the dedup insert and the balance mutation commit or roll
+        /// back together, a crash between them can never leave a deposit deduped-but-uncredited
+        /// (the F-0031 loss-of-funds lesson). Credits the net amount; records commission.
+        /// </summary>
+        public static BalanceMutationResult CreditDeposit(
+            string userId, decimal netAmount, decimal commission, double commissionInPercentage,
+            string transactionId, string status, string dedupRequest)
+        {
+            if (netAmount < 0m) return BalanceMutationResult.Fail("negative_credit");
+            string dedupKey = transactionId + "|" + (status ?? "");
+            return Mutate(userId, netAmount, false, 0m, netAmount, commission,
+                commissionInPercentage, TypeCryptoDeposit, transactionId, status, "wallet_missing",
+                dedupType: "PGCrypto", dedupKey: dedupKey, dedupRequest: dedupRequest);
+        }
+
         private static BalanceMutationResult Mutate(
             string userId, decimal balanceDelta, bool requireMinBalance, decimal minBalance,
             decimal ledgerAmount, decimal ledgerCommission, double ledgerCommissionPct,
-            string type, string transactionId, string status, string noRowReason)
+            string type, string transactionId, string status, string noRowReason,
+            string dedupType = null, string dedupKey = null, string dedupRequest = null)
         {
             string updateSql =
                 "UPDATE dbo.tblM_User_Balance " +
@@ -95,6 +116,26 @@ namespace QryptoCard.INT.Callback.Service
             {
                 try
                 {
+                    // Per-event dedup, in the SAME transaction as the credit: insert first so a
+                    // duplicate-key rolls the whole thing back (no double credit), and a crash
+                    // after this point cannot leave the event deduped-but-uncredited.
+                    if (dedupKey != null)
+                    {
+                        try
+                        {
+                            ctx.Database.ExecuteSqlCommand(
+                                "INSERT INTO dbo.tblH_Partner_Webhook_ID (Type, TXID, Request, RequestDate) " +
+                                "VALUES (@dtype, @dkey, @dreq, @now)",
+                                P("@dtype", dedupType), P("@dkey", dedupKey),
+                                P("@dreq", dedupRequest), P("@now", now));
+                        }
+                        catch (Exception dupEx) when (IsDuplicateKey(dupEx))
+                        {
+                            tx.Rollback();
+                            return BalanceMutationResult.Fail("duplicate_event");
+                        }
+                    }
+
                     var updateRows = ctx.Database.SqlQuery<BalanceDelta>(updateSql,
                         P("@uid", userId),
                         P("@cur", CurrencyUSDT),
@@ -190,7 +231,7 @@ namespace QryptoCard.INT.Callback.Service
             return new SqlParameter(name, value ?? DBNull.Value);
         }
 
-        public static bool IsDuplicateKey(DbUpdateException ex)
+        public static bool IsDuplicateKey(Exception ex)
         {
             for (Exception e = ex; e != null; e = e.InnerException)
             {

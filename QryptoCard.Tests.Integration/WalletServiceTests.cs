@@ -163,6 +163,83 @@ namespace QryptoCard.Tests.Integration
             Assert.Equal("wallet_missing", r.FailureReason);
         }
 
+        // ---- Deposit credit + per-event dedup (the webhook credit path) ----------
+
+        [Fact]
+        public void CreditDeposit_FirstDelivery_CreditsAndRecordsDedupRow()
+        {
+            var uid = FreshUser("dep");
+            WalletService.EnsureWallet(uid);
+            var tx = "tx-dep-" + Guid.NewGuid().ToString("N").Substring(0, 8);
+
+            var r = WalletService.CreditDeposit(uid, 100m, 0m, 0d, tx, "COMPLETED", "{}");
+
+            Assert.True(r.Success);
+            Assert.Equal(100m, BalanceOf(uid));
+            using (var ctx = _db.NewContext())
+            {
+                Assert.Equal(1, ctx.tblH_User_Balance.Count(p => p.TransactionID == tx));
+                Assert.Equal(1, ctx.tblH_Partner_Webhook_ID.Count(p => p.TXID == tx + "|COMPLETED"));
+            }
+        }
+
+        [Fact]
+        public void CreditDeposit_DuplicateEvent_SecondIsNoOp()
+        {
+            var uid = FreshUser("dup");
+            WalletService.EnsureWallet(uid);
+            var tx = "tx-dup-" + Guid.NewGuid().ToString("N").Substring(0, 8);
+
+            var first = WalletService.CreditDeposit(uid, 100m, 0m, 0d, tx, "COMPLETED", "{}");
+            var second = WalletService.CreditDeposit(uid, 100m, 0m, 0d, tx, "COMPLETED", "{}");
+
+            Assert.True(first.Success);
+            Assert.False(second.Success);
+            Assert.Equal("duplicate_event", second.FailureReason);
+            Assert.Equal(100m, BalanceOf(uid)); // credited exactly once
+            using (var ctx = _db.NewContext())
+                Assert.Equal(1, ctx.tblH_User_Balance.Count(p => p.TransactionID == tx));
+        }
+
+        [Fact]
+        public void CreditDeposit_SameTxDifferentStatus_BothLand()
+        {
+            // The per-event key is (TransactionID, Status), so a PENDING and a COMPLETED delivery
+            // are distinct keys — collapsing them to the bare tx id would skip a credit (F-0031a).
+            var uid = FreshUser("status");
+            WalletService.EnsureWallet(uid);
+            var tx = "tx-st-" + Guid.NewGuid().ToString("N").Substring(0, 8);
+
+            var a = WalletService.CreditDeposit(uid, 10m, 0m, 0d, tx, "PENDING", "{}");
+            var b = WalletService.CreditDeposit(uid, 90m, 0m, 0d, tx, "COMPLETED", "{}");
+
+            Assert.True(a.Success);
+            Assert.True(b.Success);
+            Assert.Equal(100m, BalanceOf(uid));
+            using (var ctx = _db.NewContext())
+                Assert.Equal(2, ctx.tblH_Partner_Webhook_ID.Count(p => p.TXID == tx + "|PENDING" || p.TXID == tx + "|COMPLETED"));
+        }
+
+        [Fact]
+        public void CreditDeposit_MissingWallet_RollsBackDedup_RetryableAfterEnsure()
+        {
+            // No wallet row yet: the credit fails closed AND the dedup row must roll back, so a
+            // retry after EnsureWallet still credits (the dedup didn't "consume" the event).
+            var uid = FreshUser("deprb");
+            var tx = "tx-rb-" + Guid.NewGuid().ToString("N").Substring(0, 8);
+
+            var fail = WalletService.CreditDeposit(uid, 100m, 0m, 0d, tx, "COMPLETED", "{}");
+            Assert.False(fail.Success);
+            Assert.Equal("wallet_missing", fail.FailureReason);
+            using (var ctx = _db.NewContext())
+                Assert.Equal(0, ctx.tblH_Partner_Webhook_ID.Count(p => p.TXID == tx + "|COMPLETED")); // rolled back
+
+            WalletService.EnsureWallet(uid);
+            var ok = WalletService.CreditDeposit(uid, 100m, 0m, 0d, tx, "COMPLETED", "{}");
+            Assert.True(ok.Success);
+            Assert.Equal(100m, BalanceOf(uid));
+        }
+
         [Fact]
         public void Ledger_Reconciles_SumOfAmounts_EqualsBalance()
         {
