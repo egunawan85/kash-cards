@@ -949,6 +949,85 @@ namespace QryptoCard.INT.Script.Service.App.v1
             return op;
         }
 
+        // Return the authenticated user's static deposit address (+ network/coin for a QR
+        // payload), provisioning one on first view. Strictly scoped to the caller's own user
+        // (derived from the bearer identity, never a body-supplied id) to prevent IDOR.
+        public OutputModel getDepositAddress(string em)
+        {
+            try
+            {
+                var uid = getUserId(em);
+                var addr = WalletService.EnsureDepositAddress(uid);
+                if (addr == null)
+                {
+                    op.Status = "failed";
+                    op.Message = "No deposit address available";
+                    return op;
+                }
+                op.Data = JsonConvert.SerializeObject(new
+                {
+                    Address = addr.Address,
+                    NetworkID = addr.NetworkID,
+                    Network = "TRC20",
+                    Coin = "USDT"
+                }, Formatting.None);
+                op.Status = "success";
+                op.Message = "Success get deposit address";
+            }
+            catch (Exception ex)
+            {
+                op.Message = ex.Message;
+                op.Status = "error";
+            }
+            return op;
+        }
+
+        // Paginated prepaid-balance ledger for the authenticated user. Scoped to the caller's
+        // own user (IDOR-safe); the internal surrogate ID and BalanceID are not exposed.
+        public OutputModel getLedger(string em, int page, int pageSize)
+        {
+            try
+            {
+                var uid = getUserId(em);
+                if (page < 1) page = 1;
+                if (pageSize < 1 || pageSize > 100) pageSize = 20;
+
+                var q = db.tblH_User_Balance.Where(p => p.UserID == uid);
+                var total = q.Count();
+                var rows = q.OrderByDescending(p => p.ID)
+                    .Skip((page - 1) * pageSize)
+                    .Take(pageSize)
+                    .Select(p => new
+                    {
+                        p.Type,
+                        p.Amount,
+                        p.Commision,
+                        p.BalancePrevious,
+                        p.Balance,
+                        p.TransactionID,
+                        p.Status,
+                        p.CreatedDate
+                    })
+                    .ToList();
+
+                op.Data = JsonConvert.SerializeObject(new
+                {
+                    Page = page,
+                    PageSize = pageSize,
+                    Total = total,
+                    Items = rows
+                }, Formatting.None);
+                op.Status = "success";
+                op.Message = "Success get ledger";
+            }
+            catch (Exception ex)
+            {
+                op.Message = ex.Message;
+                op.Status = "error";
+            }
+            return op;
+        }
+
 
         public OutputModel generateKeyOTP(string em)
         {
