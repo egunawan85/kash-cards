@@ -154,6 +154,23 @@ Driven by the idempotent `cloudflare-setup.sh` pattern.
   Plan 3 adds real signature verification. Then point both providers at the new
   callback URLs and confirm their webhooks arrive.
 
+**Implementation note (dev shakeout, `s16.xyz`).** The D5 subdomain→site decision is now an
+explicit, operator-named **`ROUTES`** array in `.env.cloudflare.<env>` (runegate-infra
+pattern: `"<prefix>:<service-url>"`, hostname = `<prefix>.<zone>`). Finalized exposure — **5
+public**: `app` (Dashboard), `admin` (Dashboard.Admin, login-gated), `api` (API.Public,
+programmatic API-key), `callback`, `docs`; **internal/loopback**: `QryptoCard.API` +
+`API.Admin` (dashboard backends, reached server-side over loopback — no browser calls),
+`API.Scheduler`, the three INT tiers, and `Scrapper`. Mirrors runegate/qrypto-omni: admin
+*API* and scheduler stay dark; the admin *dashboard* is public but auth-gated. Origin
+services use `127.0.0.1` (not `localhost` → IPv6 `::1`, while IIS binds IPv4 only).
+
+**T4.3 / T4.4 (hardening + WAF) are gated on a broader CF token** (Zone Settings:Edit + Zone
+WAF:Edit). The dev token carries Tunnel+DNS only, so the setup creates tunnel/ingress/DNS and
+**skips** hardening/WAF with a clear note — apply at the prod cutover. **T4.5 (callback
+IP-lock)** is defense-in-depth only: the HMAC webhook signature (Plan 3 / Plan 7) is the
+actual auth, so the IP-lock is optional belt-and-suspenders, best applied at the Cloudflare
+WAF by real client IP (behind the tunnel the NSG/app sees only Cloudflare IPs).
+
 ## Slice 5 — Cutover & decommission
 
 - **T5.1 — Production validation.** Run the full flow on the new box: crypto
