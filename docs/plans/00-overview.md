@@ -32,6 +32,7 @@ Numbered in **implementation order** — rotation → deployment → hardening:
 - [`03-security-hardening.md`](03-security-hardening.md)
 - [`04-auth-tokens-2fa.md`](04-auth-tokens-2fa.md) — bearer-token & email-OTP/2FA design (broke out of P3·S3; awaiting sign-off)
 - [`05-execution-runbook.md`](05-execution-runbook.md) — **operational plan of record**: dev shakeout → prod cutover (how the code-complete hardening goes live)
+- [`07-runegate-prepaid-balance.md`](07-runegate-prepaid-balance.md) — feature design: deposit to a Runegate address → reusable prepaid balance → spend on cards (money-path refactor + security review; 📝 draft, awaiting sign-off)
 
 ## Progress (live status)
 
