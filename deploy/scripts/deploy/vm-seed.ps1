@@ -74,6 +74,14 @@ $smokeEmail = 'smoke-user@kash.cards'
 $apiKey     = 'smoke-' + [Guid]::NewGuid().ToString('N')
 $apiSecret  = [Guid]::NewGuid().ToString('N') + [Guid]::NewGuid().ToString('N')
 
+# Internal RT: $adminEmail is spliced into seed-admin.sql via sqlcmd -v (textual
+# substitution). The base64 ciphertext + GUID values are inherently quote-free, but an
+# operator-supplied SEED_ADMIN_EMAIL is not -- validate its shape so it cannot break out
+# of the N'...' string literal (defense-in-depth; the default is the fixed dev admin).
+if ($adminEmail -notmatch '^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$') {
+    Die "SEED_ADMIN_EMAIL '$adminEmail' has an unexpected shape -- refusing to splice into seed SQL"
+}
+
 $adminPwdDb    = Enc $adminPwd  $DBKEY
 $userPwdDb     = Enc $userPwd   $DBKEY
 $apiSecretDb   = Enc $apiSecret $DBKEY
