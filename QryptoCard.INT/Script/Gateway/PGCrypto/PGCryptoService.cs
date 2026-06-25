@@ -33,7 +33,7 @@ namespace QryptoCard.INT.Script.Gateway.PGCrypto
 
                 clients.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
 
-                ServicePointManager.SecurityProtocol = SecurityProtocolType.Ssl3 | SecurityProtocolType.Tls | SecurityProtocolType.Tls11 | SecurityProtocolType.Tls12;
+                ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls12;
 
                 string path = "/v1/address/static/generate";
                 clients.DefaultRequestHeaders.Add("Authorization", "Basic " + credentials());
@@ -103,7 +103,7 @@ namespace QryptoCard.INT.Script.Gateway.PGCrypto
 
                 clients.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
 
-                ServicePointManager.SecurityProtocol = SecurityProtocolType.Ssl3 | SecurityProtocolType.Tls | SecurityProtocolType.Tls11 | SecurityProtocolType.Tls12;
+                ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls12;
 
                 string path = "/v1/master/data/coin";
                 clients.DefaultRequestHeaders.Add("Authorization", "Basic " + credentials());
@@ -170,7 +170,7 @@ namespace QryptoCard.INT.Script.Gateway.PGCrypto
 
                 clients.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
 
-                ServicePointManager.SecurityProtocol = SecurityProtocolType.Ssl3 | SecurityProtocolType.Tls | SecurityProtocolType.Tls11 | SecurityProtocolType.Tls12;
+                ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls12;
 
                 string path = "/v1/master/data/coin";
                 clients.DefaultRequestHeaders.Add("Authorization", "Basic " + credentials());
@@ -237,7 +237,7 @@ namespace QryptoCard.INT.Script.Gateway.PGCrypto
 
                 clients.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
 
-                ServicePointManager.SecurityProtocol = SecurityProtocolType.Ssl3 | SecurityProtocolType.Tls | SecurityProtocolType.Tls11 | SecurityProtocolType.Tls12;
+                ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls12;
 
                 string path = "/v1/customer";
                 clients.DefaultRequestHeaders.Add("Authorization", "Basic " + credentials());
@@ -307,7 +307,7 @@ namespace QryptoCard.INT.Script.Gateway.PGCrypto
 
                 clients.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
 
-                ServicePointManager.SecurityProtocol = SecurityProtocolType.Ssl3 | SecurityProtocolType.Tls | SecurityProtocolType.Tls11 | SecurityProtocolType.Tls12;
+                ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls12;
 
                 string path = "/v1/invoice";
                 clients.DefaultRequestHeaders.Add("Authorization", "Basic " + credentials());

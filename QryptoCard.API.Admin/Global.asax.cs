@@ -11,6 +11,10 @@ namespace QryptoCard.API.Admin
     {
         protected void Application_Start()
         {
+            // Pin outbound TLS to 1.2 (no weak-protocol fallback); certificate validation is the
+            // framework default now that the accept-all cert-bypass has been removed process-wide.
+            System.Net.ServicePointManager.SecurityProtocol = System.Net.SecurityProtocolType.Tls12;
+
             GlobalConfiguration.Configure(WebApiConfig.Register);
         }
     }

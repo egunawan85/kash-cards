@@ -49,6 +49,7 @@
     <Compile Include="SecretsConfig.cs" />
     <Compile Include="RunegateWebhookVerifier.cs" />
     <Compile Include="WasabiSignatureVerifier.cs" />
+    <Compile Include="WebhookCrossCheckEvaluator.cs" />
     <Compile Include="SharedSecretAuth.cs" />
     <Compile Include="OtpCodes.cs" />
     <Compile Include="AuthTokens.cs" />

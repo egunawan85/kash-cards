@@ -15,14 +15,6 @@ namespace QryptoCard.API.Controllers.v1
         UserV1ServiceClient sr = new UserV1ServiceClient();
         OutputModel op = new OutputModel();
 
-        private void trustConnection()
-        {
-            ServicePointManager.ServerCertificateValidationCallback +=
-                (se, cert, chain, sslerror) =>
-                {
-                    return true;
-                };
-        }
 
         [Route("register")]
         [HttpPost]
@@ -30,7 +22,6 @@ namespace QryptoCard.API.Controllers.v1
         {
             try
             {
-                trustConnection();
                 op = sr.Register(x);
             }
             catch (Exception ex)
@@ -51,7 +42,6 @@ namespace QryptoCard.API.Controllers.v1
         {
             try
             {
-                trustConnection();
                 op = sr.regenerateOTPRegister(x);
             }
             catch (Exception ex)
@@ -70,7 +60,6 @@ namespace QryptoCard.API.Controllers.v1
         {
             try
             {
-                trustConnection();
                 op = sr.RegisterVerify(x);
                 if (op.Status == "success")
                     op.Data = JsonConvert.DeserializeObject<tblM_User>(op.Data.ToString());
@@ -94,7 +83,6 @@ namespace QryptoCard.API.Controllers.v1
         {
             try
             {
-                trustConnection();
                 op = sr.Login(x);
             }
             catch (Exception ex)
@@ -113,7 +101,6 @@ namespace QryptoCard.API.Controllers.v1
         {
             try
             {
-                trustConnection();
                 op = sr.regenerateOTP(x);
             }
             catch (Exception ex)
@@ -132,7 +119,6 @@ namespace QryptoCard.API.Controllers.v1
         {
             try
             {
-                trustConnection();
                 op = sr.LoginVerify(x);
                 if (op.Status == "success")
                     op.Data = JsonConvert.DeserializeObject<tblM_User>(op.Data.ToString());
@@ -153,7 +139,6 @@ namespace QryptoCard.API.Controllers.v1
         {
             try
             {
-                trustConnection();
                 op = sr.forgotPassword(x);
                 //if (op.Status == "success")
                 //    op.Data = JsonConvert.DeserializeObject<vw_User>(op.Data.ToString());
@@ -174,7 +159,6 @@ namespace QryptoCard.API.Controllers.v1
         {
             try
             {
-                trustConnection();
                 op = sr.checkForgotPassword(x);
                 //if (op.Status == "success")
                 //    op.Data = JsonConvert.DeserializeObject<vw_User>(op.Data.ToString());
@@ -195,7 +179,6 @@ namespace QryptoCard.API.Controllers.v1
         {
             try
             {
-                trustConnection();
                 op = sr.changePassword(x);
                 //if (op.Status == "success")
                 //    op.Data = JsonConvert.DeserializeObject<vw_User>(op.Data.ToString());
@@ -210,49 +193,6 @@ namespace QryptoCard.API.Controllers.v1
             return op;
         }
 
-
-        //[Route("invited/check")]
-        //[HttpPost]
-        //public OutputModel getInvitedAccount(tblM_User x)
-        //{
-        //    try
-        //    {
-        //        trustConnection();
-        //        op = sr.getInvitedUser(x);
-        //        if (op.Status == "success")
-        //            op.Data = JsonConvert.DeserializeObject<UserModel>(op.Data.ToString());
-        //    }
-        //    catch (Exception ex)
-        //    {
-        //        op.Status = "error";
-        //        op.Message = ex.Message;
-        //        op.Data = null;
-        //    }
-
-        //    return op;
-        //}
-
-
-        //[Route("invited/onboarding")]
-        //[HttpPut]
-        //public OutputModel updateInvitedAccount(tblM_User x)
-        //{
-        //    try
-        //    {
-        //        trustConnection();
-        //        op = sr.updateInvitedUser(x);
-        //        //if (op.Status == "success")
-        //        //    op.Data = JsonConvert.DeserializeObject<UserModel>(op.Data.ToString());
-        //    }
-        //    catch (Exception ex)
-        //    {
-        //        op.Status = "error";
-        //        op.Message = ex.Message;
-        //        op.Data = null;
-        //    }
-
-        //    return op;
-        //}
 
         // ---------- auth-token routes ----------
         //

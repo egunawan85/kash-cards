@@ -7,6 +7,10 @@ namespace QryptoCard.INT.Callback
     {
         protected void Application_Start(object sender, EventArgs e)
         {
+            // Pin outbound TLS to 1.2 (no weak-protocol fallback); certificate validation is the
+            // framework default now that the accept-all cert-bypass has been removed process-wide.
+            System.Net.ServicePointManager.SecurityProtocol = System.Net.SecurityProtocolType.Tls12;
+
             // Fail fast if the shared secret protecting the money-tier WCF operations is not
             // provisioned, rather than faulting on the first inbound call.
             QryptoCard.Sec.SecretsConfig.Preload("INT_CALLBACK_SHARED_SECRET");

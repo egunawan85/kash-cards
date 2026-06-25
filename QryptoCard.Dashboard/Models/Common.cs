@@ -42,14 +42,6 @@ namespace QryptoCard.Dashboard.Models
             }
         }
 
-        public static void trustConnection()
-        {
-            ServicePointManager.ServerCertificateValidationCallback +=
-                (se, cert, chain, sslerror) =>
-                {
-                    return true;
-                };
-        }
 
         public static bool checkID()
         {

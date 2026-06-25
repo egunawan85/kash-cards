@@ -44,10 +44,6 @@ namespace QryptoCard.INT.Script.Service.Admin.v1
 
 
         [OperationContract]
-        void testEmail();
-
-
-        [OperationContract]
         OutputModel getAdminData(string em, string x);
 
         [OperationContract]

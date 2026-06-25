@@ -29,14 +29,6 @@ namespace QryptoCard.API.Public.Controllers.v1
             return originalString.Split(':')[0];
         }
 
-        private void trustConnection()
-        {
-            ServicePointManager.ServerCertificateValidationCallback +=
-                (se, cert, chain, sslerror) =>
-                {
-                    return true;
-                };
-        }
 
         [Route("card/type")]
         [HttpGet]
@@ -45,7 +37,6 @@ namespace QryptoCard.API.Public.Controllers.v1
             try
             {
                 tblM_Card_Type x = new tblM_Card_Type();
-                trustConnection();
                 op = sr.CardType(getKey(), x);
                 if (op.Status == "success")
                     op.Data = JsonConvert.DeserializeObject<List<CardTypeModel>>(op.Data.ToString());
@@ -66,7 +57,6 @@ namespace QryptoCard.API.Public.Controllers.v1
         {
             try
             {
-                trustConnection();
                 op = sr.getCardTypeById(getKey(), x);
                 if (op.Status == "success")
                     op.Data = JsonConvert.DeserializeObject<CardTypeModel>(op.Data.ToString());

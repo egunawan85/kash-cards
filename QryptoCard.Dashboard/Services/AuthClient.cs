@@ -95,7 +95,6 @@ namespace QryptoCard.Dashboard.Services
         {
             try
             {
-                Common.trustConnection();
                 using (var client = new WebClient())
                 {
                     client.Headers[HttpRequestHeader.ContentType] = "application/json";
@@ -140,7 +139,6 @@ namespace QryptoCard.Dashboard.Services
             {
                 if (!string.IsNullOrEmpty(refreshToken))
                 {
-                    Common.trustConnection();
                     using (var client = new WebClient())
                     {
                         client.Headers[HttpRequestHeader.ContentType] = "application/json";
@@ -210,7 +208,6 @@ namespace QryptoCard.Dashboard.Services
         // body unparsed. A 401 surfaces as the WebException the retry wrapper catches.
         private static string ExecuteOnceRaw(string path, string method, string json)
         {
-            Common.trustConnection();
             using (var client = new WebClient())
             {
                 client.Headers[HttpRequestHeader.Authorization] = "Bearer " + (SessionLib.Current.AccessToken ?? "");
@@ -252,7 +249,6 @@ namespace QryptoCard.Dashboard.Services
 
                 try
                 {
-                    Common.trustConnection();
                     using (var client = new WebClient())
                     {
                         client.Headers[HttpRequestHeader.ContentType] = "application/json";

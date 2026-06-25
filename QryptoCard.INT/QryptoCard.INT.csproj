@@ -146,7 +146,6 @@
       <LastGenOutput>DB.cs</LastGenOutput>
     </Content>
     <Content Include="Script\Service\Admin\v1\AdminV1Service.svc" />
-    <Content Include="Script\Service\Admin\v1\AutomationV1Service.svc" />
     <Content Include="Script\Service\Admin\v1\CardV1Service.svc" />
     <Content Include="Script\Service\Admin\v1\DashboardV1Service.svc" />
     <Content Include="Script\Service\Admin\v1\SettingV1Service.svc" />
@@ -155,7 +154,6 @@
     <Content Include="Script\Service\App\v1\CardV1Service.svc" />
     <Content Include="Script\Service\App\v1\UserV1Service.svc" />
     <Content Include="Script\Service\Auth\v1\AuthV1Service.svc" />
-    <Content Include="Script\Service\ManualService.svc" />
     <Content Include="Script\Service\SecurityService.svc" />
     <Content Include="Service1.svc" />
     <Content Include="Web.config" />
@@ -226,9 +224,6 @@
     <Compile Include="Script\Service\Admin\v1\AdminV1Service.svc.cs">
       <DependentUpon>AdminV1Service.svc</DependentUpon>
     </Compile>
-    <Compile Include="Script\Service\Admin\v1\AutomationV1Service.svc.cs">
-      <DependentUpon>AutomationV1Service.svc</DependentUpon>
-    </Compile>
     <Compile Include="Script\Service\Admin\v1\CardV1Service.svc.cs">
       <DependentUpon>CardV1Service.svc</DependentUpon>
     </Compile>
@@ -236,7 +231,6 @@
       <DependentUpon>DashboardV1Service.svc</DependentUpon>
     </Compile>
     <Compile Include="Script\Service\Admin\v1\IAdminV1Service.cs" />
-    <Compile Include="Script\Service\Admin\v1\IAutomationV1Service.cs" />
     <Compile Include="Script\Service\Admin\v1\ICardV1Service.cs" />
     <Compile Include="Script\Service\Admin\v1\IDashboardV1Service.cs" />
     <Compile Include="Script\Service\Admin\v1\ISettingV1Service.cs" />
@@ -271,11 +265,7 @@
     <Compile Include="Model\PGCrypto\TokenModel.cs" />
     <Compile Include="Model\PGCrypto\TransactionModel.cs" />
     <Compile Include="Script\Gateway\PGCrypto\PGCryptoService.cs" />
-    <Compile Include="Script\Service\IManualService.cs" />
     <Compile Include="Script\Service\ISecurityService.cs" />
-    <Compile Include="Script\Service\ManualService.svc.cs">
-      <DependentUpon>ManualService.svc</DependentUpon>
-    </Compile>
     <Compile Include="Script\Service\NotificationMailkitService.cs" />
     <Compile Include="Script\Service\NotificationService.cs" />
     <Compile Include="Script\Service\NotificationSMTPService.cs" />

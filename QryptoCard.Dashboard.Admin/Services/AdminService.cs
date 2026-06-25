@@ -18,7 +18,6 @@ namespace QryptoCard.Dashboard.Admin.Services
         {
             try
             {
-                Common.trustConnection();
                 string path = "/v1/auth/login";
                 return op = AuthClient.ExecuteJsonPost(path, adm);
             }
@@ -34,7 +33,6 @@ namespace QryptoCard.Dashboard.Admin.Services
         {
             try
             {
-                Common.trustConnection();
                 string path = "/v1/auth/login/verify";
                 return op = AuthClient.ExecuteJsonPost(path, adm);
             }
@@ -50,7 +48,6 @@ namespace QryptoCard.Dashboard.Admin.Services
         {
             try
             {
-                Common.trustConnection();
                 string path = "/v1/auth/login/resend";
                 return op = AuthClient.ExecuteJsonPost(path, adm);
             }
@@ -66,7 +63,6 @@ namespace QryptoCard.Dashboard.Admin.Services
         {
             try
             {
-                Common.trustConnection();
                 string path = "/v1/auth/password/forgot";
                 return op = AuthClient.ExecuteJsonPost(path, adm);
             }
@@ -82,7 +78,6 @@ namespace QryptoCard.Dashboard.Admin.Services
         {
             try
             {
-                Common.trustConnection();
                 string path = "/v1/auth/password/forgot/check";
                 return op = AuthClient.ExecuteJsonPost(path, adm);
             }
@@ -98,7 +93,6 @@ namespace QryptoCard.Dashboard.Admin.Services
         {
             try
             {
-                Common.trustConnection();
                 string path = "/v1/auth/password/forgot/change";
                 return op = AuthClient.ExecuteJsonPost(path, adm);
             }
@@ -114,7 +108,6 @@ namespace QryptoCard.Dashboard.Admin.Services
         {
             try
             {
-                Common.trustConnection();
                 string path = "/v1/auth/invited/check";
                 return op = AuthClient.ExecuteJsonPost(path, adm);
             }
@@ -129,7 +122,6 @@ namespace QryptoCard.Dashboard.Admin.Services
         {
             try
             {
-                Common.trustConnection();
                 string path = "/v1/auth/invited/onboarding";
                 return op = AuthClient.ExecuteJsonPut(path, adm);
             }
@@ -145,7 +137,6 @@ namespace QryptoCard.Dashboard.Admin.Services
         {
             try
             {
-                Common.trustConnection();
                 string path = "/v1/admin/list";
                 return op = AuthClient.ExecuteJsonPost(path, adm);
             }
@@ -161,7 +152,6 @@ namespace QryptoCard.Dashboard.Admin.Services
         {
             try
             {
-                Common.trustConnection();
                 string path = "/v1/admin/detail";
                 return op = AuthClient.ExecuteJsonPost(path, adm);
             }
@@ -177,7 +167,6 @@ namespace QryptoCard.Dashboard.Admin.Services
         {
             try
             {
-                Common.trustConnection();
                 string path = "/v1/admin/invite";
                 return op = AuthClient.ExecuteJsonPost(path, adm);
             }
@@ -193,7 +182,6 @@ namespace QryptoCard.Dashboard.Admin.Services
         {
             try
             {
-                Common.trustConnection();
                 string path = "/v1/admin/ban";
                 return op = AuthClient.ExecuteJsonDelete(path, adm);
             }
@@ -209,7 +197,6 @@ namespace QryptoCard.Dashboard.Admin.Services
         {
             try
             {
-                Common.trustConnection();
                 string path = "/v1/admin/data/" + id;
                 return op = AuthClient.ExecuteJsonGet(path);
             }
@@ -225,7 +212,6 @@ namespace QryptoCard.Dashboard.Admin.Services
         {
             try
             {
-                Common.trustConnection();
                 string path = "/v1/admin/data";
                 return op = AuthClient.ExecuteJsonPut(path, adm);
             }
@@ -241,7 +227,6 @@ namespace QryptoCard.Dashboard.Admin.Services
         {
             try
             {
-                Common.trustConnection();
                 string path = "/v1/admin/password";
                 return op = AuthClient.ExecuteJsonPut(path, adm);
             }
@@ -257,7 +242,6 @@ namespace QryptoCard.Dashboard.Admin.Services
         {
             try
             {
-                Common.trustConnection();
                 string path = "/v1/admin/email/otp";
                 return op = AuthClient.ExecuteJsonPost(path, adm);
             }
@@ -273,7 +257,6 @@ namespace QryptoCard.Dashboard.Admin.Services
         {
             try
             {
-                Common.trustConnection();
                 string path = "/v1/admin/email";
                 return op = AuthClient.ExecuteJsonPut(path, adm);
             }

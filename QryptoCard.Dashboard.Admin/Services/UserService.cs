@@ -18,7 +18,6 @@ namespace QryptoCard.Dashboard.Admin.Services
         {
             try
             {
-                Common.trustConnection();
                 string path = "/v1/user/list/active";
                 return op = AuthClient.ExecuteJsonGet(path);
             }
@@ -34,7 +33,6 @@ namespace QryptoCard.Dashboard.Admin.Services
         {
             try
             {
-                Common.trustConnection();
                 string path = "/v1/user/commission/list";
                 return op = AuthClient.ExecuteJsonGet(path);
             }
@@ -50,7 +48,6 @@ namespace QryptoCard.Dashboard.Admin.Services
         {
             try
             {
-                Common.trustConnection();
                 string path = "/v1/user/commission";
                 return op = AuthClient.ExecuteJsonPut(path, adm);
             }
@@ -66,7 +63,6 @@ namespace QryptoCard.Dashboard.Admin.Services
         {
             try
             {
-                Common.trustConnection();
                 string path = "/v1/user/fee/list";
                 return op = AuthClient.ExecuteJsonGet(path);
             }
@@ -82,7 +78,6 @@ namespace QryptoCard.Dashboard.Admin.Services
         {
             try
             {
-                Common.trustConnection();
                 string path = "/v1/user/fee";
                 return op = AuthClient.ExecuteJsonPut(path, adm);
             }

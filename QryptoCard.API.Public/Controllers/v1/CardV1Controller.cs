@@ -28,14 +28,6 @@ namespace QryptoCard.API.Public.Controllers.v1
             return originalString.Split(':')[0];
         }
 
-        private void trustConnection()
-        {
-            ServicePointManager.ServerCertificateValidationCallback +=
-                (se, cert, chain, sslerror) =>
-                {
-                    return true;
-                };
-        }
 
         [Route("active")]
         [HttpGet]
@@ -44,7 +36,6 @@ namespace QryptoCard.API.Public.Controllers.v1
             try
             {
                 tblT_Card x = new tblT_Card();
-                trustConnection();
                 op = sr.getCardListActive(getKey(), x);
                 if (op.Status == "success")
                     op.Data = JsonConvert.DeserializeObject<List<CardActiveModel>>(op.Data.ToString());
@@ -65,7 +56,6 @@ namespace QryptoCard.API.Public.Controllers.v1
         {
             try
             {
-                trustConnection();
                 op = sr.getCardDetail(getKey(), x);
                 if (op.Status == "success")
                     op.Data = JsonConvert.DeserializeObject<CardActiveModel>(op.Data.ToString());
@@ -86,7 +76,6 @@ namespace QryptoCard.API.Public.Controllers.v1
         {
             try
             {
-                trustConnection();
                 op = sr.getCardDetail(getKey(), x);
                 if (op.Status == "success")
                     op.Data = JsonConvert.DeserializeObject<CardSensitiveModel>(op.Data.ToString());
@@ -107,7 +96,6 @@ namespace QryptoCard.API.Public.Controllers.v1
         {
             try
             {
-                trustConnection();
                 op = sr.getCardBalance(getKey(), x);
                 if (op.Status == "success")
                     op.Data = JsonConvert.DeserializeObject<CardBalanceModel>(op.Data.ToString());
@@ -128,7 +116,6 @@ namespace QryptoCard.API.Public.Controllers.v1
         {
             try
             {
-                trustConnection();
                 op = sr.getCardTransaction(getKey(), x);
                 if (op.Status == "success")
                     op.Data = JsonConvert.DeserializeObject<List<CardTransactionModel>>(op.Data.ToString());

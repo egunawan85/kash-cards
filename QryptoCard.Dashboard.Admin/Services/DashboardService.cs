@@ -18,7 +18,6 @@ namespace QryptoCard.Dashboard.Admin.Services
         {
             try
             {
-                Common.trustConnection();
                 string path = "/v1/dashboard/data";
                 return op = AuthClient.ExecuteJsonGet(path);
             }
@@ -34,7 +33,6 @@ namespace QryptoCard.Dashboard.Admin.Services
         {
             try
             {
-                Common.trustConnection();
                 string path = "/v1/dashboard/card/trx";
                 return op = AuthClient.ExecuteJsonGet(path);
             }

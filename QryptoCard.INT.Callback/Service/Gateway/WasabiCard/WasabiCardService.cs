@@ -59,7 +59,7 @@ namespace QryptoCard.INT.Callback.Service.Gateway.WasabiCard
 
                 clients.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
 
-                ServicePointManager.SecurityProtocol = SecurityProtocolType.Ssl3 | SecurityProtocolType.Tls | SecurityProtocolType.Tls11 | SecurityProtocolType.Tls12;
+                ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls12;
 
                 var httpContent = new StringContent(JsonConvert.SerializeObject(req), Encoding.UTF8, "application/json");
                 var xxx = JsonConvert.SerializeObject(req);
@@ -130,7 +130,7 @@ namespace QryptoCard.INT.Callback.Service.Gateway.WasabiCard
 
                 clients.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
 
-                ServicePointManager.SecurityProtocol = SecurityProtocolType.Ssl3 | SecurityProtocolType.Tls | SecurityProtocolType.Tls11 | SecurityProtocolType.Tls12;
+                ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls12;
 
                 var httpContent = new StringContent(JsonConvert.SerializeObject(req), Encoding.UTF8, "application/json");
                 var xxx = JsonConvert.SerializeObject(req);
@@ -201,7 +201,7 @@ namespace QryptoCard.INT.Callback.Service.Gateway.WasabiCard
 
                 clients.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
 
-                ServicePointManager.SecurityProtocol = SecurityProtocolType.Ssl3 | SecurityProtocolType.Tls | SecurityProtocolType.Tls11 | SecurityProtocolType.Tls12;
+                ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls12;
 
                 var httpContent = new StringContent(JsonConvert.SerializeObject(req), Encoding.UTF8, "application/json");
                 var xxx = JsonConvert.SerializeObject(req);
@@ -258,6 +258,68 @@ namespace QryptoCard.INT.Callback.Service.Gateway.WasabiCard
             }
         }
 
+        // Post-verify cross-check support: fetch the canonical record for a single card-deposit
+        // order from WasabiCard's /card/v2/transaction query, so the callback can confirm a
+        // claimed deposit outcome against the provider before crediting. Returns the matching
+        // record, or null on any error / non-OK / not-found (the caller treats null as
+        // "unconfirmed" and withholds the credit — fail-closed).
+        public static WCCardTransactionResponseModel.Record getDepositOperation(string merchantOrderNo)
+        {
+            DBEntities db = new DBEntities();
+            tblH_API_Log api = new tblH_API_Log();
+            try
+            {
+                if (string.IsNullOrEmpty(merchantOrderNo)) return null;
+
+                WCCardTransactionRequestModel req = new WCCardTransactionRequestModel();
+                req.pageNum = 1;
+                req.pageSize = 50;
+                req.type = "deposit";
+                req.merchantOrderNo = merchantOrderNo;
+
+                HttpClient clients = new HttpClient();
+                clients.BaseAddress = new Uri(KeyModel.WASABICARD_API_URL);
+                clients.Timeout.Add(new TimeSpan(0, 0, 5));
+                clients.DefaultRequestHeaders.Accept.Clear();
+                clients.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
+
+                ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls12;
+
+                var xxx = JsonConvert.SerializeObject(req);
+                var httpContent = new StringContent(xxx, Encoding.UTF8, "application/json");
+
+                string path = "/merchant/core/mcb/card/v2/transaction";
+                clients.DefaultRequestHeaders.Add("X-WSB-API-KEY", KeyModel.WASABICARD_API_KEY);
+                clients.DefaultRequestHeaders.Add("X-WSB-SIGNATURE", signData(xxx, loadRsaPrivateKeyPem()));
+                HttpResponseMessage responses = clients.PostAsync(path, httpContent).Result;
+
+                api.Type = "Wasabi Card - Deposit Cross-Check";
+                api.Request = xxx;
+                api.RequestDate = DateTime.Now;
+
+                string resultJSON = responses.Content.ReadAsStringAsync().Result;
+                api.Response = (int)responses.StatusCode + " - " + resultJSON;
+                api.ResponseDate = DateTime.Now;
+                db.tblH_API_Log.Add(api);
+                db.SaveChanges();
+
+                if (responses.StatusCode != HttpStatusCode.OK) return null;
+
+                var parsed = JsonConvert.DeserializeObject<WCCardTransactionResponseModel>(resultJSON);
+                if (parsed == null || parsed.data == null || parsed.data.records == null) return null;
+
+                return parsed.data.records.FirstOrDefault(r => r != null && r.merchantOrderNo == merchantOrderNo);
+            }
+            catch (Exception ex)
+            {
+                api.Response = ex.Message;
+                api.ResponseDate = DateTime.Now;
+                db.tblH_API_Log.Add(api);
+                db.SaveChanges();
+                return null;
+            }
+        }
+
         public static WCCardInfoResponseModel getCardInfo(WCCardInfoRequestModel req)
         {
             DBEntities db = new DBEntities();
@@ -272,7 +334,7 @@ namespace QryptoCard.INT.Callback.Service.Gateway.WasabiCard
 
                 clients.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
 
-                ServicePointManager.SecurityProtocol = SecurityProtocolType.Ssl3 | SecurityProtocolType.Tls | SecurityProtocolType.Tls11 | SecurityProtocolType.Tls12;
+                ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls12;
 
                 var httpContent = new StringContent(JsonConvert.SerializeObject(req), Encoding.UTF8, "application/json");
                 var xxx = JsonConvert.SerializeObject(req);
@@ -343,7 +405,7 @@ namespace QryptoCard.INT.Callback.Service.Gateway.WasabiCard
 
                 clients.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
 
-                ServicePointManager.SecurityProtocol = SecurityProtocolType.Ssl3 | SecurityProtocolType.Tls | SecurityProtocolType.Tls11 | SecurityProtocolType.Tls12;
+                ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls12;
 
                 var httpContent = new StringContent(JsonConvert.SerializeObject(req), Encoding.UTF8, "application/json");
                 var xxx = JsonConvert.SerializeObject(req);
@@ -414,7 +476,7 @@ namespace QryptoCard.INT.Callback.Service.Gateway.WasabiCard
 
                 clients.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
 
-                ServicePointManager.SecurityProtocol = SecurityProtocolType.Ssl3 | SecurityProtocolType.Tls | SecurityProtocolType.Tls11 | SecurityProtocolType.Tls12;
+                ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls12;
 
                 var httpContent = new StringContent(JsonConvert.SerializeObject(req), Encoding.UTF8, "application/json");
                 var xxx = JsonConvert.SerializeObject(req);

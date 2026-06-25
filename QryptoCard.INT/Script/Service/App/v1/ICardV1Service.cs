@@ -13,8 +13,6 @@ namespace QryptoCard.INT.Script.Service.App.v1
     public interface ICardV1Service
     {
         [OperationContract]
-        void testAPI();
-        [OperationContract]
         string getDate();
 
 

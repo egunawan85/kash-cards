@@ -28,14 +28,6 @@ namespace QryptoCard.API.Public.Controllers.v1
             return originalString.Split(':')[0];
         }
 
-        private void trustConnection()
-        {
-            ServicePointManager.ServerCertificateValidationCallback +=
-                (se, cert, chain, sslerror) =>
-                {
-                    return true;
-                };
-        }
 
         [Route("card/purchase/list")]
         [HttpGet]
@@ -44,7 +36,6 @@ namespace QryptoCard.API.Public.Controllers.v1
             try
             {
                 tblT_Card x = new tblT_Card();
-                trustConnection();
                 op = sr.getCardListAll(getKey(), x);
                 if (op.Status == "success")
                     op.Data = JsonConvert.DeserializeObject<List<CardPurchaseModel>>(op.Data.ToString());
@@ -65,7 +56,6 @@ namespace QryptoCard.API.Public.Controllers.v1
         {
             try
             {
-                trustConnection();
                 op = sr.getCardPurchaseDetail(getKey(), x);
                 if (op.Status == "success")
                     op.Data = JsonConvert.DeserializeObject<CardPurchaseModel>(op.Data.ToString());
@@ -86,7 +76,6 @@ namespace QryptoCard.API.Public.Controllers.v1
         {
             try
             {
-                trustConnection();
                 op = sr.openCard(getKey(), x);
                 if (op.Status == "success")
                     op.Data = JsonConvert.DeserializeObject<CardPurchaseModel>(op.Data.ToString());
@@ -107,7 +96,6 @@ namespace QryptoCard.API.Public.Controllers.v1
         {
             try
             {
-                trustConnection();
                 op = sr.cancelCardPurchase(getKey(), x);
                 if (op.Status == "success")
                     op.Data = JsonConvert.DeserializeObject<CardPurchaseModel>(op.Data.ToString());
@@ -130,7 +118,6 @@ namespace QryptoCard.API.Public.Controllers.v1
         {
             try
             {
-                trustConnection();
                 op = sr.getCardDepositList(getKey(), x);
                 if (op.Status == "success")
                     op.Data = JsonConvert.DeserializeObject<List<CardDepositModel>>(op.Data.ToString());
@@ -151,7 +138,6 @@ namespace QryptoCard.API.Public.Controllers.v1
         {
             try
             {
-                trustConnection();
                 op = sr.getCardDepositDetail(getKey(), x);
                 if (op.Status == "success")
                     op.Data = JsonConvert.DeserializeObject<CardDepositModel>(op.Data.ToString());
@@ -172,7 +158,6 @@ namespace QryptoCard.API.Public.Controllers.v1
         {
             try
             {
-                trustConnection();
                 op = sr.depositCard(getKey(), x);
                 if (op.Status == "success")
                     op.Data = JsonConvert.DeserializeObject<CardDepositModel>(op.Data.ToString());
@@ -193,7 +178,6 @@ namespace QryptoCard.API.Public.Controllers.v1
         {
             try
             {
-                trustConnection();
                 op = sr.cancelDepositTransaction(getKey(), x);
                 if (op.Status == "success")
                     op.Data = JsonConvert.DeserializeObject<CardDepositModel>(op.Data.ToString());

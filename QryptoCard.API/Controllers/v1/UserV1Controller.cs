@@ -19,14 +19,6 @@ namespace QryptoCard.API.Controllers.v1
         UserV1ServiceClient sr = new UserV1ServiceClient();
         OutputModel op = new OutputModel();
 
-        private void trustConnection()
-        {
-            ServicePointManager.ServerCertificateValidationCallback +=
-                (se, cert, chain, sslerror) =>
-                {
-                    return true;
-                };
-        }
 
 
         [Route("dashboard/data")]
@@ -36,7 +28,6 @@ namespace QryptoCard.API.Controllers.v1
             try
             {
                 var x = new DashboardModel();
-                trustConnection();
                 op = sr.getDashboardData(getEmail(), x);
                 if (op.Status == "success")
                     op.Data = JsonConvert.DeserializeObject<DashboardModel>(op.Data.ToString());
@@ -58,7 +49,6 @@ namespace QryptoCard.API.Controllers.v1
         {
             try
             {
-                trustConnection();
                 op = sr.getReferralCode(getEmail(), x);
                 if (op.Status == "success")
                     op.Data = JsonConvert.DeserializeObject<tblM_User_Referral>(op.Data.ToString());
@@ -79,7 +69,6 @@ namespace QryptoCard.API.Controllers.v1
         {
             try
             {
-                trustConnection();
                 op = sr.getBalance(getEmail(), x);
                 if (op.Status == "success")
                     op.Data = JsonConvert.DeserializeObject<tblM_User_Balance>(op.Data.ToString());
@@ -100,7 +89,6 @@ namespace QryptoCard.API.Controllers.v1
         {
             try
             {
-                trustConnection();
                 op = sr.generateKeyOTP(getEmail());
             }
             catch (Exception ex)
@@ -119,7 +107,6 @@ namespace QryptoCard.API.Controllers.v1
         {
             try
             {
-                trustConnection();
                 op = sr.validateKeyOTP(getEmail(), x);
             }
             catch (Exception ex)
@@ -139,7 +126,6 @@ namespace QryptoCard.API.Controllers.v1
             try
             {
                 var x = new DashboardModel();
-                trustConnection();
                 op = sr.getReferralJoined(getEmail());
                 if (op.Status == "success")
                     op.Data = JsonConvert.DeserializeObject<List<tblM_User>>(op.Data.ToString());
