@@ -225,9 +225,11 @@ if (-not $callbackSite) {
 } else {
     $cbPort = [int]$callbackSite.port
     Check "callback (:$cbPort): unsigned POST -> 401" {
-        # POST with a junk body and no provider signature; the callback origin
-        # must reject it as 401 Unauthorized. 401 is success here; 2xx/3xx means
-        # the signature gate isn't firing (a real finding).
+        # Negative control: a junk body with no provider signature must be rejected
+        # 401. The matching POSITIVE control -- a correctly signed callback that
+        # succeeds end-to-end -- is exercised by QryptoCard.Tests.Smoke Tier 3 against
+        # the running app (where the signing keys are available); vm-verify stays
+        # read-only. Any 2xx/3xx here means the signature gate isn't firing.
         try {
             $resp = Invoke-WebRequest -Uri "http://127.0.0.1:$cbPort/" -Method POST `
                 -Body '{"unsigned":"probe"}' -ContentType 'application/json' `

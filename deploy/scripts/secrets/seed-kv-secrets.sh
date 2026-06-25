@@ -176,6 +176,10 @@ seed_file() {
     done < <(list_keys "$src_file")
 }
 
+# Both files are seeded intentionally: .vault holds secrets, and .env holds the
+# non-secret runtime config (env gate, provider URLs, sender) that inject-secrets.ps1
+# injects as pool env on the server -- the app reads it via SecretsConfig, and
+# load-env.ps1 is local-only. Key Vault is the on-box config source either way.
 seed_file "$ENV_SECRETS"   ".env"
 seed_file "$VAULT_SECRETS" ".vault"
 

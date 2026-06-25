@@ -210,6 +210,14 @@ if ([string]::IsNullOrWhiteSpace($DbPassword)) {
     Write-Ok "DB password supplied via -DbPassword (value not logged)"
 }
 
+# The EF6 wrapped connection string uses bare double-quotes as the INNER delimiter
+# (provider connection string="..."), so a '"' or ';' in the password corrupts the
+# parsed connection string even though the XML stays well-formed. Reject fail-fast
+# rather than emit a silently-broken Web.config.
+if ($DbPassword -match '["'';]') {
+    Stop-Deploy "DB password contains a double-quote, single-quote, or semicolon, which breaks the EF connection-string delimiter. Re-seed DB_PASSWORD without those characters."
+}
+
 # -- Parse sites.json --------------------------------------------------------
 Write-Step "reading $SitesJson"
 $sites = Get-Content -LiteralPath $SitesJson -Raw | ConvertFrom-Json

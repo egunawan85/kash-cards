@@ -161,6 +161,20 @@ $AllSecretNames = @(
     'AUTH_SERVICE_REVOKE_TOKEN'
 )
 
+# Non-secret runtime config the app reads via SecretsConfig.GetOptional. On the
+# server these don't come from a file (load-env.ps1 is local-only), so inject them as
+# pool env vars too -- otherwise tiers fall back to code defaults (e.g. the callback
+# tier would use the PROD WasabiCard URL instead of the dev sandbox). Seeded into KV
+# from secrets/.env by seed-kv-secrets.sh, under the same '_' -> '-' name mapping.
+$ConfigNames = @(
+    'QRYPTO_ENVIRONMENT',
+    'WASABICARD_API_URL',
+    'PGCRYPTO_API_URL',
+    'EMAIL_FROM',
+    'EMAIL_SMTP_GATEWAY',
+    'EMAIL_SMTP_PORT'
+)
+
 # -- Pull each secret from KV once (cache in a local map). Never log values. --
 # Pulling once and reusing across pools avoids N*pools KV round-trips and keeps
 # the value lifetime as short and as in-memory as possible.
@@ -259,16 +273,16 @@ $sites    = Get-Content -LiteralPath $SitesJson -Raw | ConvertFrom-Json
 $allPools = @($sites.public + $sites.internal | ForEach-Object { $_.appPool }) | Select-Object -Unique
 Write-Ok "target app pools: $($allPools.Count) -- $($allPools -join ', ')"
 
-# Pull every secret once up front (fail fast if any is missing/empty).
-$secretValues = Get-Secrets -Names $AllSecretNames
+# Pull every secret + config value once up front (fail fast if any is missing/empty).
+$secretValues = Get-Secrets -Names ($AllSecretNames + $ConfigNames)
 
 foreach ($pool in $allPools) {
     if (-not (Test-Path "IIS:\AppPools\$pool")) {
         Stop-Inject "app pool '$pool' does not exist -- run deploy-iis.ps1 first (it creates the pools)"
     }
-    $names = Get-SecretsForPool -PoolName $pool
+    $names = @(Get-SecretsForPool -PoolName $pool) + $ConfigNames
     Write-Host ''
-    Write-Host "=== $pool : injecting $($names.Count) secret(s) ==="
+    Write-Host "=== $pool : injecting $($names.Count) var(s) ==="
     foreach ($name in $names) {
         Set-PoolEnvVar -PoolName $pool -Name $name -Value $secretValues[$name]
         Write-Ok "  $pool <- $name (value hidden)"
@@ -278,6 +292,13 @@ foreach ($pool in $allPools) {
 # Lock down the config that now carries the values.
 Protect-ApplicationHostConfig
 
+# Recycle pools so any already-started worker (AlwaysRunning) drops its stale/empty
+# environment and picks up the injected vars; otherwise verify would probe an app
+# that faulted on missing secrets.
+foreach ($pool in $allPools) {
+    if (Test-Path "IIS:\AppPools\$pool") { Restart-WebAppPool -Name $pool -ErrorAction SilentlyContinue }
+}
+
 Write-Host ''
 Write-Host '==========================================================================='
 Write-Host "  Secret injection complete: $env:COMPUTERNAME"
@@ -286,7 +307,7 @@ Write-Host "  Pools:    $($allPools.Count)"
 Write-Host "  Secrets:  $($AllSecretNames.Count) per pool (DEV: full set to every pool)"
 Write-Host "  Key Vault: $VaultName"
 Write-Host ''
-Write-Host '  Recycle pools (or run deploy-iis.ps1 restart) so w3wp picks up the new env.'
+Write-Host '  Pools recycled so w3wp picks up the new env.'
 Write-Host '  PROD reminder: minimize per pool -- see header + Get-SecretsForPool.'
 Write-Host ''
 Write-Host "INJECT_RESULT: PASS ($($allPools.Count) pools)"

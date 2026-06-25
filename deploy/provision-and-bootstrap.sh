@@ -25,6 +25,9 @@ die()  { printf '[xx] %s\n' "$*" >&2; exit 1; }
 # shellcheck disable=SC1090
 . "$CFG"
 : "${VM_NAME:?}" : "${COMPUTE_RG:?}" : "${KEYVAULT_NAME:?}"
+# --with-deploy additionally needs the source location and DB name.
+if [[ "${1:-}" == "--with-deploy" ]]; then : "${REPO_URL:?set in $CFG}" : "${DB_NAME:?set in $CFG}"; fi
+REPO_BRANCH="${REPO_BRANCH:-main}"
 
 # Helper: run a PowerShell script ON the VM and stream its output.
 run_on_vm() {
@@ -53,12 +56,12 @@ if [[ "$WITH_DEPLOY" -eq 0 ]]; then
 fi
 
 # ── Phase 4: app + DB + perimeter (build-on-box) ─────────────────────────────
-run_on_vm "$SCRIPT_DIR/scripts/deploy/vm-fetch-source.ps1"        # source onto the box
+run_on_vm "$SCRIPT_DIR/scripts/deploy/vm-fetch-source.ps1" "RepoUrl=$REPO_URL Branch=$REPO_BRANCH"
 run_on_vm "$SCRIPT_DIR/scripts/deploy/vm-install-sqlpackage.ps1"
 run_on_vm "$SCRIPT_DIR/scripts/deploy/vm-publish-schema.ps1"      # 38 tables -> SQL Express
 run_on_vm "$SCRIPT_DIR/scripts/deploy/deploy-iis.ps1"             # 12 IIS sites + WCF/connstr rewrites
 run_on_vm "$SCRIPT_DIR/scripts/deploy/inject-secrets.ps1"         # KV -> per-pool env
-run_on_vm "$SCRIPT_DIR/scripts/deploy/vm-seed-data.ps1"           # minimal rows + smoke creds
+run_on_vm "$SCRIPT_DIR/scripts/deploy/vm-seed-data.ps1" "KvName=$KEYVAULT_NAME DbName=$DB_NAME"
 run_on_vm "$SCRIPT_DIR/scripts/perimeter/vm-install-cloudflared.ps1"
 
 # Cloudflare zone/tunnel config runs locally (it talks to the Cloudflare API).

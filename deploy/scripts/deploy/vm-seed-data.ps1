@@ -6,6 +6,7 @@
 param(
     [string]$SourceDir  = 'C:\src\kash-cards',
     [string]$DbName     = 'qrypto-card',
+    [Parameter(Mandatory = $true)][string]$KvName,   # Key Vault holding DBKEY/APPKEY
     [string]$SmokeOut   = 'C:\src\kash-cards\deploy\secrets\.smoke.env'
 )
 $ErrorActionPreference = 'Stop'
@@ -13,10 +14,16 @@ function Step($m) { Write-Host "[..] $m" }
 function Ok($m)   { Write-Host "[ok] $m" }
 function Die($m)  { Write-Host "[xx] $m"; exit 1 }
 
-# DBKEY/APPKEY must be in the environment (inject-secrets sets these per pool; for the
-# seed run they are read from the process env — pass them in or load from .vault/KV).
+# DBKEY/APPKEY encrypt the seeded passwords. This script runs via run-command as
+# SYSTEM with a clean environment — the per-app-pool env vars inject-secrets writes do
+# NOT apply here — so pull them from Key Vault via the VM managed identity and set them
+# on THIS process only. Values are never logged.
+& az login --identity 2>&1 | Out-Null
+if ($LASTEXITCODE -ne 0) { Die 'az login --identity failed (VM managed identity / az CLI on PATH?)' }
 foreach ($k in 'DBKEY', 'APPKEY') {
-    if (-not [Environment]::GetEnvironmentVariable($k)) { Die "$k not in environment (needed to encrypt seeded passwords)" }
+    $v = (& az keyvault secret show --vault-name $KvName --name $k --query value -o tsv 2>$null)
+    if ([string]::IsNullOrWhiteSpace($v)) { Die "$k not found in Key Vault $KvName -- seed it (seed-kv-secrets.sh) and re-run" }
+    [Environment]::SetEnvironmentVariable($k, $v, 'Process')
 }
 
 $sec  = Join-Path $SourceDir 'QryptoCard.Sec\QryptoCard.Sec.csproj'

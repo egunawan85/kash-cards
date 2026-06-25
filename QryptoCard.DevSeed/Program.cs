@@ -68,11 +68,14 @@ namespace QryptoCard.DevSeed
                     }
                 }
 
-                WriteSmokeEnv(smokeOut, apiKey, apiSecretWire, adminPwdWire, adminPwd);
+                WriteSmokeEnv(smokeOut, apiKey, apiSecretWire, adminPwdWire);
+                // Do NOT print credentials to stdout: the orchestrator streams this
+                // through `az vm run-command invoke`, whose output is retained in the
+                // Azure control plane / Activity Log. Credentials live only in the
+                // gitignored .smoke.env file.
                 Console.WriteLine("[ok] seed complete.");
-                Console.WriteLine("[ok] admin: " + AdminEmail + "  (dev password: " + adminPwd + ")");
-                Console.WriteLine("[ok] smoke API key: " + apiKey);
-                Console.WriteLine("[ok] smoke creds written to: " + smokeOut);
+                Console.WriteLine("[ok] admin seeded: " + AdminEmail);
+                Console.WriteLine("[ok] smoke + admin credentials written to: " + smokeOut);
                 return 0;
             }
             catch (Exception ex)
@@ -171,7 +174,7 @@ namespace QryptoCard.DevSeed
                 ("@u", SmokeUserId), ("@k", apiKey), ("@s", apiSecretDb));
         }
 
-        private static void WriteSmokeEnv(string path, string apiKey, string apiSecretWire, string adminPwdWire, string adminPwdPlain)
+        private static void WriteSmokeEnv(string path, string apiKey, string apiSecretWire, string adminPwdWire)
         {
             var dir = Path.GetDirectoryName(Path.GetFullPath(path));
             if (!string.IsNullOrEmpty(dir)) Directory.CreateDirectory(dir);
@@ -185,7 +188,6 @@ namespace QryptoCard.DevSeed
             sb.AppendLine("SMOKE_ADMIN_EMAIL=" + AdminEmail);
             sb.AppendLine("# SMOKE_ADMIN_PASSWORD is the wire form (EncryptAPP) the admin client sends.");
             sb.AppendLine("SMOKE_ADMIN_PASSWORD=" + adminPwdWire);
-            sb.AppendLine("# SMOKE_ADMIN_PASSWORD_PLAIN (reference / manual login only): " + adminPwdPlain);
             File.WriteAllText(path, sb.ToString());
         }
     }
