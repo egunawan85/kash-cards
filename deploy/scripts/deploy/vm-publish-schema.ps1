@@ -17,7 +17,8 @@
 #   3. Load DB_NAME / DB_APP_LOGIN from deploy/config/.env.provision.<env>.
 #   4. sqlpackage /Action:Publish the DACPAC -> [DB_NAME] (creates 38 tables on
 #      a fresh DB; incremental diff on re-run).
-#   5. Apply deploy/sql/create-token-tables.sql (IF-NOT-EXISTS guarded).
+#   5. Apply the additive deploy/sql DDL scripts in order (bearer-token tables +
+#      prepaid-balance uniqueness/webhook-dedup indexes; all IF-NOT-EXISTS guarded).
 #   6. Ensure DB_APP_LOGIN exists and has db_datareader/db_datawriter +
 #      EXECUTE on [DB_NAME].
 #
@@ -68,7 +69,15 @@ if (Test-Path (Join-Path $candidate 'sql\kashnow-schema.dacpac')) {
 }
 $ConfigFile  = Join-Path $DeployRoot "config\.env.provision.$Env"
 $DacpacFile  = Join-Path $DeployRoot 'sql\kashnow-schema.dacpac'
-$TokenDdl    = Join-Path $DeployRoot 'sql\create-token-tables.sql'
+# Additive, idempotent DDL applied (in order) after the DACPAC publish. Each file is
+# internally IF-NOT-EXISTS / guarded so re-runs are safe. create-token-tables.sql stays
+# first; the prepaid-balance index scripts only touch tables the DACPAC already creates.
+$DdlScriptNames = @(
+    'create-token-tables.sql',
+    'create-wallet-indexes.sql',
+    'create-webhook-dedup-index.sql'
+)
+$DdlScripts  = $DdlScriptNames | ForEach-Object { Join-Path $DeployRoot "sql\$_" }
 
 # -- Load DB_NAME / DB_APP_LOGIN from the provision config. The file is plain
 # KEY=VALUE (same format load-env.ps1 parses); we only need two keys, so parse
@@ -127,7 +136,9 @@ if (-not $sqlcmd -and (Test-Path 'C:\Tools\sqlcmd.exe')) { $sqlcmd = 'C:\Tools\s
 if (-not $sqlcmd) { Stop-Run 'sqlcmd not found on PATH or C:\Tools\sqlcmd.exe -- vm-bootstrap installs go-sqlcmd there' }
 
 if (-not (Test-Path $DacpacFile)) { Stop-Run "DACPAC not found: $DacpacFile" }
-if (-not (Test-Path $TokenDdl))   { Stop-Run "token DDL not found: $TokenDdl" }
+foreach ($ddl in $DdlScripts) {
+    if (-not (Test-Path $ddl)) { Stop-Run "DDL script not found: $ddl" }
+}
 Write-Ok "dacpac: $DacpacFile"
 
 # Integrated-auth sqlcmd base args. -C trusts SQL Express's self-signed cert
@@ -176,14 +187,19 @@ $state = Invoke-Scalar -BaseArgs $masterArgs -Query `
 if ($state -ne 'ONLINE') { Stop-Run "[$DbName] state is '$state' after publish, expected ONLINE" }
 Write-Ok "[$DbName] is ONLINE"
 
-# -- 2. Apply the bearer-token DDL. The file is internally IF-NOT-EXISTS
-# guarded and GO-batched, so it is safe to re-run; -b means any real error
-# (not a benign already-exists) still fails the script.
-Write-Step "applying token-table DDL: $(Split-Path -Leaf $TokenDdl)"
+# -- 2. Apply the additive DDL scripts in order. Each is internally IF-NOT-EXISTS
+# guarded and GO-batched, so it is safe to re-run; -b means any real error (not a
+# benign already-exists) still fails the script. This includes the prepaid-balance
+# uniqueness + webhook-dedup indexes the wallet code relies on for race-safety and
+# replay protection (without them, replayed deposit webhooks can double-credit).
 $dbArgs = @('-S', $DbServer, '-E', '-C', '-l', '15', '-b', '-d', $DbName)
-& $sqlcmd @dbArgs -i $TokenDdl
-if ($LASTEXITCODE -ne 0) { Stop-Run "token DDL failed (exit $LASTEXITCODE)" }
-Write-Ok 'token tables applied (idempotent)'
+foreach ($ddl in $DdlScripts) {
+    $leaf = Split-Path -Leaf $ddl
+    Write-Step "applying DDL: $leaf"
+    & $sqlcmd @dbArgs -i $ddl
+    if ($LASTEXITCODE -ne 0) { Stop-Run "DDL failed ($leaf, exit $LASTEXITCODE)" }
+    Write-Ok "$leaf applied (idempotent)"
+}
 
 # -- 3. Ensure the least-priv app login can use the DB. Idempotent: create the
 # server login only if absent (no password set here -- credential material is
