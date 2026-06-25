@@ -87,3 +87,42 @@ BEGIN
     END
 END
 GO
+
+-- ---- tblM_User_Crypto_Deposit (Address) active-row uniqueness ------------------
+-- The deposit-credit branch resolves an inbound Address to its owning user, so an active
+-- address must map to EXACTLY ONE user — otherwise a deposit could be credited to the
+-- wrong account. Address ships as nvarchar(max) (not indexable); narrow it to an
+-- address-sized width first (safe: far wider than any TRC20/crypto address).
+
+IF EXISTS (SELECT 1 FROM sys.columns
+           WHERE object_id = OBJECT_ID('tblM_User_Crypto_Deposit')
+             AND name = 'Address'
+             AND (max_length = -1 OR max_length > 256))
+BEGIN
+    ALTER TABLE tblM_User_Crypto_Deposit ALTER COLUMN Address nvarchar(128) NULL;
+END
+GO
+
+IF NOT EXISTS (SELECT 1 FROM sys.indexes
+               WHERE name = 'UIX_tblM_User_Crypto_Deposit_Address'
+                 AND object_id = OBJECT_ID('tblM_User_Crypto_Deposit'))
+BEGIN
+    IF EXISTS (
+        SELECT Address
+        FROM tblM_User_Crypto_Deposit
+        WHERE isActive = 1 AND Address IS NOT NULL
+        GROUP BY Address
+        HAVING COUNT(*) > 1)
+    BEGIN
+        RAISERROR (
+            'Cannot create UIX_tblM_User_Crypto_Deposit_Address: duplicate active Address rows exist — a deposit could be credited to the wrong user. Investigate and de-duplicate before re-running. Probe: SELECT Address, COUNT(*) FROM tblM_User_Crypto_Deposit WHERE isActive = 1 AND Address IS NOT NULL GROUP BY Address HAVING COUNT(*) > 1;',
+            16, 1);
+    END
+    ELSE
+    BEGIN
+        CREATE UNIQUE NONCLUSTERED INDEX UIX_tblM_User_Crypto_Deposit_Address
+            ON tblM_User_Crypto_Deposit (Address)
+            WHERE isActive = 1 AND Address IS NOT NULL;
+    END
+END
+GO

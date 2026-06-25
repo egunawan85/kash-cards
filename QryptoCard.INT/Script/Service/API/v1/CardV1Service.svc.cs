@@ -442,10 +442,8 @@ namespace QryptoCard.INT.Script.Service.API.v1
                     x.ReceivedAmount = x.InitialDeposit;
                     x.DateExpired = DateTime.Now.AddHours(1);
 
-                    var st = db.tblM_Setting_Counter.Where(p => p.ID == 1).FirstOrDefault();
-                    st.Value += 1;
-                    x.ID = "QRYCRDBUY" + st.Value.Value.ToString("000000000000");
-                    db.SaveChanges();
+                    // Atomic sequence (race-safe) instead of read-increment-save on the counter row.
+                    x.ID = "QRYCRDBUY" + CounterService.Next(1).ToString("000000000000");
 
                     // Pay from the prepaid balance (debit-first, then provision via WasabiCard).
                     var spend = CardSpendService.OpenCard(x);
@@ -455,6 +453,7 @@ namespace QryptoCard.INT.Script.Service.API.v1
                         op.Message = spend.Message;
                         return op;
                     }
+                    x.Status = spend.Status;
                     op.Status = "success";
                     op.Message = spend.Message;
                     op.Data = JsonConvert.SerializeObject(x, Formatting.None);
@@ -827,10 +826,8 @@ namespace QryptoCard.INT.Script.Service.API.v1
                     x.DateExpired = x.DateTransaction.Value.AddHours(1);
 
                     // Wallet-only: top-ups are paid from the prepaid balance, no static-address wait.
-                    var st = db.tblM_Setting_Counter.Where(p => p.ID == 2).FirstOrDefault();
-                    st.Value += 1;
-                    x.ID = "QRYCRDPST" + st.Value.Value.ToString("000000000000");
-                    db.SaveChanges();
+                    // Atomic sequence (race-safe) instead of read-increment-save on the counter row.
+                    x.ID = "QRYCRDPST" + CounterService.Next(2).ToString("000000000000");
 
                     // Debit balance, then provision the top-up via WasabiCard.
                     var spend = CardSpendService.TopUp(x);
@@ -840,6 +837,7 @@ namespace QryptoCard.INT.Script.Service.API.v1
                         op.Message = spend.Message;
                         return op;
                     }
+                    x.Status = spend.Status;
                     op.Status = "success";
                     op.Message = spend.Message;
                     op.Data = JsonConvert.SerializeObject(x, Formatting.None);
