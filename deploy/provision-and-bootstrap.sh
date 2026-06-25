@@ -12,6 +12,11 @@
 # is safe. Nothing here is destructive to anything outside the dev resource group.
 set -euo pipefail
 
+# Windows/git-bash: stop MSYS from rewriting args that start with '/' (Azure resource
+# IDs / scopes like /subscriptions/...). Exported so all child scripts inherit it.
+# Harmless on macOS/Linux.
+export MSYS_NO_PATHCONV=1
+
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ENV="${ENV:-dev}"
 CFG="$SCRIPT_DIR/config/.env.provision.${ENV}"
@@ -29,14 +34,26 @@ die()  { printf '[xx] %s\n' "$*" >&2; exit 1; }
 if [[ "${1:-}" == "--with-deploy" ]]; then : "${REPO_URL:?set in $CFG}" : "${DB_NAME:?set in $CFG}"; fi
 REPO_BRANCH="${REPO_BRANCH:-main}"
 
+# Windows/git-bash: az needs a Windows path for @file args (cygpath). Passthrough on Linux.
+winpath() { if command -v cygpath >/dev/null 2>&1; then cygpath -w "$1"; else printf '%s' "$1"; fi; }
+
 # Helper: run a PowerShell script ON the VM and stream its output.
 run_on_vm() {
   local script="$1"; shift
   local params="${1:-}"
   log "VM: $(basename "$script") ${params}"
-  az vm run-command invoke -g "$COMPUTE_RG" -n "$VM_NAME" \
-     --command-id RunPowerShellScript --scripts "@${script}" ${params:+--parameters $params} \
-     --query "value[0].message" -o tsv
+  # `az vm run-command invoke` returns success even when the inner PowerShell fails, so
+  # capture its combined output and fail the orchestrator if the script printed a fatal
+  # marker ([xx], used by every VM-side script's Stop-*/die). Otherwise a broken phase
+  # would silently cascade.
+  local out
+  out=$(az vm run-command invoke -g "$COMPUTE_RG" -n "$VM_NAME" \
+     --command-id RunPowerShellScript --scripts "@$(winpath "$script")" ${params:+--parameters $params} \
+     --query "value[0].message" -o tsv)
+  printf '%s\n' "$out"
+  if printf '%s' "$out" | grep -q '\[xx\]'; then
+    die "VM phase failed: $(basename "$script") -- see [xx] above"
+  fi
 }
 
 # ── Phase 1: Azure resources (RG, network, VM, Key Vault, Log Analytics) ──────
@@ -66,11 +83,13 @@ run_on_vm "$SCRIPT_DIR/scripts/deploy/vm-publish-schema.ps1"      # 38 tables ->
 run_on_vm "$SCRIPT_DIR/scripts/deploy/deploy-iis.ps1"             # 12 IIS sites + WCF/connstr rewrites
 run_on_vm "$SCRIPT_DIR/scripts/deploy/inject-secrets.ps1"         # KV -> per-pool env
 run_on_vm "$SCRIPT_DIR/scripts/deploy/vm-seed-data.ps1" "KvName=$KEYVAULT_NAME DbName=$DB_NAME"
-run_on_vm "$SCRIPT_DIR/scripts/perimeter/vm-install-cloudflared.ps1"
-
-# Cloudflare zone/tunnel config runs locally (it talks to the Cloudflare API).
-log "Phase 4: Cloudflare perimeter"
+# Cloudflare perimeter: create the tunnel + store its connector token in Key Vault FIRST
+# (runs locally; talks to the Cloudflare API), THEN install the connector on the VM, which
+# pulls that token from KV. Installing the connector before the tunnel exists hangs waiting
+# for a token that isn't there yet.
+log "Phase 5: Cloudflare perimeter (tunnel + token)"
 ENV="$ENV" "$SCRIPT_DIR/scripts/perimeter/cloudflare-setup.sh"
+run_on_vm "$SCRIPT_DIR/scripts/perimeter/vm-install-cloudflared.ps1"
 
 # ── Phase 5: verify ──────────────────────────────────────────────────────────
 run_on_vm "$SCRIPT_DIR/scripts/verify/vm-verify.ps1"

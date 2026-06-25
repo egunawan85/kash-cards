@@ -379,6 +379,10 @@ deploy/secrets/*.vault
 # ---- kash-cards: filled infra config (subscription id + IPs); templates committed ----
 deploy/config/.env.provision.*
 !deploy/config/.env.provision.*.example
+
+# ---- kash-cards: Cloudflare named-mode creds (API token) — never commit ----
+deploy/config/.env.cloudflare.*
+!deploy/config/.env.cloudflare.*.example
 # key material
 *.pem
 *.pfx

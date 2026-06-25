@@ -1,27 +1,27 @@
 # deploy/scripts/deploy/vm-fetch-source.ps1
-# Fetches the kash-cards source onto the VM for build-on-box. Idempotent: clones if
-# absent, otherwise fetches + hard-resets to the requested ref. Runs ON the VM.
-#
-# (The sister runegate-infra used GitHub deploy keys; for the dev shakeout we take a
-#  repo URL + optional token so a throwaway box needs no standing key. For prod, prefer
-#  a short-lived deploy key or a managed-identity-gated artifact pull.)
+# Fetches the kash-cards source onto the VM for build-on-box. Uses the GitHub zipball
+# via built-in Invoke-WebRequest/Expand-Archive -- no git needed on the VM. Idempotent:
+# replaces TargetDir with fresh source each run (config is written separately by
+# vm-write-config; secrets come from Key Vault, so neither is in the zipball).
 param(
-    [Parameter(Mandatory = $true)][string]$RepoUrl,   # https URL or git@ ssh; do NOT embed a token here
+    [Parameter(Mandatory = $true)][string]$RepoUrl,   # https://github.com/<owner>/<repo>[.git]
     [string]$Branch = 'main',
     [string]$TargetDir = 'C:\src\kash-cards',
-    [string]$KvName,                                   # if set, pull an optional REPO-TOKEN secret from KV
-    [string]$Token                                     # optional PAT fallback; prefer KV so it stays off argv/logs
+    [string]$KvName,                                   # optional: pull REPO-TOKEN for a private repo
+    [string]$Token                                     # optional PAT fallback
 )
 $ErrorActionPreference = 'Stop'
 function Step($m) { Write-Host "[..] $m" }
 function Ok($m)   { Write-Host "[ok] $m" }
 function Die($m)  { Write-Host "[xx] $m"; exit 1 }
 
-if (-not (Get-Command git -ErrorAction SilentlyContinue)) { Die 'git not on PATH (install via vm-bootstrap)' }
+# Derive owner/repo + the codeload zip URL from the GitHub URL.
+$u = $RepoUrl -replace '\.git$', ''
+if ($u -notmatch 'github\.com[:/]+([^/]+)/([^/]+)/?$') { Die "RepoUrl is not a recognized GitHub URL: $RepoUrl" }
+$owner = $Matches[1]; $repo = $Matches[2]
+$zipUrl = "https://github.com/$owner/$repo/archive/refs/heads/$Branch.zip"
 
-# Prefer a token from Key Vault (via the VM managed identity) over -Token, so a PAT
-# never rides argv / run-command parameters / operator logs. A public repo simply has
-# no REPO-TOKEN secret and clones without one.
+# Optional token (private repo): prefer Key Vault via the VM managed identity.
 if (-not $Token -and $KvName -and (Get-Command az -ErrorAction SilentlyContinue)) {
     & az login --identity --output none 2>$null
     if ($LASTEXITCODE -eq 0) {
@@ -29,27 +29,27 @@ if (-not $Token -and $KvName -and (Get-Command az -ErrorAction SilentlyContinue)
         if (-not [string]::IsNullOrWhiteSpace($kvTok)) { $Token = $kvTok; Step 'using git token from Key Vault (REPO-TOKEN)' }
     }
 }
+$headers = @{}
+if ($Token) { $headers['Authorization'] = "token $Token" }
 
-# Inject the token into an https URL without logging it.
-$url = $RepoUrl
-if ($Token -and $RepoUrl -match '^https://') {
-    $url = $RepoUrl -replace '^https://', "https://$Token@"
-}
+[System.Net.ServicePointManager]::SecurityProtocol = [System.Net.SecurityProtocolType]::Tls12
+$tmpZip = Join-Path $env:TEMP ("kc-src-" + [guid]::NewGuid().ToString('N') + ".zip")
+$tmpDir = Join-Path $env:TEMP ("kc-src-" + [guid]::NewGuid().ToString('N'))
+try {
+    Step "downloading $zipUrl"
+    Invoke-WebRequest -Uri $zipUrl -Headers $headers -OutFile $tmpZip -UseBasicParsing
+    Step "extracting"
+    Expand-Archive -Path $tmpZip -DestinationPath $tmpDir -Force
+    # GitHub zipballs contain a single top-level dir: <repo>-<branch>.
+    $inner = Get-ChildItem -Path $tmpDir -Directory | Select-Object -First 1
+    if (-not $inner) { Die "unexpected zip layout (no top-level directory)" }
 
-if (Test-Path (Join-Path $TargetDir '.git')) {
-    Step "updating existing checkout at $TargetDir -> $Branch"
-    git -C $TargetDir remote set-url origin $url 2>&1 | Out-Null
-    git -C $TargetDir fetch --depth 1 origin $Branch 2>&1 | Out-Null
-    git -C $TargetDir checkout -B $Branch "origin/$Branch" 2>&1 | Out-Null
-    git -C $TargetDir reset --hard "origin/$Branch" 2>&1 | Out-Null
-} else {
-    Step "cloning $Branch into $TargetDir"
+    if (Test-Path $TargetDir) { Remove-Item -Recurse -Force $TargetDir }
     $parent = Split-Path $TargetDir -Parent
     if ($parent -and -not (Test-Path $parent)) { New-Item -ItemType Directory -Force -Path $parent | Out-Null }
-    git clone --depth 1 --branch $Branch $url $TargetDir 2>&1 | Out-Null
+    Move-Item -Path $inner.FullName -Destination $TargetDir
+} finally {
+    Remove-Item -Force $tmpZip -ErrorAction SilentlyContinue
+    Remove-Item -Recurse -Force $tmpDir -ErrorAction SilentlyContinue
 }
-# Scrub the token from the stored remote so it isn't persisted on disk.
-if ($Token) { git -C $TargetDir remote set-url origin $RepoUrl 2>&1 | Out-Null }
-
-$head = (git -C $TargetDir rev-parse --short HEAD)
-Ok "source at $TargetDir @ $head ($Branch)"
+Ok "source at $TargetDir (from $owner/$repo@$Branch)"

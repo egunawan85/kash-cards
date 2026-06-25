@@ -55,6 +55,9 @@ ok()   { printf '[ok] %s\n' "$*"; }
 warn() { printf '[!!] %s\n' "$*" >&2; }
 die()  { printf '[xx] %s\n' "$*" >&2; exit 1; }
 
+# Windows/git-bash: az needs a Windows path for --file args (cygpath). Passthrough on Linux.
+winpath() { if command -v cygpath >/dev/null 2>&1; then cygpath -w "$1"; else printf '%s' "$1"; fi; }
+
 # Honor wrapper-level skip.
 if [[ "${SKIP_SEED_KV:-false}" == "true" ]]; then
     ok "SKIP_SEED_KV=true -- leaving KV untouched (operator opted out)"
@@ -121,7 +124,7 @@ upload_kv_value_via_tmpfile() {
     tmp=$( (umask 077 && mktemp) )
     [[ -f "$tmp" ]] || { warn "$secret_name: failed to create temp file"; return 1; }
     printf '%s' "$value" > "$tmp"
-    az keyvault secret set --vault-name "$KV_NAME" --name "$secret_name" --file "$tmp" >/dev/null || rc=$?
+    az keyvault secret set --vault-name "$KV_NAME" --name "$secret_name" --file "$(winpath "$tmp")" >/dev/null || rc=$?
     rm -f "$tmp"
     return "$rc"
 }

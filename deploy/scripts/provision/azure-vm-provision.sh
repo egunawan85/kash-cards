@@ -43,6 +43,21 @@ ok()   { printf '[ok] %s\n' "$*"; }
 warn() { printf '[!!] %s\n' "$*" >&2; }
 die()  { printf '[xx] %s\n' "$*" >&2; exit 1; }
 
+# Windows/git-bash: az.cmd emits CRLF; strip the CR from captured stdout so a trailing
+# \r doesn't corrupt values reused as args (resource IDs, scopes, passwords). stderr
+# passes through untouched and az's real exit code is preserved, so `set -e` and
+# `if az ...` checks still work.
+az() {
+  local _out _rc
+  _out="$(command az "$@")" || _rc=$?
+  _rc=${_rc:-0}
+  printf '%s\n' "${_out//$'\r'/}"
+  return "$_rc"
+}
+
+# Windows/git-bash: az needs a Windows path for --file/@file args (cygpath). Passthrough on Linux.
+winpath() { if command -v cygpath >/dev/null 2>&1; then cygpath -w "$1"; else printf '%s' "$1"; fi; }
+
 # -- Preflight ---------------------------------------------------------------
 [ -f "$ENV_FILE" ] || die "missing $ENV_FILE -- copy .env.provision.dev.example and edit"
 
@@ -66,7 +81,9 @@ command -v openssl >/dev/null 2>&1 || die "openssl not found on PATH"
 : "${VM_SIZE:?set in $ENV_FILE}"
 : "${VM_IMAGE:?set in $ENV_FILE}"
 : "${VM_ADMIN_USERNAME:?set in $ENV_FILE}"
-: "${RDP_SOURCE:?set in $ENV_FILE -- your public IP for the one-time bootstrap RDP}"
+# RDP_SOURCE is OPTIONAL: blank => no RDP NSG rule at all (pure NSG-dark). The deploy
+# drives the VM via 'az vm run-command', not RDP; set it only for emergency GUI RDP.
+RDP_SOURCE="${RDP_SOURCE:-}"
 : "${LOG_ANALYTICS_NAME:?set in $ENV_FILE}"
 : "${KEYVAULT_NAME:?set in $ENV_FILE}"
 
@@ -92,9 +109,14 @@ az account show --query '{id:id, name:name, user:user.name}' -o table
 # rather than partway through.
 SIGNED_IN_OBJECT_ID=$(az ad signed-in-user show --query id -o tsv)
 SIGNED_IN_USER_NAME=$(az account show --query user.name -o tsv)
+# --all --include-inherited so inherited (management-group) and guest/personal
+# account assignments resolve too. The plain "--assignee X --scope /subscriptions/Y"
+# form false-negatives for some identities (it errors with MissingSubscription,
+# which 2>/dev/null then hides, leaving an empty result and a wrong "lacks Owner").
 PREFLIGHT_ROLES=$(az role assignment list \
+  --all --include-inherited \
   --assignee "$SIGNED_IN_OBJECT_ID" \
-  --scope "/subscriptions/$AZURE_SUBSCRIPTION_ID" \
+  --subscription "$AZURE_SUBSCRIPTION_ID" \
   --query "[?roleDefinitionName=='Owner' || roleDefinitionName=='User Access Administrator'].roleDefinitionName" \
   -o tsv 2>/dev/null | sort -u | tr '\n' ',' | sed 's/,$//' || true)
 if [ -z "$PREFLIGHT_ROLES" ]; then
@@ -181,7 +203,15 @@ else
   az keyvault create $KV_CREATE_ARGS >/dev/null
   ok "created Key Vault: $KEYVAULT_NAME"
 fi
-KV_ID=$(az keyvault show --name "$KEYVAULT_NAME" --resource-group "$SHARED_RG" --query id -o tsv)
+# Retry: a show immediately after create can race ARM propagation and return empty,
+# which would pass an empty --resource to diagnostic-settings below.
+KV_ID=""
+for _ in 1 2 3 4 5 6; do
+  KV_ID=$(az keyvault show --name "$KEYVAULT_NAME" --resource-group "$SHARED_RG" --query id -o tsv 2>/dev/null)
+  [ -n "$KV_ID" ] && break
+  sleep 5
+done
+[ -n "$KV_ID" ] || die "could not resolve Key Vault id for $KEYVAULT_NAME after retries"
 
 # Diagnostic logs: KV -> Log Analytics. Always-PUT (idempotent ARM PUT), so
 # re-running with a changed --logs list overwrites cleanly.
@@ -267,7 +297,11 @@ ensure_nsg_rule() {
   ok "NSG rule: $name (priority=$priority, $access, source=$source, port=$port)"
 }
 
-ensure_nsg_rule "Allow-RDP"  110 3389 "$RDP_SOURCE" "$RDP_DEFAULT_ACTION" "RDP -- default Deny; flip to Allow for the one-off bootstrap GUI session, then flip back"
+if [ -n "$RDP_SOURCE" ]; then
+  ensure_nsg_rule "Allow-RDP"  110 3389 "$RDP_SOURCE" "$RDP_DEFAULT_ACTION" "RDP -- default Deny; flip to Allow for the one-off bootstrap GUI session, then flip back"
+else
+  ok "RDP rule skipped (RDP_SOURCE blank) -- no RDP inbound; NSG-dark, manage via az vm run-command"
+fi
 ensure_nsg_rule "Deny-HTTPS" 200 443  "Internet"    Deny                  "Inbound 443 denied; cloudflared tunnel is outbound-only, no inbound origin port needed"
 
 # Attach NSG to subnet (belt-and-braces with NIC-level NSG below).
@@ -331,7 +365,7 @@ else
   # unavoidable argv, but ARM treats that field as a secureString.
   pwtmp="$(umask 077 && mktemp)"
   printf '%s' "$ADMIN_PWD" > "$pwtmp"
-  az keyvault secret set --vault-name "$KEYVAULT_NAME" --name "$ADMIN_PWD_SECRET" --file "$pwtmp" >/dev/null
+  az keyvault secret set --vault-name "$KEYVAULT_NAME" --name "$ADMIN_PWD_SECRET" --file "$(winpath "$pwtmp")" >/dev/null
   rm -f "$pwtmp"
   ok "admin password stored in KV (secret: $ADMIN_PWD_SECRET)"
 fi

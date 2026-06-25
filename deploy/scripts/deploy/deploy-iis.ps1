@@ -79,8 +79,15 @@ function Stop-Deploy {
 
 # -- Resolve paths -----------------------------------------------------------
 if (-not $RepoRoot) {
-    # deploy/scripts/deploy/deploy-iis.ps1 -> repo root is three dirs up.
-    $RepoRoot = (Resolve-Path (Join-Path $PSScriptRoot '..\..\..')).Path
+    # From the repo, repo root is three dirs up. When sent detached via
+    # `az vm run-command` ($PSScriptRoot is a temp dir, not the repo), fall back to the
+    # fixed clone location vm-fetch-source.ps1 writes to.
+    $candidate = Join-Path $PSScriptRoot '..\..\..'
+    if (Test-Path (Join-Path $candidate 'deploy\config\sites.json')) {
+        $RepoRoot = (Resolve-Path $candidate).Path
+    } else {
+        $RepoRoot = 'C:\src\kash-cards'
+    }
 }
 $DeployDir  = Join-Path $RepoRoot 'deploy'
 $ConfigDir  = Join-Path $DeployDir 'config'

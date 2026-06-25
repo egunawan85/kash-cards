@@ -58,7 +58,14 @@ function Stop-Run   { param([string]$m) Write-Host "[xx] $m" -ForegroundColor Re
 
 # -- Resolve repo paths relative to this script (deploy/scripts/deploy/...).
 $ScriptDir   = $PSScriptRoot
-$DeployRoot  = (Resolve-Path (Join-Path $ScriptDir '..\..')).Path   # .../deploy
+# From the repo, deploy root is two dirs up. When sent detached via `az vm run-command`
+# ($PSScriptRoot is a temp dir), fall back to the fixed clone location.
+$candidate   = Join-Path $ScriptDir '..\..'
+if (Test-Path (Join-Path $candidate 'sql\kashnow-schema.dacpac')) {
+    $DeployRoot = (Resolve-Path $candidate).Path
+} else {
+    $DeployRoot = 'C:\src\kash-cards\deploy'
+}
 $ConfigFile  = Join-Path $DeployRoot "config\.env.provision.$Env"
 $DacpacFile  = Join-Path $DeployRoot 'sql\kashnow-schema.dacpac'
 $TokenDdl    = Join-Path $DeployRoot 'sql\create-token-tables.sql'

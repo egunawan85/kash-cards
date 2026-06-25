@@ -534,17 +534,21 @@ if ($mssqlInstance) {
     # few more seconds. Poll TCP (the transport we just configured) so the
     # CREATE LOGIN below doesn't race the listener.
     Write-Step "waiting for SQL Express to accept TCP connections"
-    $sqlReadyDeadline = (Get-Date).AddSeconds(60)
+    # TCP-connect probe (no auth): the SQL login doesn't exist yet, so an `sqlcmd -E`
+    # probe would conflate "listener not up" with "auth not ready". A small VM can take
+    # well over a minute to bring the listener back after a restart, so allow 180s.
+    $sqlReadyDeadline = (Get-Date).AddSeconds(180)
     $sqlReady         = $false
     while ((Get-Date) -lt $sqlReadyDeadline) {
         try {
-            & $sqlcmdPath -S 'tcp:127.0.0.1,1433' -E -Q 'SELECT 1' -b -h -1 -l 5 *> $null
+            $tcp = New-Object System.Net.Sockets.TcpClient
+            $tcp.Connect('127.0.0.1', 1433)
+            if ($tcp.Connected) { $tcp.Close(); $sqlReady = $true; break }
         } catch { }
-        if ($LASTEXITCODE -eq 0) { $sqlReady = $true; break }
-        Start-Sleep -Seconds 2
+        Start-Sleep -Seconds 3
     }
     if (-not $sqlReady) {
-        Stop-Bootstrap "SQL Express did not accept TCP connections within 60s after restart -- check Get-EventLog -LogName Application -Source $sqlSvcName on the VM"
+        Stop-Bootstrap "SQL Express not listening on 127.0.0.1:1433 within 180s after restart -- check Get-EventLog -LogName Application -Source $sqlSvcName on the VM"
     }
     Write-Ok "SQL Express accepting TCP connections"
 

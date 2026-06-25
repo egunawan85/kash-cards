@@ -78,7 +78,14 @@ function Stop-Inject {
 
 # -- Resolve paths -----------------------------------------------------------
 if (-not $RepoRoot) {
-    $RepoRoot = (Resolve-Path (Join-Path $PSScriptRoot '..\..\..')).Path
+    # From the repo, repo root is three dirs up. When sent detached via
+    # `az vm run-command` ($PSScriptRoot is a temp dir), fall back to the fixed clone.
+    $candidate = Join-Path $PSScriptRoot '..\..\..'
+    if (Test-Path (Join-Path $candidate 'deploy\config\sites.json')) {
+        $RepoRoot = (Resolve-Path $candidate).Path
+    } else {
+        $RepoRoot = 'C:\src\kash-cards'
+    }
 }
 $ConfigDir = Join-Path $RepoRoot 'deploy\config'
 $SitesJson = Join-Path $ConfigDir 'sites.json'
