@@ -262,16 +262,8 @@ namespace QryptoCard.INT.Script.Service.App.v1
                         return op;
                     }
 
-                    var qry = db.tblM_User_Crypto_Deposit.Where(p => p.UserID == uid && p.isActive == 1).FirstOrDefault();
-                    if (qry == null)
-                    {
-                        op.Status = "failed";
-                        op.Message = "No crypto address found for payment";
-                        return op;
-                    }
-
-                    x.AddressID = qry.ID;
-                    x.Address = qry.Address;
+                    // Wallet-only: card actions are paid from the prepaid balance, not a fresh
+                    // per-order deposit, so there is no static-address lookup here anymore.
                     x.UserID = uid;
 
                     if (data.NeedCardHolder == 1)
@@ -421,21 +413,25 @@ namespace QryptoCard.INT.Script.Service.App.v1
                     x.Fee = (Convert.ToDouble(x.FeeInPercentage) / 100) * x.InitialDeposit.Value;
                     x.Total = x.Price + x.InitialDeposit + x.Fee;
                     x.ReceivedAmount = x.InitialDeposit;
-                    x.Status = StatusModel.Created;
-                    x.isActive = 0;
-                    x.DateCreated = DateTime.Now;
-                    x.DateExpired = x.DateCreated.Value.AddHours(1);
-
+                    x.DateExpired = DateTime.Now.AddHours(1);
 
                     var st = db.tblM_Setting_Counter.Where(p => p.ID == 1).FirstOrDefault();
                     st.Value += 1;
                     x.ID = "QRYCRDBUY" + st.Value.Value.ToString("000000000000");
-
-                    db.tblT_Card.Add(x);
                     db.SaveChanges();
 
+                    // Pay from the prepaid balance: debit first, then provision via WasabiCard.
+                    // CardSpendService owns order persistence and provider-outcome reconciliation
+                    // (confirmed / reversed-on-definitive-failure / pending-on-ambiguous).
+                    var spend = CardSpendService.OpenCard(x);
+                    if (!spend.Success)
+                    {
+                        op.Status = "failed";
+                        op.Message = spend.Message;
+                        return op;
+                    }
                     op.Status = "success";
-                    op.Message = "Success create card transaction";
+                    op.Message = spend.Message;
                     op.Data = JsonConvert.SerializeObject(x, Formatting.None);
                 }
             }
@@ -740,26 +736,23 @@ namespace QryptoCard.INT.Script.Service.App.v1
                     x.DateTransaction = DateTime.Now;
                     x.DateExpired = x.DateTransaction.Value.AddHours(1);
 
-                    var qry = db.tblM_User_Crypto_Deposit.Where(p => p.UserID == uid && p.isActive == 1).FirstOrDefault();
-                    if (qry == null)
-                    {
-                        op.Status = "failed";
-                        op.Message = "No crypto address found for payment";
-                        return op;
-                    }
-
-                    x.AddressID = qry.ID;
-                    x.Address = qry.Address;
-
+                    // Wallet-only: top-ups are paid from the prepaid balance, no static-address wait.
                     var st = db.tblM_Setting_Counter.Where(p => p.ID == 2).FirstOrDefault();
                     st.Value += 1;
                     x.ID = "QRYCRDPST" + st.Value.Value.ToString("000000000000");
-
-                    db.tblT_Card_Deposit.Add(x);
                     db.SaveChanges();
 
+                    // Debit balance, then provision the top-up via WasabiCard (CardSpendService owns
+                    // order persistence and provider-outcome reconciliation).
+                    var spend = CardSpendService.TopUp(x);
+                    if (!spend.Success)
+                    {
+                        op.Status = "failed";
+                        op.Message = spend.Message;
+                        return op;
+                    }
                     op.Status = "success";
-                    op.Message = "Success create card deposit";
+                    op.Message = spend.Message;
                     op.Data = JsonConvert.SerializeObject(x, Formatting.None);
                 }
             }
