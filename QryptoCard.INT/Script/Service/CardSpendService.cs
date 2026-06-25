@@ -1,4 +1,5 @@
 using System;
+using System.Data.SqlClient;
 using System.Linq;
 using QryptoCard.INT.Model.Service;
 using QryptoCard.INT.Model.WasabiCard;
@@ -47,6 +48,12 @@ namespace QryptoCard.INT.Script.Service
         {
             decimal total = Convert.ToDecimal(x.Total);
 
+            // 0. Reject a fractional provider amount: WasabiCard is funded in integer units, so a
+            // fractional deposit would under-fund the card vs. the (decimal) wallet debit. Fail closed.
+            decimal deposit = Convert.ToDecimal(x.InitialDeposit);
+            if (deposit != decimal.Truncate(deposit))
+                return new SpendResult { Success = false, Status = StatusModel.Failed, Message = "Deposit amount must be a whole number" };
+
             // 1. Persist the order up front.
             x.Status = StatusModel.Created;
             x.isActive = 0;
@@ -57,8 +64,13 @@ namespace QryptoCard.INT.Script.Service
                 ctx.SaveChanges();
             }
 
-            // 2. Debit-first (commits before the provider call). Ledger TransactionID = order ID.
-            var debit = WalletService.Debit(x.UserID, total, WalletService.TypeCardOpen, x.ID);
+            // 2. Debit-first, atomically transitioning the order Created -> PendingProvider in the
+            // SAME transaction. A crash can then never strand a committed debit on a Created order
+            // (which nothing reconciles). Ledger TransactionID = order ID.
+            string claimSql = "UPDATE dbo.tblT_Card SET Status = '" + StatusModel.PendingProvider +
+                              "' WHERE ID = @id AND Status = '" + StatusModel.Created + "'";
+            var debit = WalletService.DebitForOrder(x.UserID, total, WalletService.TypeCardOpen, x.ID,
+                claimSql, new[] { new SqlParameter("@id", x.ID) });
             if (!debit.Success)
             {
                 SetCardStatus(x.ID, StatusModel.Failed);
@@ -71,6 +83,7 @@ namespace QryptoCard.INT.Script.Service
                     Message = insufficient ? "Insufficient balance" : "Could not debit balance"
                 };
             }
+            // The order is now PendingProvider, atomic with the debit.
 
             // 3. Provision via WasabiCard. A throw (timeout / unreachable / config) is treated the
             // same as a null result: ambiguous, never auto-reverse — see the reconcile step.
@@ -116,13 +129,36 @@ namespace QryptoCard.INT.Script.Service
             }
             if (definitiveFailure)
             {
-                WalletService.Credit(x.UserID, total, 0m, 0d, WalletService.TypeCardOpenReversal, x.ID);
-                SetCardStatus(x.ID, StatusModel.Failed);
-                return new SpendResult { Success = false, ProviderFailed = true, Status = StatusModel.Failed, Message = "Card provider rejected the request; balance refunded" };
+                // Reverse the debit. If the reversal itself fails (transient DB error / throw), do NOT
+                // mark Failed — leave the order PendingProvider (where the debit atomically landed) so
+                // the reconciler retries the reversal, and log it as money-affecting.
+                if (TryReverse(x.UserID, total, WalletService.TypeCardOpenReversal, x.ID))
+                {
+                    SetCardStatus(x.ID, StatusModel.Failed);
+                    return new SpendResult { Success = false, ProviderFailed = true, Status = StatusModel.Failed, Message = "Card provider rejected the request; balance refunded" };
+                }
+                System.Diagnostics.Trace.TraceError("Card-open reversal failed for order " + x.ID + " — left pending-provider for reconciliation (money-affecting)");
+                return new SpendResult { Success = false, ProviderFailed = true, Status = StatusModel.PendingProvider, Message = "Card provider rejected the request; refund pending reconciliation" };
             }
-            // Ambiguous: leave the debit, reconcile later. Never auto-reverse.
-            SetCardStatus(x.ID, StatusModel.PendingProvider);
+            // Ambiguous: the debit already landed and the order is already PendingProvider (set
+            // atomically with the debit). Leave it; reconcile later. Never auto-reverse.
             return new SpendResult { Success = true, ProviderPending = true, Status = StatusModel.PendingProvider, Message = "Card opening pending provider confirmation" };
+        }
+
+        // Attempt a compensating reversal credit; true only if it definitively succeeded. A throw
+        // (transient DB error) or a non-success result returns false so the caller can leave the
+        // order in a reconcilable state rather than falsely marking it refunded.
+        private static bool TryReverse(string userId, decimal amount, string type, string orderId)
+        {
+            try
+            {
+                var rev = WalletService.Credit(userId, amount, 0m, 0d, type, orderId);
+                return rev.Success;
+            }
+            catch
+            {
+                return false;
+            }
         }
 
         /// <summary>
@@ -133,6 +169,11 @@ namespace QryptoCard.INT.Script.Service
         {
             decimal total = Convert.ToDecimal(x.Total);
 
+            // Reject a fractional provider amount (integer-funded; see OpenCard).
+            decimal topup = Convert.ToDecimal(x.Amount);
+            if (topup != decimal.Truncate(topup))
+                return new SpendResult { Success = false, Status = StatusModel.Failed, Message = "Top-up amount must be a whole number" };
+
             x.Status = StatusModel.Created;
             if (x.DateTransaction == null) x.DateTransaction = DateTime.Now;
             using (var ctx = new DBEntities())
@@ -141,7 +182,11 @@ namespace QryptoCard.INT.Script.Service
                 ctx.SaveChanges();
             }
 
-            var debit = WalletService.Debit(x.UserID, total, WalletService.TypeCardTopup, x.ID);
+            // Debit-first, atomically transitioning the order Created -> PendingProvider (see OpenCard).
+            string claimSql = "UPDATE dbo.tblT_Card_Deposit SET Status = '" + StatusModel.PendingProvider +
+                              "' WHERE ID = @id AND Status = '" + StatusModel.Created + "'";
+            var debit = WalletService.DebitForOrder(x.UserID, total, WalletService.TypeCardTopup, x.ID,
+                claimSql, new[] { new SqlParameter("@id", x.ID) });
             if (!debit.Success)
             {
                 SetDepositStatus(x.ID, StatusModel.Failed);
@@ -154,6 +199,7 @@ namespace QryptoCard.INT.Script.Service
                     Message = insufficient ? "Insufficient balance" : "Could not debit balance"
                 };
             }
+            // The order is now PendingProvider, atomic with the debit.
 
             int amount = Convert.ToInt32(x.Amount);
             WCDepositCardResponseModel res = null;
@@ -181,11 +227,15 @@ namespace QryptoCard.INT.Script.Service
             }
             if (definitiveFailure)
             {
-                WalletService.Credit(x.UserID, total, 0m, 0d, WalletService.TypeCardTopupReversal, x.ID);
-                SetDepositStatus(x.ID, StatusModel.Failed);
-                return new SpendResult { Success = false, ProviderFailed = true, Status = StatusModel.Failed, Message = "Card provider rejected the top-up; balance refunded" };
+                if (TryReverse(x.UserID, total, WalletService.TypeCardTopupReversal, x.ID))
+                {
+                    SetDepositStatus(x.ID, StatusModel.Failed);
+                    return new SpendResult { Success = false, ProviderFailed = true, Status = StatusModel.Failed, Message = "Card provider rejected the top-up; balance refunded" };
+                }
+                System.Diagnostics.Trace.TraceError("Top-up reversal failed for order " + x.ID + " — left pending-provider for reconciliation (money-affecting)");
+                return new SpendResult { Success = false, ProviderFailed = true, Status = StatusModel.PendingProvider, Message = "Card provider rejected the top-up; refund pending reconciliation" };
             }
-            SetDepositStatus(x.ID, StatusModel.PendingProvider);
+            // Ambiguous: debit landed; order already PendingProvider (set atomically with the debit).
             return new SpendResult { Success = true, ProviderPending = true, Status = StatusModel.PendingProvider, Message = "Top-up pending provider confirmation" };
         }
 

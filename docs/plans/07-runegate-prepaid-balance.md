@@ -154,10 +154,14 @@ reference. We adopt its hard-won patterns rather than re-deriving them:
   on the event, backed by a **filtered unique index** (`WHERE Type='PGCrypto'`), and
   swallow the duplicate-key (`SqlException 2601`) as a no-op. Supersedes the
   filtered-index-on-ledger idea in C2.b.
-- **Per-EVENT key (their F-0031a P0 lesson).** The dedup key is composite
-  **`(TransactionID, Status)`**, NOT `TransactionID` alone — collapsing PENDING+COMPLETED
-  to one key would skip the credit (the exact P0 they already paid for). Credit only on
-  the confirmed-status event (I-4); pending/replay are distinct/duplicate keys.
+- **Per-EVENT key (their F-0031a P0 lesson) — and why ours ended up bare.** The sister's
+  dedup key is composite **`(TransactionID, Status)`** because *they* credit on status
+  transitions, so collapsing PENDING+COMPLETED would skip a credit. **As built, our key is the
+  `TransactionID` alone:** we gate the credit on `isPaid == 1` *before* any dedup row is
+  written, so only the one confirmed event ever reaches dedup — and folding the free-form
+  `Status` into the key would instead let a single confirmed deposit, redelivered with a
+  different status string, write a distinct key and **double-credit**. Do NOT restore a
+  composite `TransactionID|Status` key — see the comment in `WalletService.CreditDeposit`.
 - **Atomic balance mutation (I-8 / their F-0066).** Runegate favours a `Serializable`
   transaction to match EF6 entity-tracking; kash-cards already has the **raw-SQL
   atomic-claim** idiom (the refund path), so we use atomic `UPDATE … WHERE … OUTPUT`
@@ -296,11 +300,12 @@ PGCrypto webhook handler.
 - [ ] **T2.3 — Confirmed-status gate + per-event idempotency (R6; adopts I-2/I-3/I-4).**
   Credit **only** on the confirmed/settled status transition (`isPaid`/`Status`),
   **exactly once**, via the existing `tblH_Partner_Webhook_ID` dedup table: insert a row
-  keyed on the **composite `(TransactionID, Status)`** (per-event, *not* per-transaction —
-  avoids the F-0031a P0 of collapsing PENDING+COMPLETED), backed by a filtered unique
-  index, and swallow the duplicate-key (`SqlException 2601`) as a no-op. A pre-confirmation
-  or replayed delivery therefore cannot credit or double-credit. See "Sister-project
-  callback patterns" above.
+  keyed on the **provider `TransactionID` alone** (as built — the upstream `isPaid == 1` gate
+  means only the confirmed event reaches dedup, so a `Status`-composite key would *enable* a
+  double-credit rather than prevent one; see C2.b and `WalletService.CreditDeposit`), backed by
+  a filtered unique index, and swallow the duplicate-key (`SqlException 2601`) as a no-op. A
+  pre-confirmation or replayed delivery therefore cannot credit or double-credit. See
+  "Sister-project callback patterns" above.
 - [ ] **T2.4 — Address-ownership safety + edge cases.** Credit strictly the user who
   owns the destination address; never infer the user from the webhook body. Edge
   handling: a deposit to an **unknown/inactive** address is ledger-logged + alerted,
@@ -350,10 +355,12 @@ PGCrypto webhook handler.
   `audit/fix-history/QO-0038.md` / `QO-0081.md`.
 - **C2.b — Dedup via the existing dedup table (resolved by the sister pattern).** Rather
   than a filtered index on the ledger's `TransactionID` (which collides with refund rows
-  that reuse it), use the **already-present `tblH_Partner_Webhook_ID` table** keyed on the
-  composite `(TransactionID, Status)` with a filtered unique index (`WHERE Type='PGCrypto'`)
-  + `SqlException 2601` swallow — the runegate F-0031a/F-0031b house pattern. See
-  "Sister-project callback patterns." *(refines R14 / T6.1 / T2.3)*
+  that reuse it), use the **already-present `tblH_Partner_Webhook_ID` table** keyed (as built)
+  on the **`TransactionID` alone** with a filtered unique index (`WHERE Type='PGCrypto'`)
+  + `SqlException 2601` swallow — the runegate F-0031a/F-0031b house pattern, minus the
+  `Status` component (our upstream `isPaid == 1` gate makes a `Status`-composite key a
+  double-credit hazard, not a safeguard — see the per-EVENT note above and
+  `WalletService.CreditDeposit`). See "Sister-project callback patterns." *(refines R14 / T6.1 / T2.3)*
 - **C2.c — Atomic credit must capture before/after consistently.** Use SQL Server
   `OUTPUT` (`UPDATE … SET Balance = Balance + @amt OUTPUT deleted.Balance,
   inserted.Balance`) to read `BalancePrevious`/`Balance` for the ledger row atomically —
@@ -564,8 +571,8 @@ code now; apply the index/migration at shakeout).
   and add a regression test per invariant **even where already compliant** (the house
   "permanent armor" rule). Port the runegate test shapes (see Sister-project patterns).
 - [ ] **T6.1** **Durable replay defense (R6; adopts I-2/I-3):** wire the existing
-  `tblH_Partner_Webhook_ID` dedup table with a **filtered unique index** on the composite
-  `(TransactionID, Status)` (`WHERE Type='PGCrypto'`) + `SqlException 2601` swallow, so a
+  `tblH_Partner_Webhook_ID` dedup table with a **filtered unique index** on the
+  `TransactionID` alone (`WHERE Type='PGCrypto'`) + `SqlException 2601` swallow, so a
   replayed webhook cannot double-credit across process restarts. Ship the index as
   `deploy/sql/*.sql` (DB-gated); pre-apply a duplicate-probe/cleanup like runegate's
   `F0031a_duplicate_probe_and_cleanup.sql`.

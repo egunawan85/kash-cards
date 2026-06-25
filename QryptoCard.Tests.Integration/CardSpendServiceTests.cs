@@ -66,6 +66,49 @@ namespace QryptoCard.Tests.Integration
         }
 
         [Fact]
+        public void OpenCard_FractionalDeposit_RejectedNoDebitNoOrder()
+        {
+            var uid = Fresh("oc-frac");
+            Fund(uid, 200m);
+            var card = NewCard(uid, total: 50.5m, initialDeposit: 50.5m);
+
+            var r = CardSpendService.OpenCard(card);
+
+            Assert.False(r.Success);
+            Assert.Contains("whole number", r.Message);
+            Assert.Equal(200m, BalanceOf(uid)); // unchanged
+            using (var ctx = _db.NewContext())
+            {
+                Assert.False(ctx.tblT_Card.Any(p => p.ID == card.ID));                  // no order persisted
+                Assert.False(ctx.tblH_User_Balance.Any(p => p.TransactionID == card.ID)); // no debit
+            }
+        }
+
+        [Fact]
+        public void TopUp_FractionalAmount_RejectedNoDebitNoOrder()
+        {
+            var uid = Fresh("tu-frac");
+            Fund(uid, 100m);
+            var dep = new tblT_Card_Deposit
+            {
+                ID = "dep-" + Guid.NewGuid().ToString("N").Substring(0, 10),
+                UserID = uid, CardNo = "4111111111111111",
+                Amount = 40.5d, Fee = 0d, Total = 40.5d
+            };
+
+            var r = CardSpendService.TopUp(dep);
+
+            Assert.False(r.Success);
+            Assert.Contains("whole number", r.Message);
+            Assert.Equal(100m, BalanceOf(uid));
+            using (var ctx = _db.NewContext())
+            {
+                Assert.False(ctx.tblT_Card_Deposit.Any(p => p.ID == dep.ID));
+                Assert.False(ctx.tblH_User_Balance.Any(p => p.TransactionID == dep.ID));
+            }
+        }
+
+        [Fact]
         public void OpenCard_SufficientBalance_DebitsFirst_NotReversedOnAmbiguousProvider()
         {
             var uid = Fresh("oc-ok");

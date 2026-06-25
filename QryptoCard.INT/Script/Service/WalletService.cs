@@ -121,6 +121,33 @@ namespace QryptoCard.INT.Script.Service
         }
 
         /// <summary>
+        /// Debit for a card spend, atomically transitioning the order out of its pre-debit status in
+        /// the SAME transaction. A crash can then never leave an order holding a committed debit in a
+        /// status nothing reconciles. <paramref name="claimSql"/> must be a conditional UPDATE that
+        /// affects exactly one row (else the whole debit rolls back as "claim_lost").
+        /// </summary>
+        public static BalanceMutationResult DebitForOrder(
+            string userId, decimal amount, string type, string transactionId,
+            string claimSql, SqlParameter[] claimParams)
+        {
+            if (amount < 0m) return BalanceMutationResult.Fail("negative_debit");
+            return Mutate(
+                userId: userId,
+                balanceDelta: -amount,
+                requireMinBalance: true,
+                minBalance: amount,
+                ledgerAmount: -amount,
+                ledgerCommission: 0m,
+                ledgerCommissionPct: 0d,
+                type: type,
+                transactionId: transactionId,
+                status: null,
+                noRowReason: "insufficient_balance",
+                claimSql: claimSql,
+                claimParams: claimParams);
+        }
+
+        /// <summary>
         /// Credit a confirmed inbound deposit, deduped per-event in the SAME transaction as the
         /// credit. The dedup row (tblH_Partner_Webhook_ID, keyed on TransactionID|Status,
         /// Type='PGCrypto') is inserted first; a duplicate-key means this exact event already
@@ -163,7 +190,8 @@ namespace QryptoCard.INT.Script.Service
             string userId, decimal balanceDelta, bool requireMinBalance, decimal minBalance,
             decimal ledgerAmount, decimal ledgerCommission, double ledgerCommissionPct,
             string type, string transactionId, string status, string noRowReason,
-            string dedupType = null, string dedupKey = null, string dedupRequest = null)
+            string dedupType = null, string dedupKey = null, string dedupRequest = null,
+            string claimSql = null, SqlParameter[] claimParams = null)
         {
             // ISNULL guards a legacy NULL balance; the OUTPUT captures before/after in the
             // same statement so there is no read-then-update window. The debit variant adds
@@ -206,6 +234,20 @@ namespace QryptoCard.INT.Script.Service
                         {
                             tx.Rollback();
                             return BalanceMutationResult.Fail("duplicate_event");
+                        }
+                    }
+
+                    // Optional claim in the SAME transaction (e.g. an order Created->PendingProvider
+                    // transition): a conditional UPDATE that must affect exactly one row, so the order
+                    // can never be left in a pre-debit status while holding a committed debit. 0 rows
+                    // affected -> roll back (already transitioned / not in the expected state).
+                    if (claimSql != null)
+                    {
+                        int claimed = ctx.Database.ExecuteSqlCommand(claimSql, claimParams);
+                        if (claimed != 1)
+                        {
+                            tx.Rollback();
+                            return BalanceMutationResult.Fail("claim_lost");
                         }
                     }
 

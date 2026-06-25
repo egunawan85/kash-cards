@@ -9,11 +9,15 @@
 -- the handler treats it as an already-processed no-op. This is the DB-layer dedup
 -- the house pattern relies on — not a check-then-insert in app code, which races.
 --
--- Key: TXID encodes the PER-EVENT key as '<TransactionID>|<Status>' (not the bare
--- transaction id), so a PENDING and a COMPLETED delivery of the same transaction
--- are distinct keys — collapsing them would skip the confirmed credit (the F-0031a
--- P0). Type discriminates the provider so the index is filtered to PGCrypto rows
--- and never collides with other webhook sources sharing the table.
+-- Key: TXID holds the provider TransactionID ALONE (one credit per transaction).
+-- It deliberately does NOT include Status: the credit path is gated on isPaid==1
+-- before a dedup row is ever written, so only confirmed events reach here — and
+-- folding the free-form Status into the key would let the same confirmed deposit,
+-- redelivered with a different status string, write a distinct key and double-credit.
+-- (Do not "restore" a composite TransactionID|Status key — that reintroduces the
+-- double-credit bug; see the comment in WalletService.CreditDeposit.) Type
+-- discriminates the provider so the index is filtered to PGCrypto rows and never
+-- collides with other webhook sources sharing the table.
 --
 --   UIX_tblH_Partner_Webhook_ID_PGCrypto_TXID
 --       UNIQUE (TXID) WHERE Type = 'PGCrypto'
