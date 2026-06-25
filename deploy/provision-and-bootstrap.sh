@@ -82,7 +82,7 @@ run_on_vm "$SCRIPT_DIR/scripts/deploy/vm-install-sqlpackage.ps1"
 run_on_vm "$SCRIPT_DIR/scripts/deploy/vm-publish-schema.ps1"      # 38 tables -> SQL Express
 run_on_vm "$SCRIPT_DIR/scripts/deploy/deploy-iis.ps1"             # 12 IIS sites + WCF/connstr rewrites
 run_on_vm "$SCRIPT_DIR/scripts/deploy/inject-secrets.ps1"         # KV -> per-pool env
-run_on_vm "$SCRIPT_DIR/scripts/deploy/vm-seed-data.ps1" "KvName=$KEYVAULT_NAME DbName=$DB_NAME"
+run_on_vm "$SCRIPT_DIR/scripts/deploy/vm-seed.ps1" "KvName=$KEYVAULT_NAME DbName=$DB_NAME"
 # Cloudflare perimeter: create the tunnel + store its connector token in Key Vault FIRST
 # (runs locally; talks to the Cloudflare API), THEN install the connector on the VM, which
 # pulls that token from KV. Installing the connector before the tunnel exists hangs waiting

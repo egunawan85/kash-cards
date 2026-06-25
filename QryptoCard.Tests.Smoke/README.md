@@ -6,10 +6,10 @@ HTTP Basic credential the seeder produces, so it exercises the full public → I
 
 ## How it's driven
 
-`QryptoCard.DevSeed` seeds a user + API key and emits `deploy/secrets/.smoke.env`:
+`vm-seed.ps1` (applying `deploy/sql/seeds/*.sql`) seeds the smoke user + API key and emits `deploy/secrets/.smoke.env`:
 
 ```
-SMOKE_BASE_URL=https://public-dev.kash.cards   # the deployed public API base
+SMOKE_BASE_URL=https://api-dev.s16.xyz         # the deployed programmatic API base (QryptoCard.API.Public)
 SMOKE_API_KEY=smoke-...                          # tblM_User_API.APIKey
 SMOKE_API_SECRET=...                             # the EncryptAPP wire form (Basic password)
 SMOKE_ADMIN_EMAIL=edward@s16.ventures

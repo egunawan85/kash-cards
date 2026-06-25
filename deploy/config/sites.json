@@ -2,13 +2,13 @@
   "_comment": "IIS site map for kash-cards. 8 public sites (reached only via the Cloudflare tunnel) + 4 loopback-only WCF tiers. deploy-iis.ps1 binds each site to its localhost port, ACLs the INT tiers to 127.0.0.1, and rewrites the public tiers' WCF client endpoints (origPort -> intPort) and the INT connection strings. Hostnames are templated as <prefix>-<ENV>.<CLOUDFLARE_ZONE> (or a quick-tunnel path when CLOUDFLARE_QUICK_TUNNEL=true).",
 
   "public": [
-    { "project": "QryptoCard.API",            "appPool": "kash-api",            "port": 8081, "hostPrefix": "api" },
-    { "project": "QryptoCard.API.Public",     "appPool": "kash-api-public",     "port": 8082, "hostPrefix": "public" },
-    { "project": "QryptoCard.API.Admin",      "appPool": "kash-api-admin",      "port": 8083, "hostPrefix": "apiadmin" },
+    { "project": "QryptoCard.API",            "appPool": "kash-api",            "port": 8081, "hostPrefix": "api-backend", "expose": false, "_expose": "user-tier dashboard backend; reached server-side over loopback, no public URL" },
+    { "project": "QryptoCard.API.Public",     "appPool": "kash-api-public",     "port": 8082, "hostPrefix": "api" },
+    { "project": "QryptoCard.API.Admin",      "appPool": "kash-api-admin",      "port": 8083, "hostPrefix": "apiadmin",   "expose": false, "_expose": "admin-tier dashboard backend; loopback only" },
     { "project": "QryptoCard.API.Callback",   "appPool": "kash-api-callback",   "port": 8084, "hostPrefix": "callback" },
-    { "project": "QryptoCard.API.Scheduler",  "appPool": "kash-api-scheduler",  "port": 8085, "hostPrefix": "scheduler" },
+    { "project": "QryptoCard.API.Scheduler",  "appPool": "kash-api-scheduler",  "port": 8085, "hostPrefix": "scheduler", "expose": false, "_expose": "internal job trigger; loopback only" },
     { "project": "QryptoCard.APIDocs",        "appPool": "kash-apidocs",        "port": 8086, "hostPrefix": "docs" },
-    { "project": "QryptoCard.Dashboard",      "appPool": "kash-dashboard",      "port": 8087, "hostPrefix": "dashboard" },
+    { "project": "QryptoCard.Dashboard",      "appPool": "kash-dashboard",      "port": 8087, "hostPrefix": "app" },
     { "project": "QryptoCard.Dashboard.Admin","appPool": "kash-dashboard-admin","port": 8088, "hostPrefix": "admin" }
   ],
 
