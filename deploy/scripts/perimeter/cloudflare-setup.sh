@@ -88,7 +88,7 @@ KV_SECRET_NAME="CLOUDFLARED-TUNNEL-TOKEN-${ENV_UPPER}"
 site_hostname() { printf '%s-%s.%s' "$1" "$ENV" "$CLOUDFLARE_ZONE"; }
 
 # Primary public site for the quick-tunnel single-URL exposure: the Dashboard.
-PRIMARY_PREFIX="dashboard"
+PRIMARY_PREFIX="app"
 PRIMARY_PORT=$(jq -r --arg p "$PRIMARY_PREFIX" \
     '.public[] | select(.hostPrefix == $p) | .port' "$SITES_JSON")
 [[ -n "$PRIMARY_PORT" && "$PRIMARY_PORT" != "null" ]] \
@@ -251,8 +251,8 @@ else
     while IFS=$'\t' read -r prefix port; do
         [[ -z "$prefix" ]] && continue
         EXPOSE+=("${prefix}-${ENV}.${CLOUDFLARE_ZONE}"$'\t'"http://127.0.0.1:${port}")
-    done < <(jq -r '.public[] | "\(.hostPrefix)\t\(.port)"' "$SITES_JSON" | tr -d '\r')
-    ok "exposure: ${#EXPOSE[@]} route(s) from sites.json public[] (no ROUTES override)"
+    done < <(jq -r '.public[] | select(.expose != false) | "\(.hostPrefix)\t\(.port)"' "$SITES_JSON" | tr -d '\r')
+    ok "exposure: ${#EXPOSE[@]} route(s) from sites.json public[] expose!=false (no ROUTES override)"
 fi
 
 # Desired ingress: one rule per exposed route. Catch-all 404 must be last.
