@@ -129,15 +129,14 @@ namespace QryptoCard.INT.Script.Service
             }
             if (definitiveFailure)
             {
-                // Reverse the debit. If the reversal itself fails (transient DB error / throw), do NOT
-                // mark Failed — leave the order PendingProvider (where the debit atomically landed) so
-                // the reconciler retries the reversal, and log it as money-affecting.
-                if (TryReverse(x.UserID, total, WalletService.TypeCardOpenReversal, x.ID))
-                {
-                    SetCardStatus(x.ID, StatusModel.Failed);
+                // Reverse the debit atomically with the order's -> Failed transition (claim-gated), so
+                // there is no window in which the refund is issued while the order still reads
+                // PendingProvider (which the deposit-fail webhook / reTopup could double-act on), and a
+                // second reversal is a no-op. Only if the reversal cannot apply at all do we leave the
+                // order PendingProvider for reconciliation.
+                if (ReverseFailedSpend("tblT_Card", x.UserID, total, WalletService.TypeCardOpenReversal, x.ID))
                     return new SpendResult { Success = false, ProviderFailed = true, Status = StatusModel.Failed, Message = "Card provider rejected the request; balance refunded" };
-                }
-                System.Diagnostics.Trace.TraceError("Card-open reversal failed for order " + x.ID + " — left pending-provider for reconciliation (money-affecting)");
+                System.Diagnostics.Trace.TraceError("Card-open reversal could not apply for order " + x.ID + " — left pending-provider for reconciliation (money-affecting)");
                 return new SpendResult { Success = false, ProviderFailed = true, Status = StatusModel.PendingProvider, Message = "Card provider rejected the request; refund pending reconciliation" };
             }
             // Ambiguous: the debit already landed and the order is already PendingProvider (set
@@ -145,20 +144,28 @@ namespace QryptoCard.INT.Script.Service
             return new SpendResult { Success = true, ProviderPending = true, Status = StatusModel.PendingProvider, Message = "Card opening pending provider confirmation" };
         }
 
-        // Attempt a compensating reversal credit; true only if it definitively succeeded. A throw
-        // (transient DB error) or a non-success result returns false so the caller can leave the
-        // order in a reconcilable state rather than falsely marking it refunded.
-        private static bool TryReverse(string userId, decimal amount, string type, string orderId)
+        // Reverse a failed spend's debit, atomically flipping the order PendingProvider/InProgress ->
+        // Failed in the SAME transaction (claim-gated, idempotent). Returns true when the refund has
+        // definitively landed — either this call committed it, or a prior reversal already finalized
+        // the order ("claim_lost" => order no longer reversible => refund already issued, a safe
+        // no-op). Returns false only when the reversal could not apply at all (e.g. no wallet row), so
+        // the caller leaves the order PendingProvider for the reconciler rather than claiming a refund.
+        private static bool ReverseFailedSpend(string table, string userId, decimal amount, string type, string orderId)
         {
+            string claimSql = "UPDATE dbo." + table + " SET Status = '" + StatusModel.Failed +
+                              "' WHERE ID = @id AND Status IN ('" + StatusModel.PendingProvider +
+                              "', '" + StatusModel.InProgress + "')";
+            WalletService.BalanceMutationResult rev;
             try
             {
-                var rev = WalletService.Credit(userId, amount, 0m, 0d, type, orderId);
-                return rev.Success;
+                rev = WalletService.ReverseForOrder(userId, amount, type, orderId,
+                    claimSql, new[] { new SqlParameter("@id", orderId) });
             }
             catch
             {
-                return false;
+                return false; // transient error — leave PendingProvider for reconciliation
             }
+            return rev.Success || rev.FailureReason == "claim_lost";
         }
 
         /// <summary>
@@ -227,12 +234,12 @@ namespace QryptoCard.INT.Script.Service
             }
             if (definitiveFailure)
             {
-                if (TryReverse(x.UserID, total, WalletService.TypeCardTopupReversal, x.ID))
-                {
-                    SetDepositStatus(x.ID, StatusModel.Failed);
+                // Claim-gated, atomic reversal (see OpenCard) — closes the double-refund/double-fund
+                // window where the deposit-fail webhook or reTopup could act on a PendingProvider order
+                // whose refund had already been issued.
+                if (ReverseFailedSpend("tblT_Card_Deposit", x.UserID, total, WalletService.TypeCardTopupReversal, x.ID))
                     return new SpendResult { Success = false, ProviderFailed = true, Status = StatusModel.Failed, Message = "Card provider rejected the top-up; balance refunded" };
-                }
-                System.Diagnostics.Trace.TraceError("Top-up reversal failed for order " + x.ID + " — left pending-provider for reconciliation (money-affecting)");
+                System.Diagnostics.Trace.TraceError("Top-up reversal could not apply for order " + x.ID + " — left pending-provider for reconciliation (money-affecting)");
                 return new SpendResult { Success = false, ProviderFailed = true, Status = StatusModel.PendingProvider, Message = "Card provider rejected the top-up; refund pending reconciliation" };
             }
             // Ambiguous: debit landed; order already PendingProvider (set atomically with the debit).

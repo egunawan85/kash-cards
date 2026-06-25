@@ -148,6 +148,35 @@ namespace QryptoCard.INT.Script.Service
         }
 
         /// <summary>
+        /// Compensating reversal credit for a failed card spend, atomically transitioning the order
+        /// to Failed in the SAME transaction (claim-gated, mirroring the Callback-tier CreditRefund).
+        /// The reversal credit and the status flip commit or roll back together, so there is no window
+        /// in which the order sits at PendingProvider with the refund already issued (which a webhook
+        /// or reTopup reconciler could double-act on). The claim is also the idempotency gate: a second
+        /// reversal finds 0 rows ("claim_lost") and is a no-op, so the user can never be double-credited.
+        /// </summary>
+        public static BalanceMutationResult ReverseForOrder(
+            string userId, decimal amount, string type, string orderId,
+            string claimSql, SqlParameter[] claimParams)
+        {
+            if (amount < 0m) return BalanceMutationResult.Fail("negative_credit");
+            return Mutate(
+                userId: userId,
+                balanceDelta: amount,
+                requireMinBalance: false,
+                minBalance: 0m,
+                ledgerAmount: amount,
+                ledgerCommission: 0m,
+                ledgerCommissionPct: 0d,
+                type: type,
+                transactionId: orderId,
+                status: null,
+                noRowReason: "wallet_missing",
+                claimSql: claimSql,
+                claimParams: claimParams);
+        }
+
+        /// <summary>
         /// Credit a confirmed inbound deposit, deduped per-event in the SAME transaction as the
         /// credit. The dedup row (tblH_Partner_Webhook_ID, keyed on TransactionID|Status,
         /// Type='PGCrypto') is inserted first; a duplicate-key means this exact event already
@@ -217,6 +246,21 @@ namespace QryptoCard.INT.Script.Service
             {
                 try
                 {
+                    // Optional claim in the SAME transaction (e.g. an order Created->PendingProvider
+                    // transition): a conditional UPDATE that must affect exactly one row, so the order
+                    // can never be left in a pre-debit status while holding a committed debit. 0 rows
+                    // affected -> roll back (already transitioned / not in the expected state).
+                    // (Ordered before the dedup block to match the Callback-tier copy.)
+                    if (claimSql != null)
+                    {
+                        int claimed = ctx.Database.ExecuteSqlCommand(claimSql, claimParams);
+                        if (claimed != 1)
+                        {
+                            tx.Rollback();
+                            return BalanceMutationResult.Fail("claim_lost");
+                        }
+                    }
+
                     // Per-event dedup, in the SAME transaction as the credit: insert first so a
                     // duplicate-key rolls the whole thing back (no double credit), and a crash
                     // after this point cannot leave the event deduped-but-uncredited.
@@ -234,20 +278,6 @@ namespace QryptoCard.INT.Script.Service
                         {
                             tx.Rollback();
                             return BalanceMutationResult.Fail("duplicate_event");
-                        }
-                    }
-
-                    // Optional claim in the SAME transaction (e.g. an order Created->PendingProvider
-                    // transition): a conditional UPDATE that must affect exactly one row, so the order
-                    // can never be left in a pre-debit status while holding a committed debit. 0 rows
-                    // affected -> roll back (already transitioned / not in the expected state).
-                    if (claimSql != null)
-                    {
-                        int claimed = ctx.Database.ExecuteSqlCommand(claimSql, claimParams);
-                        if (claimed != 1)
-                        {
-                            tx.Rollback();
-                            return BalanceMutationResult.Fail("claim_lost");
                         }
                     }
 

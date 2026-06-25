@@ -32,7 +32,7 @@
 -- deploy fails actionably instead of on a cryptic CREATE INDEX error.
 --
 -- Column note: TXID ships as nvarchar(max), which cannot be an index key. The dedup
--- key (<TransactionID>|<Status>) is short, so this script first narrows TXID to an
+-- key (the bare TransactionID) is short, so this script first narrows TXID to an
 -- indexable width. Safe: the table ships unwired/empty, so there is no data to lose.
 -- =============================================================================
 
