@@ -19,10 +19,11 @@
     { "project": "QryptoCard.Scrapper",       "appPool": "kash-scrapper",       "port": 8094, "loopbackOnly": true, "origDevPort": null }
   ],
 
+  "_wcf_comment": "toHostPort uses 127.0.0.1, NOT localhost: the INT IIS sites bind 127.0.0.1 (IPv4) only, and a WCF client targeting 'localhost' resolves to ::1 / a host that does not match the binding -> HTTP.sys 400 'Invalid Hostname' -> 'no endpoint listening'. Same IPv4-loopback rule as the cloudflared tunnel origin.",
   "wcfEndpointRewrites": [
-    { "_comment": "Public tiers that consume QryptoCard.INT (SecurityService, App/Admin/API CardV1Service, UserV1Service, AdminV1Service, DashboardV1Service, AuthV1Service).", "inProjects": ["QryptoCard.API", "QryptoCard.API.Public", "QryptoCard.API.Admin"], "fromHostPort": "localhost:50434", "toHostPort": "localhost:8091" },
-    { "_comment": "API.Callback -> INT.Callback (CallbackV1Service).", "inProjects": ["QryptoCard.API.Callback"], "fromHostPort": "localhost:61205", "toHostPort": "localhost:8092" },
-    { "_comment": "API.Scheduler -> INT.Scheduler (SchedulerV1Service).", "inProjects": ["QryptoCard.API.Scheduler"], "fromHostPort": "localhost:53131", "toHostPort": "localhost:8093" }
+    { "_comment": "Public tiers that consume QryptoCard.INT (SecurityService, App/Admin/API CardV1Service, UserV1Service, AdminV1Service, DashboardV1Service, AuthV1Service).", "inProjects": ["QryptoCard.API", "QryptoCard.API.Public", "QryptoCard.API.Admin"], "fromHostPort": "localhost:50434", "toHostPort": "127.0.0.1:8091" },
+    { "_comment": "API.Callback -> INT.Callback (CallbackV1Service).", "inProjects": ["QryptoCard.API.Callback"], "fromHostPort": "localhost:61205", "toHostPort": "127.0.0.1:8092" },
+    { "_comment": "API.Scheduler -> INT.Scheduler (SchedulerV1Service).", "inProjects": ["QryptoCard.API.Scheduler"], "fromHostPort": "localhost:53131", "toHostPort": "127.0.0.1:8093" }
   ],
 
   "connectionStringTiers": {
