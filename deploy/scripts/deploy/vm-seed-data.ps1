@@ -39,8 +39,12 @@ Step 'building QryptoCard.Sec'
 & $msbuild $sec /p:Configuration=Debug /v:minimal /nologo
 if ($LASTEXITCODE -ne 0) { Die 'Sec build failed' }
 
-Step 'building QryptoCard.DevSeed'
-& dotnet build $seed -c Debug -v quiet --nologo
+# Build with full MSBuild, NOT `dotnet build`: DevSeed is SDK-style net48 but references
+# the legacy (packages.config) QryptoCard.Sec, which the .NET SDK build cannot resolve
+# (CS0234). MSBuild 17 builds the SDK-style project + the legacy ProjectReference together.
+# /t:Restore restores DevSeed's PackageReferences.
+Step 'building QryptoCard.DevSeed (MSBuild)'
+& $msbuild $seed /t:Restore,Build /p:Configuration=Debug /v:minimal /nologo
 if ($LASTEXITCODE -ne 0) { Die 'DevSeed build failed' }
 
 $exe  = Join-Path $SourceDir 'QryptoCard.DevSeed\bin\Debug\net48\QryptoCard.DevSeed.exe'

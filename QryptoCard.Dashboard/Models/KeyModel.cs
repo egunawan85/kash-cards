@@ -10,7 +10,10 @@ namespace QryptoCard.Dashboard.Models
     public class KeyModel
     {
         // --- Non-secret config (environment-specific URLs) ---
-        public static string API_URL = "https://api-app-dev.kash.cards";
+        // Backend (user-tier) API base. Config-driven so each deployment points at its
+        // own backend; defaults to the on-box loopback tier (QryptoCard.API, port 8081)
+        // which is how the dashboard reaches it server-side (the backend stays internal).
+        public static string API_URL => SecretsConfig.GetOptional("API_URL", "http://127.0.0.1:8081");
         public static string REFERRAL_URL = "https://dash-dev.kash.cards/register?id=";
         public static string DETAIL_URL = "https://dash-dev.kash.cards/card/carddetail?id=";
         public static string DETAIL_OWN_URL = "https://dash-dev.kash.cards/card/mycarddetail?id=";

@@ -236,19 +236,32 @@ else
     ok "KV $KV_SECRET_NAME updated"
 fi
 
-# Build desired ingress from sites.json: one rule per PUBLIC site
-# (<hostPrefix>-<ENV>.<zone> -> http://localhost:<port>). INT tiers are
-# loopback-only and deliberately get NO ingress. Catch-all 404 must be last.
+# Build the exposure list. Prefer an explicit ROUTES array in .env.cloudflare.<env>
+# (runegate-infra style -- the operator NAMES each public URL and maps it to a loopback
+# service). Each ROUTES entry is "<prefix>:<service-url>"; hostname = "<prefix>.<zone>".
+# Fall back to sites.json public[] when ROUTES is unset. Services use 127.0.0.1 (IPv4),
+# NOT localhost: Windows resolves localhost to ::1 first but IIS binds 127.0.0.1 only, so
+# an ::1 origin hop returns HTTP.sys 400 "Invalid Hostname". Sites not listed get NO
+# public hostname (deploy-iis still builds every site loopback-only).
+declare -a EXPOSE=()   # entries: "<fqdn>\t<service-url>"
+if declare -p ROUTES >/dev/null 2>&1 && [[ "${#ROUTES[@]}" -gt 0 ]]; then
+    for r in "${ROUTES[@]}"; do EXPOSE+=("${r%%:*}.${CLOUDFLARE_ZONE}"$'\t'"${r#*:}"); done
+    ok "exposure: ${#EXPOSE[@]} route(s) from ROUTES in $(basename "$CF_FILE")"
+else
+    while IFS=$'\t' read -r prefix port; do
+        [[ -z "$prefix" ]] && continue
+        EXPOSE+=("${prefix}-${ENV}.${CLOUDFLARE_ZONE}"$'\t'"http://127.0.0.1:${port}")
+    done < <(jq -r '.public[] | "\(.hostPrefix)\t\(.port)"' "$SITES_JSON" | tr -d '\r')
+    ok "exposure: ${#EXPOSE[@]} route(s) from sites.json public[] (no ROUTES override)"
+fi
+
+# Desired ingress: one rule per exposed route. Catch-all 404 must be last.
 INGRESS_JSON='[]'
-while IFS=$'\t' read -r prefix port; do
-    [[ -z "$prefix" ]] && continue
-    hostname="$(site_hostname "$prefix")"
-    # Target 127.0.0.1 (IPv4) explicitly, NOT localhost: on Windows "localhost"
-    # resolves to ::1 (IPv6) first, but the IIS sites bind 127.0.0.1 (IPv4) only,
-    # so an ::1 origin hop gets HTTP.sys 400 "Invalid Hostname" (no binding there).
-    INGRESS_JSON=$(jq --arg h "$hostname" --arg s "http://127.0.0.1:${port}" \
+while IFS=$'\t' read -r hostname service; do
+    [[ -z "$hostname" ]] && continue
+    INGRESS_JSON=$(jq --arg h "$hostname" --arg s "$service" \
         '. + [{hostname: $h, service: $s}]' <<<"$INGRESS_JSON")
-done < <(jq -r '.public[] | "\(.hostPrefix)\t\(.port)"' "$SITES_JSON" | tr -d '\r')
+done < <(printf '%s\n' "${EXPOSE[@]}")
 N_ROUTES=$(jq length <<<"$INGRESS_JSON")
 INGRESS_JSON=$(jq '. + [{service: "http_status:404"}]' <<<"$INGRESS_JSON")
 
@@ -272,10 +285,9 @@ else
     ok "Tunnel ingress updated ($N_ROUTES public route(s))"
 fi
 
-# Create or update a proxied CNAME for each public site hostname.
-while IFS=$'\t' read -r prefix _port; do
-    [[ -z "$prefix" ]] && continue
-    hostname="$(site_hostname "$prefix")"
+# Create or update a proxied CNAME for each exposed hostname.
+while IFS=$'\t' read -r hostname _service; do
+    [[ -z "$hostname" ]] && continue
     EXISTING_REC=$(cf_api GET "/zones/${CLOUDFLARE_ZONE_ID}/dns_records?type=CNAME&name=${hostname}")
     REC_ID=$(jq -r '.result[0].id // empty' <<<"$EXISTING_REC")
     REC_CONTENT=$(jq -r '.result[0].content // empty' <<<"$EXISTING_REC")
@@ -293,7 +305,7 @@ while IFS=$'\t' read -r prefix _port; do
     else
         ok "CNAME $hostname already current"
     fi
-done < <(jq -r '.public[] | "\(.hostPrefix)\t\(.port)"' "$SITES_JSON" | tr -d '\r')
+done < <(printf '%s\n' "${EXPOSE[@]}")
 
 # ---------------------------------------------------------------------------
 # Capability gate for Sections 2-3.
@@ -437,10 +449,10 @@ echo
 echo "  Tunnel : $CLOUDFLARE_TUNNEL_NAME ($TUNNEL_ID)"
 echo "  Origin : $TUNNEL_HOST"
 echo "  Public routes ($N_ROUTES):"
-while IFS=$'\t' read -r prefix port; do
-    [[ -z "$prefix" ]] && continue
-    echo "    https://$(site_hostname "$prefix")  ->  http://localhost:${port}"
-done < <(jq -r '.public[] | "\(.hostPrefix)\t\(.port)"' "$SITES_JSON" | tr -d '\r')
+while IFS=$'\t' read -r hostname service; do
+    [[ -z "$hostname" ]] && continue
+    echo "    https://${hostname}  ->  ${service}"
+done < <(printf '%s\n' "${EXPOSE[@]}")
 echo
 echo "  Zone hardening: Always Use HTTPS, Min TLS 1.2, TLS 1.3, Auto HTTPS"
 echo "  Rewrites, SSL Full (strict), Security Level Medium, HSTS (1y +"
