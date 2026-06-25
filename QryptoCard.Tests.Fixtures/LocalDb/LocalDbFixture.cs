@@ -113,6 +113,7 @@ namespace QryptoCard.Tests.Fixtures.LocalDb
             CreateDatabase();
             ApplySchema();
             ApplyTokenSchema();
+            ApplyWalletIndexes();
             SeedData();
         }
 
@@ -231,6 +232,15 @@ namespace QryptoCard.Tests.Fixtures.LocalDb
 
         static string ResolveTokenSchemaPath()
             => ResolveRepoFilePath("deploy", "sql", "create-token-tables.sql");
+
+        // The prepaid-wallet filtered unique indexes (one active wallet / deposit address
+        // per user) are additive deploy DDL, not part of the EF init.sql. Apply the same
+        // idempotent script the production redeploy runs so the wallet race-safety and
+        // dedup tests exercise the real constraints.
+        void ApplyWalletIndexes() => RunScriptFile(ResolveWalletIndexesPath());
+
+        static string ResolveWalletIndexesPath()
+            => ResolveRepoFilePath("deploy", "sql", "create-wallet-indexes.sql");
 
         void RunScriptFile(string path)
         {

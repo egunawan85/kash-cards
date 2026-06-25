@@ -51,11 +51,13 @@ namespace QryptoCard.INT.Callback.Service
         }
 
         public static BalanceMutationResult Credit(
-            string userId, decimal netAmount, decimal grossAmount, decimal commission,
+            string userId, decimal netAmount, decimal commission,
             double commissionInPercentage, string type, string transactionId, string status = null)
         {
             if (netAmount < 0m) return BalanceMutationResult.Fail("negative_credit");
-            return Mutate(userId, netAmount, false, 0m, grossAmount, commission,
+            // Amount stores the NET balance delta (not gross) so every ledger row satisfies
+            // BalancePrevious + Amount = Balance; gross is recoverable as Amount + Commision.
+            return Mutate(userId, netAmount, false, 0m, netAmount, commission,
                 commissionInPercentage, type, transactionId, status, "wallet_missing");
         }
 

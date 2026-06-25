@@ -74,16 +74,20 @@ namespace QryptoCard.INT.Script.Service
         /// missing/inactive row fails closed rather than silently creating one mid-credit.
         /// </summary>
         public static BalanceMutationResult Credit(
-            string userId, decimal netAmount, decimal grossAmount, decimal commission,
+            string userId, decimal netAmount, decimal commission,
             double commissionInPercentage, string type, string transactionId, string status = null)
         {
             if (netAmount < 0m) return BalanceMutationResult.Fail("negative_credit");
+            // Amount stores the NET balance delta — not the gross deposit — so every ledger
+            // row satisfies the canonical tamper invariant BalancePrevious + Amount = Balance
+            // (the deployed forensic check). Commission is recorded separately; the gross
+            // deposit is recoverable as Amount + Commision.
             return Mutate(
                 userId: userId,
                 balanceDelta: netAmount,
                 requireMinBalance: false,
                 minBalance: 0m,
-                ledgerAmount: grossAmount,
+                ledgerAmount: netAmount,
                 ledgerCommission: commission,
                 ledgerCommissionPct: commissionInPercentage,
                 type: type,

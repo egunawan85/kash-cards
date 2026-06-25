@@ -349,7 +349,6 @@ namespace QryptoCard.INT.Callback.Service.v1
                                 var refund = WalletService.Credit(
                                     cr.UserID,
                                     Convert.ToDecimal(cr.Total),
-                                    Convert.ToDecimal(cr.Amount),
                                     Convert.ToDecimal(cr.Fee),
                                     Convert.ToDouble(cr.FeeInPercentage),
                                     WalletService.TypeDepositRefund,
