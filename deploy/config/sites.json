@@ -1,0 +1,32 @@
+{
+  "_comment": "IIS site map for kash-cards. 8 public sites (reached only via the Cloudflare tunnel) + 4 loopback-only WCF tiers. deploy-iis.ps1 binds each site to its localhost port, ACLs the INT tiers to 127.0.0.1, and rewrites the public tiers' WCF client endpoints (origPort -> intPort) and the INT connection strings. Hostnames are templated as <prefix>-<ENV>.<CLOUDFLARE_ZONE> (or a quick-tunnel path when CLOUDFLARE_QUICK_TUNNEL=true).",
+
+  "public": [
+    { "project": "QryptoCard.API",            "appPool": "kash-api",            "port": 8081, "hostPrefix": "api" },
+    { "project": "QryptoCard.API.Public",     "appPool": "kash-api-public",     "port": 8082, "hostPrefix": "public" },
+    { "project": "QryptoCard.API.Admin",      "appPool": "kash-api-admin",      "port": 8083, "hostPrefix": "apiadmin" },
+    { "project": "QryptoCard.API.Callback",   "appPool": "kash-api-callback",   "port": 8084, "hostPrefix": "callback" },
+    { "project": "QryptoCard.API.Scheduler",  "appPool": "kash-api-scheduler",  "port": 8085, "hostPrefix": "scheduler" },
+    { "project": "QryptoCard.APIDocs",        "appPool": "kash-apidocs",        "port": 8086, "hostPrefix": "docs" },
+    { "project": "QryptoCard.Dashboard",      "appPool": "kash-dashboard",      "port": 8087, "hostPrefix": "dashboard" },
+    { "project": "QryptoCard.Dashboard.Admin","appPool": "kash-dashboard-admin","port": 8088, "hostPrefix": "admin" }
+  ],
+
+  "internal": [
+    { "project": "QryptoCard.INT",            "appPool": "kash-int",            "port": 8091, "loopbackOnly": true, "origDevPort": 50434 },
+    { "project": "QryptoCard.INT.Callback",   "appPool": "kash-int-callback",   "port": 8092, "loopbackOnly": true, "origDevPort": 61205 },
+    { "project": "QryptoCard.INT.Scheduler",  "appPool": "kash-int-scheduler",  "port": 8093, "loopbackOnly": true, "origDevPort": 53131 },
+    { "project": "QryptoCard.Scrapper",       "appPool": "kash-scrapper",       "port": 8094, "loopbackOnly": true, "origDevPort": null }
+  ],
+
+  "wcfEndpointRewrites": [
+    { "_comment": "Public tiers that consume QryptoCard.INT (SecurityService, App/Admin/API CardV1Service, UserV1Service, AdminV1Service, DashboardV1Service, AuthV1Service).", "inProjects": ["QryptoCard.API", "QryptoCard.API.Public", "QryptoCard.API.Admin"], "fromHostPort": "localhost:50434", "toHostPort": "localhost:8091" },
+    { "_comment": "API.Callback -> INT.Callback (CallbackV1Service).", "inProjects": ["QryptoCard.API.Callback"], "fromHostPort": "localhost:61205", "toHostPort": "localhost:8092" },
+    { "_comment": "API.Scheduler -> INT.Scheduler (SchedulerV1Service).", "inProjects": ["QryptoCard.API.Scheduler"], "fromHostPort": "localhost:53131", "toHostPort": "localhost:8093" }
+  ],
+
+  "connectionStringTiers": {
+    "_comment": "Only these tiers hold the EF 'DBEntities' connection string; deploy-iis injects server/db/user/password into each, all pointed at the SINGLE on-box dev DB (consolidating the 3 different catalogs the committed configs carried).",
+    "projects": ["QryptoCard.INT", "QryptoCard.INT.Callback", "QryptoCard.INT.Scheduler"]
+  }
+}
