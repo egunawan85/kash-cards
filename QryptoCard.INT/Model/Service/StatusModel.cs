@@ -16,6 +16,9 @@ namespace QryptoCard.INT.Model.Service
         public const string Approved = "approved";
         public const string InQueue = "in queue";
         public const string InProgress = "in progress";
+        // Provider call returned an ambiguous result (timeout / null): the balance debit stands
+        // and the card may or may not have been created — reconcile, never auto-reverse (C3.c).
+        public const string PendingProvider = "pending provider";
         public const string OnHold = "on hold";
         public const string Pending = "pending";
         public const string Archived = "archived";

@@ -113,6 +113,8 @@ namespace QryptoCard.Tests.Fixtures.LocalDb
             CreateDatabase();
             ApplySchema();
             ApplyTokenSchema();
+            ApplyWalletIndexes();
+            ApplyWebhookDedupIndex();
             SeedData();
         }
 
@@ -231,6 +233,23 @@ namespace QryptoCard.Tests.Fixtures.LocalDb
 
         static string ResolveTokenSchemaPath()
             => ResolveRepoFilePath("deploy", "sql", "create-token-tables.sql");
+
+        // The prepaid-wallet filtered unique indexes (one active wallet / deposit address
+        // per user) are additive deploy DDL, not part of the EF init.sql. Apply the same
+        // idempotent script the production redeploy runs so the wallet race-safety and
+        // dedup tests exercise the real constraints.
+        void ApplyWalletIndexes() => RunScriptFile(ResolveWalletIndexesPath());
+
+        static string ResolveWalletIndexesPath()
+            => ResolveRepoFilePath("deploy", "sql", "create-wallet-indexes.sql");
+
+        // The per-event webhook dedup unique index — the replay defence the deposit-credit
+        // branch relies on. Applied like the other additive deploy DDL so the dedup tests
+        // exercise the real constraint.
+        void ApplyWebhookDedupIndex() => RunScriptFile(ResolveWebhookDedupIndexPath());
+
+        static string ResolveWebhookDedupIndexPath()
+            => ResolveRepoFilePath("deploy", "sql", "create-webhook-dedup-index.sql");
 
         void RunScriptFile(string path)
         {

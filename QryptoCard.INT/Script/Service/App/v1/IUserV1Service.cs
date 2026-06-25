@@ -52,6 +52,10 @@ namespace QryptoCard.INT.Script.Service.App.v1
         OutputModel getReferralCode(string em, tblM_User_Referral x);
         [OperationContract]
         OutputModel getBalance(string em, tblM_User_Balance x);
+        [OperationContract]
+        OutputModel getDepositAddress(string em);
+        [OperationContract]
+        OutputModel getLedger(string em, int page, int pageSize);
 
 
 

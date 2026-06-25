@@ -283,23 +283,14 @@ namespace QryptoCard.INT.Script.Service.API.v1
                 else
                 {
                     var ck = db.tblT_Card.Where(p => p.CardTypeId == x.CardTypeId && p.UserID == uid && p.Status == StatusModel.Created).FirstOrDefault();
-                    if (data == null)
+                    if (ck != null)
                     {
                         op.Status = "failed";
                         op.Message = "You have pending transaction on this card";
                         return op;
                     }
 
-                    var qry = db.tblM_User_Crypto_Deposit.Where(p => p.UserID == uid && p.isActive == 1).FirstOrDefault();
-                    if (qry == null)
-                    {
-                        op.Status = "failed";
-                        op.Message = "No crypto address found for payment";
-                        return op;
-                    }
-
-                    x.AddressID = qry.ID;
-                    x.Address = qry.Address;
+                    // Wallet-only: paid from the prepaid balance, no static-address lookup.
                     x.UserID = uid;
 
                     if (data.NeedCardHolder == 1)
@@ -449,21 +440,22 @@ namespace QryptoCard.INT.Script.Service.API.v1
                     x.Fee = (Convert.ToDouble(x.FeeInPercentage) / 100) * x.InitialDeposit.Value;
                     x.Total = x.Price + x.InitialDeposit + x.Fee;
                     x.ReceivedAmount = x.InitialDeposit;
-                    x.Status = StatusModel.Created;
-                    x.isActive = 0;
-                    x.DateCreated = DateTime.Now;
-                    x.DateExpired = x.DateCreated.Value.AddHours(1);
+                    x.DateExpired = DateTime.Now.AddHours(1);
 
+                    // Atomic sequence (race-safe) instead of read-increment-save on the counter row.
+                    x.ID = "QRYCRDBUY" + CounterService.Next(1).ToString("000000000000");
 
-                    var st = db.tblM_Setting_Counter.Where(p => p.ID == 1).FirstOrDefault();
-                    st.Value += 1;
-                    x.ID = "QRYCRDBUY" + st.Value.Value.ToString("000000000000");
-
-                    db.tblT_Card.Add(x);
-                    db.SaveChanges();
-
+                    // Pay from the prepaid balance (debit-first, then provision via WasabiCard).
+                    var spend = CardSpendService.OpenCard(x);
+                    if (!spend.Success)
+                    {
+                        op.Status = "failed";
+                        op.Message = spend.Message;
+                        return op;
+                    }
+                    x.Status = spend.Status;
                     op.Status = "success";
-                    op.Message = "Success create card transaction";
+                    op.Message = spend.Message;
                     op.Data = JsonConvert.SerializeObject(x, Formatting.None);
                 }
             }
@@ -833,26 +825,21 @@ namespace QryptoCard.INT.Script.Service.API.v1
                     x.DateTransaction = DateTime.Now;
                     x.DateExpired = x.DateTransaction.Value.AddHours(1);
 
-                    var qry = db.tblM_User_Crypto_Deposit.Where(p => p.UserID == uid && p.isActive == 1).FirstOrDefault();
-                    if (qry == null)
+                    // Wallet-only: top-ups are paid from the prepaid balance, no static-address wait.
+                    // Atomic sequence (race-safe) instead of read-increment-save on the counter row.
+                    x.ID = "QRYCRDPST" + CounterService.Next(2).ToString("000000000000");
+
+                    // Debit balance, then provision the top-up via WasabiCard.
+                    var spend = CardSpendService.TopUp(x);
+                    if (!spend.Success)
                     {
                         op.Status = "failed";
-                        op.Message = "No crypto address found for payment";
+                        op.Message = spend.Message;
                         return op;
                     }
-
-                    x.AddressID = qry.ID;
-                    x.Address = qry.Address;
-
-                    var st = db.tblM_Setting_Counter.Where(p => p.ID == 2).FirstOrDefault();
-                    st.Value += 1;
-                    x.ID = "QRYCRDPST" + st.Value.Value.ToString("000000000000");
-
-                    db.tblT_Card_Deposit.Add(x);
-                    db.SaveChanges();
-
+                    x.Status = spend.Status;
                     op.Status = "success";
-                    op.Message = "Success create card deposit";
+                    op.Message = spend.Message;
                     op.Data = JsonConvert.SerializeObject(x, Formatting.None);
                 }
             }
