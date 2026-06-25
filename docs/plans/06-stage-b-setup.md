@@ -57,28 +57,40 @@ to rotate the dev values.
 
 ---
 
-## 2. Cloudflare — pick one
+## 2. Cloudflare — named tunnel + named ROUTES
 
-**Option A — Quick tunnel (default; recommended for dev).** No Cloudflare account or
-domain needed. `CLOUDFLARE_QUICK_TUNNEL=true` exposes the dashboard on a throwaway
-`*.trycloudflare.com` URL printed during the run; the other public sites stay loopback.
-This proves the tunnel mechanic without touching `kash.cards`. **No setup required.**
+The shakeout ran in **named mode** (`CLOUDFLARE_QUICK_TUNNEL=false`) against the **`s16.xyz`**
+zone — a full prod-shaped perimeter rehearsal. One-time setup:
+1. Add the zone in Cloudflare; create an API token scoped to **Account → Cloudflare
+   Tunnel:Edit** and **Zone → DNS:Edit**. (Zone hardening + WAF additionally need **Zone
+   Settings:Edit + Zone WAF:Edit** — see the note below.)
+2. Put the token + IDs in `deploy/config/.env.cloudflare.dev` (gitignored):
+   `CLOUDFLARE_API_TOKEN`, `CLOUDFLARE_ACCOUNT_ID`, `CLOUDFLARE_ZONE_ID`.
+3. Set `CLOUDFLARE_QUICK_TUNNEL=false` and `CLOUDFLARE_ZONE=<zone>` in `.env.provision.dev`.
 
-**Option B — Real `kash.cards` zone (do this for prod anyway).** Per-site dev subdomains
-(`api-dev.kash.cards`, `dashboard-dev.kash.cards`, …). Requires, one-time:
-1. Add `kash.cards` as a zone in your Cloudflare account.
-2. At your domain registrar, change the nameservers to the two Cloudflare assigns.
-3. Create a Cloudflare API token (Zone:DNS:Edit + Account:Cloudflare Tunnel:Edit) and a
-   scoped account; put them in `deploy/config/.env.cloudflare.dev` (gitignored):
-   `CLOUDFLARE_API_TOKEN=...`, `CLOUDFLARE_ACCOUNT_ID=...`, `CLOUDFLARE_ZONE_ID=...`.
-4. Set `CLOUDFLARE_QUICK_TUNNEL=false` in `.env.provision.dev`.
-5. Confirm the **cloudflared version pin** in `vm-install-cloudflared.ps1` is current.
-6. Fill the **callback edge IP-lock allowlist** (`CALLBACK_ALLOW_IPS` in
-   `cloudflare-setup.sh`) with WasabiCard / Runegate source CIDRs, or leave empty to skip
-   the IP-lock (the rule is skipped, not applied, when empty).
+**Which sites get a public URL is an explicit `ROUTES` array** in `.env.cloudflare.<env>`
+(the runegate-infra pattern — you *name* each hostname and map it to a loopback service;
+hostname = `<prefix>.<zone>`). The dev set:
 
-> Recommendation: **Option A for the dev shakeout** (fastest, zero domain risk); set up
-> the real zone (Option B) when you do the production cutover.
+```
+ROUTES=(
+  "app-dev:http://127.0.0.1:8087"        # Dashboard         (customer/merchant UI)
+  "admin-dev:http://127.0.0.1:8088"      # Dashboard.Admin   (admin UI, login-gated)
+  "api-dev:http://127.0.0.1:8082"        # API.Public        (programmatic, API-key)
+  "callback-dev:http://127.0.0.1:8084"   # API.Callback      (provider webhooks)
+  "docs-dev:http://127.0.0.1:8086"       # APIDocs
+)
+```
+
+Sites not listed get **no** public hostname (deploy-iis still builds all 12 loopback-only).
+Rename a prefix to rename the URL, then re-run `cloudflare-setup.sh` (idempotent). See
+[§6 Exposure model](#6-exposure-model-login--what-the-shakeout-proved) for why those 5.
+A quick tunnel (`=true`) remains available for a zero-domain test of the tunnel mechanic.
+
+> **Zone hardening + WAF are gated on the broader token.** With only Tunnel+DNS scope, the
+> setup creates the tunnel/ingress/DNS (what makes the app reachable) and **skips**
+> Always-HTTPS / min-TLS / HSTS / WAF with a clear note. Add Zone Settings:Edit +
+> Zone WAF:Edit and re-run to apply them — required for the prod cutover.
 
 ---
 
@@ -107,16 +119,81 @@ What happens, in order (all idempotent — safe to re-run):
 
 ## 4. Validate
 
+**Smoke test** — targets the programmatic API tier (`QryptoCard.API.Public`), API-key Basic
+auth, read-only:
 ```bash
-# The seeder wrote smoke credentials here during the run:
-cat deploy/secrets/.smoke.env          # contains SMOKE_API_KEY / SMOKE_API_SECRET
-# set SMOKE_BASE_URL to the tunnel URL the run printed, then:
-dotnet test QryptoCard.Tests.Smoke
+# The seeder writes smoke credentials here during the run:
+cat deploy/secrets/.smoke.env          # SMOKE_API_KEY / SMOKE_API_SECRET (wire form)
+SMOKE_BASE_URL=https://api-dev.s16.xyz dotnet test QryptoCard.Tests.Smoke
 ```
+It exercises only the API-key tier (`/v1/card`, `/v1/master`, `/v1/transaction`); the
+Bearer/dashboard backends are deliberately excluded. The mutating lifecycle tier runs only
+with `SMOKE_ALLOW_MUTATION=true`.
 
-Expect: `vm-verify` PASS (NSG deny, INT tiers loopback-only, callback rejects unsigned,
-public sites up), and the smoke suite green (auth + read tiers; the mutating lifecycle
-tier runs only with `SMOKE_ALLOW_MUTATION=true`).
+**Admin login** — browse `https://admin-dev.s16.xyz` and sign in as the seeded admin
+`edward@s16.ventures` / `KashAdmin!dev1`. An **OTP is emailed via Postmark** (confirm it
+arrives); enter it to complete login. The dashboards reach their backends over loopback —
+`KeyModel.API_URL` is config-driven (default `http://127.0.0.1:8081` / `:8083`).
+
+**Expect:** `vm-verify` PASS; the 5 public URLs answer (dashboard/docs `200`, api/admin/
+callback return their auth/signature challenges — not `5xx`); the internal surfaces
+(`apiadmin`, `scheduler`, the INT tiers, Scrapper) have **no public hostname**.
+
+---
+
+## 6. Exposure model, login & what the shakeout proved
+
+### Exposure model
+12 sites are built; **5 are public**, 7 are internal (loopback-only — reachable only on the
+box, or via the tunnel-fronted public tiers):
+
+| Public (`*-dev.s16.xyz`) | Project | Why public |
+|---|---|---|
+| `app-dev` | Dashboard | customer/merchant UI |
+| `admin-dev` | Dashboard.Admin | admin UI — login + OTP gated |
+| `api-dev` | API.Public | the programmatic, API-key customer API |
+| `callback-dev` | API.Callback | inbound provider webhooks (signature-verified) |
+| `docs-dev` | APIDocs | API documentation |
+
+**Internal (no public URL):** `QryptoCard.API` + `API.Admin` (the dashboards' Bearer-token
+backends — called server-side over loopback, never from the browser), `API.Scheduler`
+(internal job trigger), `INT` / `INT.Callback` / `INT.Scheduler` (the WCF money tier), and
+`Scrapper` (a worker that web-scrapes US billing addresses for card issuance — outbound
+only). This mirrors runegate/qrypto-omni: admin *API* and scheduler stay dark; the admin
+*dashboard* is public but login-gated.
+
+### Login & email
+The seeder creates one admin (`edward@s16.ventures` / `KashAdmin!dev1`) in `tblM_Admin` plus
+one smoke API user. Login is OTP-based: password → OTP emailed → verify → bearer token. The
+**login/OTP email path is wired to Postmark** (MailKit → `smtp.postmarkapp.com:587`,
+`POSTMARK_SERVER_TOKEN`, from `no-reply@kash.cards`). Known gaps (not on the login path):
+user *forgot-password* email is commented out, and admin-invitation / callback-failure
+emails still use a legacy Gmail path — migrate both to Postmark before prod.
+
+### What the shakeout proved (and the fixes it took)
+The full pipeline runs end-to-end on a fresh disposable VM. Non-obvious things that had to be
+right, now baked into the scripts:
+- **SQL 2025 Express** needs the static TCP port on **`IPAll`** (a per-IP loopback config
+  yields error 26058 "no TCP listening ports"); SQL Browser enabled; clients connect by
+  instance name, not `tcp:127.0.0.1,1433`.
+- **On-box build:** restore the **whole solution** before building (a shared dependency
+  declares its package in another project's `packages.config`); copy the published tree from
+  `obj\Release\Package\PackageTmp` to the site root (these projects ignore `publishUrl`);
+  **start the app pools** after publish (a stopped pool answers 503).
+- **Tunnel origin must be `127.0.0.1`**, not `localhost` (Windows resolves `localhost` to
+  `::1` first, but IIS binds IPv4 only → HTTP.sys 400 "Invalid Hostname").
+- **`vm-install-cloudflared` must be passed `KvName`** — a missing mandatory parameter makes
+  PowerShell prompt for input under `run-command` and hang forever.
+- **Windows/git-bash:** `MSYS_NO_PATHCONV=1` for `az` resource-id args; CRLF stripping;
+  cygpath for file / `@file` / native-`jq` path args.
+
+### Deferred to the prod cutover
+- Zone hardening + WAF (needs the broader CF token: Zone Settings + Zone WAF Edit).
+- Callback-host **IP-allowlist** at the Cloudflare WAF (defense-in-depth; the HMAC webhook
+  signature is the actual auth — see Plan 7 / security-findings).
+- **Replace DevSeed** with a lighter seeding method (under review).
+- Migrate the legacy-Gmail / commented-out email paths to Postmark.
+- Real secret rotation + Runegate wiring (deposits) — currently fake addresses, dev token.
 
 ---
 
