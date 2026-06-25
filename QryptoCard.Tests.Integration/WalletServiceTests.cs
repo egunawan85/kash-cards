@@ -179,7 +179,7 @@ namespace QryptoCard.Tests.Integration
             using (var ctx = _db.NewContext())
             {
                 Assert.Equal(1, ctx.tblH_User_Balance.Count(p => p.TransactionID == tx));
-                Assert.Equal(1, ctx.tblH_Partner_Webhook_ID.Count(p => p.TXID == tx + "|COMPLETED"));
+                Assert.Equal(1, ctx.tblH_Partner_Webhook_ID.Count(p => p.TXID == tx));
             }
         }
 
@@ -202,22 +202,25 @@ namespace QryptoCard.Tests.Integration
         }
 
         [Fact]
-        public void CreditDeposit_SameTxDifferentStatus_BothLand()
+        public void CreditDeposit_SameTxDifferentStatus_CreditsOnce()
         {
-            // The per-event key is (TransactionID, Status), so a PENDING and a COMPLETED delivery
-            // are distinct keys — collapsing them to the bare tx id would skip a credit (F-0031a).
+            // Dedup is keyed on TransactionID alone (credit only reaches here for confirmed
+            // events), so the SAME confirmed deposit redelivered with a different Status string
+            // must credit exactly once — not once per status value (the double-credit the
+            // red-team caught).
             var uid = FreshUser("status");
             WalletService.EnsureWallet(uid);
             var tx = "tx-st-" + Guid.NewGuid().ToString("N").Substring(0, 8);
 
-            var a = WalletService.CreditDeposit(uid, 10m, 0m, 0d, tx, "PENDING", "{}");
-            var b = WalletService.CreditDeposit(uid, 90m, 0m, 0d, tx, "COMPLETED", "{}");
+            var a = WalletService.CreditDeposit(uid, 100m, 0m, 0d, tx, "confirmed", "{}");
+            var b = WalletService.CreditDeposit(uid, 100m, 0m, 0d, tx, "completed", "{}");
 
             Assert.True(a.Success);
-            Assert.True(b.Success);
-            Assert.Equal(100m, BalanceOf(uid));
+            Assert.False(b.Success);
+            Assert.Equal("duplicate_event", b.FailureReason);
+            Assert.Equal(100m, BalanceOf(uid)); // credited once, despite differing status
             using (var ctx = _db.NewContext())
-                Assert.Equal(2, ctx.tblH_Partner_Webhook_ID.Count(p => p.TXID == tx + "|PENDING" || p.TXID == tx + "|COMPLETED"));
+                Assert.Equal(1, ctx.tblH_Partner_Webhook_ID.Count(p => p.TXID == tx));
         }
 
         [Fact]
@@ -232,7 +235,7 @@ namespace QryptoCard.Tests.Integration
             Assert.False(fail.Success);
             Assert.Equal("wallet_missing", fail.FailureReason);
             using (var ctx = _db.NewContext())
-                Assert.Equal(0, ctx.tblH_Partner_Webhook_ID.Count(p => p.TXID == tx + "|COMPLETED")); // rolled back
+                Assert.Equal(0, ctx.tblH_Partner_Webhook_ID.Count(p => p.TXID == tx)); // rolled back
 
             WalletService.EnsureWallet(uid);
             var ok = WalletService.CreditDeposit(uid, 100m, 0m, 0d, tx, "COMPLETED", "{}");

@@ -12,6 +12,9 @@ namespace QryptoCard.INT.Callback.Model.PGCrypto
         public const string WaitingPayment = "awaiting for payment";
         public const string Paid = "paid";
         public const string InProgress = "in progress";
+        // Spend parked here when the provider result was ambiguous (timeout/null). The card webhook
+        // must still be able to finalize or refund it, so finalizer queries accept it too.
+        public const string PendingProvider = "pending provider";
         public const string OpenCard = "open card";
         public const string Completed = "completed";
         public const string Success = "success";

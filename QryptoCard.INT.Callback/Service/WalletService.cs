@@ -83,17 +83,42 @@ namespace QryptoCard.INT.Callback.Service
             string transactionId, string status, string dedupRequest)
         {
             if (netAmount < 0m) return BalanceMutationResult.Fail("negative_credit");
-            string dedupKey = transactionId + "|" + (status ?? "");
+            // Dedup on the provider TransactionID ALONE — not TransactionID|Status. Credit is
+            // gated on isPaid==1 before this is ever called, so only confirmed events reach here;
+            // including the free-form Status would let the same confirmed deposit, redelivered
+            // with a different status string, credit more than once.
+            string dedupKey = transactionId;
             return Mutate(userId, netAmount, false, 0m, netAmount, commission,
                 commissionInPercentage, TypeCryptoDeposit, transactionId, status, "wallet_missing",
                 dedupType: "PGCrypto", dedupKey: dedupKey, dedupRequest: dedupRequest);
+        }
+
+        /// <summary>
+        /// Refund a failed card deposit back to the wallet, atomically with the order's
+        /// InProgress/PendingProvider -> Failed transition. The status claim and the credit commit or
+        /// roll back together, so a crash between them can never leave a deposit Failed-but-unrefunded
+        /// (the loss-of-funds gap the red-team caught). The claim is also the idempotency gate: a
+        /// replay finds 0 rows to claim and is a no-op.
+        /// </summary>
+        public static BalanceMutationResult CreditRefund(
+            string userId, decimal netAmount, decimal commission, double commissionInPercentage,
+            string depositOrderId)
+        {
+            if (netAmount < 0m) return BalanceMutationResult.Fail("negative_credit");
+            string claimSql =
+                "UPDATE dbo.tblT_Card_Deposit SET Status = 'failed' " +
+                "WHERE ID = @cid AND Status IN ('in progress', 'pending provider')";
+            return Mutate(userId, netAmount, false, 0m, netAmount, commission,
+                commissionInPercentage, TypeDepositRefund, depositOrderId, null, "wallet_missing",
+                claimSql: claimSql, claimParams: new[] { new SqlParameter("@cid", depositOrderId) });
         }
 
         private static BalanceMutationResult Mutate(
             string userId, decimal balanceDelta, bool requireMinBalance, decimal minBalance,
             decimal ledgerAmount, decimal ledgerCommission, double ledgerCommissionPct,
             string type, string transactionId, string status, string noRowReason,
-            string dedupType = null, string dedupKey = null, string dedupRequest = null)
+            string dedupType = null, string dedupKey = null, string dedupRequest = null,
+            string claimSql = null, SqlParameter[] claimParams = null)
         {
             string updateSql =
                 "UPDATE dbo.tblM_User_Balance " +
@@ -116,6 +141,21 @@ namespace QryptoCard.INT.Callback.Service
             {
                 try
                 {
+                    // Optional claim, in the SAME transaction as the credit: a conditional UPDATE that
+                    // must affect exactly one row (e.g. an order InProgress->Failed transition). It is
+                    // both the idempotency gate and an atomicity guarantee — a crash after the claim but
+                    // before the credit rolls BOTH back, so the credit is never lost, and a replay finds
+                    // 0 rows and is a no-op.
+                    if (claimSql != null)
+                    {
+                        int claimed = ctx.Database.ExecuteSqlCommand(claimSql, claimParams);
+                        if (claimed != 1)
+                        {
+                            tx.Rollback();
+                            return BalanceMutationResult.Fail("claim_lost");
+                        }
+                    }
+
                     // Per-event dedup, in the SAME transaction as the credit: insert first so a
                     // duplicate-key rolls the whole thing back (no double credit), and a crash
                     // after this point cannot leave the event deduped-but-uncredited.

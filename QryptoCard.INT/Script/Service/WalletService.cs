@@ -135,7 +135,11 @@ namespace QryptoCard.INT.Script.Service
             string transactionId, string status, string dedupRequest)
         {
             if (netAmount < 0m) return BalanceMutationResult.Fail("negative_credit");
-            string dedupKey = transactionId + "|" + (status ?? "");
+            // Dedup on the provider TransactionID ALONE — not TransactionID|Status. Credit is
+            // gated on isPaid==1 before this is ever called, so only confirmed events reach here;
+            // including the free-form Status would let the same confirmed deposit, redelivered
+            // with a different status string, credit more than once.
+            string dedupKey = transactionId;
             return Mutate(
                 userId: userId,
                 balanceDelta: netAmount,

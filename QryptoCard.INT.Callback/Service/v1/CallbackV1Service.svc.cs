@@ -196,7 +196,7 @@ namespace QryptoCard.INT.Callback.Service.v1
                     {
                         if (q.status == "success")
                         {
-                            var cr = db.tblT_Card.Where(p => p.ID == q.merchantOrderNo && p.Status == PGStatusModel.InProgress).FirstOrDefault();
+                            var cr = db.tblT_Card.Where(p => p.ID == q.merchantOrderNo && (p.Status == PGStatusModel.InProgress || p.Status == PGStatusModel.PendingProvider)).FirstOrDefault();
                             if (cr != null)
                             {
                                 cr.CardNo = q.cardNo;
@@ -255,7 +255,7 @@ namespace QryptoCard.INT.Callback.Service.v1
                     }
                     else if (type == "deposit")
                     {
-                        var cr = db.tblT_Card_Deposit.Where(p => p.ID == q.merchantOrderNo && p.Status == PGStatusModel.InProgress).FirstOrDefault();
+                        var cr = db.tblT_Card_Deposit.Where(p => p.ID == q.merchantOrderNo && (p.Status == PGStatusModel.InProgress || p.Status == PGStatusModel.PendingProvider)).FirstOrDefault();
 
                         if (q.status == "success")
                         {
@@ -324,36 +324,22 @@ namespace QryptoCard.INT.Callback.Service.v1
                                         "Wasabi deposit-fail amount differs between webhook and provider record for order " + cr.ID);
                                 }
 
-                                // Atomically claim the deposit so only ONE delivery credits the refund. A
-                                // concurrent or replayed duplicate (provider at-least-once retry) finds 0 rows
-                                // affected and bails — this InProgress->Failed transition is the in-process
-                                // idempotency gate for the refund, closing the window opened by the cross-check
-                                // call above. (The durable belt-and-suspenders is the deferred PGCryptoID/dedup
-                                // unique index.)
-                                int claimedDeposit = db.Database.ExecuteSqlCommand(
-                                    "UPDATE dbo.tblT_Card_Deposit SET Status = {0} WHERE ID = {1} AND Status = {2}",
-                                    PGStatusModel.Failed, cr.ID, PGStatusModel.InProgress);
-                                if (claimedDeposit != 1)
-                                {
-                                    System.Diagnostics.Trace.TraceWarning(
-                                        "Wasabi deposit-fail refund skipped: deposit already finalized for order " + cr.ID);
-                                    return;
-                                }
-
-                                // Route the refund through the shared atomic balance helper: EnsureWallet
-                                // closes the historical null-deref (a user with no balance row), and Credit
-                                // does the conditional UPDATE + ledger write in one Serializable transaction
-                                // instead of the old non-atomic read-modify-write. Credit the settled net
-                                // (cr.Total); record gross (cr.Amount) and fee in the ledger.
+                                // Refund atomically: the deposit's claim (InProgress/PendingProvider->Failed)
+                                // and the wallet credit commit or roll back together inside one Serializable
+                                // transaction. The claim is also the idempotency gate — a concurrent or
+                                // replayed delivery finds 0 rows to claim and is a no-op — and folding it into
+                                // the credit closes the crash window that previously could leave a deposit
+                                // Failed-but-unrefunded. EnsureWallet first so a user without a balance row
+                                // (historical null-deref) still gets the refund. Credit the settled net
+                                // (cr.Total); record the fee in the ledger.
                                 WalletService.EnsureWallet(cr.UserID);
-                                var refund = WalletService.Credit(
+                                var refund = WalletService.CreditRefund(
                                     cr.UserID,
                                     Convert.ToDecimal(cr.Total),
                                     Convert.ToDecimal(cr.Fee),
                                     Convert.ToDouble(cr.FeeInPercentage),
-                                    WalletService.TypeDepositRefund,
                                     cr.ID);
-                                if (!refund.Success)
+                                if (!refund.Success && refund.FailureReason != "claim_lost")
                                 {
                                     System.Diagnostics.Trace.TraceError(
                                         "Wasabi deposit-fail refund credit failed (" + refund.FailureReason + ") for order " + cr.ID);
@@ -495,7 +481,12 @@ namespace QryptoCard.INT.Callback.Service.v1
         {
             DBEntities db = new DBEntities();
 
-            var y = db.tblT_Card_Deposit.Where(p => p.ID == tid && p.Status == "paid").FirstOrDefault();
+            // Reconciliation tool for the wallet-only model: only re-provision a deposit that is
+            // PendingProvider — i.e. the balance was ALREADY debited but the provider result was
+            // ambiguous. Re-provisioning such an order does not (and must not) debit again. The
+            // legacy "paid" status is never produced now, and re-funding a completed deposit would
+            // double-fund the card with no second debit, so it is no longer eligible here.
+            var y = db.tblT_Card_Deposit.Where(p => p.ID == tid && p.Status == PGStatusModel.PendingProvider).FirstOrDefault();
             if (y != null)
             {
                 //do deposit

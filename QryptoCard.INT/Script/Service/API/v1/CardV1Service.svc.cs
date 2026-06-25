@@ -283,7 +283,7 @@ namespace QryptoCard.INT.Script.Service.API.v1
                 else
                 {
                     var ck = db.tblT_Card.Where(p => p.CardTypeId == x.CardTypeId && p.UserID == uid && p.Status == StatusModel.Created).FirstOrDefault();
-                    if (data == null)
+                    if (ck != null)
                     {
                         op.Status = "failed";
                         op.Message = "You have pending transaction on this card";
