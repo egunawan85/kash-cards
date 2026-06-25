@@ -119,6 +119,13 @@ and to trigger incident response if so.
 
 ## Carried notes (low severity)
 
+- **Refund path dereferences the user balance row without a null check.** In the WasabiCard
+  deposit-fail refund (`CallbackV1Service.Wasabi`), the user's balance row is read with
+  `FirstOrDefault()` and then dereferenced; a user with no balance row throws and the deposit is
+  left `Failed` with no refund credited. This is **pre-existing** (the same finalize-before-credit
+  ordering existed before the cross-check work and was confirmed out-of-scope by both red-team
+  passes), but it is a real availability gap on a money path. To close: null-guard the balance row
+  and bail before claiming the deposit, or wrap the claim + credit in a single transaction.
 - **Stale generated WCF client proxies.** Removing the unused server-side operations
   (`testEmail` / `testAPI` and the `SecurityService` crypto oracles) leaves the auto-generated
   client proxies (`Connected Services/*/Reference.cs`) still declaring those operations. They are
