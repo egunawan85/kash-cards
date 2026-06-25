@@ -76,6 +76,13 @@ namespace QryptoCard.INT.Security
 
             // Both SET right-hand sides read the pre-update row values (SQL Server evaluates them against
             // the old row), so the two CASE expressions see a consistent prior FailureCount/LockoutEnd.
+            //
+            // The WHERE additionally gates on the row NOT being actively locked
+            // (LockoutEnd IS NULL OR LockoutEnd <= @now), so the DB row is the single source of truth for
+            // the lock: a concurrent wrong-password burst that all passed the earlier IsLockedOut SELECT
+            // can no longer keep incrementing (or pushing out LockoutEnd) once one of them has set the
+            // lock — the stragglers update zero rows. Rows that are NULL or already-expired still match,
+            // so the normal-increment and expired-window-reset paths are unaffected.
             string sql =
                 "UPDATE " + table + " SET " +
                 "FailureCount = CASE WHEN LockoutEnd IS NOT NULL AND LockoutEnd <= @now THEN 1 " +
@@ -83,7 +90,7 @@ namespace QryptoCard.INT.Security
                 "LockoutEnd = CASE WHEN LockoutEnd IS NOT NULL AND LockoutEnd <= @now THEN NULL " +
                 "WHEN ISNULL(FailureCount, 0) + 1 >= " + Threshold + " THEN @lockUntil " +
                 "ELSE LockoutEnd END " +
-                "WHERE " + pkColumn + " = @p0";
+                "WHERE " + pkColumn + " = @p0 AND (LockoutEnd IS NULL OR LockoutEnd <= @now)";
 
             database.ExecuteSqlCommand(sql,
                 new SqlParameter("@p0", pkValue),
