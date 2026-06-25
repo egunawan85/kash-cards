@@ -54,6 +54,11 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 DEPLOY_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
 CONFIG_DIR="$DEPLOY_ROOT/config"
 SITES_JSON="$CONFIG_DIR/sites.json"
+# jq here is a native Windows binary; when the caller exports MSYS_NO_PATHCONV=1
+# (the orchestrator does, for az), a unix /c/... path reaches jq unconverted and it
+# cannot open the file. Hand jq a forward-slash Windows path (cygpath -m), which the
+# bash builtins below (-f test, dot-source) also accept.
+if command -v cygpath >/dev/null 2>&1; then SITES_JSON="$(cygpath -m "$SITES_JSON")"; fi
 ENV="${ENV:-dev}"
 ENV_FILE="$CONFIG_DIR/.env.provision.${ENV}"
 CF_FILE="$CONFIG_DIR/.env.cloudflare.${ENV}"   # optional; NAMED-mode CF creds
@@ -240,7 +245,7 @@ while IFS=$'\t' read -r prefix port; do
     hostname="$(site_hostname "$prefix")"
     INGRESS_JSON=$(jq --arg h "$hostname" --arg s "http://localhost:${port}" \
         '. + [{hostname: $h, service: $s}]' <<<"$INGRESS_JSON")
-done < <(jq -r '.public[] | "\(.hostPrefix)\t\(.port)"' "$SITES_JSON")
+done < <(jq -r '.public[] | "\(.hostPrefix)\t\(.port)"' "$SITES_JSON" | tr -d '\r')
 N_ROUTES=$(jq length <<<"$INGRESS_JSON")
 INGRESS_JSON=$(jq '. + [{service: "http_status:404"}]' <<<"$INGRESS_JSON")
 
@@ -285,7 +290,28 @@ while IFS=$'\t' read -r prefix _port; do
     else
         ok "CNAME $hostname already current"
     fi
-done < <(jq -r '.public[] | "\(.hostPrefix)\t\(.port)"' "$SITES_JSON")
+done < <(jq -r '.public[] | "\(.hostPrefix)\t\(.port)"' "$SITES_JSON" | tr -d '\r')
+
+# ---------------------------------------------------------------------------
+# Capability gate for Sections 2-3.
+# ---------------------------------------------------------------------------
+# Zone hardening + WAF need 'Zone Settings:Edit' and 'Zone WAF:Edit' on the token.
+# A token scoped only to Account Tunnel + Zone DNS (enough for Section 1, which is
+# what actually makes the app reachable) returns 10000 auth-error here. Probe once
+# with a raw GET; if it can't read zone settings, skip hardening with a clear note
+# instead of aborting. Sections 2-3 are idempotent, so a later run with a broader
+# token completes the hardening.
+_zhprobe=$(curl -sS -X GET "${CF_API}/zones/${CLOUDFLARE_ZONE_ID}/settings/always_use_https" \
+    -H "Authorization: Bearer ${CLOUDFLARE_API_TOKEN}")
+if [[ "$(jq -r '.success' <<<"$_zhprobe")" != "true" ]]; then
+    echo
+    warn "API token lacks Zone Settings / WAF permission -- skipping zone hardening + WAF (Sections 2-3)."
+    warn "Tunnel, ingress, and DNS are live (the app is reachable). For full hardening, add"
+    warn "'Zone Settings:Edit' + 'Zone WAF:Edit' to the token and re-run (idempotent)."
+    echo
+    ok "cloudflare-setup done (Section 1: tunnel + ingress + DNS; hardening deferred -- token scope)"
+    exit 0
+fi
 
 # ---------------------------------------------------------------------------
 # Section 2: zone hardening (TLS / HSTS / security)
@@ -411,7 +437,7 @@ echo "  Public routes ($N_ROUTES):"
 while IFS=$'\t' read -r prefix port; do
     [[ -z "$prefix" ]] && continue
     echo "    https://$(site_hostname "$prefix")  ->  http://localhost:${port}"
-done < <(jq -r '.public[] | "\(.hostPrefix)\t\(.port)"' "$SITES_JSON")
+done < <(jq -r '.public[] | "\(.hostPrefix)\t\(.port)"' "$SITES_JSON" | tr -d '\r')
 echo
 echo "  Zone hardening: Always Use HTTPS, Min TLS 1.2, TLS 1.3, Auto HTTPS"
 echo "  Rewrites, SSL Full (strict), Security Level Medium, HSTS (1y +"
