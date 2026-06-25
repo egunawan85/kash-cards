@@ -461,6 +461,12 @@ foreach ($site in $allSites) {
     $webConfig = Join-Path $dest 'Web.config'
     Rewrite-WcfEndpoints      -Project $project -WebConfigPath $webConfig
     Rewrite-ConnectionString  -Project $project -WebConfigPath $webConfig -Password $DbPassword
+
+    # Build-And-Publish stopped the pool to release file locks for the PackageTmp copy.
+    # Wake it now that Web.config is fully patched so the site actually serves (a stopped
+    # pool answers 503). inject-secrets later recycles it to pick up the per-pool env vars.
+    Start-WebAppPool -Name $pool -ErrorAction SilentlyContinue
+    Write-Ok "$project`: app pool '$pool' started"
 }
 
 # ===========================================================================

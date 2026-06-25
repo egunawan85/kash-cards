@@ -243,7 +243,10 @@ INGRESS_JSON='[]'
 while IFS=$'\t' read -r prefix port; do
     [[ -z "$prefix" ]] && continue
     hostname="$(site_hostname "$prefix")"
-    INGRESS_JSON=$(jq --arg h "$hostname" --arg s "http://localhost:${port}" \
+    # Target 127.0.0.1 (IPv4) explicitly, NOT localhost: on Windows "localhost"
+    # resolves to ::1 (IPv6) first, but the IIS sites bind 127.0.0.1 (IPv4) only,
+    # so an ::1 origin hop gets HTTP.sys 400 "Invalid Hostname" (no binding there).
+    INGRESS_JSON=$(jq --arg h "$hostname" --arg s "http://127.0.0.1:${port}" \
         '. + [{hostname: $h, service: $s}]' <<<"$INGRESS_JSON")
 done < <(jq -r '.public[] | "\(.hostPrefix)\t\(.port)"' "$SITES_JSON" | tr -d '\r')
 N_ROUTES=$(jq length <<<"$INGRESS_JSON")
