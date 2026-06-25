@@ -31,6 +31,7 @@ Numbered in **implementation order** — rotation → deployment → hardening:
 - [`02-redeploy-and-perimeter.md`](02-redeploy-and-perimeter.md)
 - [`03-security-hardening.md`](03-security-hardening.md)
 - [`04-auth-tokens-2fa.md`](04-auth-tokens-2fa.md) — bearer-token & email-OTP/2FA design (broke out of P3·S3; awaiting sign-off)
+- [`05-execution-runbook.md`](05-execution-runbook.md) — **operational plan of record**: dev shakeout → prod cutover (how the code-complete hardening goes live)
 
 ## Progress (live status)
 
@@ -53,14 +54,19 @@ Legend: ✅ done · 🟡 partial · ⬜ not started · ⏸ deferred (blocked on 
 | **P3·S6** — Verification & red-team | ✅ | escalated to **full external red-team** — separate headless `claude` instances (Opus + Sonnet) in detached worktrees, verdicts posted verbatim — run across **every** PR (#2–#12), incl. post-merge assurance on the already-merged #2/#4. xUnit projects (#6). |
 | **P4** — Auth tokens & 2FA (opaque bearer tokens, SubjectType, email-OTP → 2FA) | ✅ | **DONE — #7–#11 merged** (real OTP #7, token subsystem #8, bearer wiring #9, dashboard Basic→Bearer + Postmark #10, consolidated via #11). Runegate-wholesale auth subsystem, LocalDB integration-tested. Residual: OTP lockout (DB-gated). |
 
-**Shipped:** PR #1–#12 — secrets foundation (#1), callback signature verification (#2), INT money-tier WCF auth (#3), IDOR + fee-backdoor + `enable2FA` (#4), admin role guards (#5), xUnit test projects (#6), then all of **Plan 4** — real OTP (#7), opaque bearer-token subsystem + LocalDB harness (#8), bearer wiring (#9), dashboard Basic→Bearer + Postmark (#10), consolidated into `main` (#11) — and a **comprehensive IDOR remediation (#12)** that closed a whole *class* of cross-user holes the original #4 missed (14 endpoints + admin role-gates). **#1–#11 merged; #12 open for review.** Every money/auth change went through a **full external red-team** (separate headless Opus + Sonnet instances); the reviews caught and we fixed before merge: a broken WCF role-guard (critical), a refresh/ban-bypass TOCTOU + a missing `AuthV1Service.svc` host (medium/runtime), old-OTP-on-regenerate, two inverted `isBanned` checks, a `login.aspx` revoke gap — and surfaced the entire #12 IDOR class on already-merged code.
+**Shipped:** PR #1–#12 — secrets foundation (#1), callback signature verification (#2), INT money-tier WCF auth (#3), IDOR + fee-backdoor + `enable2FA` (#4), admin role guards (#5), xUnit test projects (#6), then all of **Plan 4** — real OTP (#7), opaque bearer-token subsystem + LocalDB harness (#8), bearer wiring (#9), dashboard Basic→Bearer + Postmark (#10), consolidated into `main` (#11) — and a **comprehensive IDOR remediation (#12)** that closed a whole *class* of cross-user holes the original #4 missed (14 endpoints + admin role-gates), and a **security loose-ends close-out (#13)** that removed the unauthenticated write endpoint and the dead crypto/debug WCF operations, killed the accept-any-TLS-certificate bypass and pinned TLS 1.2, and added the callback replay-guard / provider cross-check / atomic-claim defense-in-depth. **#1–#13 all merged — every code-only item is now closed.** Every money/auth change went through a **full external red-team** (separate headless Opus + Sonnet instances); the reviews caught and we fixed before merge: a broken WCF role-guard (critical), a refresh/ban-bypass TOCTOU + a missing `AuthV1Service.svc` host (medium/runtime), old-OTP-on-regenerate, two inverted `isBanned` checks, a `login.aspx` revoke gap — and surfaced the entire #12 IDOR class on already-merged code.
 
-**Open code-doable loose ends** (the only things executable now without DB/provider/Azure access that aren't done — one more worktree + PR, same red-team gate):
-- **T3.4** — secure or remove the unauthenticated `AutomationV1Controller.InsertAddress` write endpoint *(forgotten — never had auth)*.
-- **T4.2 / T4.4** — gate or remove `ManualService` (`cancelCard`, `generateAPI`) + `SecurityService` crypto-oracle (`decryptdb`/`getwb`/`signRSA`/`decryptRSA`) + `testEmail`/`testAPI`; today these rely **solely on INT network isolation** *(consciously deferred when the #12 scope was set to "14 IDOR + role-gates")*.
-- **T4.3** — remove the `trustConnection()` TLS-validation bypass (RT-flagged 3×; now carries bearer tokens).
-- **T2.4** — post-verify REST cross-check on the callback (defense-in-depth + replay mitigation; the forgery hole itself is already closed by #2).
-- **Callback replay** — the Wasabi path has no replay window at all (#2 RT); track INT-tier idempotency (dedup on request/reference ID).
+**Code-doable loose ends — CLOSED by #13.** The items that were once the only things
+executable without DB/provider/Azure access are now done: the unauthenticated
+`AutomationV1Controller.InsertAddress` write endpoint (T3.4) and the dead
+`ManualService` / `SecurityService` crypto-oracle + `testEmail`/`testAPI` operations
+(T4.2/T4.4) were **removed**; the `trustConnection()` TLS-validation bypass (T4.3) was
+**deleted** and TLS 1.2 pinned; the callback gained the post-verify cross-check (T2.4),
+an atomic-claim guard, and a `TransactionID` replay guard. What remains is **operational
+only** (rotation, forensics, redeploy, the launch crypto/bcrypt migration with the
+durable UNIQUE index, OTP lockout, rate-limiter) — tracked in
+[`../security-findings.md`](../security-findings.md) and executed per
+[`05-execution-runbook.md`](05-execution-runbook.md).
 
 **Why things are deferred:** anything needing **DB access** (forensics, the crypto/bcrypt data migration, replay idempotency with a unique index) or **provider/Azure access** (rotation, deploy) is staged but not executable in Band A (code-only) — those run with your access, mostly at launch.
 
@@ -93,7 +99,7 @@ proceed with the recommendation unless you change it; ❓ = I need your input.
 | D11 | Dev shakeout data/keys | **Synthetic data**; dev/sandbox provider keys if available, else real keys with mutating-call guards | Restored prod data | ✔ **decided: synthetic data; sandbox keys preferred** |
 | D5 | Primary domain | **`kash.cards`** | `kash.now` / `qrypto.trade` (both legacy) | ✔ **decided: `kash.cards`** (subdomain→site map still TBD) |
 | D6 | Rotation timing | **Rotate provider creds now** (kills leaked values); externalize to KV during redeploy | Full externalize on the old server first | ✅ confirm |
-| D7 | Canonical prod DB | **Consolidate to ONE.** Spike confirmed all DBs share one schema (no drift) → feasible. Likely-live = `qrypto/qrypto-card-kashnow`. **Risk found:** API reads `qrypto-card` while money-callback writes `qrypto-card-kashnow` (possible split). | — | ❓ **pending live-DB check** (`tmp/db-consolidation-checks.sql`) to pick canonical + detect data split |
+| D7 | Canonical prod DB | **Consolidate to ONE.** | — | ✔ **RESOLVED by live data: canonical = `kashnow` on `gendb.database.windows.net`.** Only two kash-cards DBs actually exist (`gendb/kashnow`, `gendb-dev/qrypto-card`); the committed catalog names `qrypto-card-kashnow`/`qrypto-card-dev` are stale (no such DB). `kashnow` holds the live data (4,356 users, callback traffic today); `qrypto-card` is a near-empty dev/test remnant (2 users). **Identical schema (38 tables), no money-split → single-DB move, no keyed merge.** Committed connection strings are unreliable (prod runs an overridden config); the data is decisive. |
 | D8 | Sequencing | **Rotation → Deployment → Hardening** (deploy adds an interim Cloudflare IP-lock on the callback route to cover the pre-hardening window) | Harden before deploy | ✔ **decided: rotate → deploy → harden** |
 | D9 | Old server / DB | Treat as compromised; **decommission after cutover** | Keep as warm fallback (still-compromised) | ✅ confirm |
 | D10 | Forensics → IR | If theft is confirmed, branch to incident response (freeze suspect acct, notify WasabiCard, assess user impact) | — | ❓ depends on forensic results |

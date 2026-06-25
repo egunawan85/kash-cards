@@ -106,14 +106,38 @@ and a loopback-bound database. Until then the origin is directly reachable.
 
 - **To close:** provision the new environment and cut over; decommission the old servers.
 
-## 9. Forensics / incident response — *Open · Blocker: db*
+## 9. Forensics / incident response — *In progress · Blocker: db (analysis) + owner decision (D10)*
 
-The forensic queries (forged-callback fingerprints, ledger-tamper detection, reconciliation of
-credited value vs. confirmed deposits, profiling of the previously hardcoded preferential-fee
-account) need to be run against the live database to determine whether funds were already taken,
-and to trigger incident response if so.
+The read-only forensic queries were run against the live canonical database (`kashnow` on
+`gendb`). Preliminary results:
 
-- **To close:** run the forensic queries once database access exists; branch to IR on a positive.
+- **No mass forged-callback theft.** Credited value ($95,874.70) matches confirmed on-chain
+  value ($95,824.70) within **$50** — a single, oldest-record deposit (`QRYCRDPST…0001`,
+  2025-02-13) funded without a `Txhash`/`PGCryptoID`. Deposit statuses: 54 success / 11 expired
+  / 3 paid.
+- **Open question (DEFERRED) — duplicate `Txhash` reuse.** Five groups of "success" deposits
+  share the same `Txhash` value (uses of 8/5/4/3/2; **~$44k of credited value** sits on reused
+  values). The stored values are explorer **URLs** (`https://tronscan.org/…`), not raw on-chain
+  hashes, so this may be a benign artifact of how the field is populated **or** genuine
+  double-credits. **Deferred by owner decision** — revisit before final cutover. To resolve when
+  picked up: pull per-deposit detail for the 5 groups (users, amounts, dates, deposit addresses,
+  whether each credit maps to a distinct on-chain transaction); branch to incident response (D10)
+  only if double-crediting is confirmed.
+- **Suspect fee-GUID account `59da7833…` is a real live account** (1 user row, 9 deposits, 2
+  cards), keyed on the `UserID` nvarchar column (not `ID`, which is a bigint surrogate). The
+  preferential-fee code is already removed (PR #4); its historical fee advantage is unquantified.
+- **Ledger table is buggy/unused, not tampered.** `tblH_User_Balance` has 13 rows, all "Initial
+  Deposit", with a `Balance` that does not equal `BalancePrevious + Amount` (inconsistent
+  scaling) — a pre-existing promo-path bug, not out-of-band edits.
+- **`kashnow` has zero admin rows** (`tblM_Admin` empty) — relevant to seeding the first real
+  admin (D17) at migration.
+
+- **To close:** get the owner's read on the duplicate-`Txhash` groups (benign vs. double-credit);
+  branch to incident response (D10) only if double-crediting is confirmed; quantify the suspect
+  account's historical fee advantage as a follow-up.
+
+**Note:** the forensic script `tmp/forensics.sql` filters the suspect on `tblM_User.ID`, but in
+this schema the GUID lives in `UserID` (`ID` is a bigint) — use `UserID` when re-running.
 
 ---
 
