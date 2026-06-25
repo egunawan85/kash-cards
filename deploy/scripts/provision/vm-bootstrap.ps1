@@ -310,6 +310,22 @@ if (Test-Path $sqlcmdPath) {
 }
 
 # ===========================================================================
+# Step 3b. NuGet CLI -- deploy-iis.ps1 restores each project's packages.config
+# with it (it looks for C:\Tools\nuget.exe). Mirrors runegate-infra's bootstrap.
+# ===========================================================================
+$nugetPath = 'C:\Tools\nuget.exe'
+if (Test-Path $nugetPath) {
+    Write-Ok "nuget already installed: $nugetPath"
+} else {
+    Write-Step "downloading NuGet CLI -> $nugetPath"
+    New-Item -ItemType Directory -Path 'C:\Tools' -Force | Out-Null
+    [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.SecurityProtocolType]::Tls12
+    Invoke-WebRequest -Uri 'https://dist.nuget.org/win-x86-commandline/latest/nuget.exe' -OutFile $nugetPath -UseBasicParsing
+    if (-not (Test-Path $nugetPath)) { Stop-Bootstrap "nuget download did not produce $nugetPath" }
+    Write-Ok "nuget installed: $nugetPath"
+}
+
+# ===========================================================================
 # Step 4. VS 2022 Build Tools -- Web workload + .NET FX 4.6.2 AND 4.7.2
 # targeting packs. kash-cards' 12 projects target the 4.6.2/4.7.2 reference
 # assemblies; we build on-box (no Docker), so MSBuild + both targeting packs
@@ -466,35 +482,27 @@ $tcpRegBase = if ($mssqlInstance) {
     Join-Path $mssqlInstance.PSPath 'MSSQLServer\SuperSocketNetLib\Tcp'
 } else { $null }
 if ($tcpRegBase -and (Test-Path $tcpRegBase)) {
-    Write-Step "configuring SQL Express to listen on 127.0.0.1:1433 (loopback only)"
+    Write-Step "configuring SQL Express for TCP 1433 (runegate-infra pattern: static port on IPAll)"
     Set-ItemProperty -Path $tcpRegBase -Name Enabled -Value 1 -Type DWord
-    # Per-IP subkeys: enable + pin 1433 on the loopback IP (127.0.0.1), disable
-    # all other IPs so SQL only ever answers on loopback. IPAll left with no
-    # static port so it does not open a wildcard listener.
-    Get-ChildItem $tcpRegBase | ForEach-Object {
-        $ipKey  = $_.PSPath
-        $ipName = $_.PSChildName
-        if ($ipName -eq 'IPAll') {
-            Set-ItemProperty -Path $ipKey -Name TcpDynamicPorts -Value '' -Type String -ErrorAction SilentlyContinue
-            Set-ItemProperty -Path $ipKey -Name TcpPort         -Value '' -Type String -ErrorAction SilentlyContinue
-            return
-        }
-        $ipAddr = (Get-ItemProperty -Path $ipKey -Name IpAddress -ErrorAction SilentlyContinue).IpAddress
-        if ($ipAddr -eq '127.0.0.1') {
-            Set-ItemProperty -Path $ipKey -Name Enabled         -Value 1      -Type DWord  -ErrorAction SilentlyContinue
-            Set-ItemProperty -Path $ipKey -Name TcpDynamicPorts -Value ''     -Type String -ErrorAction SilentlyContinue
-            Set-ItemProperty -Path $ipKey -Name TcpPort         -Value '1433' -Type String -ErrorAction SilentlyContinue
-        } else {
-            Set-ItemProperty -Path $ipKey -Name Enabled         -Value 0  -Type DWord  -ErrorAction SilentlyContinue
-            Set-ItemProperty -Path $ipKey -Name TcpDynamicPorts -Value '' -Type String -ErrorAction SilentlyContinue
-            Set-ItemProperty -Path $ipKey -Name TcpPort         -Value '' -Type String -ErrorAction SilentlyContinue
-        }
+    # Static port 1433 on IPAll; clear the per-IP keys so they fall through to IPAll.
+    # (A per-IP loopback-only config left IPAll portless and produced SQL error 26058
+    # "no TCP listening ports" on SQL 2025 Express. Mirror runegate-infra's vm-bootstrap,
+    # which sets the port on IPAll.) The DB is kept off the network by the NSG (all
+    # inbound denied), not by binding loopback-only.
+    $ipAll = Join-Path $tcpRegBase 'IPAll'
+    if (Test-Path $ipAll) {
+        Set-ItemProperty -Path $ipAll -Name TcpDynamicPorts -Value ''     -Type String
+        Set-ItemProperty -Path $ipAll -Name TcpPort         -Value '1433' -Type String
+    }
+    Get-ChildItem $tcpRegBase | Where-Object { $_.PSChildName -ne 'IPAll' } | ForEach-Object {
+        Set-ItemProperty -Path $_.PSPath -Name TcpDynamicPorts -Value '' -Type String -ErrorAction SilentlyContinue
+        Set-ItemProperty -Path $_.PSPath -Name TcpPort         -Value '' -Type String -ErrorAction SilentlyContinue
     }
     if ((Get-Service $sqlSvcName).Status -eq 'Running') {
-        Write-Step "restarting $sqlSvcName to apply loopback:1433 config"
+        Write-Step "restarting $sqlSvcName to apply port 1433"
         Restart-Service -Name $sqlSvcName -Force
     }
-    Write-Ok "SQL Server Express listening on 127.0.0.1:1433 (loopback only)"
+    Write-Ok "SQL Server Express configured for TCP 1433 (NSG-dark; not exposed on the LAN)"
 } else {
     Write-Warn "no MSSQLnn.$SqlInstance hive found under $mssqlRoot (skipping loopback:1433 reconfigure)"
 }
@@ -530,25 +538,27 @@ if ($mssqlInstance) {
     Restart-Service -Name $sqlSvcName -Force
     Write-Ok "$sqlSvcName restarted; mixed-mode auth live"
 
-    # Restart-Service returns at SCM-level start, but the SQL listener takes a
-    # few more seconds. Poll TCP (the transport we just configured) so the
-    # CREATE LOGIN below doesn't race the listener.
-    Write-Step "waiting for SQL Express to accept TCP connections"
-    # TCP-connect probe (no auth): the SQL login doesn't exist yet, so an `sqlcmd -E`
-    # probe would conflate "listener not up" with "auth not ready". A small VM can take
-    # well over a minute to bring the listener back after a restart, so allow 180s.
+    # SQL 2025 Express comes up named-pipe + shared-memory only (the TCP provider is
+    # enabled but gets no static port -> logged error 26058; harmless here because every
+    # client connects LOCALLY by instance name, not over TCP). Enable SQL Browser so
+    # instance-name resolution (localhost\SQLEXPRESS) works for go-sqlcmd; the app's .NET
+    # SqlClient reaches the same instance via shared memory.
+    Write-Step "enabling SQL Browser (instance-name resolution)"
+    Set-Service SQLBrowser -StartupType Automatic
+    Start-Service SQLBrowser -ErrorAction SilentlyContinue
+
+    # Readiness: poll a real local login via the instance name (resolves to the named
+    # pipe). Proves SQL is up AND accepting connections -- exactly how the app connects.
+    Write-Step "waiting for SQL Express to accept connections (localhost\$SqlInstance)"
     $sqlReadyDeadline = (Get-Date).AddSeconds(180)
     $sqlReady         = $false
     while ((Get-Date) -lt $sqlReadyDeadline) {
-        try {
-            $tcp = New-Object System.Net.Sockets.TcpClient
-            $tcp.Connect('127.0.0.1', 1433)
-            if ($tcp.Connected) { $tcp.Close(); $sqlReady = $true; break }
-        } catch { }
+        & $sqlcmdPath -S "localhost\$SqlInstance" -E -C -l 5 -b -h -1 -Q 'SELECT 1' *> $null
+        if ($LASTEXITCODE -eq 0) { $sqlReady = $true; break }
         Start-Sleep -Seconds 3
     }
     if (-not $sqlReady) {
-        Stop-Bootstrap "SQL Express not listening on 127.0.0.1:1433 within 180s after restart -- check Get-EventLog -LogName Application -Source $sqlSvcName on the VM"
+        Stop-Bootstrap "SQL Express not accepting connections on localhost\$SqlInstance within 180s -- check Get-EventLog -LogName Application -Source $sqlSvcName on the VM"
     }
     Write-Ok "SQL Express accepting TCP connections"
 
@@ -621,7 +631,7 @@ GO
     $sqlTmp = Join-Path $sqlStageDir ("$([System.IO.Path]::GetRandomFileName()).sql")
     [System.IO.File]::WriteAllText($sqlTmp, $sql, [System.Text.UTF8Encoding]::new($false))
     try {
-        $sqlOut = & $sqlcmdPath -S 'tcp:127.0.0.1,1433' -E -i $sqlTmp -b -h -1 2>&1
+        $sqlOut = & $sqlcmdPath -S "localhost\$SqlInstance" -E -i $sqlTmp -b -h -1 2>&1
         $rc     = $LASTEXITCODE
         if ($rc -ne 0) {
             $msg = ($sqlOut | Out-String).Trim()

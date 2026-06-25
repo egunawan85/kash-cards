@@ -123,7 +123,8 @@ if (-not $sqlpackage) {
 Write-Ok "sqlpackage: $sqlpackage"
 
 $sqlcmd = (Get-Command sqlcmd -ErrorAction SilentlyContinue).Source
-if (-not $sqlcmd) { Stop-Run 'sqlcmd not on PATH (expected from the SQL Express tooling install)' }
+if (-not $sqlcmd -and (Test-Path 'C:\Tools\sqlcmd.exe')) { $sqlcmd = 'C:\Tools\sqlcmd.exe' }  # vm-bootstrap installs go-sqlcmd here (not on the SYSTEM PATH)
+if (-not $sqlcmd) { Stop-Run 'sqlcmd not found on PATH or C:\Tools\sqlcmd.exe -- vm-bootstrap installs go-sqlcmd there' }
 
 if (-not (Test-Path $DacpacFile)) { Stop-Run "DACPAC not found: $DacpacFile" }
 if (-not (Test-Path $TokenDdl))   { Stop-Run "token DDL not found: $TokenDdl" }
@@ -197,8 +198,11 @@ BEGIN
     -- step; create a placeholder here only so a standalone schema publish on a
     -- bare box does not fail the grant. The bootstrap step is authoritative for
     -- the password (ALTER LOGIN there sets the real KV value).
-    PRINT 'login [$AppLogin] absent -- creating (password owned by bootstrap/seed)';
-    CREATE LOGIN [$AppLogin] WITH PASSWORD = NEWID(), CHECK_POLICY = OFF;
+    PRINT 'login [$AppLogin] absent -- creating placeholder (password owned by bootstrap/seed)';
+    -- NEWID() is not a valid password literal; derive a random one via a variable.
+    -- Dynamic SQL also keeps CREATE LOGIN out of batch-parse when the branch is skipped.
+    DECLARE @pw nvarchar(64) = CONVERT(nvarchar(36), NEWID());
+    EXEC(N'CREATE LOGIN [$AppLogin] WITH PASSWORD = ''' + @pw + N''', CHECK_POLICY = OFF;');
 END
 "@
 & $sqlcmd @masterArgs -Q $grantSql

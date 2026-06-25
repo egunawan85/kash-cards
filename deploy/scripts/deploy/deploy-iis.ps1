@@ -296,7 +296,7 @@ function Ensure-LoopbackSite {
 
 # -- NuGet restore + MSBuild publish a project to its site root. -------------
 function Build-And-Publish {
-    param([string]$Project, [string]$DestDir)
+    param([string]$Project, [string]$DestDir, [string]$Pool)
 
     $projDir  = Join-Path $RepoRoot $Project
     $csproj   = Join-Path $projDir "$Project.csproj"
@@ -325,7 +325,35 @@ function Build-And-Publish {
         /p:DeleteExistingFiles=false `
         /nologo /verbosity:minimal /m
     if ($LASTEXITCODE -ne 0) { Stop-Deploy "$Project`: msbuild publish failed (exit $LASTEXITCODE)" }
-    Write-Ok "$Project`: published to $DestDir"
+
+    # .NET Framework web projects with the MSDeploy package targets write the
+    # published tree to obj\Release\Package\PackageTmp regardless of publishUrl
+    # (the FileSystem publishUrl is only honored when the MSDeployPublish target
+    # runs, which these projects don't). So copy PackageTmp -> $DestDir ourselves.
+    # Mirrors runegate's deploy-iis.ps1.
+    $pkgTmp = Join-Path $projDir 'obj\Release\Package\PackageTmp'
+    if (Test-Path $pkgTmp) {
+        # Stop the pool first so a running w3wp releases file locks on the deployed
+        # assemblies (no-op if the pool is absent or already stopped); inject-secrets
+        # recycles the pools afterward.
+        if ($Pool) {
+            try {
+                $poolItem = Get-Item "IIS:\AppPools\$Pool" -ErrorAction SilentlyContinue
+                if ($poolItem -and $poolItem.state -eq 'Started') { Stop-WebAppPool -Name $Pool; Start-Sleep -Seconds 1 }
+            } catch { }
+        }
+        if (Test-Path $DestDir) {
+            Get-ChildItem $DestDir -Force | Remove-Item -Recurse -Force -ErrorAction SilentlyContinue
+        } else {
+            New-Item -ItemType Directory -Path $DestDir -Force | Out-Null
+        }
+        Copy-Item "$pkgTmp\*" $DestDir -Recurse -Force
+        Write-Ok "$Project`: published (PackageTmp -> $DestDir)"
+    } elseif (Test-Path (Join-Path $DestDir 'Web.config')) {
+        Write-Ok "$Project`: published to $DestDir"
+    } else {
+        Stop-Deploy "$Project`: no PackageTmp and no Web.config at $DestDir -- publish produced nothing"
+    }
 }
 
 # -- WCF endpoint rewrite: string-replace fromHostPort -> toHostPort in the
@@ -397,6 +425,24 @@ function Rewrite-ConnectionString {
 }
 
 # ===========================================================================
+# Solution-wide NuGet restore (once, up front).
+# ===========================================================================
+# Per-project restore alone is insufficient: a shared dependency (QryptoCard.Sec)
+# references BouncyCastle by HintPath into packages/, but declares it in a DIFFERENT
+# project's packages.config (QryptoCard.INT). Building a site that uses Sec BEFORE
+# the INT project restores would miss it. Restoring the whole solution first fills
+# packages/ from every packages.config, so all builds resolve their HintPaths.
+$solution = Join-Path $RepoRoot 'QryptoCard.sln'
+if (Test-Path $solution) {
+    Write-Step "nuget restore (solution): $solution"
+    & $NuGet restore $solution -PackagesDirectory (Join-Path $RepoRoot 'packages') -NonInteractive
+    if ($LASTEXITCODE -ne 0) { Stop-Deploy "solution nuget restore failed (exit $LASTEXITCODE)" }
+    Write-Ok "solution packages restored"
+} else {
+    Write-Warn "solution not found at $solution -- relying on per-project restore"
+}
+
+# ===========================================================================
 # Main pass: per site, app pool -> site -> build/publish -> Web.config patch.
 # ===========================================================================
 foreach ($site in $allSites) {
@@ -410,7 +456,7 @@ foreach ($site in $allSites) {
 
     Ensure-AppPool       -Name $pool
     Ensure-LoopbackSite  -SiteName $project -PoolName $pool -Port $port -PhysicalPath $dest
-    Build-And-Publish    -Project $project -DestDir $dest
+    Build-And-Publish    -Project $project -DestDir $dest -Pool $pool
 
     $webConfig = Join-Path $dest 'Web.config'
     Rewrite-WcfEndpoints      -Project $project -WebConfigPath $webConfig

@@ -295,12 +295,15 @@ Check "MSSQL`$$SqlInstance service: Running" {
     if (-not $svc) { throw "MSSQL`$$SqlInstance service not found" }
     if ($svc.Status -eq 'Running') { 'running' } else { throw "service state: $($svc.Status)" }
 }
-Check 'SQL TCP 1433 open on 127.0.0.1' {
-    if (Test-TcpOpen -IpAddress '127.0.0.1' -Port 1433 -TimeoutSec $NetworkTimeoutSec) {
-        'connected'
-    } else {
-        throw 'TCP 1433 not reachable on loopback (named-pipe-only instance? check TCP/IP protocol)'
-    }
+Check "SQL accepts a local connection (localhost\$SqlInstance)" {
+    # SQL Express serves locally via shared memory / named pipe (instance name), which is
+    # how the app's .NET SqlClient and the deploy's go-sqlcmd connect -- not raw TCP 1433
+    # (SQL 2025 Express has no static TCP port here). Test the path the app uses.
+    $sqlcmd = 'C:\Tools\sqlcmd.exe'
+    if (-not (Test-Path $sqlcmd)) { throw "go-sqlcmd not found at $sqlcmd" }
+    & $sqlcmd -S "localhost\$SqlInstance" -E -C -l 10 -b -h -1 -Q 'SELECT 1' *> $null
+    if ($LASTEXITCODE -eq 0) { 'connected via instance name (shared memory / named pipe)' }
+    else { throw "could not connect to localhost\$SqlInstance (exit $LASTEXITCODE)" }
 }
 
 # ===========================================================================
