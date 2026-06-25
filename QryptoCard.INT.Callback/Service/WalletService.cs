@@ -113,6 +113,24 @@ namespace QryptoCard.INT.Callback.Service
                 claimSql: claimSql, claimParams: new[] { new SqlParameter("@cid", depositOrderId) });
         }
 
+        /// <summary>
+        /// Compensating reversal credit for a failed card spend, atomically transitioning the order
+        /// to Failed in the SAME transaction via a caller-supplied claim (works for either order
+        /// table). The credit and the status flip commit or roll back together (no window for a late
+        /// webhook/reconciler to double-act), and the claim is the idempotency gate: a second reversal
+        /// finds 0 rows ("claim_lost") and is a no-op, so the user can never be double-credited. Mirrors
+        /// the INT-tier copy; used by the reconciliation sweep for both opens and top-ups.
+        /// </summary>
+        public static BalanceMutationResult ReverseForOrder(
+            string userId, decimal amount, string type, string orderId,
+            string claimSql, SqlParameter[] claimParams)
+        {
+            if (amount < 0m) return BalanceMutationResult.Fail("negative_credit");
+            return Mutate(userId, amount, false, 0m, amount, 0m, 0d,
+                type, orderId, null, "wallet_missing",
+                claimSql: claimSql, claimParams: claimParams);
+        }
+
         private static BalanceMutationResult Mutate(
             string userId, decimal balanceDelta, bool requireMinBalance, decimal minBalance,
             decimal ledgerAmount, decimal ledgerCommission, double ledgerCommissionPct,

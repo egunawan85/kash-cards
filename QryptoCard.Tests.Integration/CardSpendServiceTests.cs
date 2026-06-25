@@ -220,5 +220,47 @@ namespace QryptoCard.Tests.Integration
                 Assert.Equal(1, ctx.tblH_User_Balance.Count(p => p.TransactionID == orderId && p.Type == WalletService.TypeCardTopupReversal));
             }
         }
+
+        [Fact]
+        public void ReverseForOrder_OpenCardClaim_RefundsOnceAndIsIdempotent()
+        {
+            // The reconciliation sweep refunds a definitively-failed pending OPEN by claiming the
+            // tblT_Card row PendingProvider/InProgress -> Failed atomically with the credit. Same
+            // money-safety property as the top-up path: refund exactly once, second attempt is a no-op.
+            var uid = Fresh("orev");
+            WalletService.EnsureWallet(uid);
+            Assert.True(WalletService.Credit(uid, 100m, 0m, 0d, WalletService.TypeCryptoDeposit, "orev-fund-" + Guid.NewGuid().ToString("N").Substring(0, 8)).Success);
+
+            var orderId = "card-rev-" + Guid.NewGuid().ToString("N").Substring(0, 8);
+            Assert.True(WalletService.Debit(uid, 50m, WalletService.TypeCardOpen, orderId).Success); // balance 50
+            using (var ctx = _db.NewContext())
+            {
+                ctx.tblT_Card.Add(new tblT_Card
+                {
+                    ID = orderId, UserID = uid, CardTypeId = 1,
+                    InitialDeposit = 50d, Fee = 0d, Total = 50d, Status = StatusModel.PendingProvider, isActive = 0
+                });
+                ctx.SaveChanges();
+            }
+
+            string claim = "UPDATE dbo.tblT_Card SET Status = '" + StatusModel.Failed +
+                           "' WHERE ID = @id AND Status IN ('" + StatusModel.PendingProvider +
+                           "', '" + StatusModel.InProgress + "')";
+
+            var first = WalletService.ReverseForOrder(uid, 50m, WalletService.TypeCardOpenReversal, orderId,
+                claim, new[] { new SqlParameter("@id", orderId) });
+            var second = WalletService.ReverseForOrder(uid, 50m, WalletService.TypeCardOpenReversal, orderId,
+                claim, new[] { new SqlParameter("@id", orderId) });
+
+            Assert.True(first.Success);
+            Assert.False(second.Success);
+            Assert.Equal("claim_lost", second.FailureReason);
+            Assert.Equal(100m, BalanceOf(uid));               // refunded exactly once
+            using (var ctx = _db.NewContext())
+            {
+                Assert.Equal(StatusModel.Failed, ctx.tblT_Card.Single(p => p.ID == orderId).Status);
+                Assert.Equal(1, ctx.tblH_User_Balance.Count(p => p.TransactionID == orderId && p.Type == WalletService.TypeCardOpenReversal));
+            }
+        }
     }
 }
