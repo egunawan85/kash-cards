@@ -224,8 +224,13 @@ $features = @(
     'Web-Default-Doc',
     'Web-Http-Logging',
     'Web-Mgmt-Console',
-    'WCF-HTTP-Activation45',  # WCF over HTTP (the INT WCF service tiers)
-    'WCF-Non-HTTP-Activation',
+    # WCF over HTTP for the INT .svc money tiers. This MUST be the Server-Manager
+    # feature name ('NET-' prefix): Get-WindowsFeature does not recognize the DISM
+    # name 'WCF-HTTP-Activation45', so the old value silently warned "not on this
+    # image" and skipped -> no *.svc handler -> IIS served the .svc as static ->
+    # 404/405 -> login + every API call failed. (kash's INT WCF is HTTP-only, so the
+    # net.tcp/net.pipe Non-HTTP activation features are intentionally not installed.)
+    'NET-WCF-HTTP-Activation45',
     'NET-Framework-45-Features'
 )
 foreach ($feat in $features) {
