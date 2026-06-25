@@ -3,6 +3,10 @@
 ##
 ## Get latest from https://github.com/github/gitignore/blob/master/VisualStudio.gitignore
 
+# Local git worktrees created under the repo — never track these (they are
+# per-task checkouts, and their gitlinks must never be committed).
+.claude/worktrees/
+
 # User-specific files
 *.rsuser
 *.suo
