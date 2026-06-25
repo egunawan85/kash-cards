@@ -134,10 +134,10 @@ if [[ "$QUICK" == "true" ]]; then
     echo
     log "=== Quick tunnel (dev shakeout) ==="
     warn "CLOUDFLARE_QUICK_TUNNEL=true: a Cloudflare quick tunnel maps exactly ONE"
-    warn "URL to ONE local service. It CANNOT serve the 8 distinct public"
+    warn "URL to ONE local service. It CANNOT serve the multiple distinct public"
     warn "hostnames this app needs -- so only the PRIMARY public site (the"
     warn "Dashboard, :$PRIMARY_PORT) is exposed for the end-to-end smoke test."
-    warn "The other 7 public sites and all 4 INT tiers stay loopback-only."
+    warn "The other public sites + the internal/INT tiers stay loopback-only."
     warn "Set CLOUDFLARE_QUICK_TUNNEL=false (with the kash.cards zone + an API"
     warn "token) to bring up the real per-site named tunnel at prod."
     echo
@@ -247,6 +247,17 @@ declare -a EXPOSE=()   # entries: "<fqdn>\t<service-url>"
 if declare -p ROUTES >/dev/null 2>&1 && [[ "${#ROUTES[@]}" -gt 0 ]]; then
     for r in "${ROUTES[@]}"; do EXPOSE+=("${r%%:*}.${CLOUDFLARE_ZONE}"$'\t'"${r#*:}"); done
     ok "exposure: ${#EXPOSE[@]} route(s) from ROUTES in $(basename "$CF_FILE")"
+    # External RT (convergent MEDIUM): ROUTES is an operator override that otherwise bypasses
+    # the sites.json expose:false guard -- a stale/copied ROUTES could silently re-expose an
+    # internal tier (admin/scheduler backend). Refuse any ROUTES entry whose target port is
+    # marked expose:false in sites.json.
+    _dark_ports=$(jq -r '.public[] | select(.expose == false) | .port' "$SITES_JSON" | tr -d '\r')
+    for e in "${EXPOSE[@]}"; do
+        _p="${e##*:}"
+        if [[ -n "$_dark_ports" ]] && printf '%s\n' $_dark_ports | grep -qx "$_p" 2>/dev/null; then
+            die "ROUTES targets port $_p which is expose:false (internal-only) in sites.json -- remove it from ROUTES, or flip the site's expose flag if you really mean to publish it"
+        fi
+    done
 else
     while IFS=$'\t' read -r prefix port; do
         [[ -z "$prefix" ]] && continue

@@ -4,7 +4,7 @@
     E2E smoke suite mirroring the sister PGCrypto.Tests.Smoke: an over-the-wire
     HTTP suite that runs against the DEPLOYED endpoints, reading SMOKE_BASE_URL /
     SMOKE_API_KEY / SMOKE_API_SECRET from the environment (produced by
-    QryptoCard.DevSeed). SDK-style net48 xUnit; runs via `dotnet test`. No app
+    deploy/scripts/deploy/vm-seed.ps1). SDK-style net48 xUnit; runs via `dotnet test`. No app
     project references — it exercises the public API exactly as a real consumer.
 
     Tiers (see README): T0 env gate, T1 auth (safe everywhere), T2 read coverage
