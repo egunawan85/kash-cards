@@ -1,5 +1,6 @@
 ﻿using Newtonsoft.Json;
 using QryptoCard.API.Admin.AdminV1Service;
+using QryptoCard.API.Admin.Filters;
 using QryptoCard.API.Admin.Models.Service;
 using System;
 using System.Collections.Generic;
@@ -17,6 +18,7 @@ namespace QryptoCard.API.Admin.Controllers.v1
         OutputModel op = new OutputModel();
 
 
+        [RateLimit(5, 60)]
         [Route("login")]
         [HttpPost]
         public OutputModel login(tblM_Admin x)
@@ -35,6 +37,7 @@ namespace QryptoCard.API.Admin.Controllers.v1
             return op;
         }
 
+        [RateLimit(3, 300)]
         [Route("login/resend")]
         [HttpPost]
         public OutputModel regenrerateOTP(tblH_Admin_Login x)
@@ -53,6 +56,7 @@ namespace QryptoCard.API.Admin.Controllers.v1
             return op;
         }
 
+        [RateLimit(10, 60)]
         [Route("login/verify")]
         [HttpPost]
         public OutputModel loginVerify(tblH_Admin_Login x)
@@ -73,6 +77,7 @@ namespace QryptoCard.API.Admin.Controllers.v1
             return op;
         }
 
+        [RateLimit(5, 60)]
         [Route("password/forgot")]
         [HttpPost]
         public OutputModel forgotPassword(tblM_Admin x)
@@ -93,6 +98,7 @@ namespace QryptoCard.API.Admin.Controllers.v1
             return op;
         }
 
+        [RateLimit(10, 60)]
         [Route("password/forgot/check")]
         [HttpPost]
         public OutputModel checkforgotPassword(tblT_Admin_ForgotPassword x)
@@ -113,6 +119,7 @@ namespace QryptoCard.API.Admin.Controllers.v1
             return op;
         }
 
+        [RateLimit(10, 60)]
         [Route("password/forgot/change")]
         [HttpPost]
         public OutputModel changeforgotPassword(tblT_Admin_ForgotPassword x)
@@ -134,6 +141,7 @@ namespace QryptoCard.API.Admin.Controllers.v1
         }
 
 
+        [RateLimit(10, 60)]
         [Route("invited/check")]
         [HttpPost]
         public OutputModel getInvitedAccount(tblM_Admin x)
@@ -155,6 +163,7 @@ namespace QryptoCard.API.Admin.Controllers.v1
         }
 
 
+        [RateLimit(10, 60)]
         [Route("invited/onboarding")]
         [HttpPut]
         public OutputModel updateInvitedAccount(tblM_Admin x)
@@ -184,6 +193,7 @@ namespace QryptoCard.API.Admin.Controllers.v1
         // OutputModel is fully qualified to QryptoCard.INT.Model.Service.OutputModel
         // here (the class' field-level `op` is the proxy-generated AdminV1Service.OutputModel).
 
+        [RateLimit(10, 60)]
         [Route("mint-after-otp")]
         [HttpPost]
         public QryptoCard.INT.Model.Service.OutputModel mintAfterOtp(MintAfterOtpRequest req)
@@ -200,6 +210,7 @@ namespace QryptoCard.API.Admin.Controllers.v1
             return AuthTokenSecurity.MintAfterOtpVerify(req.OtpSessionId, req.OtpCode, "admin");
         }
 
+        [RateLimit(10, 60)]
         [Route("refresh")]
         [HttpPost]
         public QryptoCard.INT.Model.Service.OutputModel refresh(RefreshTokenRequest req)
@@ -215,6 +226,7 @@ namespace QryptoCard.API.Admin.Controllers.v1
             return AuthTokenSecurity.Refresh(req.RefreshToken);
         }
 
+        [RateLimit(10, 60)]
         [Route("revoke")]
         [HttpPost]
         public QryptoCard.INT.Model.Service.OutputModel revoke(RefreshTokenRequest req)

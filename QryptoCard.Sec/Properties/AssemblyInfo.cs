@@ -5,6 +5,10 @@ using System.Runtime.InteropServices;
 // General Information about an assembly is controlled through the following
 // set of attributes. Change these attribute values to modify the information
 // associated with an assembly.
+// Exposes internal test seams (e.g. RateLimiter's injected-clock TryClaim overload and
+// ResetForTests) to the unit-test assembly without widening the production surface.
+[assembly: InternalsVisibleTo("QryptoCard.Tests.Unit")]
+
 [assembly: AssemblyTitle("QryptoCard.Sec")]
 [assembly: AssemblyDescription("")]
 [assembly: AssemblyConfiguration("")]

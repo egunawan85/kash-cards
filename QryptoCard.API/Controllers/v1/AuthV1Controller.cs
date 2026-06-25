@@ -1,4 +1,5 @@
 ﻿using Newtonsoft.Json;
+using QryptoCard.API.Filters;
 using QryptoCard.API.UserV1Service;
 using System;
 using System.Collections.Generic;
@@ -16,6 +17,7 @@ namespace QryptoCard.API.Controllers.v1
         OutputModel op = new OutputModel();
 
 
+        [RateLimit(5, 60)]
         [Route("register")]
         [HttpPost]
         public OutputModel register(tblM_User x)
@@ -36,6 +38,7 @@ namespace QryptoCard.API.Controllers.v1
 
 
 
+        [RateLimit(3, 300)]
         [Route("register/resend")]
         [HttpPost]
         public OutputModel regenerateOTPRegister(tblH_User_Register x)
@@ -54,6 +57,7 @@ namespace QryptoCard.API.Controllers.v1
             return op;
         }
 
+        [RateLimit(10, 60)]
         [Route("register/verify")]
         [HttpPost]
         public OutputModel registerVerify(tblH_User_Register x)
@@ -77,6 +81,7 @@ namespace QryptoCard.API.Controllers.v1
 
 
 
+        [RateLimit(5, 60)]
         [Route("login")]
         [HttpPost]
         public OutputModel login(tblM_User x)
@@ -95,6 +100,7 @@ namespace QryptoCard.API.Controllers.v1
             return op;
         }
 
+        [RateLimit(3, 300)]
         [Route("login/resend")]
         [HttpPost]
         public OutputModel regenrerateOTP(tblH_User_Login x)
@@ -113,6 +119,7 @@ namespace QryptoCard.API.Controllers.v1
             return op;
         }
 
+        [RateLimit(10, 60)]
         [Route("login/verify")]
         [HttpPost]
         public OutputModel loginVerify(tblH_User_Login x)
@@ -133,6 +140,7 @@ namespace QryptoCard.API.Controllers.v1
             return op;
         }
 
+        [RateLimit(5, 60)]
         [Route("password/forgot")]
         [HttpPost]
         public OutputModel forgotPassword(tblM_User x)
@@ -153,6 +161,7 @@ namespace QryptoCard.API.Controllers.v1
             return op;
         }
 
+        [RateLimit(10, 60)]
         [Route("password/forgot/check")]
         [HttpPost]
         public OutputModel checkforgotPassword(tblT_User_ForgotPassword x)
@@ -173,6 +182,7 @@ namespace QryptoCard.API.Controllers.v1
             return op;
         }
 
+        [RateLimit(10, 60)]
         [Route("password/forgot/change")]
         [HttpPost]
         public OutputModel changeforgotPassword(tblT_User_ForgotPassword x)
@@ -209,6 +219,7 @@ namespace QryptoCard.API.Controllers.v1
         // OutputModel is fully qualified to QryptoCard.INT.Model.Service.OutputModel
         // here (the class' field-level `op` is the proxy-generated UserV1Service.OutputModel).
 
+        [RateLimit(10, 60)]
         [Route("mint-after-otp")]
         [HttpPost]
         public QryptoCard.INT.Model.Service.OutputModel mintAfterOtp(MintAfterOtpRequest req)
@@ -228,6 +239,7 @@ namespace QryptoCard.API.Controllers.v1
             return AuthTokenSecurity.MintAfterOtpVerify(req.OtpSessionId, req.OtpCode, "user");
         }
 
+        [RateLimit(10, 60)]
         [Route("refresh")]
         [HttpPost]
         public QryptoCard.INT.Model.Service.OutputModel refresh(RefreshTokenRequest req)
@@ -243,6 +255,7 @@ namespace QryptoCard.API.Controllers.v1
             return AuthTokenSecurity.Refresh(req.RefreshToken);
         }
 
+        [RateLimit(10, 60)]
         [Route("revoke")]
         [HttpPost]
         public QryptoCard.INT.Model.Service.OutputModel revoke(RefreshTokenRequest req)

@@ -53,6 +53,10 @@
     <Compile Include="SharedSecretAuth.cs" />
     <Compile Include="OtpCodes.cs" />
     <Compile Include="AuthTokens.cs" />
+    <Compile Include="LoopbackPredicate.cs" />
+    <Compile Include="RateLimiter.cs" />
+    <Compile Include="ClientIpResolver.cs" />
+    <Compile Include="LockoutPolicy.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

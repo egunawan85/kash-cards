@@ -195,6 +195,9 @@
     <Compile Include="Model\Service\DashboardModel.cs" />
     <Compile Include="Model\Service\DepositFilterModel.cs" />
     <Compile Include="Model\Service\OutputModel.cs" />
+    <Compile Include="Security\TrustedClientIp.cs" />
+    <Compile Include="Security\OtpLockout.cs" />
+    <Compile Include="Security\PasswordLockout.cs" />
     <Compile Include="Model\Service\OutputPaginationModel.cs" />
     <Compile Include="Model\Service\PaginationModel.cs" />
     <Compile Include="Model\Service\PasswordChangeModel.cs" />

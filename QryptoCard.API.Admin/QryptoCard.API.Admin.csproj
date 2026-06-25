@@ -209,6 +209,7 @@
     </Compile>
     <Compile Include="Controllers\v1\AdminV1Controller.cs" />
     <Compile Include="Controllers\v1\AuthV1Controller.cs" />
+    <Compile Include="Filters\RateLimitAttribute.cs" />
     <Compile Include="Controllers\v1\CardV1Controller.cs" />
     <Compile Include="Controllers\v1\DashboardV1Controller.cs" />
     <Compile Include="Controllers\v1\UserV1Controller.cs" />
@@ -229,6 +230,10 @@
     <ProjectReference Include="..\QryptoCard.INT\QryptoCard.INT.csproj">
       <Project>{16ED496B-A12F-479E-A244-DF11CD0ABD5D}</Project>
       <Name>QryptoCard.INT</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\QryptoCard.Sec\QryptoCard.Sec.csproj">
+      <Project>{a7615b89-8f06-4fb4-8298-6cd0ea76b7ad}</Project>
+      <Name>QryptoCard.Sec</Name>
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
