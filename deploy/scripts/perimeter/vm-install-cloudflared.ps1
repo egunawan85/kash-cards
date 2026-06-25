@@ -25,10 +25,12 @@
 
 [CmdletBinding()]
 param(
-    # KV name MUST be passed explicitly -- the VM's MI has Key Vault Secrets User
+    # KV name must be passed explicitly -- the VM's MI has Key Vault Secrets User
     # (data plane only) and cannot list vaults via Resource Manager.
-    [Parameter(Mandatory = $true)]
-    [string]$KvName,
+    # NOT [Mandatory]: a missing mandatory parameter makes PowerShell PROMPT for it,
+    # which hangs forever under `az vm run-command` (no interactive stdin) and leaves
+    # the run-command extension wedged. Default empty + fail fast below instead.
+    [string]$KvName = '',
 
     [ValidateSet('dev','stg','prd')]
     [string]$Env = 'dev'
@@ -46,6 +48,8 @@ function Stop-Install {
     Write-Host "[xx] $m" -ForegroundColor Red
     exit 1
 }
+
+if (-not $KvName) { Stop-Install "KvName is required -- pass --parameters KvName=<vault> Env=<env> (a missing value would otherwise hang on an interactive prompt under run-command)" }
 
 $AZ_CLI_PATH = 'C:\Program Files\Microsoft SDKs\Azure\CLI2\wbin\az.cmd'
 

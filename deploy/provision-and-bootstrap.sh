@@ -89,7 +89,7 @@ run_on_vm "$SCRIPT_DIR/scripts/deploy/vm-seed-data.ps1" "KvName=$KEYVAULT_NAME D
 # for a token that isn't there yet.
 log "Phase 5: Cloudflare perimeter (tunnel + token)"
 ENV="$ENV" "$SCRIPT_DIR/scripts/perimeter/cloudflare-setup.sh"
-run_on_vm "$SCRIPT_DIR/scripts/perimeter/vm-install-cloudflared.ps1"
+run_on_vm "$SCRIPT_DIR/scripts/perimeter/vm-install-cloudflared.ps1" "KvName=$KEYVAULT_NAME Env=$ENV"
 
 # ── Phase 5: verify ──────────────────────────────────────────────────────────
 run_on_vm "$SCRIPT_DIR/scripts/verify/vm-verify.ps1"
