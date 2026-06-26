@@ -446,6 +446,19 @@ namespace QryptoCard.INT.Callback.Service.v1
         }
 
 
+        public int ReconcilePendingProvider()
+        {
+            try
+            {
+                return ReconciliationService.ReconcilePendingProvider();
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Trace.TraceError("ReconcilePendingProvider failed: " + ex.GetType().FullName);
+                return 0;
+            }
+        }
+
         public void reTopup(string tid)
         {
             DBEntities db = new DBEntities();
