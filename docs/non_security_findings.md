@@ -38,3 +38,28 @@ diagnosis, which can't be done from the server side.
    the shared login template vs. an admin-only problem.
 
 **Found:** testing the dev deployment (admin login), 2026-06-25.
+
+---
+
+## NS-2. OTP login verify collapses ~6 failure modes into one message — *Open (fix recommended)*
+
+**Symptom.** `AuthV1Service.mintAfterOtpVerify` returns the identical `"Invalid OTP code or
+session"` for at least six distinct conditions: empty input, wrong code, expired code, unknown
+session, user-not-found, **and any internal exception** (e.g. a config / SQL error) caught by the
+method's outer `catch`. The generic message is partly deliberate — the catch hides `ex.Message`
+so a `SqlException` can't leak schema to the wire — but it also disguises **internal errors as
+user errors**.
+
+**Impact.** A deployment/config bug (a missing `AuthDbEntities` connection string — see PR #27)
+presented to the operator *identically* to a user fat-fingering their OTP. Finding the real cause
+required live instrumentation of the running WCF service, because the message actively
+misattributed an infrastructure failure to a bad code.
+
+**Recommended fix.** Keep the catch from surfacing `ex.Message`, but give the **internal-exception**
+path a DISTINCT, non-leaky status (e.g. `Status="error"`, `Message="Authentication temporarily
+unavailable"`) separate from the genuine bad-OTP returns — so config/infra failures are visible
+instead of disguised. Optionally split expired vs incorrect vs unknown-session for the user-facing
+paths (low sensitivity, since the caller already holds a valid session id). Touches money-tier auth
+code, so it warrants its own red-team.
+
+**Found:** diagnosing the OTP-login failure (PR #27), 2026-06-26.
