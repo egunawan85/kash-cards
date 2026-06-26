@@ -147,6 +147,7 @@
     <Compile Include="Service\Gateway\WasabiCard\WasabiCardService.cs" />
     <Compile Include="Service\WalletService.cs" />
     <Compile Include="Service\CardFinalizationService.cs" />
+    <Compile Include="Service\ReferralCommissionService.cs" />
     <Compile Include="Service\ReconciliationService.cs" />
     <Compile Include="Service\NotificationService.cs" />
     <Compile Include="Security\IntAuthBehavior.cs" />
