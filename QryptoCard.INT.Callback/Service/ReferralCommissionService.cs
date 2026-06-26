@@ -50,13 +50,7 @@ namespace QryptoCard.INT.Callback.Service
                     if (referrer == refereeUserId) return; // self-referral guard
 
                     double rate = GetCommissionRate(db, referrer);
-                    decimal feeDec = (decimal)fee.Value;
-                    decimal commission = Math.Round((decimal)rate * feeDec, 2);
-
-                    // Hard safety rail: never pay a referrer more than the fee the platform actually
-                    // earned on this transaction, no matter how the rate is configured. Guarantees the
-                    // feature can never run at a loss on any single payout.
-                    if (commission > feeDec) commission = feeDec;
+                    decimal commission = QryptoCard.Sec.ReferralMath.Commission(rate, fee.Value);
                     if (commission <= 0m) return;
 
                     WalletService.EnsureWallet(referrer);

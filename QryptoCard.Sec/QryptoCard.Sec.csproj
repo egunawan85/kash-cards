@@ -47,6 +47,7 @@
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Secure.cs" />
     <Compile Include="SecretsConfig.cs" />
+    <Compile Include="ReferralMath.cs" />
     <Compile Include="RunegateWebhookVerifier.cs" />
     <Compile Include="WasabiSignatureVerifier.cs" />
     <Compile Include="WebhookCrossCheckEvaluator.cs" />
