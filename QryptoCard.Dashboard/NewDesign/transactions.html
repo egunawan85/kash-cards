@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<meta name="robots" content="noindex, nofollow" />
+<link rel="icon" type="image/png" href="images/kash-logo.png?v=2" />
+<link rel="apple-touch-icon" href="images/kash-logo.png?v=2" />
+<meta name="theme-color" content="#05070a" />
+<title>Transactions &mdash; Kash</title>
+<meta name="description" content="Kash dashboard — Transactions" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700;800&family=Hanken+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="premium.css?v=7" />
+<link rel="stylesheet" href="app.css?v=2" />
+<style>
+.tx-toolbar{display:flex;align-items:center;justify-content:space-between;gap:16px;margin-bottom:18px;flex-wrap:wrap}
+.tx-chips{display:flex;gap:8px;flex-wrap:wrap}
+.tx-chip{font-family:var(--font-display);font-weight:600;font-size:.88rem;color:var(--ink-2);background:rgba(255,255,255,.03);border:1px solid var(--line-2);border-radius:var(--pill);padding:.55em 1.15em;cursor:pointer;transition:border-color .2s,color .2s,background .2s}
+.tx-chip:hover{border-color:var(--cyan);color:var(--cyan-bright)}
+.tx-chip:focus-visible{outline:none;border-color:var(--cyan);box-shadow:0 0 0 3px rgba(0,230,255,.18)}
+.tx-chip.is-active{background:rgba(0,230,255,.1);color:var(--cyan-bright);border-color:transparent;box-shadow:inset 0 0 0 1px rgba(0,230,255,.4)}
+.tx-search{position:relative;display:flex;align-items:center;min-width:240px;flex:0 1 320px}
+.tx-search svg{position:absolute;left:14px;width:18px;height:18px;color:var(--ink-3);pointer-events:none}
+.tx-search input{width:100%;padding:.72em 1em .72em 2.7em;border-radius:12px;border:1px solid var(--line-2);background:rgba(255,255,255,.03);color:var(--ink);font-family:var(--font-display);font-size:.92rem;outline:none;transition:border-color .2s,box-shadow .2s}
+.tx-search input::placeholder{color:var(--ink-3)}
+.tx-search input:focus{border-color:var(--cyan);box-shadow:0 0 0 3px rgba(0,230,255,.14)}
+.tx-search input::-webkit-search-cancel-button{-webkit-appearance:none}
+
+.tx-panel{padding:8px 26px 14px}
+.tx-group-h{font-family:var(--font-mono);font-size:.68rem;letter-spacing:.18em;text-transform:uppercase;color:var(--ink-faint);padding:18px 0 6px;border-bottom:1px solid var(--line);margin-bottom:2px}
+.tx-group[hidden]{display:none}
+
+.tx-ic-in{background:rgba(0,230,255,.08)!important;border-color:rgba(0,230,255,.22)!important;color:var(--cyan)!important}
+
+.tx-tag{display:inline-block;font-family:var(--font-mono);font-size:.6rem;letter-spacing:.08em;text-transform:uppercase;font-weight:500;padding:.18em .55em;border-radius:6px;margin-left:8px;vertical-align:1px}
+.tx-tag-pending{color:#ffce6b;background:rgba(255,206,107,.12);border:1px solid rgba(255,206,107,.28)}
+.tx-tag-refund{color:var(--cyan-bright);background:rgba(0,230,255,.1);border:1px solid rgba(0,230,255,.28)}
+
+.tx-empty{display:none;flex-direction:column;align-items:center;text-align:center;padding:46px 20px 38px;color:var(--ink-3)}
+.tx-empty[hidden]{display:none}
+.tx-empty.show{display:flex}
+.tx-empty svg{width:34px;height:34px;color:var(--ink-faint);margin-bottom:14px}
+.tx-empty-t{font-family:var(--font-display);font-weight:600;font-size:1rem;color:var(--ink-2)}
+.tx-empty-s{font-size:.86rem;margin-top:4px}
+
+@media (max-width:560px){
+  .tx-toolbar{flex-direction:column;align-items:stretch}
+  .tx-search{flex:1 1 auto}
+  .tx-panel{padding:8px 18px 14px}
+}
+</style>
+</head>
+<body>
+<div class="bg-fx"></div>
+<div class="grain"></div>
+<div class="dash">
+  <aside class="dash-side" id="side">
+    <a class="brand" href="dashboard.html"><img class="brand-logo" src="images/kash-logo.png?v=2" alt="Kash logo" /> Kash</a>
+    <nav class="dash-nav">
+      <a  href="dashboard.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/></svg> Dashboard</a>
+      <a  href="cards.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><rect x="2" y="5" width="20" height="14" rx="3"/><path d="M2 10h20"/></svg> My Cards</a>
+      <a  href="buy-card.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><rect x="2" y="5" width="20" height="14" rx="3"/><path d="M2 10h20M16 16h3"/></svg> Buy a card</a>
+      <a  href="topup.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><circle cx="12" cy="12" r="9"/><path d="M12 8v8M8 12h8"/></svg> Top up</a>
+      <a class="active" href="transactions.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M4 5h16v14H4z"/><path d="M4 9h16M8 14h5"/></svg> Transactions</a>
+      <a  href="referrals.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><circle cx="9" cy="8" r="3"/><path d="M3 20a6 6 0 0112 0M16 7a3 3 0 010 6M21 20a6 6 0 00-5-5.9"/></svg> Referrals</a>
+      <span class="lbl">Account</span>
+      <a  href="settings.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 00.3 1.9l.1.1a2 2 0 11-2.8 2.8l-.1-.1a1.7 1.7 0 00-2.9 1.2V21a2 2 0 11-4 0v-.1A1.7 1.7 0 005 19.4l-.1.1a2 2 0 11-2.8-2.8l.1-.1A1.7 1.7 0 003.4 13H3a2 2 0 110-4h.1A1.7 1.7 0 004.6 6.1l-.1-.1a2 2 0 112.8-2.8l.1.1A1.7 1.7 0 0011 3.4V3a2 2 0 114 0v.1a1.7 1.7 0 002.9 1.2l.1-.1a2 2 0 112.8 2.8l-.1.1A1.7 1.7 0 0021 11h.1a2 2 0 110 4H21a1.7 1.7 0 00-1.6 1z"/></svg> Settings</a>
+    </nav>
+    <div class="side-foot">
+      <div class="dash-user"><span class="av">J</span><div><div class="nm">John Smith</div><div class="em">john@kash.cards</div></div></div>
+      <a class="dash-nav" href="login-v2.html" style="display:flex;align-items:center;gap:12px;padding:11px 12px;border-radius:12px;color:var(--ink-3);font-weight:500;font-size:.94rem;margin-top:4px;"><svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M16 17l5-5-5-5M21 12H9M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/></svg> Sign out</a>
+    </div>
+  </aside>
+  <div class="dash-scrim" id="scrim"></div>
+  <main class="dash-main">
+<div class="dash-top">
+  <div style="display:flex;align-items:center;gap:14px;">
+    <button class="menu-btn" id="menu" aria-label="Open menu"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M3 12h18M3 18h18"/></svg></button>
+    <div>
+      <h1>Transactions</h1>
+      <div class="sub">All your card activity.</div>
+    </div>
+  </div>
+  <div class="dash-top-actions">
+    <button class="btn btn-line tx-export">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M12 3v12M7 10l5 5 5-5M5 21h14"/></svg>
+      Export CSV
+    </button>
+  </div>
+</div>
+
+<div class="tx-toolbar">
+  <div class="tx-chips" role="tablist" aria-label="Filter transactions">
+    <button class="tx-chip is-active" data-filter="all" role="tab" aria-selected="true">All</button>
+    <button class="tx-chip" data-filter="spend" role="tab" aria-selected="false">Card spend</button>
+    <button class="tx-chip" data-filter="topup" role="tab" aria-selected="false">Top-ups</button>
+    <button class="tx-chip" data-filter="refund" role="tab" aria-selected="false">Refunds</button>
+  </div>
+  <div class="tx-search">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
+    <input type="search" id="tx-search-input" placeholder="Search merchants…" aria-label="Search transactions by merchant" autocomplete="off" />
+  </div>
+</div>
+
+<section class="panel tx-panel" id="tx-list">
+
+  <!-- TODAY -->
+  <div class="tx-group" data-group>
+    <div class="tx-group-h" data-group-label>Today</div>
+
+    <div class="txn" data-type="spend" data-merchant="spotify">
+      <div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><circle cx="12" cy="12" r="9"/><path d="M8 14c2.5-1 5.5-1 8 0M8 11c3-1.3 6-1 8 .3M9 8c2-.7 4-.5 6 .4"/></svg></div>
+      <div class="meta"><div class="merchant">Spotify</div><div class="when">Today, 9:24 AM</div></div>
+      <div class="amt out">-$11.99</div>
+    </div>
+
+    <div class="txn" data-type="spend" data-merchant="whole foods market">
+      <div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M3 6h18l-1.4 12.2a2 2 0 01-2 1.8H6.4a2 2 0 01-2-1.8L3 6zM8 6V5a4 4 0 018 0v1"/></svg></div>
+      <div class="meta"><div class="merchant">Whole Foods Market</div><div class="when">Today, 8:11 AM</div></div>
+      <div class="amt out">-$54.27</div>
+    </div>
+
+    <div class="txn" data-type="spend" data-merchant="openai chatgpt">
+      <div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><circle cx="12" cy="12" r="9"/><path d="M9 12a3 3 0 106 0 3 3 0 00-6 0M12 3v3M12 18v3M3 12h3M18 12h3"/></svg></div>
+      <div class="meta"><div class="merchant">OpenAI <span class="tx-tag tx-tag-pending">Pending</span></div><div class="when">Today, 7:02 AM</div></div>
+      <div class="amt out">-$20.00</div>
+    </div>
+  </div>
+
+  <!-- YESTERDAY -->
+  <div class="tx-group" data-group>
+    <div class="tx-group-h" data-group-label>Yesterday</div>
+
+    <div class="txn" data-type="spend" data-merchant="uber">
+      <div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><rect x="3" y="11" width="18" height="6" rx="2"/><path d="M5 11l2-5h10l2 5M7 17v2M17 17v2"/></svg></div>
+      <div class="meta"><div class="merchant">Uber</div><div class="when">Yesterday, 6:48 PM</div></div>
+      <div class="amt out">-$24.30</div>
+    </div>
+
+    <div class="txn" data-type="topup" data-merchant="top up usdt">
+      <div class="ic tx-ic-in"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M12 5v14M5 12l7 7 7-7"/></svg></div>
+      <div class="meta"><div class="merchant">Top up · USDT</div><div class="when">Yesterday, 2:10 PM · 3% fee $15.46</div></div>
+      <div class="amt in">+500.00 USDT</div>
+    </div>
+
+    <div class="txn" data-type="spend" data-merchant="netflix">
+      <div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M7 3v18l5-6 5 6V3"/></svg></div>
+      <div class="meta"><div class="merchant">Netflix</div><div class="when">Yesterday, 11:30 AM</div></div>
+      <div class="amt out">-$15.49</div>
+    </div>
+  </div>
+
+  <!-- THIS WEEK -->
+  <div class="tx-group" data-group>
+    <div class="tx-group-h" data-group-label>This week</div>
+
+    <div class="txn" data-type="spend" data-merchant="amazon">
+      <div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M6 2l1.5 3h9L18 2M3 6h18l-2 13H5L3 6zM9 11h6"/></svg></div>
+      <div class="meta"><div class="merchant">Amazon</div><div class="when">11 Jun, 8:02 PM</div></div>
+      <div class="amt out">-$63.40</div>
+    </div>
+
+    <div class="txn" data-type="refund" data-merchant="amazon">
+      <div class="ic tx-ic-in"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M3 7v6h6M3.5 13a9 9 0 102.1-7.4L3 8"/></svg></div>
+      <div class="meta"><div class="merchant">Amazon <span class="tx-tag tx-tag-refund">Refund</span></div><div class="when">11 Jun, 9:15 AM</div></div>
+      <div class="amt in">+$28.00</div>
+    </div>
+
+    <div class="txn" data-type="spend" data-merchant="steam">
+      <div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><circle cx="12" cy="12" r="9"/><circle cx="15" cy="9" r="2.4"/><path d="M3.5 14l5 2.1M8.6 16.4a2.2 2.2 0 10.9-2.6"/></svg></div>
+      <div class="meta"><div class="merchant">Steam</div><div class="when">10 Jun, 10:41 PM</div></div>
+      <div class="amt out">-$39.99</div>
+    </div>
+
+    <div class="txn" data-type="spend" data-merchant="apple">
+      <div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M16 3a4 4 0 01-1 3M12 6c-3 0-5 2-5 6 0 5 3 9 5 9s2-1 3-1 1 1 3 1c1.5 0 3-3 3-5"/></svg></div>
+      <div class="meta"><div class="merchant">Apple</div><div class="when">10 Jun, 11:15 AM</div></div>
+      <div class="amt out">-$0.99</div>
+    </div>
+  </div>
+
+  <!-- EARLIER -->
+  <div class="tx-group" data-group>
+    <div class="tx-group-h" data-group-label>Earlier</div>
+
+    <div class="txn" data-type="topup" data-merchant="top up usdt">
+      <div class="ic tx-ic-in"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M12 5v14M5 12l7 7 7-7"/></svg></div>
+      <div class="meta"><div class="merchant">Top up · USDT</div><div class="when">6 Jun, 4:55 PM · 3% fee $9.27</div></div>
+      <div class="amt in">+300.00 USDT</div>
+    </div>
+
+    <div class="txn" data-type="spend" data-merchant="uber eats">
+      <div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M4 7h16M6 7l1 13h10l1-13M9 11v5M15 11v5"/></svg></div>
+      <div class="meta"><div class="merchant">Uber Eats</div><div class="when">5 Jun, 8:37 PM</div></div>
+      <div class="amt out">-$31.18</div>
+    </div>
+
+    <div class="txn" data-type="spend" data-merchant="trader joes grocery">
+      <div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M3 6h18l-1.4 12.2a2 2 0 01-2 1.8H6.4a2 2 0 01-2-1.8L3 6zM8 6V5a4 4 0 018 0v1"/></svg></div>
+      <div class="meta"><div class="merchant">Trader Joe's</div><div class="when">4 Jun, 5:20 PM</div></div>
+      <div class="amt out">-$47.63</div>
+    </div>
+
+    <div class="txn" data-type="spend" data-merchant="github">
+      <div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M9 19c-4 1.4-4-2-6-2.5M15 21v-3.2a2.8 2.8 0 00-.8-2.2c2.6-.3 5.4-1.3 5.4-5.9a4.6 4.6 0 00-1.3-3.2 4.3 4.3 0 00-.1-3.2s-1-.3-3.4 1.3a11.6 11.6 0 00-6 0C6.4 1.3 5.4 1.6 5.4 1.6a4.3 4.3 0 00-.1 3.2A4.6 4.6 0 004 8c0 4.6 2.8 5.6 5.4 5.9a2.8 2.8 0 00-.8 2.1V21"/></svg></div>
+      <div class="meta"><div class="merchant">GitHub</div><div class="when">3 Jun, 9:00 AM</div></div>
+      <div class="amt out">-$4.00</div>
+    </div>
+  </div>
+
+  <div class="tx-empty" id="tx-empty" hidden>
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
+    <div class="tx-empty-t">No transactions found</div>
+    <div class="tx-empty-s">Try a different filter or search term.</div>
+  </div>
+</section>
+  </main>
+</div>
+<script src="dashboard.js"></script>
+<script src="topup-modal.js?v=1"></script>
+<script>
+(function(){
+  'use strict';
+  var chips = Array.prototype.slice.call(document.querySelectorAll('.tx-chip'));
+  var search = document.getElementById('tx-search-input');
+  var rows = Array.prototype.slice.call(document.querySelectorAll('#tx-list .txn'));
+  var groups = Array.prototype.slice.call(document.querySelectorAll('#tx-list [data-group]'));
+  var empty = document.getElementById('tx-empty');
+  var activeFilter = 'all';
+
+  function apply(){
+    var q = (search.value || '').trim().toLowerCase();
+    var visible = 0;
+    rows.forEach(function(row){
+      var typeOK = activeFilter === 'all' || row.getAttribute('data-type') === activeFilter;
+      var textOK = !q || (row.getAttribute('data-merchant') || '').indexOf(q) !== -1;
+      var show = typeOK && textOK;
+      row.hidden = !show;
+      if (show) visible++;
+    });
+    // Hide date groups that have no visible rows
+    groups.forEach(function(g){
+      var any = g.querySelector('.txn:not([hidden])');
+      g.hidden = !any;
+    });
+    if (empty){
+      empty.hidden = visible !== 0;
+      empty.classList.toggle('show', visible === 0);
+    }
+  }
+
+  chips.forEach(function(chip){
+    chip.addEventListener('click', function(){
+      chips.forEach(function(c){ c.classList.remove('is-active'); c.setAttribute('aria-selected','false'); });
+      chip.classList.add('is-active');
+      chip.setAttribute('aria-selected','true');
+      activeFilter = chip.getAttribute('data-filter');
+      apply();
+    });
+  });
+
+  if (search) search.addEventListener('input', apply);
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<meta name="robots" content="noindex, nofollow" />
+<link rel="icon" type="image/png" href="images/kash-logo.png?v=2" />
+<link rel="apple-touch-icon" href="images/kash-logo.png?v=2" />
+<meta name="theme-color" content="#05070a" />
+<title>Referrals &mdash; Kash</title>
+<meta name="description" content="Kash dashboard — Referrals" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700;800&family=Hanken+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="premium.css?v=7" />
+<link rel="stylesheet" href="app.css?v=2" />
+<style>
+.ref-page{display:flex;flex-direction:column;gap:20px}
+
+/* hero */
+.ref-hero{position:relative;overflow:hidden;background:radial-gradient(70% 130% at 88% 0%,rgba(0,230,255,.13),transparent 58%),var(--panel)}
+.ref-hero::before{content:"";position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,var(--cyan),transparent);opacity:.55}
+.ref-hero-title{font-family:var(--font-display);font-weight:800;font-size:clamp(1.6rem,3vw,2.1rem);letter-spacing:-.02em;line-height:1.1;margin:12px 0 10px}
+.ref-hero-sub{color:var(--ink-2);font-size:.96rem;line-height:1.55;max-width:62ch}
+.ref-share-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:24px}
+.ref-field label{display:block;font-size:.8rem;color:var(--ink-3);margin-bottom:7px}
+
+/* stats */
+.ref-stats .ref-unit{font-size:.95rem;color:var(--ink-3);font-weight:600;margin-left:3px}
+
+/* two columns */
+.ref-cols{display:grid;grid-template-columns:1.15fr 1fr;gap:20px;align-items:start}
+
+/* referral history */
+.ref-count{font-family:var(--font-mono);font-size:.74rem;letter-spacing:.04em;color:var(--ink-3);text-transform:uppercase}
+.ref-av{font-family:var(--font-display);font-weight:700;font-size:.78rem;letter-spacing:.02em;color:var(--cyan-bright)}
+.ref-history .txn .ic{background:rgba(0,230,255,.07);border:1px solid rgba(0,230,255,.18)}
+.ref-badge{font-family:var(--font-mono);font-size:.68rem;letter-spacing:.05em;text-transform:uppercase;font-weight:600;padding:.4em .7em;border-radius:999px;white-space:nowrap}
+.ref-badge-on{color:var(--cyan-bright);background:rgba(0,230,255,.1);border:1px solid rgba(0,230,255,.24)}
+.ref-badge-wait{color:var(--ink-3);background:rgba(255,255,255,.04);border:1px solid var(--line-2)}
+
+/* commission empty state */
+.ref-commission{display:flex;flex-direction:column;min-height:100%}
+.ref-empty{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:30px 16px 24px}
+.ref-empty-ic{width:58px;height:58px;border-radius:16px;display:grid;place-items:center;background:rgba(0,230,255,.07);border:1px solid rgba(0,230,255,.2);color:var(--cyan);margin-bottom:16px}
+.ref-empty-ic svg{width:26px;height:26px}
+.ref-empty-title{font-family:var(--font-display);font-weight:600;font-size:1.05rem;letter-spacing:-.01em}
+.ref-empty-sub{color:var(--ink-3);font-size:.88rem;line-height:1.5;margin-top:6px;max-width:34ch}
+
+/* how it works */
+.ref-steps{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+.ref-step{background:rgba(255,255,255,.02);border:1px solid var(--line);border-radius:var(--r);padding:20px}
+.ref-step-ic{width:42px;height:42px;border-radius:12px;display:grid;place-items:center;background:rgba(0,230,255,.08);border:1px solid rgba(0,230,255,.2);color:var(--cyan);margin-bottom:14px}
+.ref-step-ic svg{width:20px;height:20px}
+.ref-step-n{font-family:var(--font-mono);font-size:.68rem;letter-spacing:.16em;text-transform:uppercase;color:var(--cyan-deep)}
+.ref-step-t{font-family:var(--font-display);font-weight:600;font-size:1rem;letter-spacing:-.01em;margin:4px 0 7px}
+.ref-step p{color:var(--ink-3);font-size:.88rem;line-height:1.5}
+.ref-fineprint{color:var(--ink-3);font-size:.82rem;line-height:1.5;margin-top:18px;padding-top:16px;border-top:1px solid var(--line)}
+
+@media (max-width:920px){
+  .ref-share-grid{grid-template-columns:1fr}
+  .ref-cols{grid-template-columns:1fr}
+  .ref-steps{grid-template-columns:1fr}
+}
+@media (max-width:560px){
+  .ref-stats{grid-template-columns:1fr}
+}
+</style>
+</head>
+<body>
+<div class="bg-fx"></div>
+<div class="grain"></div>
+<div class="dash">
+  <aside class="dash-side" id="side">
+    <a class="brand" href="dashboard.html"><img class="brand-logo" src="images/kash-logo.png?v=2" alt="Kash logo" /> Kash</a>
+    <nav class="dash-nav">
+      <a  href="dashboard.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/></svg> Dashboard</a>
+      <a  href="cards.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><rect x="2" y="5" width="20" height="14" rx="3"/><path d="M2 10h20"/></svg> My Cards</a>
+      <a  href="buy-card.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><rect x="2" y="5" width="20" height="14" rx="3"/><path d="M2 10h20M16 16h3"/></svg> Buy a card</a>
+      <a  href="topup.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><circle cx="12" cy="12" r="9"/><path d="M12 8v8M8 12h8"/></svg> Top up</a>
+      <a  href="transactions.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M4 5h16v14H4z"/><path d="M4 9h16M8 14h5"/></svg> Transactions</a>
+      <a class="active" href="referrals.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><circle cx="9" cy="8" r="3"/><path d="M3 20a6 6 0 0112 0M16 7a3 3 0 010 6M21 20a6 6 0 00-5-5.9"/></svg> Referrals</a>
+      <span class="lbl">Account</span>
+      <a  href="settings.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 00.3 1.9l.1.1a2 2 0 11-2.8 2.8l-.1-.1a1.7 1.7 0 00-2.9 1.2V21a2 2 0 11-4 0v-.1A1.7 1.7 0 005 19.4l-.1.1a2 2 0 11-2.8-2.8l.1-.1A1.7 1.7 0 003.4 13H3a2 2 0 110-4h.1A1.7 1.7 0 004.6 6.1l-.1-.1a2 2 0 112.8-2.8l.1.1A1.7 1.7 0 0011 3.4V3a2 2 0 114 0v.1a1.7 1.7 0 002.9 1.2l.1-.1a2 2 0 112.8 2.8l-.1.1A1.7 1.7 0 0021 11h.1a2 2 0 110 4H21a1.7 1.7 0 00-1.6 1z"/></svg> Settings</a>
+    </nav>
+    <div class="side-foot">
+      <div class="dash-user"><span class="av">J</span><div><div class="nm">John Smith</div><div class="em">john@kash.cards</div></div></div>
+      <a class="dash-nav" href="login-v2.html" style="display:flex;align-items:center;gap:12px;padding:11px 12px;border-radius:12px;color:var(--ink-3);font-weight:500;font-size:.94rem;margin-top:4px;"><svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M16 17l5-5-5-5M21 12H9M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/></svg> Sign out</a>
+    </div>
+  </aside>
+  <div class="dash-scrim" id="scrim"></div>
+  <main class="dash-main">
+<div class="dash-top">
+  <div style="display:flex;align-items:center;gap:14px;">
+    <button class="menu-btn" id="menu" aria-label="Open menu"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M3 12h18M3 18h18"/></svg></button>
+    <div>
+      <h1>Referrals</h1>
+      <div class="sub">Invite friends, earn rewards.</div>
+    </div>
+  </div>
+  <div class="dash-top-actions">
+    <button class="btn btn-cyan" id="ref-share">Share invite
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="M8.6 13.5l6.8 4M15.4 6.5l-6.8 4"/></svg>
+    </button>
+  </div>
+</div>
+
+<div class="ref-page">
+  <!-- HERO -->
+  <section class="panel ref-hero">
+    <span class="eyebrow">Referral program</span>
+    <h2 class="ref-hero-title">Refer friends, <span class="grad">earn rewards</span></h2>
+    <p class="ref-hero-sub">Share your link or code. When a friend signs up and tops up their first card, you both earn &mdash; and you keep earning a commission on every top-up they make after that.</p>
+
+    <div class="ref-share-grid">
+      <div class="ref-field">
+        <label for="ref-code">Your referral code</label>
+        <div class="copy-row">
+          <input id="ref-code" value="JOHN-K92F" readonly aria-label="Referral code" />
+          <button class="copy-btn" data-copy="#ref-code" aria-label="Copy referral code"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V5a2 2 0 012-2h10"/></svg></button>
+        </div>
+      </div>
+      <div class="ref-field">
+        <label for="ref-link">Your referral link</label>
+        <div class="copy-row">
+          <input id="ref-link" value="https://kash.cards/r/JOHN-K92F" readonly aria-label="Referral link" />
+          <button class="copy-btn" data-copy="#ref-link" aria-label="Copy referral link"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V5a2 2 0 012-2h10"/></svg></button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- STATS -->
+  <section class="stat-row ref-stats">
+    <div class="stat"><div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><circle cx="9" cy="8" r="3"/><path d="M3 20a6 6 0 0112 0M16 7a3 3 0 010 6M21 20a6 6 0 00-5-5.9"/></svg></div><div class="n">8</div><div class="l">Referrals</div></div>
+    <div class="stat"><div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M12 1v22M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg></div><div class="n">0 <span class="ref-unit">USDT</span></div><div class="l">Commission earned</div></div>
+    <div class="stat"><div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M19 5L5 19M8.5 7a1.5 1.5 0 11-3 0 1.5 1.5 0 013 0zM18.5 17a1.5 1.5 0 11-3 0 1.5 1.5 0 013 0z"/></svg></div><div class="n">0.1<span class="ref-unit">%</span></div><div class="l">Commission rate</div></div>
+  </section>
+
+  <!-- TWO PANELS -->
+  <div class="ref-cols">
+    <section class="panel ref-history">
+      <div class="panel-h"><h3>Referral history</h3><span class="ref-count">8 joined</span></div>
+
+      <div class="txn"><div class="ic"><span class="ref-av">AP</span></div><div class="meta"><div class="merchant">Anthony Petrov</div><div class="when">Joined 9 Jun 2026</div></div><span class="ref-badge ref-badge-on">Active</span></div>
+      <div class="txn"><div class="ic"><span class="ref-av">MK</span></div><div class="meta"><div class="merchant">Mei Kobayashi</div><div class="when">Joined 2 Jun 2026</div></div><span class="ref-badge ref-badge-on">Active</span></div>
+      <div class="txn"><div class="ic"><span class="ref-av">DR</span></div><div class="meta"><div class="merchant">Diego Rivera</div><div class="when">Joined 28 May 2026</div></div><span class="ref-badge ref-badge-on">Active</span></div>
+      <div class="txn"><div class="ic"><span class="ref-av">SO</span></div><div class="meta"><div class="merchant">Sara Olsen</div><div class="when">Joined 21 May 2026</div></div><span class="ref-badge ref-badge-wait">Pending top-up</span></div>
+      <div class="txn"><div class="ic"><span class="ref-av">JM</span></div><div class="meta"><div class="merchant">James Müller</div><div class="when">Joined 14 May 2026</div></div><span class="ref-badge ref-badge-on">Active</span></div>
+      <div class="txn"><div class="ic"><span class="ref-av">LN</span></div><div class="meta"><div class="merchant">Lena Novak</div><div class="when">Joined 6 May 2026</div></div><span class="ref-badge ref-badge-wait">Pending top-up</span></div>
+    </section>
+
+    <section class="panel ref-commission">
+      <div class="panel-h"><h3>Commission history</h3></div>
+      <div class="ref-empty">
+        <div class="ref-empty-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 1v22M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg></div>
+        <div class="ref-empty-title">No commission yet</div>
+        <p class="ref-empty-sub">Once a referral tops up their first card, your commission lands here automatically.</p>
+      </div>
+    </section>
+  </div>
+
+  <!-- HOW IT WORKS -->
+  <section class="panel ref-how">
+    <div class="panel-h"><h3>How the program works</h3></div>
+    <div class="ref-steps">
+      <div class="ref-step">
+        <div class="ref-step-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M4 4h16v16H4z" opacity="0"/><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="M8.6 13.5l6.8 4M15.4 6.5l-6.8 4"/></svg></div>
+        <div class="ref-step-n">Step 1</div>
+        <div class="ref-step-t">Share your link</div>
+        <p>Send your code or link to a friend. They get a head start when they sign up with it.</p>
+      </div>
+      <div class="ref-step">
+        <div class="ref-step-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><rect x="2" y="5" width="20" height="14" rx="3"/><path d="M2 10h20"/></svg></div>
+        <div class="ref-step-n">Step 2</div>
+        <div class="ref-step-t">They top up a card</div>
+        <p>When your friend funds their first Kash card with USDT, the reward unlocks for both of you.</p>
+      </div>
+      <div class="ref-step">
+        <div class="ref-step-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M12 1v22M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg></div>
+        <div class="ref-step-n">Step 3</div>
+        <div class="ref-step-t">You both earn</div>
+        <p>You earn a 0.1% commission on every top-up they make &mdash; paid in USDT, for life.</p>
+      </div>
+    </div>
+    <p class="ref-fineprint">Commissions are credited in USDT to your available balance. The standard 3% top-up fee still applies to your friend's top-ups.</p>
+  </section>
+</div>
+  </main>
+</div>
+<script src="dashboard.js"></script>
+<script src="topup-modal.js?v=1"></script>
+<script>
+(function(){
+  'use strict';
+  // "Share invite" in the top bar copies the referral link and confirms via the link's copy button state.
+  var share = document.getElementById('ref-share');
+  var linkInput = document.getElementById('ref-link');
+  var linkBtn = document.querySelector('.copy-btn[data-copy="#ref-link"]');
+  if (share && linkInput) {
+    var original = share.innerHTML;
+    share.addEventListener('click', function(){
+      var text = linkInput.value;
+      var done = function(){
+        if (linkBtn){ linkBtn.classList.add('done'); setTimeout(function(){ linkBtn.classList.remove('done'); }, 1400); }
+        share.textContent = 'Link copied';
+        setTimeout(function(){ share.innerHTML = original; }, 1400);
+      };
+      if (navigator.share) {
+        navigator.share({ title: 'Join me on Kash', text: 'Get a Kash card with my referral link', url: text })
+          .then(done).catch(function(){ done(); });
+        return;
+      }
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(text).then(done, function(){ linkInput.select && linkInput.select(); done(); });
+      } else {
+        linkInput.select && linkInput.select();
+        try { document.execCommand('copy'); } catch(e){}
+        done();
+      }
+    });
+  }
+})();
+</script>
+</body>
+</html>

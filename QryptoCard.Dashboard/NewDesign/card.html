@@ -1,0 +1,341 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<meta name="robots" content="noindex, nofollow" />
+<link rel="icon" type="image/png" href="images/kash-logo.png?v=2" />
+<link rel="apple-touch-icon" href="images/kash-logo.png?v=2" />
+<meta name="theme-color" content="#05070a" />
+<title>Card details &mdash; Kash</title>
+<meta name="description" content="Kash dashboard — card details" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700;800&family=Hanken+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="premium.css?v=7" />
+<link rel="stylesheet" href="app.css?v=2" />
+<style>
+.cardv-grid{display:grid;grid-template-columns:1fr 1fr;gap:20px;align-items:start;margin-bottom:20px}
+.cardv-status{display:inline-flex;align-items:center;gap:7px;padding:5px 12px;border-radius:999px;font-family:var(--font-mono);font-size:.7rem;letter-spacing:.1em;text-transform:uppercase;font-weight:600;color:var(--cyan-bright);background:rgba(0,230,255,.1);border:1px solid rgba(0,230,255,.3);margin-bottom:16px}
+.cardv-status .dot{width:7px;height:7px;border-radius:50%;background:var(--cyan);box-shadow:0 0 8px var(--cyan)}
+.cardv-status.frozen{color:var(--ink-2);background:rgba(255,255,255,.05);border-color:var(--line-2)}
+.cardv-status.frozen .dot{background:var(--ink-3);box-shadow:none}
+.cardv-controls{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:16px}
+
+/* sensitive details */
+.cardd-reveal{width:auto;padding:.55em .95em;font-size:.84rem}
+.cardd-rows{display:flex;flex-direction:column}
+.cardd-row{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:14px 0;border-bottom:1px solid var(--line)}
+.cardd-row:last-child{border-bottom:none}
+.cardd-l{color:var(--ink-3);font-size:.9rem}
+.cardd-r{display:flex;align-items:center;gap:10px}
+.cardd-v{font-size:.98rem;color:var(--ink)}
+.cardd-v.mono{font-family:var(--font-mono);letter-spacing:.04em}
+.cardd-cp{flex:0 0 auto;width:30px;height:30px;border-radius:8px;border:1px solid var(--line-2);background:rgba(255,255,255,.03);color:var(--ink-3);cursor:pointer;display:grid;place-items:center;transition:border-color .2s,color .2s}
+.cardd-cp:hover{border-color:var(--cyan);color:var(--cyan-bright)}
+.cardd-cp.done{border-color:var(--cyan);color:var(--cyan-bright)}
+.cardd-cp svg{width:14px;height:14px}
+.cardd-note{display:flex;gap:10px;align-items:flex-start;margin-top:18px;padding:13px 15px;border-radius:12px;border:1px solid rgba(255,176,32,.28);background:rgba(255,176,32,.07);color:var(--ink-2);font-size:.84rem;line-height:1.5}
+.cardd-note svg{flex:0 0 auto;color:#ffb020;margin-top:1px}
+
+/* compatibility */
+.cmp-h{font-family:var(--font-mono);font-size:.66rem;letter-spacing:.16em;text-transform:uppercase;color:var(--ink-faint);margin:0 0 12px}
+.cmp-chips{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:20px}
+.bchip{display:inline-flex;align-items:center;gap:6px;font-size:.84rem;color:var(--ink-2);background:rgba(0,230,255,.07);border:1px solid rgba(0,230,255,.22);padding:6px 12px;border-radius:999px}
+.bchip svg{width:13px;height:13px;color:var(--cyan-bright)}
+.bchip.no{color:var(--ink-3);background:rgba(255,255,255,.03);border-color:var(--line-2)}
+.bchip.no svg{color:var(--ink-faint)}
+
+.cardv-cols{display:grid;grid-template-columns:1fr 1fr;gap:20px}
+@media (max-width:920px){.cardv-grid,.cardv-cols{grid-template-columns:1fr}}
+
+/* OTP reveal modal */
+.otp-modal{position:fixed;inset:0;z-index:200;display:none;place-items:center;padding:20px;background:rgba(3,5,8,.72);backdrop-filter:blur(7px)}
+.otp-modal.open{display:grid}
+.otp-modal-card{width:100%;max-width:430px;background:var(--panel);border:1px solid var(--line);border-radius:var(--r-lg);box-shadow:var(--shadow);padding:34px 30px;text-align:center;position:relative}
+.otp-modal-card::before{content:"";position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,var(--cyan),transparent);opacity:.6}
+.otp-modal-ic{width:56px;height:56px;border-radius:16px;display:grid;place-items:center;margin:0 auto 18px;background:rgba(0,230,255,.08);border:1px solid rgba(0,230,255,.25);color:var(--cyan)}
+.otp-modal-card h3{font-family:var(--font-display);font-weight:700;font-size:1.3rem;margin-bottom:8px}
+.otp-modal-card p{color:var(--ink-3);font-size:.92rem;margin-bottom:2px}
+.otp-modal-card p b{color:var(--ink-2)}
+.otp-m-err{color:#ff6b6b;font-size:.84rem;min-height:18px;margin:6px 0 2px}
+.otp-m-actions{display:flex;gap:10px;margin-top:10px}
+.otp-m-resend{margin-top:16px;color:var(--ink-3);font-size:.88rem}
+.otp-m-resend button{color:var(--cyan-deep);font-weight:600;cursor:pointer}
+.otp-m-resend button:disabled{color:var(--ink-faint);cursor:default}
+.otp-m-resend button:not(:disabled):hover{color:var(--cyan-bright)}
+</style>
+</head>
+<body>
+<div class="bg-fx"></div>
+<div class="grain"></div>
+<div class="dash">
+  <aside class="dash-side" id="side">
+    <a class="brand" href="dashboard.html"><img class="brand-logo" src="images/kash-logo.png?v=2" alt="Kash logo" /> Kash</a>
+    <nav class="dash-nav">
+      <a  href="dashboard.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/></svg> Dashboard</a>
+      <a class="active" href="cards.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><rect x="2" y="5" width="20" height="14" rx="3"/><path d="M2 10h20"/></svg> My Cards</a>
+      <a  href="buy-card.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><rect x="2" y="5" width="20" height="14" rx="3"/><path d="M2 10h20M16 16h3"/></svg> Buy a card</a>
+      <a  href="topup.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><circle cx="12" cy="12" r="9"/><path d="M12 8v8M8 12h8"/></svg> Top up</a>
+      <a  href="transactions.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M4 5h16v14H4z"/><path d="M4 9h16M8 14h5"/></svg> Transactions</a>
+      <a  href="referrals.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><circle cx="9" cy="8" r="3"/><path d="M3 20a6 6 0 0112 0M16 7a3 3 0 010 6M21 20a6 6 0 00-5-5.9"/></svg> Referrals</a>
+      <span class="lbl">Account</span>
+      <a  href="settings.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 00.3 1.9l.1.1a2 2 0 11-2.8 2.8l-.1-.1a1.7 1.7 0 00-2.9 1.2V21a2 2 0 11-4 0v-.1A1.7 1.7 0 005 19.4l-.1.1a2 2 0 11-2.8-2.8l.1-.1A1.7 1.7 0 003.4 13H3a2 2 0 110-4h.1A1.7 1.7 0 004.6 6.1l-.1-.1a2 2 0 112.8-2.8l.1.1A1.7 1.7 0 0011 3.4V3a2 2 0 114 0v.1a1.7 1.7 0 002.9 1.2l.1-.1a2 2 0 112.8 2.8l-.1.1A1.7 1.7 0 0021 11h.1a2 2 0 110 4H21a1.7 1.7 0 00-1.6 1z"/></svg> Settings</a>
+    </nav>
+    <div class="side-foot">
+      <div class="dash-user"><span class="av">J</span><div><div class="nm">John Smith</div><div class="em">john@kash.cards</div></div></div>
+      <a class="dash-nav" href="login-v2.html" style="display:flex;align-items:center;gap:12px;padding:11px 12px;border-radius:12px;color:var(--ink-3);font-weight:500;font-size:.94rem;margin-top:4px;"><svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M16 17l5-5-5-5M21 12H9M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/></svg> Sign out</a>
+    </div>
+  </aside>
+  <div class="dash-scrim" id="scrim"></div>
+  <main class="dash-main">
+<div class="dash-top">
+  <div style="display:flex;align-items:center;gap:14px;">
+    <button class="menu-btn" id="menu" aria-label="Open menu"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M3 12h18M3 18h18"/></svg></button>
+    <div>
+      <h1>Card details</h1>
+      <div class="sub" id="cardv-sub">Kash Global &middot; &bull;&bull;&bull;&bull; 8317</div>
+    </div>
+  </div>
+  <div class="dash-top-actions">
+    <a class="btn btn-line" href="cards.html">All cards</a>
+    <a class="btn btn-cyan" href="topup.html?card=existing">Top up
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>
+    </a>
+  </div>
+</div>
+
+<div class="cardv-grid">
+  <!-- left: card + sensitive details -->
+  <div>
+    <section class="panel" style="margin-bottom:20px;">
+      <span class="cardv-status" id="status"><span class="dot"></span> Active</span>
+      <div class="card-shot"><img src="images/hero-card.png?v=2" alt="Kash virtual card" /></div>
+      <div class="cardv-controls">
+        <button class="ctrl-btn" id="freeze"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M12 2v20M4 7l16 10M20 7L4 17M7 4l10 16M17 4L7 20"/></svg> Freeze</button>
+        <button class="ctrl-btn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><rect x="2" y="5" width="20" height="14" rx="3"/><path d="M2 10h20"/></svg> Add to Apple Pay</button>
+      </div>
+    </section>
+
+    <section class="panel">
+      <div class="panel-h">
+        <h3>Card details</h3>
+        <button class="ctrl-btn cardd-reveal" id="reveal" aria-pressed="false">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/></svg>
+          <span id="reveal-lbl">Show</span>
+        </button>
+      </div>
+      <div class="cardd-rows">
+        <div class="cardd-row"><span class="cardd-l">Card number</span><span class="cardd-r"><span class="cardd-v mono" id="cnum" data-real="4929 1234 5678 8317" data-mask="&bull;&bull;&bull;&bull;  &bull;&bull;&bull;&bull;  &bull;&bull;&bull;&bull;  8317">&bull;&bull;&bull;&bull;  &bull;&bull;&bull;&bull;  &bull;&bull;&bull;&bull;  8317</span><button class="cardd-cp" data-copyval="4929123456788317" aria-label="Copy card number"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V5a2 2 0 012-2h10"/></svg></button></span></div>
+        <div class="cardd-row"><span class="cardd-l">Expiry date</span><span class="cardd-r"><span class="cardd-v mono">09 / 29</span></span></div>
+        <div class="cardd-row"><span class="cardd-l">CVC</span><span class="cardd-r"><span class="cardd-v mono" id="ccvc" data-real="284" data-mask="&bull;&bull;&bull;">&bull;&bull;&bull;</span><button class="cardd-cp" data-copyval="284" aria-label="Copy CVC"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V5a2 2 0 012-2h10"/></svg></button></span></div>
+        <div class="cardd-row"><span class="cardd-l">Cardholder</span><span class="cardd-r"><span class="cardd-v">John Smith</span></span></div>
+        <div class="cardd-row"><span class="cardd-l">BIN &middot; Network</span><span class="cardd-r"><span class="cardd-v mono">4&middot;28829 &middot; Visa</span></span></div>
+      </div>
+      <div class="cardd-note">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/><path d="M12 9v4M12 17h.01"/></svg>
+        <span>Treat these details like cash. Never share your full number or CVC &mdash; Kash will never ask for them.</span>
+      </div>
+    </section>
+  </div>
+
+  <!-- right: compatibility + limits -->
+  <div>
+    <section class="panel" style="margin-bottom:20px;">
+      <div class="panel-h"><h3>Where this card works</h3></div>
+      <div class="cmp-h">Works with</div>
+      <div class="cmp-chips">
+        <span class="bchip"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M20 6L9 17l-5-5"/></svg> E-commerce</span>
+        <span class="bchip"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M20 6L9 17l-5-5"/></svg> Subscriptions</span>
+        <span class="bchip"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M20 6L9 17l-5-5"/></svg> Travel</span>
+        <span class="bchip"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M20 6L9 17l-5-5"/></svg> Apple/Google Pay</span>
+      </div>
+      <div class="cmp-h">Not supported</div>
+      <div class="cmp-chips">
+        <span class="bchip no"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M18 6L6 18M6 6l12 12"/></svg> Gambling</span>
+        <span class="bchip no"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M18 6L6 18M6 6l12 12"/></svg> Crypto exchanges</span>
+      </div>
+      <p style="color:var(--ink-3);font-size:.86rem;line-height:1.5;margin-top:4px;">This is a <b style="color:var(--ink-2)">Kash Global</b> BIN. Need ad platforms or higher limits? <a href="buy-card.html" style="color:var(--cyan-deep);font-weight:600;">Buy another card</a>.</p>
+    </section>
+
+    <section class="panel">
+      <div class="panel-h"><h3>This month</h3></div>
+      <div class="stat-row" style="grid-template-columns:1fr 1fr;">
+        <div class="stat"><div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M12 1v22M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg></div><div class="n">$842.10</div><div class="l">Spent</div></div>
+        <div class="stat"><div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M12 5v14M5 12l7 7 7-7"/></svg></div><div class="n">$800.00</div><div class="l">Topped up</div></div>
+      </div>
+    </section>
+  </div>
+</div>
+
+<div class="cardv-cols">
+  <!-- transactions -->
+  <section class="panel">
+    <div class="panel-h"><h3>Recent transactions</h3><a href="transactions.html">View all</a></div>
+    <div class="txn"><div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><circle cx="12" cy="12" r="9"/><path d="M8 14c2.5-1 5.5-1 8 0M9 8c2-.7 4-.5 6 .4"/></svg></div><div class="meta"><div class="merchant">Spotify</div><div class="when">Today, 9:24 AM</div></div><div class="amt out">-$11.99</div></div>
+    <div class="txn"><div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><rect x="3" y="11" width="18" height="6" rx="2"/><path d="M5 11l2-5h10l2 5"/></svg></div><div class="meta"><div class="merchant">Uber</div><div class="when">Yesterday, 6:48 PM</div></div><div class="amt out">-$24.30</div></div>
+    <div class="txn"><div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M6 2l1.5 3h9L18 2M3 6h18l-2 13H5L3 6z"/></svg></div><div class="meta"><div class="merchant">Amazon</div><div class="when">14 Jun, 8:02 PM</div></div><div class="amt out">-$63.40</div></div>
+    <div class="txn"><div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M16 3a4 4 0 01-1 3M12 6c-3 0-5 2-5 6 0 5 3 9 5 9s2-1 3-1 1 1 3 1c1.5 0 3-3 3-5"/></svg></div><div class="meta"><div class="merchant">Apple</div><div class="when">13 Jun, 11:15 AM</div></div><div class="amt out">-$0.99</div></div>
+  </section>
+
+  <!-- deposit history -->
+  <section class="panel">
+    <div class="panel-h"><h3>Deposit history</h3></div>
+    <div class="txn"><div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M12 5v14M5 12l7 7 7-7"/></svg></div><div class="meta"><div class="merchant">Top up &middot; USDT (TRC-20)</div><div class="when">Yesterday, 2:10 PM &middot; Completed</div></div><div class="amt in">+500.00</div></div>
+    <div class="txn"><div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M12 5v14M5 12l7 7 7-7"/></svg></div><div class="meta"><div class="merchant">Top up &middot; USDT (TRC-20)</div><div class="when">6 Jun, 4:55 PM &middot; Completed</div></div><div class="amt in">+300.00</div></div>
+    <div class="txn"><div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M12 5v14M5 12l7 7 7-7"/></svg></div><div class="meta"><div class="merchant">Top up &middot; USDT (ERC-20)</div><div class="when">28 May, 9:30 AM &middot; Completed</div></div><div class="amt in">+200.00</div></div>
+    <div class="txn"><div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg></div><div class="meta"><div class="merchant">Top up &middot; USDT (TRC-20)</div><div class="when">Just now &middot; Pending</div></div><div class="amt in">+100.00</div></div>
+  </section>
+</div>
+  </main>
+</div>
+
+<!-- OTP reveal gate -->
+<div class="otp-modal" id="otp-modal" role="dialog" aria-modal="true" aria-label="Verify to reveal card details">
+  <div class="otp-modal-card">
+    <div class="otp-modal-ic"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><rect x="4" y="10" width="16" height="11" rx="2"/><path d="M8 10V7a4 4 0 018 0v3"/></svg></div>
+    <h3>Verify it's you</h3>
+    <p>For your security, enter the 6-digit code we sent to</p>
+    <p><b>john@kash.cards</b></p>
+    <div class="otp-inputs" id="m-otp" style="margin:24px 0 6px;">
+      <input type="text" inputmode="numeric" autocomplete="one-time-code" maxlength="1" aria-label="Digit 1" />
+      <input type="text" inputmode="numeric" maxlength="1" aria-label="Digit 2" />
+      <input type="text" inputmode="numeric" maxlength="1" aria-label="Digit 3" />
+      <input type="text" inputmode="numeric" maxlength="1" aria-label="Digit 4" />
+      <input type="text" inputmode="numeric" maxlength="1" aria-label="Digit 5" />
+      <input type="text" inputmode="numeric" maxlength="1" aria-label="Digit 6" />
+    </div>
+    <div class="otp-m-err" id="m-err"></div>
+    <div class="otp-m-actions">
+      <button type="button" class="btn btn-line btn-block" id="m-cancel">Cancel</button>
+      <button type="button" class="btn btn-cyan btn-block" id="m-verify">Reveal details</button>
+    </div>
+    <p class="otp-m-resend">No code? <button type="button" id="m-resend" disabled>Resend in <span id="m-count">30</span>s</button></p>
+  </div>
+</div>
+
+<script src="dashboard.js"></script>
+<script src="topup-modal.js?v=1"></script>
+<script>
+(function () {
+  'use strict';
+  // reflect the user's custom card label (set on My Cards) for card ending 8317
+  try {
+    var saved = JSON.parse(localStorage.getItem('kash-card-labels') || '{}');
+    var nick = saved['8317'];
+    if (nick) {
+      var sub = document.getElementById('cardv-sub');
+      var safe = String(nick).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+      if (sub) sub.innerHTML = safe + ' &middot; &bull;&bull;&bull;&bull; 8317';
+    }
+  } catch (e) {}
+
+  // reveal / hide sensitive fields — gated behind OTP
+  var revealed = false;
+  var btn = document.getElementById('reveal');
+  var lbl = document.getElementById('reveal-lbl');
+  var fields = [document.getElementById('cnum'), document.getElementById('ccvc')];
+
+  function setRevealed(on) {
+    revealed = on;
+    fields.forEach(function (f) { if (f) f.innerHTML = on ? f.getAttribute('data-real') : f.getAttribute('data-mask'); });
+    if (lbl) lbl.textContent = on ? 'Hide' : 'Show';
+    if (btn) btn.setAttribute('aria-pressed', on ? 'true' : 'false');
+  }
+
+  if (btn) btn.addEventListener('click', function () {
+    if (revealed) { setRevealed(false); return; }  // hide instantly
+    openOtp();                                     // require OTP to reveal
+  });
+
+  /* ---- OTP gate modal ---- */
+  var modal = document.getElementById('otp-modal');
+  var mInputs = Array.prototype.slice.call(document.querySelectorAll('#m-otp input'));
+  var mErr = document.getElementById('m-err');
+  var mVerify = document.getElementById('m-verify');
+  var mCancel = document.getElementById('m-cancel');
+  var mResend = document.getElementById('m-resend');
+  var mCount = document.getElementById('m-count');
+  var rTimer, rT;
+
+  function mCode() { return mInputs.map(function (i) { return i.value; }).join(''); }
+  function resetInputs() { mInputs.forEach(function (i) { i.value = ''; i.classList.remove('filled'); }); }
+
+  function startResend() {
+    rT = 30; if (mResend) { mResend.disabled = true; mResend.innerHTML = 'Resend in <span id="m-count">30</span>s'; mCount = document.getElementById('m-count'); }
+    clearInterval(rTimer);
+    rTimer = setInterval(function () {
+      rT -= 1;
+      if (rT <= 0) { clearInterval(rTimer); if (mResend) { mResend.disabled = false; mResend.textContent = 'Resend code'; } }
+      else if (mCount) mCount.textContent = rT;
+    }, 1000);
+  }
+
+  function openOtp() {
+    if (!modal) { setRevealed(true); return; }
+    resetInputs(); if (mErr) mErr.textContent = '';
+    modal.classList.add('open');
+    startResend();
+    if (mInputs[0]) mInputs[0].focus();
+  }
+  function closeOtp() { if (modal) modal.classList.remove('open'); clearInterval(rTimer); }
+
+  mInputs.forEach(function (input, idx) {
+    input.addEventListener('input', function () {
+      if (mErr) mErr.textContent = '';
+      input.value = input.value.replace(/\D/g, '').slice(-1);
+      input.classList.toggle('filled', !!input.value);
+      if (input.value && idx < mInputs.length - 1) mInputs[idx + 1].focus();
+      if (mCode().length === 6) verifyOtp();
+    });
+    input.addEventListener('keydown', function (e) {
+      if (e.key === 'Backspace' && !input.value && idx > 0) mInputs[idx - 1].focus();
+    });
+    input.addEventListener('paste', function (e) {
+      e.preventDefault();
+      var d = (e.clipboardData || window.clipboardData).getData('text').replace(/\D/g, '').slice(0, 6);
+      d.split('').forEach(function (ch, k) { if (mInputs[k]) { mInputs[k].value = ch; mInputs[k].classList.add('filled'); } });
+      if (d.length === 6) verifyOtp(); else if (mInputs[d.length]) mInputs[d.length].focus();
+    });
+  });
+
+  function verifyOtp() {
+    if (mCode().length !== 6) { if (mErr) mErr.textContent = 'Enter all 6 digits.'; return; }
+    // DEMO: accept any 6 digits. Wire to your verify endpoint and only reveal on success.
+    mVerify.disabled = true; mVerify.textContent = 'Verifying…';
+    setTimeout(function () {
+      mVerify.disabled = false; mVerify.textContent = 'Reveal details';
+      closeOtp();
+      setRevealed(true);
+    }, 700);
+  }
+  if (mVerify) mVerify.addEventListener('click', verifyOtp);
+  if (mCancel) mCancel.addEventListener('click', closeOtp);
+  if (mResend) mResend.addEventListener('click', function () { if (!mResend.disabled) { resetInputs(); if (mInputs[0]) mInputs[0].focus(); startResend(); } });
+  if (modal) modal.addEventListener('click', function (e) { if (e.target === modal) closeOtp(); });
+  document.addEventListener('keydown', function (e) { if (e.key === 'Escape') closeOtp(); });
+
+  // copy real values
+  document.querySelectorAll('.cardd-cp').forEach(function (b) {
+    b.addEventListener('click', function () {
+      var v = b.getAttribute('data-copyval');
+      var done = function () { b.classList.add('done'); setTimeout(function () { b.classList.remove('done'); }, 1300); };
+      if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(v).then(done, done);
+      else done();
+    });
+  });
+
+  // freeze toggle
+  var freeze = document.getElementById('freeze');
+  var status = document.getElementById('status');
+  if (freeze) freeze.addEventListener('click', function () {
+    var frozen = freeze.classList.toggle('done');
+    freeze.style.borderColor = frozen ? 'var(--cyan)' : '';
+    freeze.style.color = frozen ? 'var(--cyan-bright)' : '';
+    freeze.lastChild.textContent = frozen ? ' Frozen' : ' Freeze';
+    if (status) { status.classList.toggle('frozen', frozen); status.lastChild.textContent = frozen ? ' Frozen' : ' Active'; }
+  });
+})();
+</script>
+</body>
+</html>

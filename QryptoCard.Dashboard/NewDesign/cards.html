@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<meta name="robots" content="noindex, nofollow" />
+<link rel="icon" type="image/png" href="images/kash-logo.png?v=2" />
+<link rel="apple-touch-icon" href="images/kash-logo.png?v=2" />
+<meta name="theme-color" content="#05070a" />
+<title>My Cards &mdash; Kash</title>
+<meta name="description" content="Kash dashboard — My Cards" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700;800&family=Hanken+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="premium.css?v=7" />
+<link rel="stylesheet" href="app.css?v=2" />
+<style>
+/* summary */
+.cards-sum{display:flex;gap:26px;flex-wrap:wrap;padding:18px 22px;margin-bottom:20px;border:1px solid var(--line);border-radius:var(--r-lg);background:radial-gradient(70% 130% at 90% 0%,rgba(0,230,255,.08),transparent 55%),var(--panel)}
+.cards-sum-it .n{font-family:var(--font-display);font-weight:700;font-size:1.5rem;letter-spacing:-.02em}
+.cards-sum-it .l{color:var(--ink-3);font-size:.82rem;margin-top:2px}
+.cards-sum-sep{width:1px;background:var(--line)}
+
+/* filter toolbar */
+.cards-toolbar{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:18px}
+.cards-fchip{padding:.55em 1.05em;border-radius:999px;border:1px solid var(--line-2);background:rgba(255,255,255,.03);color:var(--ink-2);font-weight:600;font-size:.88rem;cursor:pointer;transition:border-color .2s,color .2s,background .2s}
+.cards-fchip:hover{color:var(--ink)}
+.cards-fchip.is-active{border-color:var(--cyan);color:var(--cyan-bright);background:rgba(0,230,255,.1)}
+.cards-fchip .c{opacity:.6;margin-left:5px;font-family:var(--font-mono);font-size:.8rem}
+
+/* grid (scales to any number of cards) */
+.cards-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(290px,1fr));gap:18px}
+.card-tile{display:flex;flex-direction:column;cursor:pointer;transition:transform .35s var(--ease),border-color .35s}
+.card-tile:hover{transform:translateY(-4px);border-color:rgba(0,230,255,.4)}
+.card-tile.st-blocked{opacity:.92}
+.ct-shot{position:relative;border-radius:12px;overflow:hidden;border:1px solid var(--line);margin-bottom:14px}
+.ct-shot img{width:100%;display:block}
+.card-tile.st-frozen .ct-shot img{filter:saturate(.5) brightness(.8)}
+.card-tile.st-blocked .ct-shot img{filter:grayscale(1) brightness(.6)}
+.ct-status{position:absolute;top:10px;right:10px;display:inline-flex;align-items:center;gap:6px;padding:5px 10px;border-radius:999px;font-family:var(--font-mono);font-size:.62rem;letter-spacing:.1em;text-transform:uppercase;font-weight:700;backdrop-filter:blur(6px)}
+.ct-status .dot{width:6px;height:6px;border-radius:50%}
+.ct-status.active{color:var(--cyan-bright);background:rgba(0,40,46,.6);border:1px solid rgba(0,230,255,.4)}
+.ct-status.active .dot{background:var(--cyan);box-shadow:0 0 8px var(--cyan)}
+.ct-status.frozen{color:#bcd3e0;background:rgba(20,30,40,.7);border:1px solid var(--line-2)}
+.ct-status.frozen .dot{background:#8fb8cc}
+.ct-status.blocked{color:#ff9a9a;background:rgba(50,12,12,.7);border:1px solid rgba(255,90,90,.4)}
+.ct-status.blocked .dot{background:#ff6b6b}
+.ct-namebox{display:flex;align-items:center;gap:6px}
+.ct-label{font-family:var(--font-display);font-weight:600;font-size:1.08rem;letter-spacing:-.01em;line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ct-edit{flex:0 0 auto;width:26px;height:26px;border-radius:7px;border:1px solid transparent;background:transparent;color:var(--ink-3);cursor:pointer;display:grid;place-items:center;opacity:.45;transition:opacity .2s,color .2s,border-color .2s}
+.card-tile:hover .ct-edit{opacity:1}
+.ct-edit:hover{color:var(--cyan-bright);border-color:var(--line-2)}
+.ct-edit svg{width:14px;height:14px}
+.ct-edit-input{font-family:var(--font-display);font-weight:600;font-size:1.05rem;color:var(--ink);background:rgba(0,230,255,.06);border:1px solid var(--cyan);border-radius:8px;padding:2px 8px;outline:none;max-width:180px;width:100%}
+.ct-product{display:block;font-family:var(--font-mono);font-size:.72rem;letter-spacing:.04em;color:var(--ink-3);margin-top:4px}
+.ct-num{font-family:var(--font-mono);font-size:.82rem;color:var(--ink-3);margin:8px 0 12px}
+.ct-bal{font-family:var(--font-display);font-weight:700;font-size:1.15rem}
+.ct-bal span{font-size:.72rem;color:var(--ink-3);font-weight:600;margin-left:3px}
+.ct-actions{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-top:16px}
+.ct-btn{display:flex;align-items:center;justify-content:center;gap:6px;padding:.7em;border-radius:11px;border:1px solid var(--line-2);background:rgba(255,255,255,.03);color:var(--ink-2);font-weight:600;font-size:.85rem;cursor:pointer;transition:border-color .2s,color .2s}
+.ct-btn:hover{border-color:var(--cyan);color:var(--cyan-bright)}
+.ct-btn.primary{border-color:rgba(0,230,255,.3);color:var(--cyan-bright);background:rgba(0,230,255,.08)}
+.ct-btn:disabled{opacity:.5;cursor:default;border-color:var(--line-2);color:var(--ink-3)}
+
+/* add tile */
+.card-add{display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;gap:12px;min-height:280px;border-radius:var(--r-lg);border:1.5px dashed var(--line-2);background:rgba(255,255,255,.015);color:var(--ink-2);cursor:pointer;transition:border-color .25s,background .25s,transform .25s}
+.card-add:hover{border-color:var(--cyan);background:rgba(0,230,255,.04);transform:translateY(-3px)}
+.card-add-plus{width:54px;height:54px;border-radius:16px;display:grid;place-items:center;background:rgba(0,230,255,.08);border:1px solid rgba(0,230,255,.25);color:var(--cyan)}
+.card-add-plus svg{width:26px;height:26px}
+.card-add b{font-family:var(--font-display);font-weight:600;font-size:1.02rem;color:var(--ink)}
+.card-add span{font-size:.84rem;color:var(--ink-3);max-width:200px}
+</style>
+</head>
+<body>
+<div class="bg-fx"></div>
+<div class="grain"></div>
+<div class="dash">
+  <aside class="dash-side" id="side">
+    <a class="brand" href="dashboard.html"><img class="brand-logo" src="images/kash-logo.png?v=2" alt="Kash logo" /> Kash</a>
+    <nav class="dash-nav">
+      <a  href="dashboard.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/></svg> Dashboard</a>
+      <a class="active" href="cards.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><rect x="2" y="5" width="20" height="14" rx="3"/><path d="M2 10h20"/></svg> My Cards</a>
+      <a  href="buy-card.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><rect x="2" y="5" width="20" height="14" rx="3"/><path d="M2 10h20M16 16h3"/></svg> Buy a card</a>
+      <a  href="topup.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><circle cx="12" cy="12" r="9"/><path d="M12 8v8M8 12h8"/></svg> Top up</a>
+      <a  href="transactions.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M4 5h16v14H4z"/><path d="M4 9h16M8 14h5"/></svg> Transactions</a>
+      <a  href="referrals.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><circle cx="9" cy="8" r="3"/><path d="M3 20a6 6 0 0112 0M16 7a3 3 0 010 6M21 20a6 6 0 00-5-5.9"/></svg> Referrals</a>
+      <span class="lbl">Account</span>
+      <a  href="settings.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 00.3 1.9l.1.1a2 2 0 11-2.8 2.8l-.1-.1a1.7 1.7 0 00-2.9 1.2V21a2 2 0 11-4 0v-.1A1.7 1.7 0 005 19.4l-.1.1a2 2 0 11-2.8-2.8l.1-.1A1.7 1.7 0 003.4 13H3a2 2 0 110-4h.1A1.7 1.7 0 004.6 6.1l-.1-.1a2 2 0 112.8-2.8l.1.1A1.7 1.7 0 0011 3.4V3a2 2 0 114 0v.1a1.7 1.7 0 002.9 1.2l.1-.1a2 2 0 112.8 2.8l-.1.1A1.7 1.7 0 0021 11h.1a2 2 0 110 4H21a1.7 1.7 0 00-1.6 1z"/></svg> Settings</a>
+    </nav>
+    <div class="side-foot">
+      <div class="dash-user"><span class="av">J</span><div><div class="nm">John Smith</div><div class="em">john@kash.cards</div></div></div>
+      <a class="dash-nav" href="login-v2.html" style="display:flex;align-items:center;gap:12px;padding:11px 12px;border-radius:12px;color:var(--ink-3);font-weight:500;font-size:.94rem;margin-top:4px;"><svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M16 17l5-5-5-5M21 12H9M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/></svg> Sign out</a>
+    </div>
+  </aside>
+  <div class="dash-scrim" id="scrim"></div>
+  <main class="dash-main">
+<div class="dash-top">
+  <div style="display:flex;align-items:center;gap:14px;">
+    <button class="menu-btn" id="menu" aria-label="Open menu"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M3 12h18M3 18h18"/></svg></button>
+    <div>
+      <h1>My cards</h1>
+      <div class="sub">Manage all your Kash virtual cards.</div>
+    </div>
+  </div>
+  <div class="dash-top-actions">
+    <a class="btn btn-cyan" href="buy-card.html">Buy a card
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+    </a>
+  </div>
+</div>
+
+<div class="cards-sum">
+  <div class="cards-sum-it"><div class="n" id="sum-total">0</div><div class="l">Total cards</div></div>
+  <div class="cards-sum-sep"></div>
+  <div class="cards-sum-it"><div class="n" id="sum-active">0</div><div class="l">Active</div></div>
+  <div class="cards-sum-sep"></div>
+  <div class="cards-sum-it"><div class="n" id="sum-bal">0.00 <span style="font-size:.9rem;color:var(--ink-3)">USDT</span></div><div class="l">Combined balance</div></div>
+</div>
+
+<div class="cards-toolbar" id="cards-filter" role="tablist">
+  <button class="cards-fchip is-active" data-f="all">All <span class="c" id="f-all">0</span></button>
+  <button class="cards-fchip" data-f="active">Active <span class="c" id="f-active">0</span></button>
+  <button class="cards-fchip" data-f="frozen">Frozen <span class="c" id="f-frozen">0</span></button>
+  <button class="cards-fchip" data-f="blocked">Blocked <span class="c" id="f-blocked">0</span></button>
+</div>
+
+<div class="cards-grid" id="cards-grid"></div>
+  </main>
+</div>
+<script src="dashboard.js"></script>
+<script src="topup-modal.js?v=1"></script>
+<script>
+(function () {
+  'use strict';
+  // Demo set — replace with the user's real cards.
+  var CARDS = [
+    { name: 'Kash Global',   scheme: 'Visa',       last: '8317', exp: '09/29', bal: '412.80',   status: 'active'  },
+    { name: 'Kash Commerce', scheme: 'Mastercard', last: '4471', exp: '11/28', bal: '1,930.00', status: 'active'  },
+    { name: 'Kash Pro',      scheme: 'Visa',       last: '2093', exp: '03/30', bal: '88.40',    status: 'frozen'  },
+    { name: 'Kash Travel',   scheme: 'Mastercard', last: '6628', exp: '07/27', bal: '540.10',   status: 'active'  },
+    { name: 'Kash Ads',      scheme: 'Visa',       last: '1180', exp: '05/29', bal: '0.00',     status: 'blocked' },
+    { name: 'Kash Lite',     scheme: 'Mastercard', last: '9942', exp: '12/28', bal: '23.75',    status: 'active'  },
+    { name: 'Kash Max',      scheme: 'Visa',       last: '3351', exp: '08/30', bal: '5,120.00', status: 'active'  },
+    { name: 'Kash Global',   scheme: 'Visa',       last: '7705', exp: '02/29', bal: '0.00',     status: 'frozen'  }
+  ];
+
+  var grid = document.getElementById('cards-grid');
+  var STATUS_LABEL = { active: 'Active', frozen: 'Frozen', blocked: 'Blocked' };
+
+  // user-editable card labels (persisted locally; wire to your backend)
+  var LS_KEY = 'kash-card-labels';
+  function getSaved() { try { return JSON.parse(localStorage.getItem(LS_KEY) || '{}'); } catch (e) { return {}; } }
+  function labelFor(c) { var s = getSaved(); return s[c.last] || c.name; }
+  function saveLabel(last, val, product) {
+    var s = getSaved();
+    if (val && val !== product) s[last] = val; else delete s[last];
+    try { localStorage.setItem(LS_KEY, JSON.stringify(s)); } catch (e) {}
+  }
+  function esc(t) { return String(t).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); }
+
+  function actionsFor(c, idx) {
+    var details = '<a class="ct-btn primary" href="card.html" onclick="event.stopPropagation()">Details</a>';
+    if (c.status === 'active')  return details + '<button class="ct-btn" data-act="freeze" data-i="' + idx + '" onclick="event.stopPropagation()">Freeze</button>';
+    if (c.status === 'frozen')  return details + '<button class="ct-btn" data-act="unfreeze" data-i="' + idx + '" onclick="event.stopPropagation()">Unfreeze</button>';
+    return details + '<button class="ct-btn" disabled>Blocked</button>';
+  }
+
+  function tile(c, idx) {
+    return '<article class="card-tile st-' + c.status + '" data-status="' + c.status + '" onclick="location.href=\'card.html\'">' +
+      '<div class="ct-shot"><img src="images/hero-card.png?v=2" alt="' + c.name + ' card" />' +
+        '<span class="ct-status ' + c.status + '"><span class="dot"></span>' + STATUS_LABEL[c.status] + '</span></div>' +
+      '<div class="ct-head"><div class="ct-namebox">' +
+        '<h3 class="ct-label">' + esc(labelFor(c)) + '</h3>' +
+        '<button class="ct-edit" data-edit="' + idx + '" aria-label="Rename card" onclick="event.stopPropagation()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M12 20h9M16.5 3.5a2.1 2.1 0 013 3L7 19l-4 1 1-4 12.5-12.5z"/></svg></button>' +
+      '</div><span class="ct-product">' + c.name + ' &middot; ' + c.scheme + '</span></div>' +
+      '<div class="ct-num">&bull;&bull;&bull;&bull; ' + c.last + ' &middot; Exp ' + c.exp + '</div>' +
+      '<div class="ct-bal">' + c.bal + '<span>USDT</span></div>' +
+      '<div class="ct-actions">' + actionsFor(c, idx) + '</div>' +
+    '</article>';
+  }
+
+  function render() {
+    grid.innerHTML = CARDS.map(tile).join('') +
+      '<a class="card-add" href="buy-card.html"><span class="card-add-plus"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg></span><b>Add a new card</b><span>Choose a BIN with the right merchant fit</span></a>';
+    grid.querySelectorAll('[data-act]').forEach(function (b) {
+      b.addEventListener('click', function () {
+        var i = +b.getAttribute('data-i');
+        CARDS[i].status = CARDS[i].status === 'frozen' ? 'active' : 'frozen';
+        update();
+      });
+    });
+    // rename label
+    grid.querySelectorAll('[data-edit]').forEach(function (b) {
+      b.addEventListener('click', function () {
+        var c = CARDS[+b.getAttribute('data-edit')];
+        var h3 = b.closest('.ct-namebox').querySelector('.ct-label');
+        startRename(h3, c);
+      });
+    });
+  }
+
+  function startRename(h3, c) {
+    var cur = h3.textContent;
+    var input = document.createElement('input');
+    input.className = 'ct-edit-input'; input.value = cur; input.maxLength = 24;
+    input.addEventListener('click', function (e) { e.stopPropagation(); });
+    h3.replaceWith(input);
+    input.focus(); input.select();
+    var done = false;
+    function finish(val) {
+      if (done) return; done = true;
+      var v = (val != null ? val : input.value).trim() || c.name;
+      saveLabel(c.last, v, c.name);
+      var nh = document.createElement('h3'); nh.className = 'ct-label'; nh.textContent = v;
+      input.replaceWith(nh);
+    }
+    input.addEventListener('keydown', function (e) {
+      if (e.key === 'Enter') { e.preventDefault(); finish(); }
+      else if (e.key === 'Escape') { finish(cur); }
+    });
+    input.addEventListener('blur', function () { finish(); });
+  }
+
+  function counts() {
+    var c = { all: CARDS.length, active: 0, frozen: 0, blocked: 0 };
+    var bal = 0;
+    CARDS.forEach(function (x) { c[x.status]++; bal += parseFloat(x.bal.replace(/,/g, '')) || 0; });
+    document.getElementById('sum-total').textContent = c.all;
+    document.getElementById('sum-active').textContent = c.active;
+    document.getElementById('sum-bal').innerHTML = bal.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' <span style="font-size:.9rem;color:var(--ink-3)">USDT</span>';
+    document.getElementById('f-all').textContent = c.all;
+    document.getElementById('f-active').textContent = c.active;
+    document.getElementById('f-frozen').textContent = c.frozen;
+    document.getElementById('f-blocked').textContent = c.blocked;
+  }
+
+  var filter = 'all';
+  function applyFilter() {
+    grid.querySelectorAll('.card-tile').forEach(function (t) {
+      t.style.display = (filter === 'all' || t.getAttribute('data-status') === filter) ? '' : 'none';
+    });
+  }
+
+  function update() { render(); counts(); applyFilter(); }
+
+  document.getElementById('cards-filter').addEventListener('click', function (e) {
+    var chip = e.target.closest('.cards-fchip');
+    if (!chip) return;
+    filter = chip.getAttribute('data-f');
+    this.querySelectorAll('.cards-fchip').forEach(function (c) { c.classList.toggle('is-active', c === chip); });
+    applyFilter();
+  });
+
+  update();
+})();
+</script>
+</body>
+</html>

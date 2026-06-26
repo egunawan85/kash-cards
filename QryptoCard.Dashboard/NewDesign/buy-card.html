@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<meta name="robots" content="noindex, nofollow" />
+<link rel="icon" type="image/png" href="images/kash-logo.png?v=2" />
+<link rel="apple-touch-icon" href="images/kash-logo.png?v=2" />
+<meta name="theme-color" content="#05070a" />
+<title>Buy a card &mdash; Kash</title>
+<meta name="description" content="Kash dashboard — Buy a card" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700;800&family=Hanken+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="premium.css?v=7" />
+<link rel="stylesheet" href="app.css?v=2" />
+<style>
+.buy2{display:grid;grid-template-columns:330px 1fr;gap:20px;align-items:start}
+
+/* list */
+.buy2-list{padding:14px}
+.buy2-list-h{font-family:var(--font-mono);font-size:.66rem;letter-spacing:.16em;text-transform:uppercase;color:var(--ink-faint);padding:8px 10px 12px}
+.buy2-scroll{display:flex;flex-direction:column;gap:6px;max-height:560px;overflow-y:auto;padding-right:4px}
+.buy2-scroll::-webkit-scrollbar{width:8px}
+.buy2-scroll::-webkit-scrollbar-thumb{background:var(--line-2);border-radius:8px}
+.buy2-row{display:flex;align-items:center;gap:12px;width:100%;text-align:left;padding:12px;border-radius:14px;border:1px solid transparent;background:transparent;cursor:pointer;transition:background .2s,border-color .2s}
+.buy2-row:hover{background:rgba(255,255,255,.04)}
+.buy2-row.is-active{background:rgba(0,230,255,.08);border-color:rgba(0,230,255,.3)}
+.buy2-chip{width:42px;height:30px;border-radius:7px;flex:0 0 auto;display:grid;place-items:center;font-family:var(--font-mono);font-size:.52rem;font-weight:700;letter-spacing:.04em;color:#cfe9ee;background:linear-gradient(135deg,#0c121a,#16222e 55%,#0b2b32);border:1px solid var(--line-2)}
+.buy2-row.is-active .buy2-chip{border-color:rgba(0,230,255,.4);color:var(--cyan-bright)}
+.buy2-rmeta{flex:1;min-width:0}
+.buy2-rname{font-weight:600;font-size:.95rem}
+.buy2-rbin{font-family:var(--font-mono);font-size:.74rem;color:var(--ink-3);margin-top:1px}
+.buy2-rtag{font-size:.68rem;font-weight:600;color:var(--ink-3);background:rgba(255,255,255,.05);border:1px solid var(--line);padding:3px 8px;border-radius:999px;flex:0 0 auto}
+.buy2-row.is-active .buy2-rtag{color:var(--cyan-bright);background:rgba(0,230,255,.1);border-color:rgba(0,230,255,.25)}
+
+/* detail */
+.buy2-detail{padding:0;overflow:hidden}
+.buy2-d-head{display:grid;grid-template-columns:300px 1fr;gap:26px;padding:28px;border-bottom:1px solid var(--line)}
+.buy2-d-shot{border-radius:14px;overflow:hidden;border:1px solid var(--line);align-self:start;position:relative}
+.buy2-d-shot img{width:100%;display:block}
+.buy2-d-scheme{position:absolute;top:10px;left:10px;font-family:var(--font-mono);font-size:.6rem;letter-spacing:.1em;text-transform:uppercase;font-weight:700;color:var(--ink);background:rgba(5,7,10,.55);backdrop-filter:blur(6px);border:1px solid var(--line-2);padding:4px 9px;border-radius:8px}
+.buy2-d-info h2{font-family:var(--font-display);font-weight:700;font-size:1.7rem;letter-spacing:-.02em;margin-bottom:4px}
+.buy2-d-bin{font-family:var(--font-mono);font-size:.82rem;color:var(--cyan-deep);letter-spacing:.06em;margin-bottom:12px}
+.buy2-d-desc{color:var(--ink-2);font-size:.96rem;line-height:1.55;margin-bottom:18px}
+.buy2-d-limits{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.buy2-lim{background:rgba(255,255,255,.03);border:1px solid var(--line);border-radius:12px;padding:12px 14px}
+.buy2-lim-l{font-family:var(--font-mono);font-size:.6rem;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-3)}
+.buy2-lim-v{font-family:var(--font-display);font-weight:700;font-size:1.1rem;margin-top:3px}
+
+.buy2-d-body{padding:28px}
+.buy2-compat-h{font-family:var(--font-mono);font-size:.66rem;letter-spacing:.16em;text-transform:uppercase;color:var(--ink-faint);margin:0 0 12px}
+.buy2-chips{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:22px}
+.bchip{display:inline-flex;align-items:center;gap:6px;font-size:.84rem;color:var(--ink-2);background:rgba(0,230,255,.07);border:1px solid rgba(0,230,255,.22);padding:6px 12px;border-radius:999px}
+.bchip svg{width:13px;height:13px;color:var(--cyan-bright);flex:0 0 auto}
+.bchip.no{color:var(--ink-3);background:rgba(255,255,255,.03);border-color:var(--line-2)}
+.bchip.no svg{color:var(--ink-faint)}
+.buy2-feerow{display:flex;align-items:center;gap:10px;color:var(--ink-2);font-size:.92rem;padding:18px 0;border-top:1px solid var(--line);border-bottom:1px solid var(--line);margin-bottom:22px}
+.buy2-feerow .free{color:var(--cyan-bright);font-weight:700}
+.buy2-feerow b{color:var(--ink);font-weight:600}
+.buy2-cta{width:100%}
+
+@media (max-width:960px){
+  .buy2{grid-template-columns:1fr}
+  .buy2-scroll{max-height:none}
+  .buy2-d-head{grid-template-columns:1fr}
+}
+</style>
+</head>
+<body>
+<div class="bg-fx"></div>
+<div class="grain"></div>
+<div class="dash">
+  <aside class="dash-side" id="side">
+    <a class="brand" href="dashboard.html"><img class="brand-logo" src="images/kash-logo.png?v=2" alt="Kash logo" /> Kash</a>
+    <nav class="dash-nav">
+      <a  href="dashboard.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/></svg> Dashboard</a>
+      <a  href="cards.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><rect x="2" y="5" width="20" height="14" rx="3"/><path d="M2 10h20"/></svg> My Cards</a>
+      <a class="active" href="buy-card.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><rect x="2" y="5" width="20" height="14" rx="3"/><path d="M2 10h20M16 16h3"/></svg> Buy a card</a>
+      <a  href="topup.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><circle cx="12" cy="12" r="9"/><path d="M12 8v8M8 12h8"/></svg> Top up</a>
+      <a  href="transactions.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M4 5h16v14H4z"/><path d="M4 9h16M8 14h5"/></svg> Transactions</a>
+      <a  href="referrals.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><circle cx="9" cy="8" r="3"/><path d="M3 20a6 6 0 0112 0M16 7a3 3 0 010 6M21 20a6 6 0 00-5-5.9"/></svg> Referrals</a>
+      <span class="lbl">Account</span>
+      <a  href="settings.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 00.3 1.9l.1.1a2 2 0 11-2.8 2.8l-.1-.1a1.7 1.7 0 00-2.9 1.2V21a2 2 0 11-4 0v-.1A1.7 1.7 0 005 19.4l-.1.1a2 2 0 11-2.8-2.8l.1-.1A1.7 1.7 0 003.4 13H3a2 2 0 110-4h.1A1.7 1.7 0 004.6 6.1l-.1-.1a2 2 0 112.8-2.8l.1.1A1.7 1.7 0 0011 3.4V3a2 2 0 114 0v.1a1.7 1.7 0 002.9 1.2l.1-.1a2 2 0 112.8 2.8l-.1.1A1.7 1.7 0 0021 11h.1a2 2 0 110 4H21a1.7 1.7 0 00-1.6 1z"/></svg> Settings</a>
+    </nav>
+    <div class="side-foot">
+      <div class="dash-user"><span class="av">J</span><div><div class="nm">John Smith</div><div class="em">john@kash.cards</div></div></div>
+      <a class="dash-nav" href="login-v2.html" style="display:flex;align-items:center;gap:12px;padding:11px 12px;border-radius:12px;color:var(--ink-3);font-weight:500;font-size:.94rem;margin-top:4px;"><svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M16 17l5-5-5-5M21 12H9M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/></svg> Sign out</a>
+    </div>
+  </aside>
+  <div class="dash-scrim" id="scrim"></div>
+  <main class="dash-main">
+<div class="dash-top">
+  <div style="display:flex;align-items:center;gap:14px;">
+    <button class="menu-btn" id="menu" aria-label="Open menu"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M3 12h18M3 18h18"/></svg></button>
+    <div>
+      <h1>Buy a card</h1>
+      <div class="sub">Choose a BIN — each accepts a different set of merchants.</div>
+    </div>
+  </div>
+</div>
+
+<div class="buy2">
+  <!-- LIST of BINs (scales to any number) -->
+  <section class="panel buy2-list">
+    <div class="buy2-list-h" id="buy2-count">Cards available</div>
+    <div class="buy2-scroll" id="buy2-scroll" role="listbox" aria-label="Card products"></div>
+  </section>
+
+  <!-- DETAIL of selected card -->
+  <section class="panel buy2-detail" id="buy2-detail" aria-live="polite"></section>
+</div>
+  </main>
+</div>
+<script src="dashboard.js"></script>
+<script src="topup-modal.js?v=1"></script>
+<script>
+(function () {
+  'use strict';
+  // NOTE: replace with your real 7 BINs + exact merchant compatibility.
+  var CARDS = [
+    { bin: '428829', name: 'Kash Global', scheme: 'Visa', tag: 'Everyday', desc: 'Broad worldwide acceptance for everyday spending and travel.', daily: '$5,000', monthly: '$50,000', works: ['E-commerce', 'Subscriptions', 'Travel', 'Apple/Google Pay'], no: ['Gambling', 'Crypto exchanges'] },
+    { bin: '539124', name: 'Kash Commerce', scheme: 'Mastercard', tag: 'Business', desc: 'Built for online business — ad platforms and SaaS subscriptions.', daily: '$10,000', monthly: '$100,000', works: ['Ads (Google/Meta)', 'SaaS', 'E-commerce', 'Subscriptions'], no: ['Gambling'] },
+    { bin: '471699', name: 'Kash Pro', scheme: 'Visa', tag: 'High limit', desc: 'Higher limits and the widest acceptance across all categories.', daily: '$25,000', monthly: '$250,000', works: ['E-commerce', 'Subscriptions', 'Travel', 'Ads', 'Apple/Google Pay'], no: ['Gambling'] },
+    { bin: '552145', name: 'Kash Travel', scheme: 'Mastercard', tag: 'Travel', desc: 'Optimised for airlines, hotels and travel bookings worldwide.', daily: '$8,000', monthly: '$80,000', works: ['Airlines', 'Hotels', 'Car rental', 'Apple/Google Pay'], no: ['Gambling', 'Crypto exchanges'] },
+    { bin: '433012', name: 'Kash Ads', scheme: 'Visa', tag: 'Advertising', desc: 'Tuned for advertising spend on the major ad networks.', daily: '$15,000', monthly: '$150,000', works: ['Google Ads', 'Meta Ads', 'TikTok Ads', 'SaaS'], no: ['Gambling', 'Crypto exchanges'] },
+    { bin: '515983', name: 'Kash Lite', scheme: 'Mastercard', tag: 'Starter', desc: 'A simple entry card for everyday online purchases.', daily: '$2,000', monthly: '$20,000', works: ['E-commerce', 'Subscriptions', 'Apple/Google Pay'], no: ['Gambling', 'Crypto exchanges', 'Ads'] },
+    { bin: '462778', name: 'Kash Max', scheme: 'Visa', tag: 'Premium', desc: 'Top-tier limits with near-universal merchant acceptance.', daily: '$50,000', monthly: '$500,000', works: ['E-commerce', 'Subscriptions', 'Travel', 'Ads', 'Gaming', 'Apple/Google Pay'], no: ['Gambling'] },
+  ];
+  var CHK = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M20 6L9 17l-5-5"/></svg>';
+  var X = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M18 6L6 18M6 6l12 12"/></svg>';
+  var scroll = document.getElementById('buy2-scroll');
+  var detail = document.getElementById('buy2-detail');
+  document.getElementById('buy2-count').textContent = CARDS.length + ' cards available';
+
+  function maskedBin(b) { return b.slice(0, 1) + '·' + b.slice(1); }
+
+  function renderList(activeBin) {
+    scroll.innerHTML = CARDS.map(function (c) {
+      return '<button class="buy2-row' + (c.bin === activeBin ? ' is-active' : '') + '" role="option" data-bin="' + c.bin + '">' +
+        '<span class="buy2-chip">' + (c.scheme === 'Visa' ? 'VISA' : 'MC') + '</span>' +
+        '<span class="buy2-rmeta"><span class="buy2-rname">' + c.name + '</span><span class="buy2-rbin">BIN ' + maskedBin(c.bin) + '</span></span>' +
+        '<span class="buy2-rtag">' + c.tag + '</span></button>';
+    }).join('');
+  }
+
+  function renderDetail(c) {
+    var works = c.works.map(function (w) { return '<span class="bchip">' + CHK + ' ' + w + '</span>'; }).join('');
+    var no = c.no.map(function (w) { return '<span class="bchip no">' + X + ' ' + w + '</span>'; }).join('');
+    var link = 'topup.html?card=new&product=' + encodeURIComponent(c.name) + '&bin=' + c.bin;
+    detail.innerHTML =
+      '<div class="buy2-d-head">' +
+        '<div class="buy2-d-shot"><span class="buy2-d-scheme">' + c.scheme + '</span><img src="images/hero-card.png?v=2" alt="' + c.name + ' card" /></div>' +
+        '<div class="buy2-d-info">' +
+          '<h2>' + c.name + '</h2>' +
+          '<div class="buy2-d-bin">BIN ' + maskedBin(c.bin) + ' · ' + c.scheme + '</div>' +
+          '<p class="buy2-d-desc">' + c.desc + '</p>' +
+          '<div class="buy2-d-limits">' +
+            '<div class="buy2-lim"><div class="buy2-lim-l">Daily limit</div><div class="buy2-lim-v">' + c.daily + '</div></div>' +
+            '<div class="buy2-lim"><div class="buy2-lim-l">Monthly limit</div><div class="buy2-lim-v">' + c.monthly + '</div></div>' +
+          '</div>' +
+        '</div>' +
+      '</div>' +
+      '<div class="buy2-d-body">' +
+        '<div class="buy2-compat-h">Works with</div><div class="buy2-chips">' + works + '</div>' +
+        '<div class="buy2-compat-h">Not supported</div><div class="buy2-chips">' + no + '</div>' +
+        '<div class="buy2-feerow"><span class="free">Free</span> to issue <span>·</span> <b>3%</b> fee on each top-up <span>·</span> no monthly cost</div>' +
+        '<a class="btn btn-cyan btn-lg btn-block buy2-cta" href="' + link + '">Select &amp; deposit' +
+          '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a>' +
+      '</div>';
+  }
+
+  function select(bin) {
+    var c = CARDS.filter(function (x) { return x.bin === bin; })[0] || CARDS[0];
+    renderList(c.bin);
+    renderDetail(c);
+  }
+
+  scroll.addEventListener('click', function (e) {
+    var row = e.target.closest('.buy2-row');
+    if (row) select(row.getAttribute('data-bin'));
+  });
+
+  // preselect from ?bin= if present, else first card
+  var qbin;
+  try { qbin = new URLSearchParams(location.search).get('bin'); } catch (e) {}
+  select(qbin || CARDS[0].bin);
+})();
+</script>
+</body>
+</html>

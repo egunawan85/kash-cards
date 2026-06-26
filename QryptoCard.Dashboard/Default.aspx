@@ -1,162 +1,296 @@
-﻿<%@ Page Title="Home Page" Language="C#" AutoEventWireup="true" CodeBehind="Default.aspx.cs" Inherits="QryptoCard.Dashboard._Default" %>
+<%@ Page Title="Home Page" Language="C#" AutoEventWireup="true" CodeBehind="Default.aspx.cs" Inherits="QryptoCard.Dashboard._Default" %>
 
 <%--MasterPageFile="~/Site.Master"--%>
 
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Kash.Cards - Card Payment for Crypto</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    colors: {
-                        primary: '#BAFC04',
-                        background: '#151515',
-                    },
-                },
-            },
-        }
-    </script>
-    <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inconsolata:wght@400;700&display=swap');
-
-        body {
-            font-family: 'Inconsolata', monospace;
-        }
-    </style>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="icon" type="image/png" href="Content/media/landing/kash-logo.png" />
+    <link rel="apple-touch-icon" href="Content/media/landing/kash-logo.png" />
+    <meta name="theme-color" content="#05070a" />
+    <title>Kash &mdash; Top up with USDT. Spend like cash.</title>
+    <meta name="description" content="Kash is the virtual card you top up with USDT and spend anywhere. Instant conversion at checkout. One flat 3% top-up fee. Bank-grade security." />
+    <meta name="robots" content="index, follow" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700;800&family=Hanken+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href='<%= ResolveUrl("~/Content/css/landing.css") %>' />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/lenis@1.1.13/dist/lenis.min.js"></script>
 </head>
-<body class="bg-background text-white">
+<body>
     <form runat="server">
-        <header class="fixed top-0 left-0 right-0 z-50 transition-all duration-300">
-            <div class="container mx-auto px-4 py-6">
-                <nav class="flex justify-between items-center">
-                    <a href="/" class="flex items-center gap-2">
-                        <img src="https://hebbkx1anhila5yf.public.blob.vercel-storage.com/logo-light-rGvlSpiQEHrLADZZ288DAek20BMV7h.png" alt="Kash.Cards Logo" class="w-auto h-8">
-                        <span class="text-2xl font-bold">Kash.Cards</span>
-                    </a>
-                    <ul class="hidden md:flex space-x-6">
-                        <li><a href="#features" class="hover:text-primary">Features</a></li>
-                        <li><a href="#how-it-works" class="hover:text-primary">How It Works</a></li>
-                    </ul>
-                    <div class="flex space-x-4">
-                        <a href="login" runat="server" id="btnLogin" class="bg-transparent text-white border border-white hover:bg-white hover:text-background px-4 py-2 rounded">Log In</a>
-                        <a href="register" runat="server" id="btnRegister" class="bg-primary text-background hover:bg-primary/90 px-4 py-2 rounded">Sign Up</a>
-                        <a href="dashboard" runat="server" id="btnDashboard" class="bg-primary text-background hover:bg-primary/90 px-4 py-2 rounded">Open Dashboard</a>
-                    </div>
+        <div class="bg-fx"></div>
+        <div class="grain"></div>
+
+        <!-- NAV -->
+        <header class="nav">
+            <div class="wrap nav-inner">
+                <a class="brand" href="/"><img class="brand-logo" src="Content/media/landing/kash-logo.png" alt="Kash logo" /> Kash</a>
+                <nav class="nav-links">
+                    <a href="#features">Features</a>
+                    <a href="#security">Security</a>
+                    <a href="#how">How it works</a>
+                    <a href="#faq">FAQ</a>
                 </nav>
+                <div class="nav-cta">
+                    <a class="btn btn-line" href="login" runat="server" id="btnLogin">Sign in</a>
+                    <a class="btn btn-cyan" href="register" runat="server" id="btnRegister">Get your card
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M13 6l6 6-6 6" /></svg></a>
+                    <a class="btn btn-cyan" href="dashboard" runat="server" id="btnDashboard">Open Dashboard
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M13 6l6 6-6 6" /></svg></a>
+                </div>
             </div>
         </header>
 
-        <main class="pt-20">
-            <section class="relative w-full py-20 md:py-32">
-                <div class="absolute inset-0 w-screen bg-gradient-to-r from-primary/5 to-background">
-                    <div class="absolute inset-0 w-full" style="background-image: linear-gradient(to right, rgba(186, 252, 4, 0.02) 1px, transparent 1px), linear-gradient(to bottom, rgba(186, 252, 4, 0.02) 1px, transparent 1px); background-size: 24px 24px;"></div>
+        <!-- HERO -->
+        <section class="hero">
+            <div class="hero-bg" style="background-image: url('Content/media/landing/bg-texture.png')" role="presentation"></div>
+            <div class="wrap hero-grid">
+                <div class="hero-copy">
+                    <span class="hero-badge"><span class="dot"></span> 12,400+ already on the waitlist</span>
+                    <h1>Top up with USDT.<br>Spend like <span class="grad">cash.</span></h1>
+                    <p class="lede">Kash is the virtual card you load with USDT and spend anywhere online &mdash; converted to fiat the instant you check out. One flat fee, zero guesswork.</p>
+                    <div class="hero-actions">
+                        <a class="btn btn-cyan btn-lg" href="register" runat="server" id="txtGetStarted">Get your Kash card
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M13 6l6 6-6 6" /></svg></a>
+                        <a class="btn btn-line btn-lg" href="#how">See how it works</a>
+                    </div>
+                    <p class="hero-note"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 6L9 17l-5-5" /></svg> Simple 3% top-up fee, charged upfront. Nothing hidden.</p>
+                    <div class="hero-stats">
+                        <div class="hero-stat"><div class="n"><span data-count="3" data-suffix="%">0%</span></div><div class="l">Flat top-up fee</div></div>
+                        <div class="hero-stat"><div class="n">&lt;1s</div><div class="l">USDT to fiat</div></div>
+                        <div class="hero-stat"><div class="n"><span data-count="40" data-suffix="M+">0</span></div><div class="l">Merchants worldwide</div></div>
+                    </div>
                 </div>
-                <div class="container mx-auto px-4 relative">
-                    <div class="relative flex flex-col md:flex-row items-center">
-                        <div class="md:w-1/2 mb-10 md:mb-0">
-                            <h1 class="text-4xl md:text-6xl font-bold mb-6 bg-gradient-to-br from-[#00AAE9] to-primary bg-clip-text text-transparent">Transform Your Crypto into Everyday Spending Power
-                        </h1>
-                            <p class="text-xl mb-8">
-                                Seamlessly integrate cryptocurrency payments into your business with our innovative card solution.
-                       
-                            </p>
-                            <a href="register" runat="server" id="txtGetStarted" class="bg-primary text-background hover:bg-primary/90 text-lg px-8 py-4 rounded inline-flex items-center">Get Started
-                           
-                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 ml-2" viewBox="0 0 20 20" fill="currentColor">
-                                    <path fill-rule="evenodd" d="M10.293 3.293a1 1 0 011.414 0l6 6a1 1 0 010 1.414l-6 6a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-4.293-4.293a1 1 0 010-1.414z" clip-rule="evenodd" />
-                                </svg>
-                            </a>
+                <div class="hero-card">
+                    <img src="Content/media/landing/hero-card.png" alt="The Kash virtual card, a glossy black metallic card with a cyan edge glow" />
+                </div>
+            </div>
+            <div class="scroll-cue"><span class="mouse"></span> Scroll</div>
+        </section>
+
+        <!-- TRUST STRIP -->
+        <div class="trust">
+            <div class="wrap trust-inner">
+                <div class="trust-item"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 2l8 3v6c0 5-3.4 8.5-8 11-4.6-2.5-8-6-8-11V5l8-3z" /><path d="M9 12l2 2 4-4" /></svg> Regulated &amp; compliant</div>
+                <span class="trust-sep"></span>
+                <div class="trust-item"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="4" y="10" width="16" height="11" rx="2" /><path d="M8 10V7a4 4 0 018 0v3" /></svg> 256-bit encryption</div>
+                <span class="trust-sep"></span>
+                <div class="trust-item"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 7l9-4 9 4-9 4-9-4z" /><path d="M3 7v6l9 4 9-4V7" /></svg> Funds in segregated custody</div>
+                <span class="trust-sep"></span>
+                <div class="trust-net"><b>USDT</b> &middot; <b>Apple&nbsp;Pay</b> &middot; <b>Google&nbsp;Pay</b> &middot; <b>Visa</b></div>
+            </div>
+        </div>
+
+        <!-- FEATURES BENTO -->
+        <section class="features" id="features">
+            <div class="wrap">
+                <div class="sec-head reveal">
+                    <span class="eyebrow">Why Kash</span>
+                    <h2 class="h2">A card built around<br>one simple idea.</h2>
+                    <p>Load it with USDT. Spend it like any card. No exchanges to babysit, no confusing fees.</p>
+                </div>
+                <div class="bento">
+                    <article class="tile tile-img tall col-4 row-2 reveal">
+                        <div class="ph" style="background-image: url('Content/media/landing/lifestyle-pay.png')"></div>
+                        <div class="ov"></div>
+                        <div class="cap">
+                            <span class="tag">Spend anywhere</span>
+                            <h3>Tap to pay, in the real world</h3>
+                            <p>Add Kash to Apple&nbsp;Pay or Google&nbsp;Pay and pay at 40M+ merchants. Your USDT converts to fiat the instant the terminal beeps.</p>
                         </div>
-                        <div class="md:w-1/2 hidden md:flex justify-center">
-                            <div class="relative w-[500px] h-[312px]">
-                                <%--<img src="https://hebbkx1anhila5yf.public.blob.vercel-storage.com/illushero-ZLemImWZ26TyjrHskMGLUcMlPPYXnm.png" alt="Kash.Cards Crypto Payment Card" class="object-contain w-full h-full">--%>
-                                <img src="Content/media/illustrations/card-banner.png" alt="Kash.Cards Crypto Payment Card" class="object-contain w-full h-full">
-                            </div>
+                    </article>
+                    <article class="tile tile-img col-2 reveal" data-d="1" style="min-height: 260px;">
+                        <div class="ph" style="background-image: url('Content/media/landing/feat-usdt.png')"></div>
+                        <div class="ov"></div>
+                        <div class="cap"><span class="tag">Funding</span><h3>Fund with USDT</h3><p>Top up straight from USDT &mdash; the only asset you need.</p></div>
+                    </article>
+                    <article class="tile tile-img col-2 reveal" data-d="2" style="min-height: 260px;">
+                        <div class="ph" style="background-image: url('Content/media/landing/card-detail.png')"></div>
+                        <div class="ov"></div>
+                        <div class="cap"><span class="tag">One flat fee</span><div class="big-num grad">3%</div><p>Charged upfront. No monthly fee, no hidden FX.</p></div>
+                    </article>
+                    <article class="tile tile-img col-2 reveal" data-d="1" style="min-height: 260px;">
+                        <div class="ph" style="background-image: url('Content/media/landing/app-phone.png'); background-position: center 30%"></div>
+                        <div class="ov"></div>
+                        <div class="cap"><span class="tag">Your control center</span><h3>Manage it from your phone</h3></div>
+                    </article>
+                    <article class="tile tile-img col-2 reveal" data-d="3" style="min-height: 260px;">
+                        <div class="ph" style="background-image: url('Content/media/landing/feat-virtual.png')"></div>
+                        <div class="ov"></div>
+                        <div class="cap"><span class="tag">The card</span><h3>Virtual, in 60s</h3><p>Instant issuance &mdash; no plastic to wait for.</p></div>
+                    </article>
+                    <article class="tile tile-img col-2 reveal" data-d="4" style="min-height: 260px;">
+                        <div class="ph" style="background-image: url('Content/media/landing/feat-speed.png')"></div>
+                        <div class="ov"></div>
+                        <div class="cap"><span class="tag">Speed</span><h3>Instant conversion</h3><p>Live rate, locked the moment your payment clears.</p></div>
+                    </article>
+                </div>
+            </div>
+        </section>
+
+        <!-- SPLIT: instant conversion (macro card) -->
+        <section>
+            <div class="wrap split">
+                <div class="split-media reveal"><img src="Content/media/landing/card-detail.png" alt="Macro close-up of the Kash card surface, gold chip and cyan edge light" /></div>
+                <div class="split-copy reveal" data-d="1">
+                    <span class="eyebrow">Instant conversion</span>
+                    <h2 class="h2">Crypto in.<br>Fiat out. Instantly.</h2>
+                    <p>The moment you pay, Kash converts exactly what you need from your USDT balance at the live rate and settles in fiat &mdash; locked the second the payment clears.</p>
+                    <div class="ticks">
+                        <div class="tick"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 6L9 17l-5-5" /></svg> Live mid-market rate at checkout</div>
+                        <div class="tick"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 6L9 17l-5-5" /></svg> No slippage surprises after you pay</div>
+                        <div class="tick"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 6L9 17l-5-5" /></svg> Works online and in-store via Apple/Google Pay</div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- SECURITY -->
+        <section id="security">
+            <div class="wrap split rev">
+                <div class="split-media reveal"><img src="Content/media/landing/security.png" alt="A glowing cyan security shield protecting the Kash card" /></div>
+                <div class="split-copy reveal" data-d="1">
+                    <span class="eyebrow">Security first</span>
+                    <h2 class="h2">Built to protect<br>your money.</h2>
+                    <p>Crypto should feel safer than cash, not scarier. Every Kash account is hardened end-to-end.</p>
+                    <div class="ticks">
+                        <div class="tick"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 6L9 17l-5-5" /></svg> Full KYC &amp; regulatory compliance</div>
+                        <div class="tick"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 6L9 17l-5-5" /></svg> Funds held in segregated custody</div>
+                        <div class="tick"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 6L9 17l-5-5" /></svg> 256-bit encryption &amp; 24/7 on-chain monitoring</div>
+                        <div class="tick"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 6L9 17l-5-5" /></svg> Freeze or kill the card instantly from your phone</div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- HOW IT WORKS -->
+        <section class="steps" id="how">
+            <div class="wrap">
+                <div class="split rev" style="padding-bottom: 40px;">
+                    <div class="split-media reveal"><img src="Content/media/landing/app-phone.png" alt="The Kash app showing a USDT balance and Top Up button" /></div>
+                    <div class="split-copy reveal" data-d="1">
+                        <span class="eyebrow">How it works</span>
+                        <h2 class="h2">Live in three steps.</h2>
+                        <p>From sign-up to spending in under a minute &mdash; all from the app.</p>
+                    </div>
+                </div>
+                <div class="steps-grid">
+                    <article class="step reveal" data-d="1">
+                        <div class="step-ph" style="background-image: url('Content/media/landing/app-phone.png'); background-position: center top"></div>
+                        <div class="step-body">
+                            <div class="num"></div>
+                            <h3>Create your account</h3>
+                            <p>Sign up and breeze through verification. Your virtual card is issued the moment you're approved.</p>
+                        </div>
+                    </article>
+                    <article class="step reveal" data-d="2">
+                        <div class="step-ph" style="background-image: url('Content/media/landing/feat-usdt.png')"></div>
+                        <div class="step-body">
+                            <div class="num"></div>
+                            <h3>Top up with USDT</h3>
+                            <p>Send USDT to your Kash balance. The fee is applied upfront, so the amount you see is the amount you can spend.</p>
+                            <span class="fee">3% top-up fee, charged once at top-up</span>
+                        </div>
+                    </article>
+                    <article class="step reveal" data-d="3">
+                        <div class="step-ph" style="background-image: url('Content/media/landing/lifestyle-pay.png')"></div>
+                        <div class="step-body">
+                            <div class="num"></div>
+                            <h3>Spend anywhere</h3>
+                            <p>Add the card to Apple Pay or Google Pay and pay at 40M+ online merchants. USDT converts to fiat instantly.</p>
+                        </div>
+                    </article>
+                </div>
+            </div>
+        </section>
+
+        <!-- PRICING BAND -->
+        <section class="band" id="fees">
+            <div class="ph" data-parallax="0.15" style="background-image: url('Content/media/landing/card-detail.png')" role="presentation"></div>
+            <div class="ov"></div>
+            <div class="wrap"><div class="inner reveal">
+                <span class="eyebrow" style="margin-bottom: 16px;">Pricing</span>
+                <h2 class="h2">Honest, upfront pricing.</h2>
+                <p>No monthly fee to hold the card, no hidden FX markups, no surprise charges. You pay a flat <strong style="color: var(--ink)">3% when you top up with USDT</strong> &mdash; and that's the whole story.</p>
+            </div></div>
+        </section>
+
+        <!-- FAQ -->
+        <section class="faq" id="faq">
+            <div class="wrap">
+                <div class="sec-head center reveal">
+                    <span class="eyebrow" style="justify-content: center; display: flex;">Questions</span>
+                    <h2 class="h2">Good to know.</h2>
+                </div>
+                <div class="faq-grid">
+                    <div class="faq-media reveal"><img src="Content/media/landing/security.png" alt="Kash security shield" /></div>
+                    <div class="faq-list reveal" data-d="1">
+                        <div class="faq-item">
+                            <button class="faq-q" type="button">Which crypto can I use to top up?<span class="pm"></span></button>
+                            <div class="faq-a"><div class="faq-a-inner">Right now Kash supports topping up with <strong>USDT only</strong>. It's a stablecoin pegged to the US dollar, so your balance stays predictable. Support for more assets is on the roadmap.</div></div>
+                        </div>
+                        <div class="faq-item">
+                            <button class="faq-q" type="button">How much does it cost?<span class="pm"></span></button>
+                            <div class="faq-a"><div class="faq-a-inner">A flat <strong>3% fee, charged upfront each time you top up</strong> from USDT to your card. There's no monthly fee, no FX markup, and no surprise charges at checkout &mdash; the balance you see is exactly what you can spend.</div></div>
+                        </div>
+                        <div class="faq-item">
+                            <button class="faq-q" type="button">Is it a physical or virtual card?<span class="pm"></span></button>
+                            <div class="faq-a"><div class="faq-a-inner">Kash is a <strong>virtual card</strong>. It's issued instantly and you add it to Apple&nbsp;Pay or Google&nbsp;Pay to tap and pay in stores, or use the details for online checkout. No plastic to wait for.</div></div>
+                        </div>
+                        <div class="faq-item">
+                            <button class="faq-q" type="button">How does the crypto-to-fiat conversion work?<span class="pm"></span></button>
+                            <div class="faq-a"><div class="faq-a-inner">When you pay, Kash converts exactly the amount you need from your USDT balance at the live mid-market rate and settles the merchant in fiat &mdash; all in under a second, with the rate locked the moment the payment clears.</div></div>
+                        </div>
+                        <div class="faq-item">
+                            <button class="faq-q" type="button">Is my money safe?<span class="pm"></span></button>
+                            <div class="faq-a"><div class="faq-a-inner">Yes. Kash uses full KYC and regulatory compliance, holds funds in segregated custody, encrypts everything with 256-bit encryption, and monitors on-chain activity 24/7. You can freeze or kill your card instantly from the app.</div></div>
                         </div>
                     </div>
                 </div>
-            </section>
+            </div>
+        </section>
 
-            <section id="features" class="bg-[#1A1A1A] py-20">
-                <div class="container mx-auto px-4">
-                    <h2 class="text-3xl md:text-4xl font-bold mb-12 text-center">Key Features</h2>
-                    <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
-                        <div class="bg-[#212121] p-6 rounded-lg border border-gray-400/10 hover:border-primary/50 transition-colors duration-300">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-primary mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                            </svg>
-                            <h3 class="text-xl font-semibold mb-2">Instant Crypto Transactions</h3>
-                            <p class="text-gray-400">Experience lightning-fast crypto transactions, enabling real-time payments and transfers for your business needs.</p>
-                        </div>
-                        <div class="bg-[#212121] p-6 rounded-lg border border-gray-400/10 hover:border-primary/50 transition-colors duration-300">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-primary mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
-                            </svg>
-                            <h3 class="text-xl font-semibold mb-2">Secure and Compliant</h3>
-                            <p class="text-gray-400">Our platform adheres to the highest security standards and regulatory requirements, ensuring your transactions are safe and compliant.</p>
-                        </div>
-                        <div class="bg-[#212121] p-6 rounded-lg border border-gray-400/10 hover:border-primary/50 transition-colors duration-300">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-primary mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 6l3 1m0 0l-3 9a5.002 5.002 0 006.001 0M6 7l3 9M6 7l6-2m6 2l3-1m-3 1l-3 9a5.002 5.002 0 006.001 0M18 7l3 9m-3-9l-6-2m0-2v2m0 16V5m0 16H9m3 0h3" />
-                            </svg>
-                            <h3 class="text-xl font-semibold mb-2">Multi-Currency Support</h3>
-                            <p class="text-gray-400">Accept and manage multiple cryptocurrencies, expanding your payment options and reaching a global customer base.</p>
-                        </div>
+        <!-- CTA -->
+        <section class="cta" id="waitlist">
+            <div class="wrap">
+                <div class="cta-card reveal">
+                    <div class="cta-visual"><img src="Content/media/landing/hero-card.png" alt="Kash virtual card" /></div>
+                    <span class="eyebrow" style="justify-content: center; display: flex; margin-bottom: 18px;">Join 12,400+ on the waitlist</span>
+                    <h2 class="display">Your USDT is ready.<br><span class="grad">Is your card?</span></h2>
+                    <p>Be first in line for the next batch of Kash virtual cards. No spam &mdash; just one email when your spot opens.</p>
+                    <div class="cta-form">
+                        <input type="email" runat="server" id="txtEmail" placeholder="you@email.com" aria-label="Email address" />
+                        <a class="btn btn-cyan" href="register" runat="server" id="btnRegister2">Reserve my card</a>
                     </div>
                 </div>
-            </section>
+            </div>
+        </section>
 
-            <section id="how-it-works" class="py-20">
-                <div class="container mx-auto px-4">
-                    <h2 class="text-3xl md:text-4xl font-bold mb-12 text-center">How It Works</h2>
-                    <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
-                        <div class="text-center">
-                            <div class="w-16 h-16 bg-primary text-background rounded-full flex items-center justify-center text-2xl font-bold mb-4 mx-auto">1</div>
-                            <h3 class="text-xl font-semibold mb-2">Login</h3>
-                            <p class="text-gray-400">Create your account and securely log in to access our platform.</p>
-                        </div>
-                        <div class="text-center">
-                            <div class="w-16 h-16 bg-primary text-background rounded-full flex items-center justify-center text-2xl font-bold mb-4 mx-auto">2</div>
-                            <h3 class="text-xl font-semibold mb-2">Buy Card</h3>
-                            <p class="text-gray-400">Choose and purchase your crypto card with just a few clicks.</p>
-                        </div>
-                        <div class="text-center">
-                            <div class="w-16 h-16 bg-primary text-background rounded-full flex items-center justify-center text-2xl font-bold mb-4 mx-auto">3</div>
-                            <h3 class="text-xl font-semibold mb-2">Start Spending</h3>
-                            <p class="text-gray-400">Use your card for everyday purchases, converting crypto to fiat instantly.</p>
-                        </div>
+        <!-- FOOTER -->
+        <footer class="footer">
+            <div class="wrap">
+                <div class="footer-grid">
+                    <div>
+                        <a class="brand" href="/"><img class="brand-logo" src="Content/media/landing/kash-logo.png" alt="Kash logo" /> Kash</a>
+                        <p class="footer-about">The virtual card you top up with USDT and spend anywhere. Instant conversion, one simple fee.</p>
                     </div>
+                    <div class="footer-col"><h4>Product</h4><a href="#features">Features</a><a href="#how">How it works</a><a href="#fees">Fees</a><a href="register">Get a card</a></div>
+                    <div class="footer-col"><h4>Company</h4><a href="#security">Security</a><a href="#">About</a><a href="#">Careers</a><a href="#">Contact</a></div>
+                    <div class="footer-col"><h4>Legal</h4><a href="#">Terms of Service</a><a href="#">Privacy Policy</a></div>
                 </div>
-            </section>
-
-            <section class="bg-[#1A1A1A] py-20">
-                <div class="container mx-auto px-4 text-center">
-                    <h2 class="text-3xl md:text-4xl font-bold mb-6">Ready to Get Started?</h2>
-                    <p class="text-xl mb-8">Join thousands of businesses already using CryptoCard for their payment needs.</p>
-                    <div class="flex flex-col md:flex-row justify-center items-center space-y-4 md:space-y-0 md:space-x-4">
-                        <input type="email" runat="server" id="txtEmail" placeholder="Enter your email" class="max-w-xs bg-[#212121] border-[#2A2826] text-white px-4 py-2 rounded">
-                        <a href="register" runat="server" id="btnRegister2" class="bg-primary text-background hover:bg-primary/90 px-6 py-2 rounded inline-flex items-center">Sign Up Now
-                       
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 ml-2" viewBox="0 0 20 20" fill="currentColor">
-                                <path fill-rule="evenodd" d="M10.293 3.293a1 1 0 011.414 0l6 6a1 1 0 010 1.414l-6 6a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-4.293-4.293a1 1 0 010-1.414z" clip-rule="evenodd" />
-                            </svg>
-                        </a>
-                    </div>
+                <div class="footer-bottom">
+                    <span>&copy; 2026 Kash. All rights reserved.</span>
+                    <span class="mono">kash.cards</span>
                 </div>
-            </section>
-        </main>
-
-        <footer class="bg-background py-8 border-t border-[#2A2826]">
-            <div class="container mx-auto px-4 text-center text-gray-400">
-                <p>&copy; 2025 Kash.Cards. All rights reserved.</p>
             </div>
         </footer>
+
+        <script src='<%= ResolveUrl("~/Content/js/landing.js") %>'></script>
     </form>
 </body>
 </html>
-
