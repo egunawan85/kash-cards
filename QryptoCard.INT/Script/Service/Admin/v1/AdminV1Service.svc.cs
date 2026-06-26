@@ -109,13 +109,15 @@ namespace QryptoCard.INT.Script.Service.Admin.v1
         /// </summary>
         public OutputModel devCreditWallet(string em, string userId, decimal amount, string reference)
         {
-            // Resolve the acting admin up front for the audit trail. These are reads
-            // only; no money moves before the gates below pass.
-            string adminId = tryGetAdminId(em);
-            string actingRole = (getRole(em) ?? "").Trim();
-
             try
             {
+                // Resolve the acting admin up front for the audit trail. These are
+                // reads only — no money moves before the gates below pass — and they
+                // sit inside the try so a DB hiccup returns a clean error rather than
+                // an unhandled fault.
+                string adminId = tryGetAdminId(em);
+                string actingRole = (getRole(em) ?? "").Trim();
+
                 // WALL 1 (load-bearing, fail-closed) — environment hard-gate. Checked
                 // before role and before any mutation: an attacker with full root-admin
                 // in production still cannot reach the credit.
