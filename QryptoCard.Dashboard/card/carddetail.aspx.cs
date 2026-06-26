@@ -274,10 +274,24 @@ namespace QryptoCard.Dashboard.card
             else
             {
                 enableButton();
-                lblalert.InnerHtml = op.Message;
+                lblalert.InnerHtml = BuildSpendError(op.Message);
                 ScriptManager.RegisterClientScriptBlock(this, GetType(), "Pop", "var isModalAlert = true", true);
                 return;
             }
+        }
+
+        // Surface the server's spend-failure message. The charge is server-authoritative (we send
+        // only CardTypeId + InitialDeposit), so this only reports the outcome. When the wallet
+        // balance is short, add a direct CTA to top up — the per-card deposit-address flow is retired.
+        string BuildSpendError(string message)
+        {
+            if (string.IsNullOrEmpty(message))
+                message = "Unable to complete the purchase. Please try again.";
+            bool insufficient = message.IndexOf("insufficient balance", StringComparison.OrdinalIgnoreCase) >= 0;
+            string html = HttpUtility.HtmlEncode(message);
+            if (insufficient)
+                html += "<br /><a class=\"btn btn-cyan\" style=\"margin-top:10px;\" href=\"" + ResolveUrl("~/txdeposit") + "\">Add funds</a>";
+            return html;
         }
 
         protected void lbtNewHolder_Click(object sender, EventArgs e)
