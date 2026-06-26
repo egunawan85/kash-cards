@@ -48,7 +48,18 @@ namespace QryptoCard.INT.Security
             // defaulted to "dev"). GetOptional reads the live process environment and
             // is uncached, so a misconfiguration that drops the variable is seen
             // immediately, and tests can flip it without a cache reset.
-            string env = (SecretsConfig.GetOptional("QRYPTO_ENVIRONMENT", null) ?? "").Trim();
+            return IsAllowed(SecretsConfig.GetOptional("QRYPTO_ENVIRONMENT", null));
+        }
+
+        /// <summary>
+        /// Pure allow-list decision over an explicit environment value, split out so
+        /// the fail-closed logic can be tested exhaustively without mutating the
+        /// process environment. Null, blank, "prod", or any value not in
+        /// <see cref="AllowedEnvironments"/> returns false.
+        /// </summary>
+        public static bool IsAllowed(string environment)
+        {
+            string env = (environment ?? "").Trim();
             if (env.Length == 0) return false;
 
             foreach (var allowed in AllowedEnvironments)
