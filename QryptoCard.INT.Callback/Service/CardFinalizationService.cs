@@ -59,6 +59,10 @@ namespace QryptoCard.INT.Callback.Service
                     });
                 }
                 db.SaveChanges();
+
+                // Pay the referrer their commission on this confirmed buy (best-effort, idempotent,
+                // never throws — must not roll back the finalization above).
+                ReferralCommissionService.PayForFinalizedSpend(cr.UserID, cr.Fee, cr.ID);
                 return FinalizeOutcome.Confirmed;
             }
         }
@@ -73,6 +77,10 @@ namespace QryptoCard.INT.Callback.Service
 
                 cr.Status = PGStatusModel.Success;
                 db.SaveChanges();
+
+                // Pay the referrer their commission on this confirmed top-up (best-effort,
+                // idempotent, never throws — must not roll back the finalization above).
+                ReferralCommissionService.PayForFinalizedSpend(cr.UserID, cr.Fee, cr.ID);
                 return FinalizeOutcome.Confirmed;
             }
         }

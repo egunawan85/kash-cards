@@ -28,6 +28,7 @@ namespace QryptoCard.INT.Callback.Service
         public const string TypeCardOpenReversal = "Card Open Reversal";
         public const string TypeCardTopupReversal = "Card Topup Reversal";
         public const string TypeDepositRefund = "Deposit Refund";
+        public const string TypeReferralCommission = "Referral Commission";
 
         public class BalanceMutationResult
         {
@@ -91,6 +92,25 @@ namespace QryptoCard.INT.Callback.Service
             return Mutate(userId, netAmount, false, 0m, netAmount, commission,
                 commissionInPercentage, TypeCryptoDeposit, transactionId, status, "wallet_missing",
                 dedupType: "PGCrypto", dedupKey: dedupKey, dedupRequest: dedupRequest);
+        }
+
+        /// <summary>
+        /// Credit a referrer's wallet with the commission earned on a referee's finalized card
+        /// buy/top-up, deduped per referee order in the SAME transaction as the credit. The dedup
+        /// row (tblH_Partner_Webhook_ID, Type='ReferralCommission', TXID=<referee order id>) is
+        /// inserted first; a duplicate-key means this order already paid out, so the whole
+        /// transaction rolls back and returns "duplicate_event" — no double payout if the finalize
+        /// is re-run (webhook + reconciliation sweep racing, or a redelivered webhook). The Type is
+        /// namespaced so a referee order id can never collide with a PGCrypto deposit TXID. Caller
+        /// computes amount = referrer-rate * referee-fee and ensures the referrer's wallet exists.
+        /// </summary>
+        public static BalanceMutationResult CreditReferralCommission(
+            string referrerUserId, decimal amount, string refereeOrderId, string dedupRequest)
+        {
+            if (amount <= 0m) return BalanceMutationResult.Fail("non_positive_commission");
+            return Mutate(referrerUserId, amount, false, 0m, amount, 0m, 0d,
+                TypeReferralCommission, refereeOrderId, null, "wallet_missing",
+                dedupType: "ReferralCommission", dedupKey: refereeOrderId, dedupRequest: dedupRequest);
         }
 
         /// <summary>
