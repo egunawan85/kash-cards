@@ -2382,7 +2382,10 @@
     <Content Include="Content\plugins\global\plugins.bundle.js" />
     <Content Include="Content\Site.css" />
     <Content Include="Content\css\landing.css" />
+    <Content Include="Content\css\kash-auth.css" />
+    <Content Include="Content\css\app.css" />
     <Content Include="Content\js\landing.js" />
+    <Content Include="Content\js\kash-auth.js" />
     <Content Include="Content\media\landing\app-phone.png" />
     <Content Include="Content\media\landing\bg-texture.png" />
     <Content Include="Content\media\landing\card-detail.png" />

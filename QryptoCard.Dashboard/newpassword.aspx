@@ -1,165 +1,96 @@
-﻿<%@ Page Language="C#" AutoEventWireup="true" CodeBehind="newpassword.aspx.cs" Inherits="QryptoCard.Dashboard.newpassword" %>
-
+<%@ Page Language="C#" AutoEventWireup="true" CodeBehind="newpassword.aspx.cs" Inherits="QryptoCard.Dashboard.newpassword" %>
 
 <!DOCTYPE html>
 
 <html lang="en">
-<!--begin::Head-->
 <head>
     <base href="../../../" />
-    <title>New Password - Qrypto Card</title>
+    <title>Set a new password - Kash</title>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <meta property="og:locale" content="en_US" />
-    <meta property="og:type" content="article" />
-    <link rel="shortcut icon" href="Content/media/favicon.ico" />
-    <!--begin::Fonts(mandatory for all pages)-->
-    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Inter:300,400,500,600,700" />
-    <!--end::Fonts-->
-    <!--begin::Global Stylesheets Bundle(mandatory for all pages)-->
-    <link href="Content/plugins/global/plugins.bundle.css" rel="stylesheet" type="text/css" />
-    <link href="Content/css/style.bundle.css" rel="stylesheet" type="text/css" />
-    <!--end::Global Stylesheets Bundle-->
+    <meta name="robots" content="noindex, nofollow" />
+    <link rel="shortcut icon" href='<%= ResolveUrl("~/Content/media/landing/kash-logo.png") %>' type="image/png" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700;800&family=Hanken+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href='<%= ResolveUrl("~/Content/css/kash-auth.css") %>' />
     <script>// Frame-busting to prevent site from being loaded within a frame without permission (click-jacking) if (window.top != window.self) { window.top.location.replace(window.self.location.href); }</script>
 </head>
-<!--end::Head-->
-<!--begin::Body-->
-<body id="kt_body" class="auth-bg bgi-size-cover bgi-attachment-fixed bgi-position-center bgi-no-repeat">
-    <!--begin::Theme mode setup on page load-->
-    <script>var defaultThemeMode = "light"; var themeMode; if (document.documentElement) { if (document.documentElement.hasAttribute("data-bs-theme-mode")) { themeMode = document.documentElement.getAttribute("data-bs-theme-mode"); } else { if (localStorage.getItem("data-bs-theme") !== null) { themeMode = localStorage.getItem("data-bs-theme"); } else { themeMode = defaultThemeMode; } } if (themeMode === "system") { themeMode = window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light"; } document.documentElement.setAttribute("data-bs-theme", themeMode); }</script>
-    <!--end::Theme mode setup on page load-->
-    <!--begin::Main-->
-    <!--begin::Root-->
-    <div class="d-flex flex-column flex-root">
-        <!--begin::Page bg image-->
-        <style>
-            body {
-                background-image: url('Content/media/auth/bg4.jpg');
-            }
+<body>
+    <div class="atmosphere"><span class="aura a1"></span><span class="aura a2"></span></div>
 
-            [data-bs-theme="dark"] body {
-                background-image: url('Content/media/auth/bg4-dark.jpg');
-            }
-        </style>
-        <!--end::Page bg image-->
-        <!--begin::Authentication - Sign-in -->
-        <div class="d-flex flex-column flex-column-fluid flex-lg-row">
-            <!--begin::Aside-->
-            <div class="d-flex flex-center w-lg-50 pt-15 pt-lg-0 px-10">
-                <!--begin::Aside-->
-                <div class="d-flex flex-center flex-lg-start flex-column">
-                    <!--begin::Logo-->
-                    <a href="Login.aspx" class="mb-7">
-                        <img alt="Logo" src="Content/media/logos/qrypto-white-large.png" class="h-100px" />
-                    </a>
-                    <!--end::Logo-->
-                    <!--begin::Title-->
-                    <h2 class="text-white fw-normal m-0">Your crypto payment gateway</h2>
-                    <!--end::Title-->
-                </div>
-                <!--begin::Aside-->
-            </div>
-            <!--begin::Aside-->
-            <!--begin::Body-->
-            <div class="d-flex flex-column-fluid flex-lg-row-auto justify-content-center justify-content-lg-end p-12 p-lg-20">
-                <!--begin::Card-->
-                <div class="bg-body d-flex flex-column align-items-stretch flex-center rounded-4 w-md-600px p-20">
-                    <!--begin::Wrapper-->
-                    <div class="d-flex flex-center flex-column flex-column-fluid px-lg-10 pb-15 pb-lg-20">
-                        <!--begin::Form-->
-                        <form runat="server" class="form w-100">
-                            <asp:HiddenField runat="server" ID="hfID" />
-                            <!--begin::Heading-->
-                            <div class="text-center mb-10">
-                                <!--begin::Title-->
-                                <h1 class="text-gray-900 fw-bolder mb-3">Setup New Password</h1>
-                                <!--end::Title-->
-                                <!--begin::Link-->
-                                <div class="text-gray-500 fw-semibold fs-6">
-                                    Have you already reset the password ? 
-			
-                                    <a href="Login" class="link-primary fw-bold">Sign in</a>
-                                </div>
-                                <!--end::Link-->
+    <div class="auth">
+        <aside class="auth-aside">
+            <span class="glow-blob"></span>
+            <a class="brand" href="/"><img class="brand-logo" src='<%= ResolveUrl("~/Content/media/landing/kash-logo.png") %>' alt="Kash logo" /> Kash</a>
+
+            <div class="auth-mini-card">
+                <div class="card-3d" style="width: 100%;">
+                    <div class="qcard">
+                        <div class="qcard-inner">
+                            <div class="qcard-top"><div class="qcard-brand">K<b>ash</b></div><span class="qcard-tag">Virtual</span></div>
+                            <div><div class="qcard-chip"></div></div>
+                            <div class="qcard-num"><span>4929</span><span>••••</span><span>••••</span><span>8317</span></div>
+                            <div class="qcard-bottom">
+                                <div><div class="lab">Card holder</div><div class="val">SATOSHI N.</div></div>
+                                <div><div class="lab">Funded with</div><div class="val">USDT</div></div>
+                                <div class="qcard-logo">K</div>
                             </div>
-                            <!--begin::Heading-->
-                            <div class="alert alert-dismissible bg-light-danger d-flex flex-column flex-sm-row p-5 mb-10" runat="server" id="divfailed" visible="false">
-                                <i class="ki-duotone ki-notification-bing fs-2hx text-danger me-4 mb-5 mb-sm-0"><span class="path1"></span><span class="path2"></span><span class="path3"></span></i>
-                                <div class="d-flex flex-column pe-0 pe-sm-10">
-                                    <h4 class="fw-semibold">Failed</h4>
-                                    <span>
-                                        <asp:Label runat="server" ID="lblFailed" Text="Error message" /></span>
-                                </div>
-                                <button type="button" class="position-absolute position-sm-relative m-2 m-sm-0 top-0 end-0 btn btn-icon ms-sm-auto" runat="server" id="btnfailed" onserverclick="btnfailed_ServerClick">
-                                    <i class="ki-duotone ki-cross fs-1 text-danger"><span class="path1"></span><span class="path2"></span></i>
-                                </button>
-                            </div>
-                            <div class="text-center mb-10" runat="server" id="divfinish" visible="false">
-                                <div class="text-gray-700 fw-semibold fs-5">Your password has successfully change. Please login again.</div>
-                            </div>
-                            <!--end::Input group=-->
-                            <div class="fv-row mb-8" runat="server" id="divpassword">
-                                <!--begin::Repeat Password-->
-                                <input type="password" runat="server" id="txtPassword" placeholder="New Password" name="confirm-password" autocomplete="off" class="form-control bg-transparent" />
-                                <!--end::Repeat Password-->
-                            </div>
-                            <!--end::Input group=-->
-                            <!--end::Input group=-->
-                            <div class="fv-row mb-8" runat="server" id="divpasswordconfirm">
-                                <!--begin::Repeat Password-->
-                                <input type="password" runat="server" id="txtPasswordConfirm" placeholder="Repeat Password" name="confirm-password" autocomplete="off" class="form-control bg-transparent" />
-                                <!--end::Repeat Password-->
-                            </div>
-                            <!--end::Input group=-->
-                            <!--begin::Action-->
-                            <div class="d-grid mb-10">
-                                <button type="button" id="btnSubmit" runat="server" class="btn btn-primary" onserverclick="btnSubmit_ServerClick" >
-                                    <!--begin::Indicator label-->
-                                    <span class="indicator-label">Submit</span>
-                                    <!--end::Indicator label-->
-                                </button>
-                                <a href="Login" runat="server" id="btnLogin" class="btn btn-primary me-4" visible="false">Login</a>
-                            </div>
-                            <!--end::Action-->
-                        </form>
-                        <!--end::Form-->
-                    </div>
-                    <!--end::Wrapper-->
-                    <!--begin::Footer-->
-                    <div class="d-flex flex-stack px-lg-10">
-                        <!--begin::Languages-->
-                        <div class="me-0">
                         </div>
-                        <!--end::Languages-->
-                        <!--begin::Links-->
-                        <div class="d-flex fw-semibold text-primary fs-base gap-5">
-                            <a href="#" target="_blank">Terms</a>
-                            <a href="#" target="_blank">Privacy</a>
-                            <a href="#" target="_blank">Contact Us</a>
-                        </div>
-                        <!--end::Links-->
                     </div>
-                    <!--end::Footer-->
                 </div>
-                <!--end::Card-->
             </div>
-            <!--end::Body-->
-        </div>
-        <!--end::Authentication - Sign-in-->
+
+            <div class="auth-quote">
+                <h2>One step to<br><span class="grad">back in business.</span></h2>
+                <p>Choose a strong new password and you're ready to spend again.</p>
+                <div class="auth-points" style="margin-top: 28px;">
+                    <div class="auth-point"><div class="n">256-bit</div><div class="l">Encryption</div></div>
+                    <div class="auth-point"><div class="n">KYC</div><div class="l">Compliant</div></div>
+                    <div class="auth-point"><div class="n">24/7</div><div class="l">Monitoring</div></div>
+                </div>
+            </div>
+        </aside>
+
+        <main class="auth-main">
+            <div class="auth-form-wrap">
+                <a class="back" href="login"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M11 18l-6-6 6-6" /></svg> Back to sign in</a>
+                <h1>Set a new password</h1>
+                <p class="sub">Choose a new password for your account.</p>
+
+                <form runat="server" class="form">
+                    <asp:HiddenField runat="server" ID="hfID" />
+                    <div class="auth-error" runat="server" id="divfailed" visible="false">
+                        <span><asp:Label runat="server" ID="lblFailed" Text="Error message" /></span>
+                        <button type="button" class="x" runat="server" id="btnfailed" onserverclick="btnfailed_ServerClick" aria-label="Dismiss">&times;</button>
+                    </div>
+
+                    <div class="field" runat="server" id="divpassword">
+                        <label for="txtPassword">New password</label>
+                        <div class="ctrl">
+                            <input type="password" runat="server" id="txtPassword" placeholder="Create a strong password" name="confirm-password" autocomplete="new-password" data-strength-input="data-strength-input" />
+                            <button type="button" class="toggle" data-toggle-pw aria-label="Show password"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7-10-7-10-7z" /><circle cx="12" cy="12" r="3" /></svg></button>
+                        </div>
+                        <div class="strength" data-strength="data-strength"><span></span><span></span><span></span><span></span></div>
+                    </div>
+                    <div class="field" runat="server" id="divpasswordconfirm">
+                        <label for="txtPasswordConfirm">Repeat password</label>
+                        <div class="ctrl"><input type="password" runat="server" id="txtPasswordConfirm" placeholder="Re-enter your password" name="confirm-password" autocomplete="new-password" /></div>
+                    </div>
+
+                    <div class="auth-note" runat="server" id="divfinish" visible="false">
+                        Your password has been changed. Please sign in again.
+                    </div>
+
+                    <button type="button" runat="server" id="btnSubmit" onserverclick="btnSubmit_ServerClick" class="btn btn-primary btn-block btn-lg">Update password</button>
+                    <a href="login" runat="server" id="btnLogin" class="btn btn-primary btn-block btn-lg" visible="false">Back to sign in</a>
+                </form>
+
+                <p class="auth-foot">Already reset it? <a href="login">Sign in</a></p>
+            </div>
+        </main>
     </div>
-    <!--end::Root-->
-    <!--end::Main-->
-    <!--begin::Javascript-->
-    <script>var hostUrl = "Content/";</script>
-    <!--begin::Global Javascript Bundle(mandatory for all pages)-->
-    <script src='<%= ResolveUrl("~/Content/plugins/global/plugins.bundle.js")%>'></script>
-    <script src='<%= ResolveUrl("~/Content/js/scripts.bundle.js")%>'></script>
-    <!--end::Global Javascript Bundle-->
-    <!--begin::Custom Javascript(used for this page only)-->
-    <%--<script src='<%= ResolveUrl("~/Content/js/custom/authentication/sign-in/general.js")%>'></script>--%>
-    <!--end::Custom Javascript-->
-    <!--end::Javascript-->
-</body>
-<!--end::Body-->
-</html>
 
+    <script src='<%= ResolveUrl("~/Content/js/kash-auth.js") %>'></script>
+</body>
+</html>
