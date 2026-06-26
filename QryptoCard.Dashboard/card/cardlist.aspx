@@ -17,6 +17,7 @@
         .card-tile-meta { display: flex; justify-content: space-between; align-items: flex-end; font-size: .82rem; color: var(--ink-3); }
         .card-tile-logos { text-align: right; }
         .card-tile-logos img { height: 26px; margin-left: 6px; vertical-align: middle; }
+        .cards-alert { border-radius: 12px; padding: .85em 1.1em; margin-top: 16px; font-size: .9rem; font-weight: 500; color: #ff8585; background: rgba(255, 70, 70, .07); border: 1px solid rgba(255, 90, 90, .32); }
     </style>
 
     <!--begin::Page header-->
@@ -27,6 +28,10 @@
         </div>
     </div>
     <!--end::Page header-->
+
+    <asp:Panel runat="server" ID="pnlAlert" CssClass="cards-alert" Visible="false">
+        <asp:Label runat="server" ID="lblAlert" />
+    </asp:Panel>
 
     <section class="panel">
         <div class="panel-h"><h3>Notice</h3></div>

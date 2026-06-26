@@ -87,11 +87,25 @@ namespace QryptoCard.Dashboard.card
             }
             else
             {
-
+                // Load failed upstream — bind empty AND surface the reason, rather than
+                // silently presenting an empty grid that reads identically to "you have
+                // no cards yet" (a silent failure the buy-card screen also guards against).
                 rptCard.DataSource = null;
                 rptCard.DataBind();
+                ShowAlert(op.Message);
             }
 
+        }
+
+        // Surfaces a backend error inline, matching the NewDesign alert idiom used
+        // across the re-skin, so an upstream failure is legible instead of looking
+        // like an empty card list.
+        void ShowAlert(string message)
+        {
+            pnlAlert.Visible = true;
+            lblAlert.Text = Server.HtmlEncode(string.IsNullOrEmpty(message)
+                ? "Unable to load your cards. Please try again."
+                : message);
         }
     }
 }

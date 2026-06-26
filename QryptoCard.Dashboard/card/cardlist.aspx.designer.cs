@@ -33,6 +33,24 @@ namespace QryptoCard.Dashboard.card
         protected global::System.Web.UI.WebControls.HiddenField hfReferralLink;
 
         /// <summary>
+        /// pnlAlert control.
+        /// </summary>
+        /// <remarks>
+        /// Auto-generated field.
+        /// To modify move field declaration from designer file to code-behind file.
+        /// </remarks>
+        protected global::System.Web.UI.WebControls.Panel pnlAlert;
+
+        /// <summary>
+        /// lblAlert control.
+        /// </summary>
+        /// <remarks>
+        /// Auto-generated field.
+        /// To modify move field declaration from designer file to code-behind file.
+        /// </remarks>
+        protected global::System.Web.UI.WebControls.Label lblAlert;
+
+        /// <summary>
         /// rptCard control.
         /// </summary>
         /// <remarks>
