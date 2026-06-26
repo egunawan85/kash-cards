@@ -7,6 +7,7 @@ using System.Text;
 using System.Web;
 using System.Web.Http;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 using QryptoCard.API.Models;
 using QryptoCard.API.UserV1Service;
 
@@ -72,6 +73,51 @@ namespace QryptoCard.API.Controllers.v1
                 op = sr.getBalance(getEmail(), x);
                 if (op.Status == "success")
                     op.Data = JsonConvert.DeserializeObject<tblM_User_Balance>(op.Data.ToString());
+            }
+            catch (Exception ex)
+            {
+                op.Status = "error";
+                op.Message = ex.Message;
+                op.Data = null;
+            }
+
+            return op;
+        }
+
+        // Returns the authenticated caller's own static deposit address (+ network/coin for
+        // a QR payload). The identity comes from the bearer token via getEmail(), never from
+        // a client-supplied id, so a caller can only ever read their own address (IDOR-safe).
+        [Route("deposit/address")]
+        [HttpGet]
+        public OutputModel getDepositAddress()
+        {
+            try
+            {
+                op = sr.getDepositAddress(getEmail());
+                if (op.Status == "success")
+                    op.Data = JsonConvert.DeserializeObject<JObject>(op.Data.ToString());
+            }
+            catch (Exception ex)
+            {
+                op.Status = "error";
+                op.Message = ex.Message;
+                op.Data = null;
+            }
+
+            return op;
+        }
+
+        // Returns a page of the authenticated caller's own prepaid-balance ledger. Scoped to
+        // the caller via getEmail() (IDOR-safe); paging is clamped server-side in the INT tier.
+        [Route("ledger")]
+        [HttpGet]
+        public OutputModel getLedger(int page = 1, int pageSize = 20)
+        {
+            try
+            {
+                op = sr.getLedger(getEmail(), page, pageSize);
+                if (op.Status == "success")
+                    op.Data = JsonConvert.DeserializeObject<JObject>(op.Data.ToString());
             }
             catch (Exception ex)
             {
