@@ -2385,6 +2385,7 @@
     <Content Include="Content\css\kash-auth.css" />
     <Content Include="Content\css\premium.css" />
     <Content Include="Content\css\app.css" />
+    <Content Include="Content\css\settings.css" />
     <Content Include="Content\js\landing.js" />
     <Content Include="Content\js\kash-auth.js" />
     <Content Include="Content\js\dashboard.js" />
@@ -2399,6 +2400,7 @@
     <Content Include="Content\media\landing\lifestyle-pay.png" />
     <Content Include="Content\media\landing\security.png" />
     <Content Include="dashboard.aspx" />
+    <Content Include="settings.aspx" />
     <Content Include="Default.aspx" />
     <Content Include="favicon.ico" />
     <Content Include="forgotpassword.aspx" />
@@ -2569,6 +2571,13 @@
     </Compile>
     <Compile Include="dashboard.aspx.designer.cs">
       <DependentUpon>dashboard.aspx</DependentUpon>
+    </Compile>
+    <Compile Include="settings.aspx.cs">
+      <DependentUpon>settings.aspx</DependentUpon>
+      <SubType>ASPXCodeBehind</SubType>
+    </Compile>
+    <Compile Include="settings.aspx.designer.cs">
+      <DependentUpon>settings.aspx</DependentUpon>
     </Compile>
     <Compile Include="Default.aspx.cs">
       <DependentUpon>Default.aspx</DependentUpon>

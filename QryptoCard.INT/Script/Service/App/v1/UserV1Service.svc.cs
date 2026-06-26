@@ -761,6 +761,10 @@ namespace QryptoCard.INT.Script.Service.App.v1
                     a.OTPID = Guid.NewGuid().ToString();
                     a.UserID = uid;
                     a.Name = "Change Email";
+                    // Bind the intended new address to the OTP record at request time. The confirm
+                    // step applies THIS server-stored value, never a client-supplied one, so the
+                    // verified code can only ever commit the address the code was issued for.
+                    a.MerchantID = x.Email;
 
                     //Random r = new Random();
                     //var z = r.Next(0, 1000000);
@@ -825,7 +829,9 @@ namespace QryptoCard.INT.Script.Service.App.v1
                         db.SaveChanges();
 
                         var data = db.tblM_User.Where(p => p.UserID == uid).FirstOrDefault();
-                        data.Email = x.MerchantID;
+                        // Use the address bound to the OTP at request time, not anything the client
+                        // sends now — the code proves control of the address it was issued for.
+                        data.Email = otp.MerchantID;
                         db.SaveChanges();
 
                         op.Status = "success";
