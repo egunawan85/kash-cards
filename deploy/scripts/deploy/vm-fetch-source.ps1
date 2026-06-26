@@ -100,20 +100,23 @@ function Clear-GitAuthEnv {
 # never echo the args, and auth rides in the environment (not argv), so the token
 # can't leak through an error path.
 #
-# CRITICAL: run git under 'Continue', NOT the script-level 'Stop'. git streams
-# progress/notes to stderr; with the script at 'Stop', a `2>&1` turns the FIRST
-# stderr record into a TERMINATING error that aborts git MID-RUN -- the clone is
-# killed before it finishes, leaves nothing behind, and reports exit 1, even though
-# the identical command succeeds verbatim under 'Continue'. The previous
-# try/catch{} masked this: it swallowed the terminating error AFTER git had already
-# been aborted, so the gate saw a non-zero code and Died. Capture the merged stream
-# to a variable under 'Continue' (the runegate-infra pattern) and read the real
-# exit code. (Without this, the build-on-box git fetch can never succeed.)
+# The parameter is $GitArgs, NOT $Args: `$Args` is a PowerShell AUTOMATIC variable,
+# and declaring a param with that name does NOT bind the passed array to it -- it
+# stays empty, so `& $git @Args` runs git with NO arguments. git then prints its
+# usage and exits non-zero, and the gate Dies with a misleading "git clone failed
+# (token valid?)". This is the real reason the build-on-box fetch never worked:
+# every git op ran argument-less. (Verified on-box: a param named $Args binds
+# Count=0; renamed to $GitArgs it binds Count=1 and git runs.)
+#
+# Also run git under 'Continue', not the script-level 'Stop': git streams progress
+# to stderr, and a 2>&1 under 'Stop' would turn the first stderr record into a
+# terminating error mid-run. Capture the merged stream and read the real exit code
+# (the runegate-infra pattern).
 function Git-Do {
-    param([string[]]$Args, [string]$ErrMsg)
+    param([string[]]$GitArgs, [string]$ErrMsg)
     $prev = $ErrorActionPreference
     $ErrorActionPreference = 'Continue'
-    try { $null = & $git @Args 2>&1 } finally { $ErrorActionPreference = $prev }
+    try { $null = & $git @GitArgs 2>&1 } finally { $ErrorActionPreference = $prev }
     if ($LASTEXITCODE -ne 0) { Die $ErrMsg }
 }
 
