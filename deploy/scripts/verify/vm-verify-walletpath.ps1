@@ -50,12 +50,36 @@ function Bal()  { [decimal](Sql "SET NOCOUNT ON; SELECT ISNULL(CAST(Balance AS v
 function SetBal($v) { Sql "SET NOCOUNT ON; UPDATE dbo.tblM_User_Balance SET Balance=$v, DateUpdated=GETUTCDATE() WHERE UserID='$UserId' AND Currency='USDT'" | Out-Null }
 
 # -- ENVIRONMENT hard-gate (fail-closed): funding is dev/sandbox ONLY -----------
+# The gate is DERIVED from the box's own Key Vault (QRYPTO-ENVIRONMENT -- the same
+# source of truth the dev-credit tool enforces), NOT from the -Env parameter: an
+# operator asserting -Env dev on a prod box must NOT be able to mint balance. The
+# real environment is read via the VM managed identity; fail closed if it cannot be
+# confirmed to be dev/sandbox. (-Env is kept only as a label / sanity cross-check.)
 $allowedEnv = @('dev','sandbox','local')
-if ($allowedEnv -notcontains $Env.Trim().ToLower()) {
-    Write-Host "[xx] ENV gate: -Env '$Env' is not a dev/sandbox value -- refusing to mint test balance"
+function Get-RealEnvironment {
+    $cfgFile = Get-ChildItem 'C:\src\kash-cards\deploy\config\.env.provision.*' -ErrorAction SilentlyContinue |
+               Where-Object { $_.Name -notlike '*.example' } | Select-Object -First 1
+    if (-not $cfgFile) { return $null }
+    $kv = (((Get-Content $cfgFile.FullName) | Where-Object { $_ -match '^KEYVAULT_NAME=' }) -replace '^KEYVAULT_NAME=','').Trim()
+    if (-not $kv) { return $null }
+    try {
+        $tok = (Invoke-RestMethod -Headers @{Metadata='true'} -UseBasicParsing -Uri 'http://169.254.169.254/metadata/identity/oauth2/token?api-version=2018-02-01&resource=https://vault.azure.net').access_token
+        $s = Invoke-RestMethod -Headers @{ Authorization = "Bearer $tok" } -UseBasicParsing -Uri "https://$kv.vault.azure.net/secrets/QRYPTO-ENVIRONMENT?api-version=7.4"
+        return ("" + $s.value).Trim().ToLower()
+    } catch { return $null }
+}
+$realEnv = Get-RealEnvironment
+if (-not $realEnv -or ($allowedEnv -notcontains $realEnv)) {
+    Write-Host "[xx] ENV gate (fail-closed): could not confirm a dev/sandbox environment (real='$realEnv') -- refusing to mint test balance"
     Write-Host "WALLETPATH_RESULT: FAIL (env-gated)"
     exit 1
 }
+if ($allowedEnv -notcontains $Env.Trim().ToLower()) {
+    Write-Host "[xx] ENV gate: -Env '$Env' is not a dev/sandbox value -- refusing"
+    Write-Host "WALLETPATH_RESULT: FAIL (env-gated)"
+    exit 1
+}
+Write-Host "[ok] ENV gate: confirmed environment '$realEnv' (KV-derived)"
 
 # -- creds (stay on box; never emitted) ----------------------------------------
 $cfg = @{}; (Get-Content $SmokeEnvFile) | ForEach-Object { if ($_ -match '^([A-Z_]+)=(.*)$') { $cfg[$Matches[1]] = $Matches[2] } }
