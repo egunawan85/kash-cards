@@ -28,6 +28,26 @@ namespace QryptoCard.Tests.Integration
         }
 
         [Fact]
+        public void GetDepositAddress_IsScopedToCaller_DoesNotReturnAnotherUsersAddress()
+        {
+            // Provision a deposit address for a different user, then read as the authenticated
+            // caller. The caller must get their own address, never the other user's (IDOR).
+            var other = WalletService.EnsureDepositAddress("surf-addr-other-user");
+
+            var sut = new UserV1Service();
+            var op = sut.getDepositAddress(LocalDbFixture.Ids.EmailA);
+
+            Assert.Equal("success", op.Status);
+            var data = op.Data.ToString();
+            var json = JObject.Parse(data);
+            var mine = (string)json["Address"];
+
+            Assert.False(string.IsNullOrEmpty(mine));
+            Assert.NotEqual(other.Address, mine);          // caller gets their own, distinct address
+            Assert.DoesNotContain(other.Address, data);    // the other user's address never leaks
+        }
+
+        [Fact]
         public void GetLedger_ReturnsOnlyOwnRows_PaginatedWithoutInternalIds()
         {
             // Seed two ledger rows for the authenticated user and one for a different user.

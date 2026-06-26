@@ -2801,7 +2801,19 @@ namespace QryptoCard.API.UserV1Service {
         
         [System.ServiceModel.OperationContractAttribute(Action="http://tempuri.org/IUserV1Service/getBalance", ReplyAction="http://tempuri.org/IUserV1Service/getBalanceResponse")]
         System.Threading.Tasks.Task<QryptoCard.API.UserV1Service.OutputModel> getBalanceAsync(string em, QryptoCard.API.UserV1Service.tblM_User_Balance x);
-        
+
+        [System.ServiceModel.OperationContractAttribute(Action="http://tempuri.org/IUserV1Service/getDepositAddress", ReplyAction="http://tempuri.org/IUserV1Service/getDepositAddressResponse")]
+        QryptoCard.API.UserV1Service.OutputModel getDepositAddress(string em);
+
+        [System.ServiceModel.OperationContractAttribute(Action="http://tempuri.org/IUserV1Service/getDepositAddress", ReplyAction="http://tempuri.org/IUserV1Service/getDepositAddressResponse")]
+        System.Threading.Tasks.Task<QryptoCard.API.UserV1Service.OutputModel> getDepositAddressAsync(string em);
+
+        [System.ServiceModel.OperationContractAttribute(Action="http://tempuri.org/IUserV1Service/getLedger", ReplyAction="http://tempuri.org/IUserV1Service/getLedgerResponse")]
+        QryptoCard.API.UserV1Service.OutputModel getLedger(string em, int page, int pageSize);
+
+        [System.ServiceModel.OperationContractAttribute(Action="http://tempuri.org/IUserV1Service/getLedger", ReplyAction="http://tempuri.org/IUserV1Service/getLedgerResponse")]
+        System.Threading.Tasks.Task<QryptoCard.API.UserV1Service.OutputModel> getLedgerAsync(string em, int page, int pageSize);
+
         [System.ServiceModel.OperationContractAttribute(Action="http://tempuri.org/IUserV1Service/generateKeyOTP", ReplyAction="http://tempuri.org/IUserV1Service/generateKeyOTPResponse")]
         QryptoCard.API.UserV1Service.OutputModel generateKeyOTP(string em);
         
@@ -3007,7 +3019,23 @@ namespace QryptoCard.API.UserV1Service {
         public System.Threading.Tasks.Task<QryptoCard.API.UserV1Service.OutputModel> getBalanceAsync(string em, QryptoCard.API.UserV1Service.tblM_User_Balance x) {
             return base.Channel.getBalanceAsync(em, x);
         }
-        
+
+        public QryptoCard.API.UserV1Service.OutputModel getDepositAddress(string em) {
+            return base.Channel.getDepositAddress(em);
+        }
+
+        public System.Threading.Tasks.Task<QryptoCard.API.UserV1Service.OutputModel> getDepositAddressAsync(string em) {
+            return base.Channel.getDepositAddressAsync(em);
+        }
+
+        public QryptoCard.API.UserV1Service.OutputModel getLedger(string em, int page, int pageSize) {
+            return base.Channel.getLedger(em, page, pageSize);
+        }
+
+        public System.Threading.Tasks.Task<QryptoCard.API.UserV1Service.OutputModel> getLedgerAsync(string em, int page, int pageSize) {
+            return base.Channel.getLedgerAsync(em, page, pageSize);
+        }
+
         public QryptoCard.API.UserV1Service.OutputModel generateKeyOTP(string em) {
             return base.Channel.generateKeyOTP(em);
         }

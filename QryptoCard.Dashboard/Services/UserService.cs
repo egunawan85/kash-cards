@@ -402,5 +402,38 @@ namespace QryptoCard.Dashboard.Services
                 return op;
             }
         }
+
+        // Wallet read surface (Plan 07 prepaid balance). The caller's identity is taken from
+        // the bearer token server-side, so no user id is sent — a user can only read their own
+        // deposit address / ledger. Deserialize op.Data into DepositAddressModel / LedgerModel.
+        public OutputModel getDepositAddress()
+        {
+            try
+            {
+                string path = "/v1/user/deposit/address";
+                return op = AuthClient.ExecuteJsonGet(path);
+            }
+            catch (Exception ex)
+            {
+                op.Message = ex.ToString();
+                op.Status = "error";
+                return op;
+            }
+        }
+
+        public OutputModel getLedger(int page = 1, int pageSize = 20)
+        {
+            try
+            {
+                string path = "/v1/user/ledger?page=" + page + "&pageSize=" + pageSize;
+                return op = AuthClient.ExecuteJsonGet(path);
+            }
+            catch (Exception ex)
+            {
+                op.Message = ex.ToString();
+                op.Status = "error";
+                return op;
+            }
+        }
     }
 }

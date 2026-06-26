@@ -2608,6 +2608,8 @@
     <Compile Include="Models\Service\AuthMintResponse.cs" />
     <Compile Include="Models\Service\CardTypeModel.cs" />
     <Compile Include="Models\Service\DashboardModal.cs" />
+    <Compile Include="Models\Service\DepositAddressModel.cs" />
+    <Compile Include="Models\Service\LedgerModel.cs" />
     <Compile Include="Models\Service\OutputModel.cs" />
     <Compile Include="Models\Service\PasswordChangeModel.cs" />
     <Compile Include="Models\Service\UserAuthOTPModel.cs" />
