@@ -126,3 +126,25 @@ redesign either builds (Phase 3) or hides for v1.
   preferences.** No endpoints exist; hidden in the plan-08 Settings page for v1.
 
 **Found:** Dashboard FE↔BE review + redesign planning, 2026-06-26.
+
+---
+
+## NS-5. Referral/commission system was scaffolded but never paid out — *Resolved (built in plan 10)*
+
+Surfaced while reviewing the cardholder Settings page (name/password/email-change/referral) for
+FE↔BE wiring. The referral and commission surfaces were fully scaffolded but **earned nothing**:
+
+- `tblM_User_Referral` (a per-user referral code) and `tblM_User.InvitedBy` (who referred whom)
+  are written at registration, and the dashboard shows a "Commission Rate" + "Total Commission"
+  tile and a "Commission history" panel — but **nothing ever wrote a `tblT_Commission` row**, so
+  the earnings ledger was permanently empty and the rate was display-only, applied by nothing.
+- The other Settings features were genuinely wired: first/last-name and password change (the
+  latter verifies the current password), and email change is a real two-step OTP flow (binds the
+  new address to the OTP at request time, re-checks uniqueness at confirm).
+
+**Resolution:** the earn side is now built — a referrer is paid a share (default 10%) of the
+platform **fee** on a referee's confirmed card buy/top-up, credited to their wallet balance, with
+a loss-proof cap, per-order dedup, and an external red-team (Opus + Sonnet). See
+[`plans/10-referral-commission.md`](plans/10-referral-commission.md).
+
+**Found:** Settings FE↔BE review, 2026-06-26.
