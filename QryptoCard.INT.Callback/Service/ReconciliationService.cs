@@ -33,20 +33,22 @@ namespace QryptoCard.INT.Callback.Service
 
         public static int ReconcilePendingProvider()
         {
-            int handled = 0;
+            int resolved = 0; // counts only orders where a money action completed, not merely examined
             DateTime cutoff = DateTime.Now - GraceWindow;
 
             List<tblT_Card> opens;
             using (var db = new DBEntities())
+                // Anchor on DateCreated (always set at order creation). DateModified is NOT set when an
+                // order is claimed into 'pending provider' (the claim sets only Status), so filtering on
+                // it would select nothing and the open sweep would be inert (the red-team P1).
                 opens = db.tblT_Card.Where(p => p.Status == PGStatusModel.PendingProvider
-                    && p.DateModified != null && p.DateModified < cutoff).ToList();
+                    && p.DateCreated != null && p.DateCreated < cutoff).ToList();
             foreach (var o in opens)
             {
                 try
                 {
                     var rec = WasabiCardService.getCreateOperation(o.ID);
-                    ResolveOpen(o, Classify(rec), rec);
-                    handled++;
+                    if (ResolveOpen(o, Classify(rec), rec)) resolved++;
                 }
                 catch (Exception ex)
                 {
@@ -64,8 +66,7 @@ namespace QryptoCard.INT.Callback.Service
                 try
                 {
                     var rec = WasabiCardService.getDepositOperation(t.ID);
-                    ResolveTopUp(t, Classify(rec));
-                    handled++;
+                    if (ResolveTopUp(t, Classify(rec))) resolved++;
                 }
                 catch (Exception ex)
                 {
@@ -73,72 +74,77 @@ namespace QryptoCard.INT.Callback.Service
                 }
             }
 
-            return handled;
+            return resolved;
         }
 
-        // Classify a provider record by reusing the existing status evaluator: Confirmed means the
-        // provider confirms a FAILURE state; Mismatch means it says the op SUCCEEDED; Unavailable means
-        // no record / pending / unknown / unreachable (fail-closed -> never auto-act).
+        // Classify a provider record into a sweep action via the purpose-named status classifier:
+        // provider-success -> Success (finalize); provider-failure -> Failure (refund); null record or
+        // unknown/pending/empty status -> Unavailable (fail-closed -> never auto-act).
         public static ReconcileOutcome Classify(WCCardTransactionResponseModel.Record rec)
         {
             if (rec == null) return ReconcileOutcome.Unavailable;
-            switch (WebhookCrossCheckEvaluator.EvaluateDepositRefund(rec.status))
-            {
-                case CrossCheckOutcome.Confirmed: return ReconcileOutcome.Failure;
-                case CrossCheckOutcome.Mismatch: return ReconcileOutcome.Success;
-                default: return ReconcileOutcome.Unavailable;
-            }
+            bool? c = WebhookCrossCheckEvaluator.ClassifyProviderStatus(rec.status);
+            if (c == true) return ReconcileOutcome.Success;
+            if (c == false) return ReconcileOutcome.Failure;
+            return ReconcileOutcome.Unavailable;
         }
 
         // Act on a classified card-OPEN. Public for direct unit testing (the live gateway returns null
         // under test, so the job-level path only exercises Unavailable).
-        public static void ResolveOpen(tblT_Card o, ReconcileOutcome outcome, WCCardTransactionResponseModel.Record rec)
+        // Returns true only when a definitive money action completed (card finalized-confirmed, or
+        // refund applied / already-applied). Unconfirmed-success and unavailable leave the order
+        // PendingProvider for the next sweep and return false (examined but not resolved).
+        public static bool ResolveOpen(tblT_Card o, ReconcileOutcome outcome, WCCardTransactionResponseModel.Record rec)
         {
             if (outcome == ReconcileOutcome.Success)
             {
                 var fo = CardFinalizationService.FinalizeOpenSuccess(o.ID, rec != null ? rec.cardNo : null);
                 Audit(o.ID, "open", "success", fo.ToString());
+                return fo == CardFinalizationService.FinalizeOutcome.Confirmed;
             }
-            else if (outcome == ReconcileOutcome.Failure)
+            if (outcome == ReconcileOutcome.Failure)
             {
+                WalletService.EnsureWallet(o.UserID); // match the webhook refund path (avoid a stuck wallet_missing)
                 string claim = "UPDATE dbo.tblT_Card SET Status = '" + PGStatusModel.Failed +
                     "' WHERE ID = @id AND Status IN ('" + PGStatusModel.PendingProvider + "', '" + PGStatusModel.InProgress + "')";
                 var rev = WalletService.ReverseForOrder(o.UserID, Convert.ToDecimal(o.Total),
                     WalletService.TypeCardOpenReversal, o.ID, claim, new[] { new SqlParameter("@id", o.ID) });
-                if (!rev.Success && rev.FailureReason != "claim_lost")
+                bool ok = rev.Success || rev.FailureReason == "claim_lost";
+                if (!ok)
                     System.Diagnostics.Trace.TraceError("Reconcile: open " + o.ID + " refund could not apply (" + rev.FailureReason + ") — money-affecting.");
-                Audit(o.ID, "open", "failure", rev.Success ? "refunded" : rev.FailureReason);
+                Audit(o.ID, "open", "failure", ok ? "refunded" : rev.FailureReason);
+                return ok;
             }
-            else
-            {
-                System.Diagnostics.Trace.TraceWarning("Reconcile: open " + o.ID + " unavailable — left pending-provider for manual review.");
-                Audit(o.ID, "open", "unavailable", "left");
-            }
+            System.Diagnostics.Trace.TraceWarning("Reconcile: open " + o.ID + " unavailable — left pending-provider for manual review.");
+            Audit(o.ID, "open", "unavailable", "left");
+            return false;
         }
 
         // Act on a classified TOP-UP.
-        public static void ResolveTopUp(tblT_Card_Deposit t, ReconcileOutcome outcome)
+        public static bool ResolveTopUp(tblT_Card_Deposit t, ReconcileOutcome outcome)
         {
             if (outcome == ReconcileOutcome.Success)
             {
                 var fo = CardFinalizationService.FinalizeTopUpSuccess(t.ID);
                 Audit(t.ID, "topup", "success", fo.ToString());
+                return fo == CardFinalizationService.FinalizeOutcome.Confirmed;
             }
-            else if (outcome == ReconcileOutcome.Failure)
+            if (outcome == ReconcileOutcome.Failure)
             {
+                WalletService.EnsureWallet(t.UserID); // match the webhook refund path (avoid a stuck wallet_missing)
                 string claim = "UPDATE dbo.tblT_Card_Deposit SET Status = '" + PGStatusModel.Failed +
                     "' WHERE ID = @id AND Status IN ('" + PGStatusModel.PendingProvider + "', '" + PGStatusModel.InProgress + "')";
                 var rev = WalletService.ReverseForOrder(t.UserID, Convert.ToDecimal(t.Total),
                     WalletService.TypeCardTopupReversal, t.ID, claim, new[] { new SqlParameter("@id", t.ID) });
-                if (!rev.Success && rev.FailureReason != "claim_lost")
+                bool ok = rev.Success || rev.FailureReason == "claim_lost";
+                if (!ok)
                     System.Diagnostics.Trace.TraceError("Reconcile: topup " + t.ID + " refund could not apply (" + rev.FailureReason + ") — money-affecting.");
-                Audit(t.ID, "topup", "failure", rev.Success ? "refunded" : rev.FailureReason);
+                Audit(t.ID, "topup", "failure", ok ? "refunded" : rev.FailureReason);
+                return ok;
             }
-            else
-            {
-                System.Diagnostics.Trace.TraceWarning("Reconcile: topup " + t.ID + " unavailable — left pending-provider for manual review.");
-                Audit(t.ID, "topup", "unavailable", "left");
-            }
+            System.Diagnostics.Trace.TraceWarning("Reconcile: topup " + t.ID + " unavailable — left pending-provider for manual review.");
+            Audit(t.ID, "topup", "unavailable", "left");
+            return false;
         }
 
         // Best-effort decision audit (forensics); reuses the partner-webhook journal table.

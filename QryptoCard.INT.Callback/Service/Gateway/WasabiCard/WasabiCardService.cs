@@ -279,7 +279,7 @@ namespace QryptoCard.INT.Callback.Service.Gateway.WasabiCard
 
                 HttpClient clients = new HttpClient();
                 clients.BaseAddress = new Uri(KeyModel.WASABICARD_API_URL);
-                clients.Timeout.Add(new TimeSpan(0, 0, 5));
+                clients.Timeout = new TimeSpan(0, 0, 5); // 5s cap (Timeout.Add was a no-op -> 100s default); the sweep iterates many orders
                 clients.DefaultRequestHeaders.Accept.Clear();
                 clients.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
 
@@ -340,7 +340,7 @@ namespace QryptoCard.INT.Callback.Service.Gateway.WasabiCard
 
                 HttpClient clients = new HttpClient();
                 clients.BaseAddress = new Uri(KeyModel.WASABICARD_API_URL);
-                clients.Timeout.Add(new TimeSpan(0, 0, 5));
+                clients.Timeout = new TimeSpan(0, 0, 5); // 5s cap (Timeout.Add was a no-op -> 100s default); the sweep iterates many orders
                 clients.DefaultRequestHeaders.Accept.Clear();
                 clients.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
 

@@ -32,15 +32,15 @@ namespace QryptoCard.API.Callback.Controllers.v1
         // internal) AND gated by a shared secret in X-Scheduler-Auth — fail-closed, constant-time
         // compared, rejected before any work. The on-box scheduled task presents the secret each tick.
         [Route("reconcile/pending")]
-        [HttpGet]
+        [HttpPost]
         public HttpResponseMessage reconcilePending()
         {
             if (!SharedSecretAuth.IsAuthorized(Header("X-Scheduler-Auth"), "SCHEDULER_SHARED_SECRET"))
                 return Request.CreateResponse(HttpStatusCode.Unauthorized);
 
-            int handled = sr.ReconcilePendingProvider();
+            int resolved = sr.ReconcilePendingProvider();
             HttpResponseMessage response = Request.CreateResponse(HttpStatusCode.OK);
-            response.Content = new StringContent("{\"handled\":" + handled + "}", Encoding.UTF8, "application/json");
+            response.Content = new StringContent("{\"resolved\":" + resolved + "}", Encoding.UTF8, "application/json");
             return response;
         }
 

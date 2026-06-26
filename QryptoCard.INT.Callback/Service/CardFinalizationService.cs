@@ -27,17 +27,18 @@ namespace QryptoCard.INT.Callback.Service
                     (p.Status == PGStatusModel.InProgress || p.Status == PGStatusModel.PendingProvider));
                 if (cr == null) return FinalizeOutcome.NotFound;
 
-                cr.CardNo = providerCardNo;
-                cr.Status = PGStatusModel.OpenCard;
-                db.SaveChanges();
-
-                var res = WasabiCardService.getCardInfo(new WCCardInfoRequestModel { cardNo = cr.CardNo, onlySimpleInfo = false });
-                // The card balance comes from the provider's card-info response, never a webhook body;
-                // on an unconfirmed/unreachable result the order stays OpenCard for a later retry.
+                // Cross-check the provider FIRST (using the card number the provider reported), before
+                // writing any state. On an unconfirmed/unreachable result the order is left at its
+                // current status — PendingProvider stays sweep-retryable; we never write an intermediate
+                // OpenCard state that neither the sweep nor the webhook would revisit (the stranding the
+                // red-team caught). The card balance also comes from this response, never a webhook body.
+                var res = WasabiCardService.getCardInfo(new WCCardInfoRequestModel { cardNo = providerCardNo, onlySimpleInfo = false });
                 if (res == null || res.data == null ||
-                    WebhookCrossCheckEvaluator.EvaluateCardOpen(cr.CardNo, res.data.cardNo) != CrossCheckOutcome.Confirmed)
+                    WebhookCrossCheckEvaluator.EvaluateCardOpen(providerCardNo, res.data.cardNo) != CrossCheckOutcome.Confirmed)
                     return FinalizeOutcome.Unconfirmed;
 
+                // Confirmed — bind the card, activate, and mark Success together.
+                cr.CardNo = providerCardNo;
                 cr.isActive = 1;
                 cr.Status = PGStatusModel.Success;
                 db.SaveChanges();

@@ -93,6 +93,18 @@ namespace QryptoCard.Sec
             return CrossCheckOutcome.Unavailable;
         }
 
+        /// <summary>
+        /// Purpose-named provider-status classifier for the reconciliation sweep (decoupled from the
+        /// deposit-refund framing): true = provider reports success, false = provider reports a
+        /// definitive failure, null = unknown / pending / empty / unreachable (fail-closed → no action).
+        /// </summary>
+        public static bool? ClassifyProviderStatus(string status)
+        {
+            if (IsSuccessStatus(status)) return true;
+            if (IsFailureStatus(status)) return false;
+            return null;
+        }
+
         // Gate a card-open credit. The webhook claims a card was created/funded under our order.
         // The credited balance is read independently from the provider's card-info response (never
         // from the webhook), so confirmation here is simply that the provider returns the SAME card
