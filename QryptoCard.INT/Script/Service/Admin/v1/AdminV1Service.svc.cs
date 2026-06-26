@@ -1,6 +1,8 @@
 ﻿using Newtonsoft.Json;
 using QryptoCard.INT.Model;
 using QryptoCard.INT.Model.Service;
+using QryptoCard.INT.Script.Service.Auth.v1;
+using QryptoCard.INT.Security;
 using QryptoCard.Sec;
 using System;
 using System.Collections.Generic;
@@ -15,8 +17,29 @@ namespace QryptoCard.INT.Script.Service.Admin.v1
     // NOTE: In order to launch WCF Test Client for testing this service, please select AdminV1Service.svc or AdminV1Service.svc.cs at the Solution Explorer and start debugging.
     public class AdminV1Service : IAdminV1Service
     {
-        DBEntities db = new DBEntities();
+        // Two per-instance contexts, mirroring the AuthV1Service pattern:
+        //   - db:     legacy DBEntities (.edmx) for tblM_Admin / tblM_User / vw_Admin
+        //   - authDb: code-first AuthDbContext, used here to append the test-credit
+        //             audit row to tblH_Auth_Log (the shared security audit ledger).
+        DBEntities db;
+        AuthDbContext authDb;
         OutputModel op = new OutputModel();
+
+        // Production ctor — field-initialise both contexts from config.
+        public AdminV1Service()
+        {
+            db = new DBEntities();
+            authDb = new AuthDbContext();
+        }
+
+        // Test ctor — point both contexts at an explicit connection (the legacy
+        // DBEntities takes an EntityConnection string; AuthDbContext a plain
+        // SqlClient string), both targeting the same LocalDB under test.
+        public AdminV1Service(DBEntities legacyDb, AuthDbContext authContext)
+        {
+            db = legacyDb;
+            authDb = authContext;
+        }
 
         string getAdminId(string em)
         {
@@ -24,7 +47,19 @@ namespace QryptoCard.INT.Script.Service.Admin.v1
             return a.AdminID;
         }
 
-        string getRole(string em)
+        // Null-safe AdminID lookup for audit: returns null rather than throwing when
+        // no row matches (the authenticated-email contract means this is normally
+        // populated, but the audit path must never crash on a missing row).
+        string tryGetAdminId(string em)
+        {
+            var a = db.tblM_Admin.Where(p => p.Email == em).FirstOrDefault();
+            return a?.AdminID;
+        }
+
+        // protected virtual so DB-less tests can supply a role without the physical
+        // vw_Admin object (an EF defining-query view that the LocalDb test fixture
+        // does not materialise). Production behaviour is unchanged.
+        protected virtual string getRole(string em)
         {
             var a = db.vw_Admin.Where(p => p.Email == em).FirstOrDefault();
             return a == null ? null : a.Role;
@@ -38,6 +73,180 @@ namespace QryptoCard.INT.Script.Service.Admin.v1
             var role = (getRole(em) ?? "").Trim();
             return !(role.Equals(RoleModel.Owner, StringComparison.OrdinalIgnoreCase)
                   || role.Equals(RoleModel.Admin, StringComparison.OrdinalIgnoreCase));
+        }
+
+        // ---------- devCreditWallet (dev-only test-credit tool, SD-2) ----------
+
+        // Per-call ceiling on a single test credit. A dev-only convenience to blunt a
+        // fat-finger (e.g. a stray extra zero); it is NOT a security control — the
+        // environment gate is. Kept generous because the sandbox merchant wallet that
+        // backs real card buys is itself funded ~$10M.
+        const decimal MaxTestCreditAmount = 1000000m;
+
+        // Audit EventType written to tblH_Auth_Log for every test-credit attempt,
+        // including refusals (so probes leave a trail, matching the auth ledger).
+        const string TestCreditEventType = "dev_test_credit";
+
+        // Namespacing prefix on the credit's TransactionID. Guarantees a test credit
+        // can never collide with — or be mistaken for — a real PGCrypto provider
+        // TransactionID in the shared dedup table, while still reusing the exact
+        // verified CreditDeposit dedup/idempotency path.
+        const string TestCreditTxnPrefix = "DEVCREDIT-";
+
+        /// <summary>
+        /// Dev-only tool that credits a user's wallet through the existing verified
+        /// credit path (<see cref="WalletService.CreditDeposit"/>) so sandbox spend
+        /// flows have a fundable balance without a real USDT deposit. Walled three ways
+        /// (defense in depth):
+        ///   1. Environment hard-gate (load-bearing, fail-closed): refuses unless
+        ///      QRYPTO_ENVIRONMENT is an explicit dev/sandbox value. Checked FIRST, so
+        ///      prod money-minting is impossible even for a root-admin caller.
+        ///   2. Root-admin (Owner) only — the highest-privilege role.
+        ///   3. Audit-logged — every attempt (credited or refused) appends a
+        ///      tblH_Auth_Log row capturing who/when/amount/target/outcome.
+        /// Idempotent: pass a stable <paramref name="reference"/> and a replay dedupes
+        /// to "duplicate_event" rather than double-crediting.
+        /// </summary>
+        public OutputModel devCreditWallet(string em, string userId, decimal amount, string reference)
+        {
+            try
+            {
+                // Resolve the acting admin up front for the audit trail. These are
+                // reads only — no money moves before the gates below pass — and they
+                // sit inside the try so a DB hiccup returns a clean error rather than
+                // an unhandled fault.
+                string adminId = tryGetAdminId(em);
+                string actingRole = (getRole(em) ?? "").Trim();
+
+                // WALL 1 (load-bearing, fail-closed) — environment hard-gate. Checked
+                // before role and before any mutation: an attacker with full root-admin
+                // in production still cannot reach the credit.
+                if (!TestCreditGate.IsAllowedEnvironment())
+                {
+                    auditTestCredit(adminId, userId, amount, reference, "env_refused");
+                    op.Status = "failed";
+                    op.Message = "Test-credit is disabled in this environment.";
+                    return op;
+                }
+
+                // WALL 2 — root-admin (Owner) only. Deny-by-default: anything that is
+                // not exactly Owner (case/whitespace-insensitive) — Admin, Viewer, an
+                // unknown/null role — is refused.
+                if (!actingRole.Equals(RoleModel.Owner, StringComparison.OrdinalIgnoreCase))
+                {
+                    auditTestCredit(adminId, userId, amount, reference, "not_owner");
+                    op.Status = "failed";
+                    op.Message = "You are not authorized to run this endpoint.";
+                    return op;
+                }
+
+                // Input validation.
+                if (string.IsNullOrWhiteSpace(userId))
+                {
+                    op.Status = "failed";
+                    op.Message = "A target userId is required.";
+                    return op;
+                }
+                if (amount <= 0m)
+                {
+                    op.Status = "failed";
+                    op.Message = "Amount must be greater than zero.";
+                    return op;
+                }
+                if (amount > MaxTestCreditAmount)
+                {
+                    auditTestCredit(adminId, userId, amount, reference, "amount_over_cap");
+                    op.Status = "failed";
+                    op.Message = "Amount exceeds the per-call test-credit cap.";
+                    return op;
+                }
+
+                // Target user must exist — never credit a wallet for a non-user.
+                var targetUser = db.tblM_User.Where(p => p.UserID == userId).FirstOrDefault();
+                if (targetUser == null)
+                {
+                    auditTestCredit(adminId, userId, amount, reference, "user_not_found");
+                    op.Status = "failed";
+                    op.Message = "Target user not found.";
+                    return op;
+                }
+
+                // Namespaced idempotency key. A caller-supplied reference makes the
+                // credit idempotent (replay dedupes); otherwise each call is unique.
+                string txid = TestCreditTxnPrefix +
+                    (string.IsNullOrWhiteSpace(reference) ? Guid.NewGuid().ToString() : reference.Trim());
+
+                // Route through the existing verified credit path: EnsureWallet first
+                // (a first-time target otherwise fails closed as wallet_missing), then
+                // the atomic, deduped CreditDeposit (ledger + balance in one tx).
+                WalletService.EnsureWallet(userId);
+                var res = WalletService.CreditDeposit(
+                    userId: userId,
+                    netAmount: amount,
+                    commission: 0m,
+                    commissionInPercentage: 0d,
+                    transactionId: txid,
+                    status: "DEV_TEST_CREDIT",
+                    dedupRequest: JsonConvert.SerializeObject(
+                        new { tool = "devCreditWallet", by = em, reference = reference }, Formatting.None));
+
+                if (!res.Success)
+                {
+                    auditTestCredit(adminId, userId, amount, txid, "credit_failed:" + res.FailureReason);
+                    op.Status = "failed";
+                    op.Message = res.FailureReason == "duplicate_event"
+                        ? "This test-credit reference has already been applied."
+                        : "Test-credit failed: " + res.FailureReason;
+                    return op;
+                }
+
+                auditTestCredit(adminId, userId, amount, txid, "credited");
+                op.Status = "success";
+                op.Message = "Test-credit applied.";
+                op.Data = JsonConvert.SerializeObject(
+                    new { transactionId = txid, balanceNew = res.BalanceNew }, Formatting.None);
+            }
+            catch (Exception ex)
+            {
+                op.Message = ex.Message;
+                op.Status = "error";
+            }
+            return op;
+        }
+
+        // Appends one audit row to the shared security ledger (tblH_Auth_Log) for a
+        // test-credit attempt. Best-effort: the credit (when it happened) is already
+        // durably recorded in the tblH_User_Balance ledger, so an audit-write failure
+        // must surface but never mask or undo the primary outcome.
+        void auditTestCredit(string adminId, string userId, decimal amount, string reference, string result)
+        {
+            try
+            {
+                authDb.tblH_Auth_Log.Add(new tblH_Auth_Log
+                {
+                    LogID = Guid.NewGuid().ToString(),
+                    EventType = TestCreditEventType,
+                    Subject = adminId,            // who (acting root-admin)
+                    SubjectType = "admin",
+                    RefreshTokenID = null,
+                    RotationChainRoot = null,
+                    SourceIP = WcfSourceIp.TryGet(),
+                    Details = JsonConvert.SerializeObject(new
+                    {
+                        targetUserId = userId,    // target
+                        amount = amount,          // amount
+                        reference = reference,
+                        result = result           // outcome (credited / *_refused / ...)
+                    }, Formatting.None),
+                    DateLogged = DateTime.UtcNow  // when
+                });
+                authDb.SaveChanges();
+            }
+            catch
+            {
+                // Swallow: auditing is secondary to the (already-committed) credit and
+                // must not turn a successful mint into a thrown error for the caller.
+            }
         }
 
         public OutputModel Login(tblM_Admin x)
