@@ -75,7 +75,9 @@ $DacpacFile  = Join-Path $DeployRoot 'sql\kashnow-schema.dacpac'
 $DdlScriptNames = @(
     'create-token-tables.sql',
     'create-wallet-indexes.sql',
-    'create-webhook-dedup-index.sql'
+    'create-webhook-dedup-index.sql',
+    'create-otp-lockout-columns.sql',
+    'create-login-lockout-columns.sql'
 )
 $DdlScripts  = $DdlScriptNames | ForEach-Object { Join-Path $DeployRoot "sql\$_" }
 

@@ -55,12 +55,24 @@ namespace QryptoCard.INT.Script.Service.Admin.v1
                 }
                 else
                 {
-                    if (data.Password != pwd)
+                    DateTime now = DateTime.Now;
+                    if (QryptoCard.INT.Security.PasswordLockout.IsLockedOut(db.Database, "tblM_Admin", "AdminID", data.AdminID, now))
                     {
+                        // Option B: a locked account is indistinguishable from an ordinary wrong password.
                         op.Status = "failed";
                         op.Message = "Your password is incorrect";
                         return op;
                     }
+
+                    if (data.Password != pwd)
+                    {
+                        QryptoCard.INT.Security.PasswordLockout.RecordFailure(db.Database, "tblM_Admin", "AdminID", data.AdminID, now);
+                        op.Status = "failed";
+                        op.Message = "Your password is incorrect";
+                        return op;
+                    }
+
+                    QryptoCard.INT.Security.PasswordLockout.RecordSuccess(db.Database, "tblM_Admin", "AdminID", data.AdminID);
 
                     if (data.isActive == 0)
                     {
@@ -122,6 +134,10 @@ namespace QryptoCard.INT.Script.Service.Admin.v1
 
                 if (data == null || !QryptoCard.Sec.OtpCodes.Verify(x.Code, data.Code) || QryptoCard.Sec.OtpCodes.IsExpired(data.DateExpired, DateTime.Now))
                 {
+                    // Count a wrong-code guess against this live session and lock it (isVerify=-1)
+                    // at the threshold, so a locked session reads as "not found" on the next try.
+                    if (data != null && !QryptoCard.Sec.OtpCodes.Verify(x.Code, data.Code))
+                        QryptoCard.INT.Security.OtpLockout.RecordFailure(db.Database, "tblH_Admin_Login", "ID", data.ID);
                     op.Status = "failed";
                     op.Message = "Your session is ended";
                     return op;
@@ -812,6 +828,9 @@ namespace QryptoCard.INT.Script.Service.Admin.v1
                 {
                     if (!QryptoCard.Sec.OtpCodes.Verify(x.Code, otp.Code) || QryptoCard.Sec.OtpCodes.IsExpired(otp.DateExpired, DateTime.Now))
                     {
+                        // Count a wrong-code guess and lock the session (isVerify=-1) at the threshold.
+                        if (!QryptoCard.Sec.OtpCodes.Verify(x.Code, otp.Code))
+                            QryptoCard.INT.Security.OtpLockout.RecordFailure(db.Database, "tblH_Admin_OTP", "OTPID", otp.OTPID);
                         op.Status = "failed";
                         op.Message = "Your OTP is wrong";
                         return op;
