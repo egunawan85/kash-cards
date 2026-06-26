@@ -10,6 +10,7 @@ Master roll-up; each plan doc has its own detailed checklist. `[x]` = code subst
 - [ ] **Plan 3 — Security hardening:** webhook integrity + IDOR/role + dead-code closed, **but T5.1 crypto migration (bcrypt/AES-GCM) is still unwritten**; forensics tails owner-gated → see `03`
 - [ ] **Plan 2 — Redeploy & perimeter:** Stage A automation merged (#14); WAF build-out, BACPAC data-move, and CI pipeline still open; ⏳ prod cutover → see `02`
 - [x] **Plan 7 — Prepaid balance:** core + reconciliation sweep shipped (#16/#19/#26/#29/#31); shakeout items remain → see `07`
+- [ ] **Plan 8 — Dashboard wiring & redesign:** FE↔BE review done (no broken primary buttons); Phase 1 correctness fixes ready, NewDesign full adoption + balance deposit-address money path (builds on Plan 7) await sign-off → see `08`
 
 **Stale "open" notes that are actually DONE (verified in code; corrected in the per-plan docs):**
 - [x] OTP-lockout + rate-limiter + IP-resolver (was P3·S5 "top residual")
@@ -57,6 +58,7 @@ Numbered in **implementation order** — rotation → deployment → hardening:
 - [`04-auth-tokens-2fa.md`](04-auth-tokens-2fa.md) — bearer-token & email-OTP/2FA design (broke out of P3·S3; awaiting sign-off)
 - [`05-execution-runbook.md`](05-execution-runbook.md) — **operational plan of record**: dev shakeout → prod cutover (how the code-complete hardening goes live)
 - [`07-runegate-prepaid-balance.md`](07-runegate-prepaid-balance.md) — feature design: deposit to a Runegate address → reusable prepaid balance → spend on cards (money-path refactor + security review; 📝 draft, awaiting sign-off)
+- [`08-dashboard-wiring-and-redesign.md`](08-dashboard-wiring-and-redesign.md) — cardholder Dashboard FE↔BE review: wiring/correctness fixes (Phase 1) → full NewDesign adoption (Phase 2; **pre-login pages done via PR #35**, logged-in app + sidebar chrome + Settings remain) → wallet UI (Phase 3 = **Plan 7 T4.5**: the prepaid-balance engine is already shipped/red-teamed; this exposes its read methods to the Dashboard tier + builds the UI). Parallelizable in waves; Phase-3 decisions resolved by Plan 7. Backend feature gaps logged in [`../non_security_findings.md`](../non_security_findings.md) NS-4. 📝 draft, awaiting sign-off
 
 ## Progress (live status)
 

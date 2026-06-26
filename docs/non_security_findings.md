@@ -95,3 +95,34 @@ as a HARD startup dependency (API.Callback faults at startup if it's unset).
 
 **Raised:** 2026-06-26, after the merged-main redeploy validated OTP login. Owner approved; not
 done in that session.
+
+---
+
+## NS-4. Dashboard redesign — backend feature gaps surfaced by the FE↔BE review — *Open (tracked in plan 08)*
+
+Found while planning the cardholder Dashboard redesign
+([`plans/08-dashboard-wiring-and-redesign.md`](plans/08-dashboard-wiring-and-redesign.md)).
+These are **missing/under-exposed features** the new design wants but the back-end does not
+currently provide to the front end. None are bugs in shipped behaviour; they are scope the
+redesign either builds (Phase 3) or hides for v1.
+
+- **a) No balance-level deposit address exposed to the FE.** The prototype dashboard shows a
+  standing balance + deposit address up front. `getDashboardData` returns commission/card
+  stats only; `getBalance` returns a balance with **no address**; the only deposit `Address`
+  hangs off `tblT_Card_Deposit` (per-card). The reusable balance-deposit capability exists in
+  the INT tier (Plan 07 / `WalletService`) but is **not plumbed to the Dashboard API**.
+  → **Built in plan 08 Phase 3** (money-path, security-reviewed).
+- **b) Dashboard "recent activity" feed missing.** The prototype shows recent transactions
+  across the account; today transactions are **card-scoped only** (`trxCardList`). No aggregate
+  per-user feed exists. → **Decided (plan 08 DD-8): card-scoped for v1**; aggregate feed deferred.
+- **c) 2FA toggle not exposed to the cardholder FE.** `enable2FA`/`get2FA` + `tblM_User_2FA`
+  exist in the INT/WCF `UserV1Service`, but there is **no Dashboard-API route or `UserService`
+  method** for them, so the Settings page can't read/flip 2FA without new plumbing. (Also open
+  from Plan 4: is 2FA meant to be user-optional or mandatory?) → **Decided (plan 08 DD-8): hidden in v1**, deferred until mandatory-vs-optional is resolved.
+- **d) No per-card-type card artwork from the backend.** `CardTypeModel` has no image/art/URL
+  field, so the redesigned cards/buy/detail pages have no real per-BIN card render — only the
+  prototype's static design assets. → **Decided (plan 08 DD-7): add a card-art field** (distinct per type, brand fallback) in Slice 2.3.
+- **e) No Settings/account features for: account deletion ("danger zone") and notification
+  preferences.** No endpoints exist; hidden in the plan-08 Settings page for v1.
+
+**Found:** Dashboard FE↔BE review + redesign planning, 2026-06-26.
