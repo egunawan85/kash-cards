@@ -398,7 +398,7 @@
                                                 <asp:Label runat="server" ID="Label2" Text="No deposit at the moment." CssClass="fs-6" />
                                             </center>
                                         </div>
-                                        <asp:GridView CssClass="table table-borderless gs-7" ID="gvDepositList" HeaderStyle-CssClass="header-table" runat="server" ShowHeader="false" AutoGenerateColumns="false" DataKeyNames="ID" AllowPaging="True" PageSize="50" AllowCustomPaging="False" OnRowDataBound="OnRowDataBound" OnSelectedIndexChanged="gvDepositList_SelectedIndexChanged">
+                                        <asp:GridView CssClass="table table-borderless gs-7" ID="gvDepositList" HeaderStyle-CssClass="header-table" runat="server" ShowHeader="false" AutoGenerateColumns="false" DataKeyNames="ID" AllowPaging="True" PageSize="50" AllowCustomPaging="False" OnRowDataBound="OnRowDataBound">
                                             <PagerStyle HorizontalAlign="Center" CssClass="bs4-aspnet-pager" />
                                             <Columns>
                                                 <asp:TemplateField HeaderText="1" ItemStyle-VerticalAlign="Top" ItemStyle-HorizontalAlign="Left">
@@ -539,7 +539,7 @@
                         <div class="d-flex flex-column pe-0 pe-sm-10">
                             <h4 class="fw-semibold">Failed</h4>
                             <span>
-                                <asp:Label runat="server" ID="lblfaileddeposit" Text="Error message" /></span>
+                                <span runat="server" id="lblfaileddeposit">Error message</span></span>
                         </div>
                         <button type="button" class="position-absolute position-sm-relative m-2 m-sm-0 top-0 end-0 btn btn-icon ms-sm-auto" runat="server" id="btndfaileddeposit" onserverclick="btndfaileddeposit_ServerClick">
                             <i class="ki-duotone ki-cross fs-1 text-danger"><span class="path1"></span><span class="path2"></span></i>

@@ -33,6 +33,51 @@ namespace QryptoCard.Dashboard
         protected global::System.Web.UI.WebControls.HiddenField hfReferralLink;
 
         /// <summary>
+        /// hfDepositAddress control.
+        /// </summary>
+        protected global::System.Web.UI.WebControls.HiddenField hfDepositAddress;
+
+        /// <summary>
+        /// lblBalance control.
+        /// </summary>
+        protected global::System.Web.UI.HtmlControls.HtmlGenericControl lblBalance;
+
+        /// <summary>
+        /// viewDeposit control.
+        /// </summary>
+        protected global::System.Web.UI.HtmlControls.HtmlGenericControl viewDeposit;
+
+        /// <summary>
+        /// txtDepositAddress control.
+        /// </summary>
+        protected global::System.Web.UI.WebControls.TextBox txtDepositAddress;
+
+        /// <summary>
+        /// btnCopyAddress control.
+        /// </summary>
+        protected global::System.Web.UI.HtmlControls.HtmlButton btnCopyAddress;
+
+        /// <summary>
+        /// imgDepositQR control.
+        /// </summary>
+        protected global::System.Web.UI.WebControls.Image imgDepositQR;
+
+        /// <summary>
+        /// divNoLedger control.
+        /// </summary>
+        protected global::System.Web.UI.HtmlControls.HtmlGenericControl divNoLedger;
+
+        /// <summary>
+        /// gvLedger control.
+        /// </summary>
+        protected global::System.Web.UI.WebControls.GridView gvLedger;
+
+        /// <summary>
+        /// ledgerPager control.
+        /// </summary>
+        protected global::System.Web.UI.HtmlControls.HtmlGenericControl ledgerPager;
+
+        /// <summary>
         /// lblCommissionRate control.
         /// </summary>
         /// <remarks>

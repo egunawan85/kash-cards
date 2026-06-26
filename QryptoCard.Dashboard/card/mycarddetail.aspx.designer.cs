@@ -615,7 +615,7 @@ namespace QryptoCard.Dashboard.card
         /// Auto-generated field.
         /// To modify move field declaration from designer file to code-behind file.
         /// </remarks>
-        protected global::System.Web.UI.WebControls.Label lblfaileddeposit;
+        protected global::System.Web.UI.HtmlControls.HtmlGenericControl lblfaileddeposit;
 
         /// <summary>
         /// btndfaileddeposit control.

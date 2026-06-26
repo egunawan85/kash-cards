@@ -4,6 +4,7 @@
 <asp:Content ID="Content1" ContentPlaceHolderID="MainContent" runat="server">
     <asp:HiddenField runat="server" ID="hfReferralCode" />
     <asp:HiddenField runat="server" ID="hfReferralLink" />
+    <asp:HiddenField runat="server" ID="hfDepositAddress" />
 
     <!--begin::Page header-->
     <div class="dash-top">
@@ -20,13 +21,25 @@
     <!--end::Page header-->
 
     <div class="dash-grid">
-        <!--begin::Balance — RESERVED for Phase 3 (S-F): wire live balance + actions via the
-            wallet read endpoints shipped in PR #38. Placeholder only; no fabricated figures. -->
+        <!--begin::Balance — live wallet (S-F). Balance comes from the server (getBalance);
+            no figures are computed or fabricated client-side. Deposit address + QR come from
+            getDepositAddress (one reusable USDT-TRC20 address per user). -->
         <section class="panel balance">
             <div class="lab">Available balance</div>
-            <div class="amt">&mdash;<span class="cur">USDT</span></div>
+            <div class="amt"><span runat="server" id="lblBalance">&mdash;</span><span class="cur">USDT</span></div>
             <div class="balance-actions">
-                <a class="btn btn-line" href='<%= ResolveUrl("~/tx/cardhistory") %>'>Statements</a>
+                <a class="btn btn-cyan" href='<%= ResolveUrl("~/txdeposit") %>'>Add funds</a>
+                <a class="btn btn-line" href="#wallet-ledger">Statements</a>
+            </div>
+            <div class="wallet-deposit" runat="server" id="viewDeposit" style="margin-top: 16px;">
+                <div class="lab">Your USDT (TRC20) deposit address</div>
+                <div class="copy-row">
+                    <asp:TextBox runat="server" ID="txtDepositAddress" ReadOnly="true" />
+                    <button type="button" class="copy-btn" runat="server" id="btnCopyAddress" onclick="copyDepositAddress();" aria-label="Copy deposit address">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="9" y="9" width="11" height="11" rx="2" /><path d="M5 15V5a2 2 0 012-2h10" /></svg>
+                    </button>
+                </div>
+                <asp:Image runat="server" ID="imgDepositQR" CssClass="wallet-qr" Visible="false" Style="margin-top: 12px; width: 160px; height: 160px;" />
             </div>
         </section>
         <!--end::Balance-->
@@ -60,15 +73,27 @@
         </section>
         <!--end::Stats-->
 
-        <!--begin::Recent transactions — RESERVED for Phase 3 / DD-8: populate from card-scoped
-            transaction data. Placeholder only for the shell. -->
-        <section class="panel txns">
-            <div class="panel-h"><h3>Recent transactions</h3><a href='<%= ResolveUrl("~/tx/cardhistory") %>'>View all</a></div>
-            <div class="txns-empty" style="color: var(--ink-3); font-size: .95rem; padding: 18px 0;">
-                No recent activity yet.
+        <!--begin::Wallet ledger (S-F, live) — paginated via query string (?lpage=N) so a page
+            change is a normal GET that re-binds the whole dashboard, never a postback that would
+            blank the other panels. All figures are server-returned (getLedger); none computed here. -->
+        <section class="panel txns" id="wallet-ledger">
+            <div class="panel-h"><h3>Wallet transactions</h3></div>
+            <div runat="server" id="divNoLedger" class="txns-empty" style="color: var(--ink-3); font-size: .95rem; padding: 18px 0;">
+                No wallet transactions yet.
             </div>
+            <asp:GridView CssClass="dash-table" ID="gvLedger" runat="server" AutoGenerateColumns="false" GridLines="None" Visible="false">
+                <Columns>
+                    <asp:BoundField DataField="CreatedDate" HeaderText="Date" />
+                    <asp:BoundField DataField="Type" HeaderText="Type" />
+                    <asp:BoundField DataField="Amount" HeaderText="Amount" />
+                    <asp:BoundField DataField="Commision" HeaderText="Fee" />
+                    <asp:BoundField DataField="Balance" HeaderText="Balance" />
+                    <asp:BoundField DataField="Status" HeaderText="Status" />
+                </Columns>
+            </asp:GridView>
+            <div class="ledger-pager" runat="server" id="ledgerPager" visible="false" style="display:flex; gap:12px; align-items:center; margin-top:12px;"></div>
         </section>
-        <!--end::Recent transactions-->
+        <!--end::Wallet ledger-->
 
         <!--begin::Referral (live)-->
         <section class="panel referral">
@@ -145,6 +170,11 @@
 
         function copyReferralLink() {
             var copyText = document.getElementById("<%= hfReferralLink.ClientID %>");
+            navigator.clipboard.writeText(copyText.value).then(function () { }).catch(function () { });
+        }
+
+        function copyDepositAddress() {
+            var copyText = document.getElementById("<%= hfDepositAddress.ClientID %>");
             navigator.clipboard.writeText(copyText.value).then(function () { }).catch(function () { });
         }
     </script>

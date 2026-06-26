@@ -450,7 +450,7 @@ namespace QryptoCard.Dashboard.card
             if (txtDepositAmount.Text == "")
             {
                 btnDepositConfirm.Enabled = true;
-                lblfaileddeposit.Text = "Deposit amount cannot be empty";
+                lblfaileddeposit.InnerText = "Deposit amount cannot be empty";
                 divfaileddeposit.Visible = true;
                 ScriptManager.RegisterClientScriptBlock(this, GetType(), "Pop", "var isModalRecharge = true", true);
                 return;
@@ -458,7 +458,7 @@ namespace QryptoCard.Dashboard.card
             if (!checkMinimumDeposit())
             {
                 btnDepositConfirm.Enabled = true;
-                lblfaileddeposit.Text = "Minimum deposit amount is " + hfMinDeposit.Value + " USD";
+                lblfaileddeposit.InnerText = "Minimum deposit amount is " + hfMinDeposit.Value + " USD";
                 divfaileddeposit.Visible = true;
                 ScriptManager.RegisterClientScriptBlock(this, GetType(), "Pop", "var isModalRecharge = true", true);
                 return;
@@ -466,7 +466,7 @@ namespace QryptoCard.Dashboard.card
             if (!checkMaximumDeposit())
             {
                 btnDepositConfirm.Enabled = true;
-                lblfaileddeposit.Text = "Maximum deposit amount is " + hfMaxDeposit.Value + " USD";
+                lblfaileddeposit.InnerText = "Maximum deposit amount is " + hfMaxDeposit.Value + " USD";
                 divfaileddeposit.Visible = true;
                 ScriptManager.RegisterClientScriptBlock(this, GetType(), "Pop", "var isModalRecharge = true", true);
                 return;
@@ -480,18 +480,32 @@ namespace QryptoCard.Dashboard.card
             if (res.Status == "success")
             {
                 btnDepositConfirm.Enabled = true;
-                var dt = JsonConvert.DeserializeObject<CardDepositModel>(res.Data.ToString());
-                bindData(hfCardID.Value);
-                Response.Redirect("~/txdeposit?id=" + dt.ID);
+                // Top-up is paid from the wallet balance immediately, so there is no per-card
+                // deposit address to show. Land on the card's transaction history instead.
+                Response.Redirect("~/txcard?id=" + hfCardID.Value);
             }
             else
             {
                 btnDepositConfirm.Enabled = true;
-                lblfaileddeposit.Text = res.Message;
+                lblfaileddeposit.InnerHtml = BuildSpendError(res.Message);
                 divfaileddeposit.Visible = true;
                 ScriptManager.RegisterClientScriptBlock(this, GetType(), "Pop", "var isModalRecharge = true", true);
                 return;
             }
+        }
+
+        // Surface the server's top-up-failure message. The charge is server-authoritative (we send
+        // only the card id, card no, and the user-entered amount), so this only reports the outcome.
+        // When the wallet balance is short, add a direct CTA to top up the wallet.
+        string BuildSpendError(string message)
+        {
+            if (string.IsNullOrEmpty(message))
+                message = "Unable to complete the top-up. Please try again.";
+            bool insufficient = message.IndexOf("insufficient balance", StringComparison.OrdinalIgnoreCase) >= 0;
+            string html = HttpUtility.HtmlEncode(message);
+            if (insufficient)
+                html += "<br /><a class=\"btn btn-cyan\" style=\"margin-top:10px;\" href=\"" + ResolveUrl("~/txdeposit") + "\">Add funds</a>";
+            return html;
         }
 
         protected void btndfaileddeposit_ServerClick(object sender, EventArgs e)
@@ -608,25 +622,15 @@ namespace QryptoCard.Dashboard.card
         {
             if (e.Row.RowType == DataControlRowType.DataRow)
             {
-                e.Row.Attributes["onclick"] = Page.ClientScript.GetPostBackClientHyperlink(gvDepositList, "Select$" + e.Row.RowIndex);
-                //e.Row.ToolTip = "Click to select this row.";
+                // Rows are no longer clickable: they used to navigate to the per-card
+                // deposit-address detail page, which is retired now that top-ups pay from the
+                // wallet balance. The list stays as read-only top-up history.
+                //e.Row.Attributes["onclick"] = Page.ClientScript.GetPostBackClientHyperlink(gvDepositList, "Select$" + e.Row.RowIndex);
             }
         }
 
-        protected void gvDepositList_SelectedIndexChanged(object sender, EventArgs e)
-        {
-            foreach (GridViewRow row in gvDepositList.Rows)
-            {
-                if (row.RowIndex == gvDepositList.SelectedIndex)
-                {
-                    var refs = ((HiddenField)row.FindControl("hfID")).Value;
-                    Session["ID"] = refs;
-
-                    //var a = Common.Base64Encode(refs);
-
-                    Response.Redirect("~/txdeposit?id=" + refs);
-                }
-            }
-        }
+        // The per-card deposit-detail navigation is retired (top-ups pay from the wallet
+        // balance now), so the row select handler and its redirect to the old ~/txdeposit?id=
+        // page were removed along with the row onclick wiring above. The list is read-only history.
     }
 }

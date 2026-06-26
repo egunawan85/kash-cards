@@ -1,45 +1,28 @@
-﻿using Newtonsoft.Json;
-using QRCoder;
+using Newtonsoft.Json;
+using QryptoCard.Dashboard.Models;
 using QryptoCard.Dashboard.Models.Service;
 using QryptoCard.Dashboard.Services;
 using System;
-using System.Collections.Generic;
-using System.Drawing.Imaging;
-using System.Drawing;
-using System.IO;
-using System.Linq;
 using System.Web;
 using System.Web.UI;
-using System.Web.UI.WebControls;
-using QryptoCard.Dashboard.Models;
 
 namespace QryptoCard.Dashboard
 {
+    // Wallet deposit view (S-F). Shows the user's single reusable USDT (TRC20) deposit address +
+    // QR and their live balance. The per-card deposit-address flow is retired: top-ups now pay
+    // from the wallet balance, so this page no longer takes a transaction id.
     public partial class txdeposit : System.Web.UI.Page
     {
-        CardService cs = new CardService();
+        UserService us = new UserService();
 
         protected void Page_Load(object sender, EventArgs e)
         {
+            // Standalone page (no master): mirror the original txdeposit auth guard — bounce to
+            // the dashboard (which enforces login) when there's no authenticated session.
             if (Common.checkID())
             {
-
                 if (!IsPostBack)
-                {
-                    string id = Request.QueryString["id"];
-                    if (id == null || id == "")
-                    {
-                        Response.Redirect("~/card/mycardlist");
-                    }
-                    else
-                    {
-                        getData(id);
-                    }
-                }
-                else
-                {
-                    getCounter();
-                }
+                    bindData();
             }
             else
             {
@@ -47,174 +30,55 @@ namespace QryptoCard.Dashboard
             }
         }
 
-        void getData(string id)
+        void bindData()
         {
-            CardDepositModel dt;
-
-            var req = new CardDepositModel();
-            req.ID = id;
-            OutputModel op = new OutputModel();
-            op = cs.depositCardDetail(req);
-            if (op.Status == "success")
+            // Each read is isolated: a failure (or a malformed-but-success payload that fails to
+            // deserialize) leaves its own section at its default state instead of failing the page.
+            try { getBalance(); } catch { /* leave balance at the markup default ("—") */ }
+            try
             {
-                dt = JsonConvert.DeserializeObject<CardDepositModel>(op.Data.ToString());
-                //if (dt.Organization == "Visa")
-                //    imgOrg.Src = "https://www.svgrepo.com/show/362035/visa-3.svg";
-                //else if (dt.Organization == "MasterCard")
-                //    imgOrg.Src = "https://www.svgrepo.com/show/508703/mastercard.svg";
-                //else
-                //    imgOrg.Src = "https://www.svgrepo.com/show/328132/discover.svg";
-
-                //if (dt.HolderID != null)
-                //    lblCardname.InnerHtml = dt.FirstName + " " + dt.LastName;
-
-                //hfDepositFeeRate.Value = dt.RechargeFeeRate;
-
-                //lblCardBalance.InnerHtml = dt.Param5 + " " + dt.Currency;
-
-                //hfCardNumber.Value = dt.CardNumber;
-                //hfCVV.Value = dt.CVV;
-                //hfExpDate.Value = dt.ValidPeriod;
-                //if (dt.HolderID != null)
-                //    hfHolderID.Value = dt.HolderID.ToString();
-
-                //getCardType(dt.CardTypeId.ToString());
-                //getDepositList();
-
-                lblTraID.InnerHtml = id;
-
-                lblDeposit.InnerHtml = dt.Amount.ToString() + " " + dt.Currency;
-                lblDepositFee.InnerHtml = dt.Fee.ToString() + " " + dt.Currency;
-                lblTotalPay.InnerHtml = dt.Total.ToString() + " " + dt.Currency;
-                lblTotal.InnerHtml = dt.Total.ToString() + " USDT";
-
-                lbladdress.InnerHtml = dt.Address;
-                hfAddress.Value = dt.Address;
-                generateQRCode(dt.Address);
-
-                hfStatus.Value = dt.Status;
-
-                if (dt.Status == "created")
-                {
-                    viewaddress.Visible = true;
-                    viewqr.Visible = true;
-                    viewcounter.Visible = true;
-                    viewalert.Visible = true;
-
-                    badgecreated.Visible = true;
-                    badgeexpired.Visible = false;
-                    badgecancelled.Visible = false;
-                    badgecompleted.Visible = false;
-
-                    badgefailed.Visible = false;
-                    badgeinprogress.Visible = false;
-                    badgepaid.Visible = false;
-
-                    hfExpDate.Value = dt.DateExpired.ToString();
-                    lblTime.Text = Common.CalculateTimeDifference(DateTime.Now, dt.DateExpired.Value);
-                }
-                else if (dt.Status == "completed" || dt.Status == "success")
-                {
-                    badgecreated.Visible = false;
-                    badgeexpired.Visible = false;
-                    badgecancelled.Visible = false;
-                    badgecompleted.Visible = true;
-
-                    badgefailed.Visible = false;
-                    badgeinprogress.Visible = false;
-                    badgepaid.Visible = false;
-                }
-                else if (dt.Status == "expired")
-                {
-                    badgecreated.Visible = false;
-                    badgeexpired.Visible = true;
-                    badgecancelled.Visible = false;
-                    badgecompleted.Visible = false;
-
-                    badgefailed.Visible = false;
-                    badgeinprogress.Visible = false;
-                    badgepaid.Visible = false;
-                }
-                else if (dt.Status == "in progress")
-                {
-                    badgecreated.Visible = false;
-                    badgeexpired.Visible = false;
-                    badgecancelled.Visible = false;
-                    badgecompleted.Visible = false;
-
-                    badgefailed.Visible = false;
-                    badgeinprogress.Visible = true;
-                    badgepaid.Visible = false;
-                }
-                else if (dt.Status == "paid")
-                {
-                    badgecreated.Visible = false;
-                    badgeexpired.Visible = false;
-                    badgecancelled.Visible = false;
-                    badgecompleted.Visible = false;
-
-                    badgefailed.Visible = false;
-                    badgeinprogress.Visible = false;
-                    badgepaid.Visible = true;
-                }
-                else if (dt.Status == "failed")
-                {
-                    badgecreated.Visible = false;
-                    badgeexpired.Visible = false;
-                    badgecancelled.Visible = false;
-                    badgecompleted.Visible = false;
-
-                    badgefailed.Visible = true;
-                    badgeinprogress.Visible = false;
-                    badgepaid.Visible = false;
-                }
-                else if (dt.Status == "cancelled")
-                {
-                    badgecreated.Visible = false;
-                    badgeexpired.Visible = false;
-                    badgecancelled.Visible = true;
-                    badgecompleted.Visible = false;
-
-                    badgefailed.Visible = false;
-                    badgeinprogress.Visible = false;
-                    badgepaid.Visible = false;
-                }
+                getDepositAddress();
             }
-            else
+            catch
             {
-                // Don't swallow the failure with a silent bounce to the dashboard —
-                // tell the user why the deposit couldn't be loaded.
-                ShowAlert(op.Message);
+                viewDeposit.Visible = false;
+                viewNoAddress.Visible = true;
             }
         }
 
-        void generateQRCode(string addr)
+        void getBalance()
         {
-            imgQR.ImageUrl = Common.GenerateQrDataUri(addr);
-            imgQR.Visible = true;
-        }
-
-        // Surfaces a backend error message to the user. This screen has no styled
-        // alert modal yet (added when it's re-skinned), so fall back to a client alert.
-        void ShowAlert(string message)
-        {
-            if (string.IsNullOrEmpty(message))
-                message = "Something went wrong. Please try again.";
-            string js = "alert('" + HttpUtility.JavaScriptStringEncode(message) + "');";
-            ClientScript.RegisterStartupScript(GetType(), "txDepositError", js, true);
-        }
-
-        protected void Timer1_Tick(object sender, EventArgs e)
-        {
-            getCounter();
-        }
-
-        void getCounter() {
-            if (hfStatus.Value == "created")
+            OutputModel op = us.getBalance(new UserBalanceModel());
+            if (op.Status == "success" && op.Data != null)
             {
-                if (!string.IsNullOrEmpty(hfExpDate.Value))
-                    lblTime.Text = Common.CalculateTimeDifference(DateTime.Now, Convert.ToDateTime(hfExpDate.Value));
+                var dt = JsonConvert.DeserializeObject<UserBalanceModel>(op.Data.ToString());
+                if (dt != null && dt.Balance.HasValue)
+                    lblBalance.InnerHtml = dt.Balance.Value.ToString("0.00");
             }
+            // On failure leave the markup default ("—"); never fabricate a balance.
+        }
+
+        void getDepositAddress()
+        {
+            OutputModel op = us.getDepositAddress();
+            if (op.Status == "success" && op.Data != null)
+            {
+                var dt = JsonConvert.DeserializeObject<DepositAddressModel>(op.Data.ToString());
+                if (dt != null && !string.IsNullOrEmpty(dt.Address))
+                {
+                    lbladdress.InnerText = dt.Address;
+                    hfAddress.Value = dt.Address;
+                    imgQR.ImageUrl = Common.GenerateQrDataUri(dt.Address);
+                    imgQR.Visible = true;
+                    return;
+                }
+            }
+            // No address available (or the read failed): show a clear message instead of an
+            // empty address box, and surface the backend reason when there is one.
+            viewDeposit.Visible = false;
+            viewNoAddress.Visible = true;
+            if (!string.IsNullOrEmpty(op.Message) && op.Status != "success")
+                lblNoAddress.InnerText = op.Message;
         }
     }
 }
