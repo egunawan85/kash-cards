@@ -23,6 +23,7 @@ deploy/
     create-token-tables.sql        # bearer-token tables
     create-wallet-indexes.sql      # prepaid-balance uniqueness indexes (wallet/address)
     create-webhook-dedup-index.sql # per-event deposit-webhook dedup index
+    create-referral-commission-dedup-index.sql # per-order referral-commission dedup index (no double-pay)
     seeds/                         # idempotent SQL seeds: reference rows, bootstrap admin, smoke user,
                                    #   + (dev-only) seed-dev-synthetic.sql display dataset
   scripts/

@@ -122,8 +122,11 @@ namespace QryptoCard.INT.Script.Service.App.v1
                     u.isVerified = 0;
                     u.isBanned = 0;
 
-                    if (x.InvitedBy != null || x.InvitedBy != "")
-                    { 
+                    // Only resolve a referral code when one was actually supplied. (The old
+                    // `!= null || != ""` was a tautology — always true — so an empty code still ran
+                    // a pointless lookup; the outcome was the same since a miss sets InvitedBy null.)
+                    if (!string.IsNullOrEmpty(x.InvitedBy))
+                    {
                         var ck = db.tblM_User_Referral.Where(p => p.Code == x.InvitedBy).FirstOrDefault();
                         if (ck != null)
                             u.InvitedBy = ck.UserID;
