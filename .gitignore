@@ -7,6 +7,9 @@
 # per-task checkouts, and their gitlinks must never be committed).
 .claude/worktrees/
 
+# Ephemeral front-end design-reference template (kept on disk, never tracked).
+QryptoCard.Dashboard/NewDesign/
+
 # User-specific files
 *.rsuser
 *.suo
