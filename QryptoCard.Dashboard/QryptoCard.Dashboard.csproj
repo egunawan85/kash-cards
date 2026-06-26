@@ -382,6 +382,10 @@
     <Content Include="Content\media\books\9.png" />
     <Content Include="Content\media\books\img-72.jpg" />
     <Content Include="Content\media\card-bg.png" />
+    <Content Include="Content\media\cards\brand.svg" />
+    <Content Include="Content\media\cards\visa.svg" />
+    <Content Include="Content\media\cards\mastercard.svg" />
+    <Content Include="Content\media\cards\discover.svg" />
     <Content Include="Content\media\demo\1600x1200\1.png" />
     <Content Include="Content\media\demo\1600x1200\2.jpg" />
     <Content Include="Content\media\demo\1600x1200\3.png" />

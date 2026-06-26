@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 252" role="img" aria-label="Card artwork">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#0c121a"/>
+      <stop offset="0.55" stop-color="#16222e"/>
+      <stop offset="1" stop-color="#0b2b32"/>
+    </linearGradient>
+    <linearGradient id="sheen" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#00e6ff" stop-opacity="0.30"/>
+      <stop offset="0.5" stop-color="#00e6ff" stop-opacity="0"/>
+    </linearGradient>
+    <linearGradient id="chip" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#7fe9f2"/>
+      <stop offset="1" stop-color="#1b8f9c"/>
+    </linearGradient>
+  </defs>
+  <rect width="400" height="252" rx="18" fill="url(#bg)"/>
+  <path d="M0 252 L400 72 L400 252 Z" fill="url(#sheen)"/>
+  <circle cx="332" cy="56" r="120" fill="#00e6ff" opacity="0.06"/>
+  <rect x="30" y="92" width="46" height="34" rx="6" fill="url(#chip)"/>
+  <path d="M30 109 h46 M53 92 v34" stroke="#0c121a" stroke-width="2" opacity="0.5"/>
+  <rect x="30" y="150" width="150" height="6" rx="3" fill="#eaf6f8" opacity="0.22"/>
+  <rect x="30" y="166" width="96" height="6" rx="3" fill="#eaf6f8" opacity="0.14"/>
+</svg>

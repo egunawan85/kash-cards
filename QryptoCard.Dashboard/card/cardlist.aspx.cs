@@ -40,6 +40,8 @@ namespace QryptoCard.Dashboard.card
                         else
                             dt[i].LogoURL = "https://www.svgrepo.com/show/328132/discover.svg";
 
+                        dt[i].ArtURL = ResolveCardArt(dt[i].Organization, dt[i].ArtURL);
+
                         dt[i].CardPrice = dt[i].CardPrice + " " + dt[i].CardPriceCurrency;
                         if (dt[i].NeedDepositForActiveCard == 1)
                             dt[i].NeedDeposit = "Yes";
@@ -81,6 +83,25 @@ namespace QryptoCard.Dashboard.card
                 ShowAlert(op.Message);
             }
 
+        }
+
+        // Per-card-type artwork (DD-7). Prefer an upstream-supplied ArtURL when the
+        // card-type service provides one (a server-sourced value from our own API, not
+        // client input); otherwise pick a vendored image by card scheme, with the
+        // static brand card as the final fallback for an unmapped scheme.
+        string ResolveCardArt(string organization, string upstream)
+        {
+            if (!string.IsNullOrWhiteSpace(upstream))
+                return upstream;
+
+            if (organization == "Visa")
+                return ResolveUrl("~/Content/media/cards/visa.svg");
+            if (organization == "MasterCard")
+                return ResolveUrl("~/Content/media/cards/mastercard.svg");
+            if (organization == "Discover")
+                return ResolveUrl("~/Content/media/cards/discover.svg");
+
+            return ResolveUrl("~/Content/media/card-bg.png");
         }
 
         // Surfaces a backend error message to the user. This screen has no styled

@@ -34,5 +34,10 @@ namespace QryptoCard.API.Models
         public string Status { get; set; }
         public Nullable<int> isActive { get; set; }
         public Nullable<System.DateTime> DateCreated { get; set; }
+        // Optional per-card-type artwork (DD-7). Carried end-to-end on the card-type
+        // contract so the card background can later be driven from a stored/CDN value
+        // without a model change. Null today — the Dashboard derives a local fallback
+        // when this is empty.
+        public string ArtURL { get; set; }
     }
 }

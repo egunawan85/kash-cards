@@ -41,5 +41,9 @@ namespace QryptoCard.Dashboard.Models.Service
         public Nullable<System.DateTime> DateCreated { get; set; }
         public string LogoURL { get; set; }
         public string DetailURL { get; set; }
+        // Per-card-type card artwork (DD-7). Honours an upstream-provided value when the
+        // card-type service supplies one; otherwise the page derives a local image and
+        // the markup falls back to the static brand card when this is empty.
+        public string ArtURL { get; set; }
     }
 }
