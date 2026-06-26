@@ -76,6 +76,7 @@ $DdlScriptNames = @(
     'create-token-tables.sql',
     'create-wallet-indexes.sql',
     'create-webhook-dedup-index.sql',
+    'create-referral-commission-dedup-index.sql',
     'create-otp-lockout-columns.sql',
     'create-login-lockout-columns.sql'
 )
