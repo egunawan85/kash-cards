@@ -10,8 +10,11 @@ namespace QryptoCard.INT.Callback.Model
     public class KeyModel
     {
         // --- Non-secret config ---
-        public static string WASABICARD_API_URL =>
-            SecretsConfig.GetOptional("WASABICARD_API_URL", "https://api-merchant.wasabicard.com");
+        // Required, never defaulted: the WasabiCard base URL is the only sandbox/prod (test vs.
+        // real-money) switch and the same credentials work against both, so a silent prod default
+        // could quietly route real money to the wrong host. Must match the INT tier — both read
+        // the same env var so a single per-pool value moves both tiers together (no split-brain).
+        public static string WASABICARD_API_URL => SecretsConfig.Require("WASABICARD_API_URL");
 
         // --- Secrets / key material (env-only via SecretsConfig; never committed) ---
         public static string WASABICARD_API_KEY => SecretsConfig.Require("WASABICARD_API_KEY");
