@@ -311,6 +311,19 @@ function Build-And-Publish {
         Write-Warn "$Project`: no packages.config -- skipping restore"
     }
 
+    # Force a clean compile. vm-fetch-source extracts a fresh source zipball OVER the existing
+    # tree, but the gitignored obj/ and bin/ from a PRIOR build survive the extract. Incremental
+    # MSBuild then sees a stale compiled assembly as "up-to-date" against the (re-fetched) source
+    # and SKIPS recompiling -- silently shipping an OLD binary that no longer matches the source.
+    # Deleting the intermediates guarantees the deployed DLLs reflect the current source. (Without
+    # this, a fixed AuthV1Service once deployed as its pre-fix build, rejecting every valid login OTP.)
+    foreach ($stale in @((Join-Path $projDir 'obj'), (Join-Path $projDir 'bin'))) {
+        if (Test-Path $stale) {
+            Write-Step "$Project`: clean $stale"
+            Remove-Item $stale -Recurse -Force -ErrorAction SilentlyContinue
+        }
+    }
+
     Write-Step "$Project`: msbuild publish -> $DestDir"
     # WebPublishMethod=FileSystem publishes the web app (transformed, content +
     # bin) to publishUrl. DeployOnBuild wires the publish target into the build.
@@ -419,9 +432,25 @@ function Rewrite-ConnectionString {
         $providerConn + '"'
     $node.SetAttribute('connectionString', $efValue)
     $node.SetAttribute('providerName', 'System.Data.EntityClient')
+
+    # AuthDbContext (the Bearer-token store) is EF6 Code-First and binds to a SEPARATE
+    # connection string named 'AuthDbEntities' -- plain ADO.NET, NOT the EF-metadata wrapper.
+    # Source configs historically omitted it, so token writes threw "No connection string
+    # named 'AuthDbEntities'" and every OTP login failed at the token-mint step (disguised by
+    # the verify's catch as "Invalid OTP code or session"). Create-or-update it here, pointed
+    # at the SAME on-box dev DB ($providerConn), so the deploy always provisions it.
+    $authNode = @($csElement.add | Where-Object { $_.name -eq 'AuthDbEntities' }) | Select-Object -First 1
+    if (-not $authNode) {
+        $authNode = $doc.CreateElement('add')
+        $authNode.SetAttribute('name', 'AuthDbEntities')
+        $csElement.AppendChild($authNode) | Out-Null
+    }
+    $authNode.SetAttribute('connectionString', $providerConn)
+    $authNode.SetAttribute('providerName', 'System.Data.SqlClient')
+
     $doc.Save($WebConfigPath)
     # Log without the password.
-    Write-Ok "  $Project`: DBEntities -> server=$DbServer;catalog=$DbName;user=$DbAppLogin (password hidden)"
+    Write-Ok "  $Project`: DBEntities + AuthDbEntities -> server=$DbServer;catalog=$DbName;user=$DbAppLogin (password hidden)"
 }
 
 # ===========================================================================
