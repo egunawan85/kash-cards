@@ -17,10 +17,22 @@ namespace QryptoCard.INT.Script.Service
 
         public static string RandomString(int length)
         {
-            Random random = new Random();
+            // Use a CSPRNG, not System.Random. A new time-seeded Random() per call returns the
+            // SAME string for calls within one ~15ms tick, which collides callers that must be
+            // unique (e.g. the deposit Address has a unique index — colliding values fail the
+            // insert and, under that path, can leave provisioning empty). The OS CSPRNG is
+            // re-seeded from entropy each call, so successive results don't collide.
             const string chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
-            return new string(Enumerable.Repeat(chars, length)
-                .Select(s => s[random.Next(s.Length)]).ToArray());
+            var result = new char[length];
+            var bytes = new byte[length * 4];
+            using (var rng = RandomNumberGenerator.Create())
+                rng.GetBytes(bytes);
+            for (int i = 0; i < length; i++)
+            {
+                uint val = BitConverter.ToUInt32(bytes, i * 4);
+                result[i] = chars[(int)(val % (uint)chars.Length)];
+            }
+            return new string(result);
         }
 
         public static string getOTPCode()
