@@ -57,10 +57,23 @@ $owner = $Matches[1]; $repo = $Matches[2]
 $cloneUrl = "https://github.com/$owner/$repo.git"
 
 # -- Token (private repo): prefer Key Vault via the VM managed identity. --------
-if (-not $Token -and $KvName -and (Get-Command az -ErrorAction SilentlyContinue)) {
-    & az login --identity --output none 2>$null
+# Resolve az by full path, NOT via PATH alone: this script runs under
+# `az vm run-command` (guest-agent/SYSTEM context) whose PATH is captured when the
+# agent starts and does NOT pick up an az install that landed afterward -- so a bare
+# `Get-Command az` finds nothing, the token read silently no-ops, and the private
+# clone runs unauthenticated and fails. Same stale-PATH reason this script resolves
+# git by full path (Resolve-Git) and inject-secrets.ps1 resolves az the same way.
+$az = (Get-Command az -ErrorAction SilentlyContinue).Source
+if (-not $az) {
+    foreach ($cand in @(
+        'C:\Program Files\Microsoft SDKs\Azure\CLI2\wbin\az.cmd',
+        'C:\Program Files (x86)\Microsoft SDKs\Azure\CLI2\wbin\az.cmd'
+    )) { if (Test-Path $cand) { $az = $cand; break } }
+}
+if (-not $Token -and $KvName -and $az) {
+    & $az login --identity --output none 2>$null
     if ($LASTEXITCODE -eq 0) {
-        $kvTok = (& az keyvault secret show --vault-name $KvName --name 'REPO-TOKEN' --query value -o tsv 2>$null)
+        $kvTok = (& $az keyvault secret show --vault-name $KvName --name 'REPO-TOKEN' --query value -o tsv 2>$null)
         if (-not [string]::IsNullOrWhiteSpace($kvTok)) { $Token = $kvTok; Step 'using git token from Key Vault (REPO-TOKEN)' }
     }
 }
