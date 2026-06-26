@@ -50,7 +50,11 @@ param(
 
     # SQL Express instance name. azure-vm-provision.sh / .env.provision pin
     # this to SQLEXPRESS; the bootstrap installs that named instance.
-    [string]$SqlInstance = 'SQLEXPRESS'
+    [string]$SqlInstance = 'SQLEXPRESS',
+
+    # Root where the app source is deployed (vm-fetch-source.ps1 TargetDir). The reconciliation
+    # scheduled task invokes $SourceRoot\deploy\scripts\scheduler-trigger.ps1.
+    [string]$SourceRoot = 'C:\src\kash-cards'
 )
 
 $ErrorActionPreference = 'Stop'
@@ -660,7 +664,46 @@ GO
 }
 
 # ===========================================================================
-# Step 6. Summary.
+# Step 6. Register the reconciliation-sweep scheduled task.
+# ===========================================================================
+# The sweep recovers card spends stranded at 'pending provider'. It runs via an on-box
+# scheduled task that POSTs to the API.Callback loopback endpoint with the Key-Vault-backed
+# X-Scheduler-Auth secret (deploy/scripts/scheduler-trigger.ps1). Registered idempotently
+# (-Force; infra is the source of truth, so re-running reverts any operator-side tweak). The
+# trigger script lands with the app source at $SourceRoot, so the task fails harmlessly until
+# the first deploy puts it there. Non-fatal: a registration hiccup must not abort the box
+# bootstrap (it can be re-registered later).
+Write-Step "registering reconciliation-sweep scheduled task"
+try {
+    if (-not [System.Diagnostics.EventLog]::SourceExists('KashCardsScheduler')) {
+        New-EventLog -LogName Application -Source 'KashCardsScheduler'
+        Write-Ok "  event-log source 'KashCardsScheduler' created"
+    }
+
+    $triggerScript = Join-Path $SourceRoot 'deploy\scripts\scheduler-trigger.ps1'
+    $taskName = 'KashCards-ReconcilePending'
+    $action = New-ScheduledTaskAction -Execute 'powershell.exe' `
+        -Argument ("-NoProfile -ExecutionPolicy Bypass -File `"$triggerScript`" -VaultName $KvName")
+    # -RepetitionDuration [TimeSpan]::MaxValue overflows Task Scheduler's xs:duration bounds;
+    # 9999 days (~27 yr) is the canonical "effectively forever" within them.
+    $trigger = New-ScheduledTaskTrigger -Once -At (Get-Date) `
+        -RepetitionInterval (New-TimeSpan -Minutes 10) `
+        -RepetitionDuration (New-TimeSpan -Days 9999)
+    $principal = New-ScheduledTaskPrincipal -UserId 'SYSTEM' -RunLevel Highest
+    # -MultipleInstances IgnoreNew prevents a slow tick from overlapping the next (belt; the
+    # sweep is also idempotent server-side via the claim-gated mutations).
+    $settings = New-ScheduledTaskSettingsSet `
+        -StartWhenAvailable -DontStopOnIdleEnd -MultipleInstances IgnoreNew `
+        -ExecutionTimeLimit (New-TimeSpan -Minutes 10)
+    Register-ScheduledTask -TaskName $taskName -Action $action `
+        -Trigger $trigger -Principal $principal -Settings $settings -Force | Out-Null
+    Write-Ok "  scheduled task '$taskName' registered (every 10 min, SYSTEM) -> $triggerScript"
+} catch {
+    Write-Warn "scheduled-task registration failed: $($_.Exception.Message) -- register manually (see deploy/README.md)"
+}
+
+# ===========================================================================
+# Step 7. Summary.
 # ===========================================================================
 Write-Host ''
 Write-Host '==========================================================================='

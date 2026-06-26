@@ -165,7 +165,8 @@ $AllSecretNames = @(
     'POSTMARK_SERVER_TOKEN',
     'EMAIL_PASSWORD',
     'INT_CALLBACK_SHARED_SECRET',
-    'AUTH_SERVICE_REVOKE_TOKEN'
+    'AUTH_SERVICE_REVOKE_TOKEN',
+    'SCHEDULER_SHARED_SECRET'
 )
 
 # Non-secret runtime config the app reads via SecretsConfig.GetOptional. On the
