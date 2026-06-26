@@ -805,7 +805,10 @@ namespace QryptoCard.INT.Script.Service.App.v1
             {
                 string uid = getUserId(em);
 
-                var otp = db.tblH_User_OTP.Where(p => p.isVerify == 0 && p.UserID == uid && p.OTPID == x.OTPID).OrderByDescending(p => p.DateCreated).FirstOrDefault();
+                // Scope to change-email OTPs only. Other flows (e.g. generateKeyOTP / "View Card
+                // Detail") also write tblH_User_OTP but leave MerchantID null; without this filter a
+                // caller could confirm one of those here and null their own account email.
+                var otp = db.tblH_User_OTP.Where(p => p.isVerify == 0 && p.UserID == uid && p.OTPID == x.OTPID && p.Name == "Change Email").OrderByDescending(p => p.DateCreated).FirstOrDefault();
                 if (otp == null)
                 {
                     op.Status = "failed";
@@ -825,6 +828,26 @@ namespace QryptoCard.INT.Script.Service.App.v1
                     }
                     else
                     {
+                        // The new address bound at request time. Guard against a malformed OTP
+                        // record (defence in depth) so a missing target can never blank the email.
+                        if (string.IsNullOrEmpty(otp.MerchantID))
+                        {
+                            op.Status = "failed";
+                            op.Message = "This verification code is not valid for an email change.";
+                            return op;
+                        }
+
+                        // Re-assert uniqueness at confirm time: the request-time check leaves a
+                        // window (the OTP TTL) in which another user could claim the same address,
+                        // which would create duplicate emails and break getUserId's FirstOrDefault.
+                        if (db.tblM_User.Any(p => p.Email == otp.MerchantID && p.UserID != uid
+                                && p.isActive == 1 && p.isVerified == 1 && p.isBanned == 0))
+                        {
+                            op.Status = "failed";
+                            op.Message = "That email address is no longer available. Please try another.";
+                            return op;
+                        }
+
                         otp.isVerify = 1;
                         db.SaveChanges();
 
