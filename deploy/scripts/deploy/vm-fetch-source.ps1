@@ -96,14 +96,24 @@ function Clear-GitAuthEnv {
     Remove-Item Env:GIT_CONFIG_COUNT, Env:GIT_CONFIG_KEY_0, Env:GIT_CONFIG_VALUE_0 -ErrorAction SilentlyContinue
 }
 
-# -- git helper: run, swallow git's stderr progress/warnings (which would spawn a
-# NativeCommandError under $ErrorActionPreference=Stop even on success), and gate
-# strictly on $LASTEXITCODE. Custom Die messages never echo the args, and auth
-# rides in the environment (not argv), so the token can't leak through an error
-# path. (NativeCommandError-suppression pattern from runegate.) ----------------
+# -- git helper: run git and gate strictly on $LASTEXITCODE. Custom Die messages
+# never echo the args, and auth rides in the environment (not argv), so the token
+# can't leak through an error path.
+#
+# CRITICAL: run git under 'Continue', NOT the script-level 'Stop'. git streams
+# progress/notes to stderr; with the script at 'Stop', a `2>&1` turns the FIRST
+# stderr record into a TERMINATING error that aborts git MID-RUN -- the clone is
+# killed before it finishes, leaves nothing behind, and reports exit 1, even though
+# the identical command succeeds verbatim under 'Continue'. The previous
+# try/catch{} masked this: it swallowed the terminating error AFTER git had already
+# been aborted, so the gate saw a non-zero code and Died. Capture the merged stream
+# to a variable under 'Continue' (the runegate-infra pattern) and read the real
+# exit code. (Without this, the build-on-box git fetch can never succeed.)
 function Git-Do {
     param([string[]]$Args, [string]$ErrMsg)
-    try { & $git @Args 2>&1 | Out-Null } catch { }
+    $prev = $ErrorActionPreference
+    $ErrorActionPreference = 'Continue'
+    try { $null = & $git @Args 2>&1 } finally { $ErrorActionPreference = $prev }
     if ($LASTEXITCODE -ne 0) { Die $ErrMsg }
 }
 
