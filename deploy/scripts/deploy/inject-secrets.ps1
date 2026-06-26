@@ -54,7 +54,13 @@ param(
     # env file's KEYVAULT_NAME.
     [string]$VaultName,
 
-    [string]$RepoRoot
+    [string]$RepoRoot,
+
+    # Optional per-tier targeting. When set, inject + recycle ONLY this one pool
+    # (the per-tier redeploy path driven by deploy/deploy.sh) instead of all 12.
+    # The alias is the app pool minus the 'kash-' prefix (e.g. 'int' -> kash-int);
+    # the full pool name or the project name are also accepted.
+    [string]$Service
 )
 
 $ErrorActionPreference = 'Stop'
@@ -279,6 +285,22 @@ function Protect-ApplicationHostConfig {
 # ===========================================================================
 $sites    = Get-Content -LiteralPath $SitesJson -Raw | ConvertFrom-Json
 $allPools = @($sites.public + $sites.internal | ForEach-Object { $_.appPool }) | Select-Object -Unique
+
+# -- Optional per-tier targeting (the per-tier redeploy path). When -Service is
+# set, narrow $allPools to the single matching pool so only that tier is
+# re-injected and recycled; the other 11 pools keep their existing env untouched.
+# Match on the 'kash-'-stripped alias, the full pool name, or the project name;
+# unknown -> fail with the valid list.
+if ($Service) {
+    $byProject = @($sites.public + $sites.internal | Where-Object { $_.project -eq $Service } | ForEach-Object { $_.appPool })
+    $match = @($allPools | Where-Object { $_ -eq "kash-$Service" -or $_ -eq $Service -or $byProject -contains $_ })
+    if ($match.Count -eq 0) {
+        $aliases = (($allPools | ForEach-Object { $_ -replace '^kash-', '' }) | Sort-Object) -join ', '
+        Stop-Inject "unknown -Service '$Service' -- valid aliases: $aliases"
+    }
+    $allPools = $match
+    Write-Ok "per-tier target pool: $($allPools -join ', ')"
+}
 Write-Ok "target app pools: $($allPools.Count) -- $($allPools -join ', ')"
 
 # Pull every secret + config value once up front (fail fast if any is missing/empty).
