@@ -2,7 +2,11 @@
 
 ## Status checklist (as of 2026-06-26)
 
-📝 **Draft for alignment.** Produced from a read-only front-end↔back-end review of
+✅ **SHIPPED to `main` — every phase merged 2026-06-26** (PRs #37–#49; see the
+"Shipped — reconciliation with PRs #37–#49" table below for the slice→PR map). The
+original alignment notes below are preserved for context.
+
+📝 Produced from a read-only front-end↔back-end review of
 the **cardholder Dashboard** (`QryptoCard.Dashboard`, *not* the Admin app). The
 review traced every interactive control (buttons, link-buttons, anchors,
 grid/repeater commands, JS `onclick`) to its code-behind handler and on to the
@@ -17,13 +21,18 @@ a handful of design-independent code-behind nits, some dead placeholder links, a
 one **information-architecture gap** (no balance-level deposit address on the
 dashboard) that the redesign requires us to close.
 
-**By phase:**
-- [ ] **Phase 1 — Wiring & correctness fixes** (design-independent; ship first) → §1
-- [~] **Phase 2 — NewDesign visual/IA adoption** — pre-login pages **done via PR #35**;
-      logged-in app pages + sidebar chrome + Settings remain → §2
-- [ ] **Phase 3 — Wallet UI = Plan 07 T4.5** (the money engine is already shipped &
-      red-teamed; this exposes the read methods to the Dashboard tier + builds the UI) → §3
-- [ ] **Opportunistic refactors** (dedup/rename, folded into the touching phase) → §4
+**By phase — all shipped to `main` 2026-06-26:**
+- [x] **Phase 1 — Wiring & correctness fixes** — **#39** → §1
+- [x] **Phase 2 — NewDesign visual/IA adoption** — pre-login **#35**; chrome **#37** (+ CSS-link
+      hardening **#48**), app-pages re-skin **#41**, Settings **#45**, dead-code cleanup **#44**,
+      auth residual **#40** → §2
+- [x] **Phase 3 — Wallet UI = Plan 07 T4.5** — read endpoints **#38**, wallet UI + money rewire
+      **#43**, external (Opus+Sonnet) red-team **#46** → §3
+- [x] **Opportunistic refactors** (dedup/rename) — folded into the slices above → §4
+
+> The per-slice checkboxes in §1–§3 below are the original task breakdown left as-authored;
+> the authoritative "what actually shipped" record is the **Shipped — reconciliation with
+> PRs #37–#49** table under the PR #35 section. Only open item: **DD-7 per-card card art**.
 
 **Decisions locked (signed off 2026-06-26):**
 - **DD-0 Doc shape:** one umbrella doc (this file), executed as **separate phases /
@@ -98,6 +107,39 @@ executed the marketing/auth half of Phase 2:
 | M6 (Default.aspx dead email input) | Re-verify against the rewritten `Default.aspx` |
 | `app.css` dashboard styles | ⚠️ **Inert** — depend on `premium.css` tokens that are **not in the repo** (DD-4 vendors them in) |
 | Logged-in app pages | ❌ Still old top-nav `Site.Master` + `style.bundle.css` (Metronic) — the Phase 2 remainder |
+
+---
+
+## Shipped — reconciliation with PRs #37–#49 (all merged 2026-06-26)
+
+This doc was authored (07:34Z) **before any execution PR merged**; the whole plan landed
+afterward as the per-slice worktree PRs sketched in §"Execution" below. **Plan 08 is fully
+shipped to `main`.** Slice → PR:
+
+| Slice | What shipped | PR |
+|---|---|---|
+| **Phase 1** · wiring 1.1–1.4 | frozen-countdown typo, host-relative card nav, error surfacing, validation/wording, `AuthClient` dedup | **#39** |
+| **2.1** · chrome + design-system | vendored `premium.css`; rebuilt `Site.Master` into the sidebar app chrome | **#37** |
+| **2.2** · pre-login residual | dead `href="#"` Terms/Privacy + `Default.aspx` email input (M4/M6) | **#40** |
+| **2.3** · app-pages re-skin | dashboard shell, buy-a-card & My-Cards lists, card-detail views, `txcard` → sidebar design | **#41** |
+| **2.4** · Settings page | `settings.aspx` (profile / password / email-OTP / referral); fixes the `~/account` 404 (M1) | **#45** |
+| **2.5** · dead-code cleanup | orphan `purchasecard`/`yourcards` + mobile-master stub removed (M8/M9) | **#44** |
+| **3.2** · wallet read endpoints | `getDepositAddress`/`getLedger`/balance exposed to the Dashboard tier, IDOR-scoped | **#38** |
+| **3.3** · wallet UI + money rewire | dashboard wallet panel; buy/top-up → pay-from-balance; `txdeposit` → wallet deposit view | **#43** |
+| **3.4** · external red-team | model-diverse (Opus + Sonnet) review of the wallet surface — no money/auth/XSS defects; convergent fixes applied | **#46** |
+| follow-ups | chrome stylesheet-link hardening (#48); wallet-test CSPRNG flake fix (#47) | **#48**, **#47** |
+
+**Still open:** **DD-7 per-card card art** — a nullable art field on `CardTypeModel`
+(INT → API → Dashboard) + per-type images with the brand fallback. It touches `.cs`, so it
+needs a full build/`update` (not the #49 fast lane).
+
+**New capability — front-end fast lane (#49).** `deploy.sh sync` pushes CHANGED `.css`/`.aspx`
+markup straight into the live IIS site root (base64 over `az vm run-command`) — **no GitHub
+push, no zipball fetch, no NuGet restore, no MSBuild**. Static content serves immediately;
+markup recompiles on demand. It **refuses** compile-triggers (`.cs`/`.csproj`/`.resx`/
+`packages.config`) and on-box `*.config`, so it can never ship a stale binary. This is the
+iterate-fast loop for any further dashboard visual polish: edit CSS/markup → `deploy.sh sync`
+→ see it live in seconds. Code-behind/designer changes (e.g. DD-7) still go through `update`.
 
 ---
 
@@ -504,9 +546,12 @@ Every session, on startup, follows this:
 
 ## Status
 
-**Draft for alignment.** **Wave A is ready to execute now** — Phase 1, Slice 2.1
-(chrome + `premium.css`), 2.2, 2.5, and 3.2 (Dashboard-tier exposure of the shipped
-Plan 07 read methods) are independent and parallelizable; **2.1 merges first** to unblock
-Wave B's page re-skins. Phase 3 is **no longer blocked** — D-08-1…3 are resolved by
-Plan 07 and its engine is shipped; Phase 3's UI (3.3) depends on Wave B's dashboard
-shell + 3.2.
+✅ **Complete — all phases shipped to `main` 2026-06-26** via PRs #37, #38, #39, #40, #41,
+#43, #44, #45, #46 (+ #47/#48 follow-ups and the #49 front-end fast lane). Execution went out
+as the per-slice worktree PRs planned below; the **Shipped — reconciliation with PRs #37–#49**
+table (above) maps each slice to its PR. **Only open item:** DD-7 per-card card art (needs a
+`.cs` model field — not coverable by the #49 `sync` fast lane). Further front-end polish now
+iterates via `deploy.sh sync` (#49) with no rebuild.
+
+The planning material that follows (waves, sessions, prompts) is kept as the historical record
+of how the work was decomposed.

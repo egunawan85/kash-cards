@@ -10,7 +10,8 @@ Master roll-up; each plan doc has its own detailed checklist. `[x]` = code subst
 - [ ] **Plan 3 — Security hardening:** webhook integrity + IDOR/role + dead-code closed, **but T5.1 crypto migration (bcrypt/AES-GCM) is still unwritten**; forensics tails owner-gated → see `03`
 - [ ] **Plan 2 — Redeploy & perimeter:** Stage A automation merged (#14); WAF build-out, BACPAC data-move, and CI pipeline still open; ⏳ prod cutover → see `02`
 - [x] **Plan 7 — Prepaid balance:** core + reconciliation sweep shipped (#16/#19/#26/#29/#31); shakeout items remain → see `07`
-- [ ] **Plan 8 — Dashboard wiring & redesign:** FE↔BE review done (no broken primary buttons); Phase 1 correctness fixes ready, NewDesign full adoption + balance deposit-address money path (builds on Plan 7) await sign-off → see `08`
+- [x] **Plan 8 — Dashboard wiring & redesign:** **shipped to `main` 2026-06-26** (PRs #37–#49) — Phase 1 wiring fixes, full NewDesign sidebar adoption, Settings, and the wallet panel + buy/top-up → pay-from-balance money path (builds on Plan 7). Only open item: DD-7 per-card card art → see `08`
+- [ ] **Plan 9 — Pre-cutover sandbox polish:** exercise every money/card flow end-to-end front-to-back against the WasabiCard sandbox; fix the INT/Callback URL mismatch; close the Runegate deposit-side gap; visual/UX polish. 📝 draft, awaiting sign-off → see `09`
 
 **Stale "open" notes that are actually DONE (verified in code; corrected in the per-plan docs):**
 - [x] OTP-lockout + rate-limiter + IP-resolver (was P3·S5 "top residual")
