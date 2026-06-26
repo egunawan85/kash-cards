@@ -57,6 +57,9 @@
 #   logs [svc]     Tail the latest IIS log per tier.
 #   schema         Re-publish the schema-only dacpac (incremental). Opt-in; not
 #                  part of the default `update`.
+#   seed           Re-apply the committed seed SQL (reference + admin, plus the
+#                  dev-only smoke user + synthetic display dataset). Data-only:
+#                  fetch source -> sqlcmd the seeds. No build, no IIS, no secrets.
 #
 # svc (service alias) = the app pool minus the 'kash-' prefix. Valid aliases:
 #   api  api-public  api-admin  api-callback  api-scheduler  apidocs
@@ -100,6 +103,8 @@ Usage: ENV=dev ./deploy/deploy.sh <command> [svc] [--with-schema]
   status         Show pool/site state + port for every tier.
   logs [svc]     Tail the latest IIS log per tier.
   schema         Re-publish the schema-only dacpac (incremental; opt-in).
+  seed           Re-apply committed seed SQL (reference + admin, plus the dev-only
+                 smoke user + synthetic display dataset). Data-only; no build/IIS.
 
   svc (service alias) = app pool minus the 'kash-' prefix:
     api  api-public  api-admin  api-callback  api-scheduler  apidocs
@@ -338,6 +343,20 @@ case "$CMD" in
     run_on_vm "$DEPLOY_SCRIPTS/vm-publish-schema.ps1" "Env=$ENV"
     ;;
 
+  seed)
+    # Re-apply the committed seed SQL on the box. DATA-ONLY: no build, no IIS touch,
+    # no secret inject -- just fetch the newest source (so the latest committed seed
+    # files are present) then run vm-seed, which pulls DBKEY/APPKEY from Key Vault and
+    # applies the seeds via sqlcmd. The dev-only smoke user + synthetic display dataset
+    # are gated INSIDE vm-seed on Env=dev, so `ENV=stg ./deploy/deploy.sh seed` applies
+    # only the reference + admin rows. Assumes the schema is already published.
+    [[ -z "$SVC" ]] || die "seed takes no service argument"
+    : "${REPO_URL:?set in $CFG}" : "${DB_NAME:?set in $CFG}"
+    run_on_vm "$DEPLOY_SCRIPTS/vm-fetch-source.ps1" "RepoUrl=$REPO_URL Branch=$REPO_BRANCH KvName=$KEYVAULT_NAME"
+    run_on_vm "$DEPLOY_SCRIPTS/vm-seed.ps1" "KvName=$KEYVAULT_NAME DbName=$DB_NAME Env=$ENV"
+    log "seed complete (Env=$ENV)"
+    ;;
+
   -h|--help|help) usage 0 ;;
-  *)              die "unknown command: $CMD (try: update build restart start stop status logs schema)" ;;
+  *)              die "unknown command: $CMD (try: update build restart start stop status logs schema seed)" ;;
 esac

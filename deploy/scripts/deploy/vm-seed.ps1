@@ -70,6 +70,12 @@ function Enc([string]$plain, [string]$key) {
 $adminEmail = if ($env:SEED_ADMIN_EMAIL)    { $env:SEED_ADMIN_EMAIL }    else { 'edward@s16.ventures' }
 $adminPwd   = if ($env:SEED_ADMIN_PASSWORD) { $env:SEED_ADMIN_PASSWORD } else { 'KashAdmin!dev1' }
 $userPwd    = if ($env:SEED_USER_PASSWORD)  { $env:SEED_USER_PASSWORD }  else { 'KashUser!dev1' }
+# Demo cardholder for the synthetic dataset (seed-dev-synthetic.sql): the ONE loginable
+# synthetic user. Its email must be a REAL inbox so the interactive web login's emailed OTP
+# arrives (the synthetic filler users have fake emails and never log in). Defaults to the
+# owner's address; override with SEED_DEMO_EMAIL / SEED_DEMO_PASSWORD.
+$demoEmail  = if ($env:SEED_DEMO_EMAIL)     { $env:SEED_DEMO_EMAIL }     else { 'egunawan85@gmail.com' }
+$demoPwd    = if ($env:SEED_DEMO_PASSWORD)  { $env:SEED_DEMO_PASSWORD }  else { 'KashDemo!dev1' }
 $smokeEmail = 'smoke-user@kash.cards'
 $apiKey     = 'smoke-' + [Guid]::NewGuid().ToString('N')
 $apiSecret  = [Guid]::NewGuid().ToString('N') + [Guid]::NewGuid().ToString('N')
@@ -81,12 +87,17 @@ $apiSecret  = [Guid]::NewGuid().ToString('N') + [Guid]::NewGuid().ToString('N')
 if ($adminEmail -notmatch '^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$') {
     Die "SEED_ADMIN_EMAIL '$adminEmail' has an unexpected shape -- refusing to splice into seed SQL"
 }
+# Same shape-guard for the demo cardholder email (spliced into seed-dev-synthetic.sql via -v).
+if ($demoEmail -notmatch '^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$') {
+    Die "SEED_DEMO_EMAIL '$demoEmail' has an unexpected shape -- refusing to splice into seed SQL"
+}
 
 $adminPwdDb    = Enc $adminPwd  $DBKEY
 $userPwdDb     = Enc $userPwd   $DBKEY
 $apiSecretDb   = Enc $apiSecret $DBKEY
 $apiSecretWire = Enc $apiSecret $APPKEY
 $adminPwdWire  = Enc $adminPwd  $APPKEY
+$demoPwdDb     = Enc $demoPwd   $DBKEY
 
 $seedsDir = Join-Path $SourceDir 'deploy\sql\seeds'
 foreach ($f in 'seed-reference.sql','seed-admin.sql','seed-smoke-user.sql') {
@@ -113,6 +124,18 @@ if ($Env -eq 'dev') {
         -v SMOKE_EMAIL="$smokeEmail" -v SMOKE_USER_PWD_DB="$userPwdDb" -v SMOKE_API_KEY="$apiKey" -v SMOKE_API_SECRET_DB="$apiSecretDb"
     if ($LASTEXITCODE -ne 0) { Die "seed-smoke-user failed (exit $LASTEXITCODE)" }
 
+    # Synthetic display dataset (DEV ONLY): ~25 users with wallets/ledger/cards/transactions so
+    # the cardholder UI + admin lists look realistic. Committed, idempotent (re-applies cleanly --
+    # it deletes its own '5eed%' namespace first), and entirely fabricated (fake test-BIN cards,
+    # TRC20-shaped addresses, no prod data). The ONE loginable demo cardholder ($demoEmail) gets a
+    # real AES password spliced here (the same EncryptDB scheme as the smoke user); the rest are
+    # display-only with a non-login sentinel password.
+    Step "seed-dev-synthetic.sql (synthetic users/cards/txns; demo login $demoEmail)"
+    $synthFile = Join-Path $seedsDir 'seed-dev-synthetic.sql'
+    if (-not (Test-Path $synthFile)) { Die "seed file not found: $synthFile (run vm-fetch-source first)" }
+    & $sqlcmd @base -i $synthFile -v DEMO_EMAIL="$demoEmail" -v DEMO_USER_PWD_DB="$demoPwdDb"
+    if ($LASTEXITCODE -ne 0) { Die "seed-dev-synthetic failed (exit $LASTEXITCODE)" }
+
     # .smoke.env -- wire forms only (gitignored). Not echoed to stdout (run-command output
     # is retained in the Azure control plane). The admin line reflects THIS run's password;
     # seed-admin is insert-only, so on a re-run with a *changed* SEED_ADMIN_PASSWORD the DB
@@ -129,6 +152,12 @@ if ($Env -eq 'dev') {
       "SMOKE_ADMIN_EMAIL=$adminEmail"
       '# SMOKE_ADMIN_PASSWORD is the wire form (EncryptAPP) the admin client sends (this run).'
       "SMOKE_ADMIN_PASSWORD=$adminPwdWire"
+      ''
+      '# Demo cardholder for INTERACTIVE web login at app-dev.s16.xyz (synthetic dev dataset).'
+      '# DEMO_EMAIL is a real inbox -- the login OTP is emailed there. DEMO_PASSWORD is the'
+      '# PLAINTEXT to type into the web login form (the browser encrypts it; this is NOT a wire form).'
+      "DEMO_EMAIL=$demoEmail"
+      "DEMO_PASSWORD=$demoPwd"
     ) | Set-Content -Path $SmokeOut -Encoding UTF8
     Ok "seed complete; admin=$adminEmail; smoke creds -> $SmokeOut"
 } else {
