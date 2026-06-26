@@ -9,6 +9,24 @@
 > tracked residual, flagged 4× by the external red-teams. The design/decision tables
 > below are kept for reference of what was built.
 
+## Status checklist (as of 2026-06-26)
+
+Verified against merged code. The opaque-token + email-OTP system is fully built and wired; residuals are two deviations from this design, one missing worker, and DB/box-gated items. `[x]` done · `[ ]` outstanding · ⏳ = on-box.
+
+**Done (built & merged):**
+- [x] **A1–A4, A8, A9** — opaque `at_`/`rt_` SHA-256 tokens, token store, 15m/7d lifetimes + rotation, `SubjectType` enforced both ends, Basic→Bearer migration complete, lifecycle in the INT tier
+- [x] **D-1, D-3, D-5, D-6, D-7 + Revision** — separate `AuthDbContext`, token-in-session (password cookie dropped), decoupled from bcrypt, Basic kept on the public APIKey tier only, atomic refresh rotation + reuse-detection chain-revoke, LocalDB integration harness
+- [x] **T1.1–T1.3, T2.1–T2.3, T3.1–T3.3, T4.1, T4.3, T5.1, T5.2, Slice 6** — OTP gen/verify hardening, token service, bearer filters, split login→2FA→mint, dashboards on token endpoints, unit/integration tests + red-teams
+
+**Outstanding (code):**
+- [ ] **⚠️ A6 / T4.2 / D-2 — deviation:** the merged code makes OTP **mandatory for every user**; the doc's "users opt-in via `is2FA`" was never built. Reconcile doc↔code (decide which is intended).
+- [ ] **A5 — TOTP** not built (only email-OTP shipped; the TOTP path is a stub `Param2 <> 'totp'` guard)
+- [ ] **Purge worker** — the hourly expired-token purge job (24h grace) from the Revision is not implemented anywhere
+
+**On-box / DB-gated (⏳):**
+- [ ] ⏳ **A7 / T1.3 / D-4** lockout — coded but per-session; per-account enforcement needs the `FailureCount`/`Attempts` column (`deploy/sql/create-otp-lockout-columns.sql`, not yet applied)
+- [ ] ⏳ **A2 / T2.1** token tables (`create-token-tables.sql`) applied to the live DB · **T5.3** bcrypt forced-reset sequencing · email delivery confirmed (T1.2)
+
 ## Objective
 
 Move kash-cards from "every request carries the user's `email:password` (Basic

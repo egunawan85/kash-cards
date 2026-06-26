@@ -5,6 +5,15 @@ stopping. Fill section 1 (access) + section 2 (decisions) once; section 3 are
 third-party actions to start early (lead time); section 4 is the small set of
 irreversible gates we keep.
 
+## Status (as of 2026-06-26)
+
+Most §1 access + §2 decisions are resolved; the §4 irreversible gates remain by design.
+
+- [x] **Resolved:** GitHub access · Postmark server token obtained · Azure region (`southeastasia`) + VM size · canonical DB (`kashnow`) · WasabiCard sandbox keys · `deploy/*.example` generated
+- [ ] **Still needed:** final `kash.cards` subdomain→site names · live OLD server config export confirmation · Runegate merchant key + signing (wiring still stubbed) · cutover window
+- [ ] ⏳ **Third-party (§3):** WasabiCard reissue/register pubkey/audit log · confirm Runegate cred not shared with qrypto-omni · dev access offboarding
+- [ ] ⏳ **Kept gates (§4, intentional):** prod cutover/DNS flip · prod DB swap · forced password reset on real users · decommission old server + DB · git-history force-push · rotate LIVE WasabiCard key
+
 ---
 
 ## 0. Autonomy model — what runs without you vs. with you

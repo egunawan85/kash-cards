@@ -1,5 +1,28 @@
 # Plan 2 — Redeployment & Cloudflare Perimeter
 
+## Status checklist (as of 2026-06-26)
+
+Verified against the merged `deploy/` tree. `[x]` done · `[ ]` outstanding · ⏳ = needs a box/prod action (no code artifact). The deploy automation (Stage A) is fully authored and merged; what remains is the real prod data-move, WAF/CI build-out, and the on-box cutover.
+
+**Authored & merged (DONE):**
+- [x] **D1** on-VM SQL Express · **D2** Cloudflare Tunnel · **D3** Key Vault · **D4** prod-only + throwaway dev · **D5/D7** zone+subdomain map / canonical DB (`kashnow`) resolved
+- [x] **T1.1** RGs + Key Vault · **T1.2** VM/NSG lock-down · **T1.3** server bootstrap (IIS/WCF/SQL + least-priv login) · **T1.4** seed Key Vault
+- [x] **T2.1** `deploy-iis.ps1` (12 sites) · **T2.2** `inject-secrets.ps1` · **T2.3** go-live verify script · **D11** synthetic dev seed + sandbox keys
+- [x] **T4.1** tunnel + connector · **T4.2** routes + DNS · **T4.3** zone hardening (Always-HTTPS, TLS 1.2+, HSTS)
+
+**Outstanding (code/scripts):**
+- [ ] **T4.4** WAF — only callback BIC-off + IP-lock built; scanner-path (`.env`/`.git`) and `/v1/admin/*` edge blocks NOT done (gated on the broader CF token)
+- [ ] **T4.5** callback IP-lock — mechanism coded but **inert** (empty `CALLBACK_ALLOW_IPS` placeholder; no provider CIDRs)
+- [ ] **T3.1** canonical-DB export — schema-only DACPAC captured; data-bearing BACPAC of live prod not scripted
+- [ ] **T3.2** side-by-side import + smoke (dry run) — not built (dev path substitutes in-place schema publish)
+- [ ] **T3.3** backup + atomic swap — not built
+- [ ] **T6.1 / T6.2 / T6.3** CI pipeline — **no `.github/workflows/` exists**; `check-no-secrets.sh` guard exists but nothing invokes it
+
+**On-box / prod cutover (⏳ — no repo artifact):**
+- [ ] ⏳ **D9 / T5.3** decommission old host + old Azure SQL
+- [ ] ⏳ **T5.1** prod deposit→callback→card flow validated · tunnel actually running
+- [ ] ⏳ **T5.2** cutover (DNS/tunnel flip) · webhook re-registration (T4.5)
+
 ## Objective
 
 Stand up kash-cards on a clean new server we control, move the database, and put

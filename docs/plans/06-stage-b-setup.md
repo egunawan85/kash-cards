@@ -4,6 +4,16 @@ Stand up the disposable dev environment, prove the app runs end to end, then tea
 down. This is the gated Azure run of the Stage A automation (merged in PR #14). Nothing
 here touches production. Expect ~30–45 min the first time (most of it the VM bootstrap).
 
+## Status checklist (as of 2026-06-26)
+
+Operator setup for the dev shakeout; most steps are box actions. `[x]` done/authored · `[ ]` outstanding · ⏳ = operator/box.
+
+- [x] Config realized: `ROUTES` exposure model (5 public / 7 internal) · `sites.json` (12 sites) · Postmark login/OTP transport
+- [x] **Stale "known gaps" now CLOSED** (verified in code): forgot-password email re-enabled (#21) · admin-invite + callback on Postmark (#21) · DevSeed → SQL seeds (#18)
+- [ ] ⏳ Operator prereqs: Azure RBAC · tools + correct subscription · KV-name uniqueness · fill `.env.provision.dev` + `secrets/.vault`+`.env`
+- [ ] ⏳ Run `provision-and-bootstrap.sh --with-deploy` · validate smoke + admin login + Postmark OTP · tear down (`az group delete`)
+- [ ] **Deferred to prod cutover:** zone hardening + WAF · callback IP-allowlist at the edge · real secret rotation + Runegate wiring
+
 > Run everything from a shell where the Azure CLI is logged in. The repo's
 > `deploy/provision-and-bootstrap.sh` orchestrates the whole thing; the steps below are
 > the **operator setup** it depends on.
