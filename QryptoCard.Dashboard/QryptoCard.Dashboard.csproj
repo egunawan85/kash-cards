@@ -113,8 +113,6 @@
     <Content Include="card\cardlist.aspx" />
     <Content Include="card\mycarddetail.aspx" />
     <Content Include="card\mycardlist.aspx" />
-    <Content Include="card\purchasecard.aspx" />
-    <Content Include="card\yourcards.aspx" />
     <Content Include="Contact.aspx" />
     <Content Include="Content\bootstrap-grid.css" />
     <Content Include="Content\bootstrap-grid.min.css" />
@@ -2502,7 +2500,6 @@
     <Content Include="ViewSwitcher.ascx" />
     <Content Include="Web.config" />
     <Content Include="Bundle.config" />
-    <Content Include="Site.Mobile.Master" />
   </ItemGroup>
   <ItemGroup>
     <Compile Include="App_Start\BundleConfig.cs" />
@@ -2541,20 +2538,6 @@
     </Compile>
     <Compile Include="card\mycardlist.aspx.designer.cs">
       <DependentUpon>mycardlist.aspx</DependentUpon>
-    </Compile>
-    <Compile Include="card\purchasecard.aspx.cs">
-      <DependentUpon>purchasecard.aspx</DependentUpon>
-      <SubType>ASPXCodeBehind</SubType>
-    </Compile>
-    <Compile Include="card\purchasecard.aspx.designer.cs">
-      <DependentUpon>purchasecard.aspx</DependentUpon>
-    </Compile>
-    <Compile Include="card\yourcards.aspx.cs">
-      <DependentUpon>yourcards.aspx</DependentUpon>
-      <SubType>ASPXCodeBehind</SubType>
-    </Compile>
-    <Compile Include="card\yourcards.aspx.designer.cs">
-      <DependentUpon>yourcards.aspx</DependentUpon>
     </Compile>
     <Compile Include="Contact.aspx.cs">
       <DependentUpon>Contact.aspx</DependentUpon>
@@ -2662,13 +2645,6 @@
     </Compile>
     <Compile Include="Site.Master.designer.cs">
       <DependentUpon>Site.Master</DependentUpon>
-    </Compile>
-    <Compile Include="Site.Mobile.Master.cs">
-      <DependentUpon>Site.Mobile.Master</DependentUpon>
-      <SubType>ASPXCodeBehind</SubType>
-    </Compile>
-    <Compile Include="Site.Mobile.Master.designer.cs">
-      <DependentUpon>Site.Mobile.Master</DependentUpon>
     </Compile>
     <Compile Include="txcard.aspx.cs">
       <DependentUpon>txcard.aspx</DependentUpon>
