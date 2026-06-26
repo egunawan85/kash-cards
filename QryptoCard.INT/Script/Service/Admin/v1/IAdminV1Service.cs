@@ -40,6 +40,13 @@ namespace QryptoCard.INT.Script.Service.Admin.v1
         [OperationContract]
         OutputModel banAdmin(string em, tblM_Admin x);
 
+        // Dev-only test-credit tool (SD-2): credits a user's wallet via the verified
+        // CreditDeposit path, walled by an environment hard-gate + root-admin-only +
+        // audit log. Primitive parameters (no new DataContract) keep the proxy edit
+        // minimal; the env gate inside the implementation is the load-bearing wall.
+        [OperationContract]
+        OutputModel devCreditWallet(string em, string userId, decimal amount, string reference);
+
 
 
 
