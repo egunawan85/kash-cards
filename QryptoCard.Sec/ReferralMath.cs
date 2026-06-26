@@ -18,6 +18,12 @@ namespace QryptoCard.Sec
         /// </summary>
         public static decimal Commission(double rate, double fee)
         {
+            // Reject non-finite inputs up front: NaN fails every comparison (so a bare `rate <= 0`
+            // would let it through) and Infinity would throw on the (decimal) cast. A corrupted rate
+            // must pay nothing, not blow up. (net462 has no double.IsFinite.)
+            if (double.IsNaN(rate) || double.IsInfinity(rate) ||
+                double.IsNaN(fee) || double.IsInfinity(fee)) return 0m;
+
             if (rate <= 0d || fee <= 0d) return 0m;
 
             decimal feeDec = (decimal)fee;

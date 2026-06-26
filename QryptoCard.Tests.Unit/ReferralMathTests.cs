@@ -44,5 +44,17 @@ namespace QryptoCard.Tests.Unit
         {
             Assert.Equal(0m, ReferralMath.Commission(rate, fee));
         }
+
+        [Theory]
+        // A corrupted/non-finite rate or fee must pay nothing, never throw on the (decimal) cast.
+        [InlineData(double.NaN, 2.50)]
+        [InlineData(double.PositiveInfinity, 2.50)]
+        [InlineData(double.NegativeInfinity, 2.50)]
+        [InlineData(0.1, double.NaN)]
+        [InlineData(0.1, double.PositiveInfinity)]
+        public void Commission_NonFiniteInputs_PayNothing(double rate, double fee)
+        {
+            Assert.Equal(0m, ReferralMath.Commission(rate, fee));
+        }
     }
 }
