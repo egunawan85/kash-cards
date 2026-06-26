@@ -2,8 +2,8 @@
 
 ## Status checklist (as of 2026-06-26)
 
-📝 **Draft — awaiting sign-off.** This is the design gate. Nothing is built and no
-worktree is opened until the decisions in §7 are signed off.
+✅ **Signed off 2026-06-26 — executing.** The §7 decisions are approved; slices are being
+built and shipped in parallel worktrees, coordinated live in Issue #51 (merge stays a human gate).
 
 **What this phase is.** Take what is already shipped and deployed to the dev shakeout
 box and polish it to a realistic, practical state: exercise every money/card flow
@@ -342,7 +342,7 @@ input.
 |---|---|---|
 | **SD-1** | INT/Callback WasabiCard URL fix | ✔ **Make both tiers read `WASABICARD_API_URL` and make it REQUIRED — no silent default** (fail fast at startup if unset). Rationale strengthened by SD-8: since the **same credentials work for both sandbox and prod**, the URL is the *only* switch between test and real money — a wrong silent default is therefore unacceptable. The deploy already injects `WASABICARD_API_URL` per pool, so requiring it is safe (a misconfigured box won't start rather than silently hit the wrong environment). Change in `QryptoCard.INT/Model/KeyModel.cs` (+ tighten the callback tier from `GetOptional(...,prod-default)` to `Require`). |
 | **SD-2** | Runegate deposit gap | ✔ **Build a dev-only test-credit tool, defended in depth.** Runegate *has* a sandbox but it doesn't carry USDT, so the real USDT-in path still can't be exercised. We credit a test wallet by driving the existing verified credit path (`WalletService.CreditDeposit` / a synthetic `PGCrypto` webhook). **Three walls:** (1) **environment hard-gate, fail-closed** — refuses unless `QRYPTO_ENVIRONMENT` is the dev/sandbox value (the load-bearing control: makes prod money-minting physically impossible even with full admin); (2) **root-admin only** (per owner ask); (3) **audit-logged**. *Never auth alone for a money-minting path — the env gate is the wall, admin-only is defense in depth.* No real PROD deposit. |
-| **SD-3** | Seeding | ✔ **Prefer sandbox-generated data over fabricated seed.** If the WasabiCard sandbox lets us actually generate card opens / top-ups / transactions that flow into our DB (U1–U3 dependent), we use *those* — more realistic than hand-seeded rows. We create only the **minimal test user accounts** needed to log in and click through; their wallet balances come from the SD-2 test-credit tool. Anonymized prod-data load stays deferred. |
+| **SD-3** | Seeding | ✔ **Prefer sandbox-generated data over fabricated seed.** If the WasabiCard sandbox lets us actually generate card opens / top-ups / transactions that flow into our DB (U1–U3 dependent), we use *those* — more realistic than hand-seeded rows. We create only the **minimal test user accounts** needed to log in and click through; their wallet balances come from the SD-2 test-credit tool. Anonymized prod-data load stays deferred. **Update (shipped, S7 / [#59](https://github.com/egunawan85/kash-cards/pull/59)):** a deterministic **synthetic dev-seed generator** now backs a realistic dataset (~25 users with wallets/ledger/cards/transactions), emitted as committed idempotent SQL and applied **dev-only** by `vm-seed.ps1`; the anonymized *prod-data* load stays deferred, with a documented fit-to-prod-aggregates hook left in the generator. |
 | **SD-4** | DD-7 card artwork | ✔ **In scope.** Harvest the card artwork from the **NewDesign template** (already on disk locally, untracked) — the owner likes that look. Vendor the images into `Content/media/cards/`, add the nullable art field (INT card-type → API `/v1/card/type` → `CardTypeModel`), render per-type with the static brand card as fallback. Needs a full `update` (touches `.cs`), not the `sync` fast lane. |
 | **SD-5** | Test strategy | ✔ **Manual click-through primary** + targeted automated checks for read/signing paths; mutating sandbox calls exercised manually first, automate only the stable ones. |
 | **SD-6** | Webhook driving | ✔ Confirm tunnel exposure if the sandbox delivers (U2); otherwise **synthesise signed webhooks on-box** (we hold the keys). Same harness backs the SD-2 test-credit tool. |
@@ -435,6 +435,17 @@ read it from env and **refuse to start if it's unset**, rather than silently def
 - [ ] Build INT + Callback + test projects; run suites; record pass/fail/skip
 - [ ] Deploy via `update`; confirm both tiers resolve to the **sandbox** URL on the dev box
 - [ ] PR (`worktree-09-url-required`); no red-team (config plumbing)
+
+**Slice 0.3 — Synthetic dev-seed dataset (SD-3 follow-on). — ✅ DONE ([#59](https://github.com/egunawan85/kash-cards/pull/59)).**
+Runegate can't fund a realistic dataset in the sandbox, so a deterministic generator fabricates
+~25 users with wallets, a chained ledger, cards and card transactions — emitted as committed
+idempotent SQL and applied **dev-only** by `vm-seed.ps1` (sqlcmd, no rebuild). One loginable demo
+cardholder (real inbox for the emailed OTP) + display-only filler; entirely fabricated, no prod data.
+- [x] `deploy/scripts/dev-seed/generate-dev-seed.ps1` — deterministic generator → committed SQL
+- [x] `deploy/sql/seeds/seed-dev-synthetic.sql` — idempotent, `5eed%`-namespaced, internally consistent (ledger `prev+amt=bal`)
+- [x] `vm-seed.ps1` applies it inside the `Env -eq 'dev'` gate; demo email/password spliced via `sqlcmd -v`
+- [x] `deploy.sh seed` reload lane (data-only; no build/IIS)
+- [x] Verified against the real dacpac on LocalDB (counts + ledger invariants + idempotency); light internal red-team (env-gate)
 
 ### Phase 1 — Security & money-path corrections (the two changes with teeth)
 
@@ -537,10 +548,10 @@ Live coordination board: **GitHub Issue
 state, never in a repo file. Claim = branch + draft PR; dependency gate = PR merge state;
 merge to `main` is a human gate.
 
-**Wave A — 4 parallel sessions, disjoint files, no inter-deps (start now):**
+**Wave A — parallel sessions, disjoint files, no inter-deps:**
 - **S1** SD-1 URL-Required · ~~**S2** SD-9/SD-11 webhook verify~~ **(✅ closed — already
   done; the webhook is verified fail-closed at the edge, see §3.4 correction / SD-9)** ·
-  **S3** SD-2 test-credit tool · **S4** SD-4 card art.
+  **S3** SD-2 test-credit tool · **S4** SD-4 card art · **S7** SD-3 synthetic dev-seed (✅ shipped).
 
 **Wave B — sequential / gated:**
 - **S5** wallet money-path verification — after **S3** merges (needs the test-credit tool).

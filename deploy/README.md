@@ -23,13 +23,15 @@ deploy/
     create-token-tables.sql        # bearer-token tables
     create-wallet-indexes.sql      # prepaid-balance uniqueness indexes (wallet/address)
     create-webhook-dedup-index.sql # per-event deposit-webhook dedup index
-    seeds/                         # idempotent SQL seeds: reference rows, bootstrap admin, smoke user
+    seeds/                         # idempotent SQL seeds: reference rows, bootstrap admin, smoke user,
+                                   #   + (dev-only) seed-dev-synthetic.sql display dataset
   scripts/
     load-env.ps1      # local dev: load .env + .vault into the current process env
     check-no-secrets.sh # secret-shape guard (CI)
     provision/        # azure-vm-provision.sh, vm-bootstrap.ps1
     deploy/           # deploy-iis.ps1, inject-secrets.ps1, vm-iis-ops.ps1, vm-fetch-source.ps1,
                       #   vm-install-sqlpackage.ps1, vm-publish-schema.ps1, vm-write-config.ps1, vm-seed.ps1
+    dev-seed/         # generate-dev-seed.ps1 (author-time: emits sql/seeds/seed-dev-synthetic.sql)
     perimeter/        # cloudflare-setup.sh, vm-install-cloudflared.ps1
     secrets/          # seed-kv-secrets.sh   (.env/.vault -> Key Vault; names '_' -> '-')
     verify/           # vm-verify.ps1        (NSG/loopback/callback/perimeter checks)
@@ -37,9 +39,19 @@ deploy/
 
 The dev seed is committed SQL (`deploy/sql/seeds/*.sql`) applied by `vm-seed.ps1` with
 `sqlcmd -v`: structural reference rows (no secrets), the bootstrap admin, and the smoke
-API user. The seeder reproduces the app's reversible `Secure` cipher (AES-128-CBC) in
-PowerShell, so password/secret ciphertext is computed at deploy time and never committed.
-`QryptoCard.Tests.Smoke` is the tiered over-the-wire E2E (see its README).
+API user. In **dev** it also applies a **synthetic display dataset** (`seed-dev-synthetic.sql`,
+produced by `scripts/dev-seed/generate-dev-seed.ps1`): ~25 fabricated users with wallets, a
+chained balance ledger, cards and card transactions so the cardholder UI and admin lists look
+realistic — idempotent, `5eed%`-namespaced, **env-gated to dev**, and entirely fake (no prod
+data), with one loginable demo cardholder whose real-inbox email (`SEED_DEMO_EMAIL`) receives the
+login OTP. The seeder reproduces the app's reversible `Secure` cipher (AES-128-CBC) in PowerShell,
+so password/secret ciphertext is computed at deploy time and never committed. Re-apply the seeds
+any time with **`deploy.sh seed`** (data-only; no rebuild). `QryptoCard.Tests.Smoke` is the
+tiered over-the-wire E2E (see its README).
+
+To refresh or extend the synthetic dataset, re-run the generator and commit its output:
+`pwsh -NoProfile -File deploy/scripts/dev-seed/generate-dev-seed.ps1` (deterministic — same
+input yields a byte-identical file).
 
 ## Running the dev shakeout
 
@@ -69,10 +81,11 @@ ENV=dev ./deploy/deploy.sh status              # pool/site state + port for ever
 ENV=dev ./deploy/deploy.sh logs dashboard      # tail the latest IIS log
 ENV=dev ./deploy/deploy.sh start               # start-guarantee: every pool ends Started
 ENV=dev ./deploy/deploy.sh sync dashboard      # front-end fast lane: push CHANGED static/markup from your LOCAL tree
+ENV=dev ./deploy/deploy.sh seed                 # re-apply the seed SQL (dev also loads the synthetic dataset); data-only, no rebuild
 ```
 
 Commands: `update [svc] [--with-schema]`, `build [svc]`, `sync <svc> [files...] [--recycle]`,
-`restart [svc]`, `start [svc]`, `stop [svc]`, `status`, `logs [svc]`, `schema`. A
+`restart [svc]`, `start [svc]`, `stop [svc]`, `status`, `logs [svc]`, `schema`, `seed`. A
 **service alias** is the app pool minus the `kash-` prefix: `api api-public
 api-admin api-callback api-scheduler apidocs dashboard dashboard-admin int
 int-callback int-scheduler scrapper`.
