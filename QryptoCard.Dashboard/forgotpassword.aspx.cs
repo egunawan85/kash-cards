@@ -42,7 +42,7 @@ namespace QryptoCard.Dashboard
             if (txtEmail.Value == "")
             {
                 divfailed.Visible = true;
-                lblFailed.Text = "Email and password cannot be empty";
+                lblFailed.Text = "Email cannot be empty";
                 return;
             }
             try

@@ -74,11 +74,23 @@ namespace QryptoCard.Dashboard.card
             }
             else
             {
-
+                // Load failed upstream — bind empty AND tell the user, rather than
+                // silently presenting an empty card list as if none existed.
                 rptCard.DataSource = null;
                 rptCard.DataBind();
+                ShowAlert(op.Message);
             }
 
+        }
+
+        // Surfaces a backend error message to the user. This screen has no styled
+        // alert modal yet (added when it's re-skinned), so fall back to a client alert.
+        void ShowAlert(string message)
+        {
+            if (string.IsNullOrEmpty(message))
+                message = "Unable to load cards. Please try again.";
+            string js = "alert('" + HttpUtility.JavaScriptStringEncode(message) + "');";
+            ClientScript.RegisterStartupScript(GetType(), "cardListError", js, true);
         }
     }
 }

@@ -14,10 +14,18 @@ namespace QryptoCard.Dashboard.Models
         // own backend; defaults to the on-box loopback tier (QryptoCard.API, port 8081)
         // which is how the dashboard reaches it server-side (the backend stays internal).
         public static string API_URL => SecretsConfig.GetOptional("API_URL", "http://127.0.0.1:8081");
-        public static string REFERRAL_URL = "https://dash-dev.kash.cards/register?id=";
-        public static string DETAIL_URL = "https://dash-dev.kash.cards/card/carddetail?id=";
-        public static string DETAIL_OWN_URL = "https://dash-dev.kash.cards/card/mycarddetail?id=";
-        public static string TXCARD_URL = "https://dash-dev.kash.cards/txcard?id=";
+
+        // Public-facing base for links SHARED OUTSIDE the app (the referral/register
+        // link a user hands to someone else) — must be an absolute URL with the host,
+        // so it can't be relative. Config-driven per deployment; defaults to dev.
+        public static string REFERRAL_URL =>
+            SecretsConfig.GetOptional("PUBLIC_BASE_URL", "https://dash-dev.kash.cards").TrimEnd('/') + "/register?id=";
+
+        // In-app navigation targets — root-relative so a tile click / post-buy redirect
+        // stays on whatever host is serving the page (previously hardcoded to dev).
+        public static string DETAIL_URL = "/card/carddetail?id=";
+        public static string DETAIL_OWN_URL = "/card/mycarddetail?id=";
+        public static string TXCARD_URL = "/txcard?id=";
 
         // --- Secrets / key material (env-only via SecretsConfig; never committed) ---
         public static string APPKEY => SecretsConfig.Require("APPKEY");

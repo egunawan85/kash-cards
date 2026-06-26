@@ -135,9 +135,12 @@ namespace QryptoCard.Dashboard.card
             }
             else
             {
-
-                //rptCard.DataSource = null;
-                //rptCard.DataBind();
+                // Load failed upstream — surface the reason in the existing alert
+                // modal instead of leaving the page showing "0 USD" with no feedback.
+                lblalert.InnerHtml = string.IsNullOrEmpty(op.Message)
+                    ? "Unable to load card details. Please try again."
+                    : op.Message;
+                ScriptManager.RegisterClientScriptBlock(this, GetType(), "Pop", "var isModalAlert = true", true);
             }
 
         }

@@ -45,7 +45,7 @@ namespace QryptoCard.Dashboard
         protected void btnLogin_ServerClick(object sender, EventArgs e)
         {
             divfailed.Visible = false;
-            if (txtEmail.Value == "" && txtPassword.Value == "")
+            if (txtEmail.Value == "" || txtPassword.Value == "")
             {
                 divfailed.Visible = true;
                 lblFailed.Text = "Email and password cannot be empty";
