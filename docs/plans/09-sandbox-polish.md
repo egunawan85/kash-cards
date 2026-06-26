@@ -515,17 +515,20 @@ prod. The environment gate is the security-critical surface.
 
 ### Phase 3 — Visual / UX polish
 
-**Slice 3.1 — DD-7 per-card-type artwork (SD-4).** *(touches `.cs` → full `update`)*
-- [ ] Add nullable art field: INT card-type service → API `/v1/card/type` → `CardTypeModel`
-- [ ] Vendor template card images into `Content/media/cards/`; map per card type
-- [ ] Render per-type art with the static brand card as fallback
-- [ ] Build + run suites; visual verify; light internal review (non-money)
-- [ ] PR (`worktree-09-card-art`)
+**Slice 3.1 — DD-7 per-card-type artwork (SD-4). — ✅ DONE ([#54](https://github.com/egunawan85/kash-cards/pull/54)).** *(touches `.cs` → full `update`)*
+- [x] Nullable `ArtURL` added to the card-type contract (API + Dashboard `CardTypeModel`), carried end-to-end as a forward-compat seam. The INT tier serves `tblM_Card_Type` (no art column — no schema migration this phase), so art is **derived in the Dashboard per card scheme**, honouring an upstream `ArtURL` when the service supplies one.
+- [x] Vendored on-brand **SVG** card artwork into `Content/media/cards/` (brand/visa/mastercard/discover), registered in the Dashboard `.csproj`. *(The NewDesign template dir is gitignored/empty in-tree, so these are drop-in-replaceable stand-ins — same filenames, no code change.)*
+- [x] Per-type art renders on the catalog tiles + the card-detail visual, with the static brand card (`card-bg.png`) as the fallback for an unmapped scheme; the card-detail derivation is postback-safe.
+- [x] Built Dashboard + API; `aspnet_compiler` markup precompile clean; unit suite **105/0/0**; light internal red-team caught + fixed a CSS-injection vector (a client-round-tripped `ArtURL` on the detail page → now scheme-only).
+- [x] PR ([#54](https://github.com/egunawan85/kash-cards/pull/54)) merged.
 
 **Slice 3.2 — UX defect sweep.** *(markup/CSS via `deploy.sh sync`; one focused PR per cohesive change)*
-- [ ] Walk every in-scope page vs. the NewDesign bar (chrome, wallet panel, lists, details, settings, history)
-- [ ] Log defects found during the Phase 2 click-through; fix small inline, batch larger
-- [ ] Confirm no dropped server-control wiring after any markup touch
+- [x] **Card-list error surfaces** ([#56](https://github.com/egunawan85/kash-cards/pull/56), merged): `cardlist` native `alert()` → inline NewDesign banner; `mycardlist` silent-failure-on-load-error → same banner (an upstream error no longer reads as an empty card list).
+- [x] **Card-detail re-skin** ([#58](https://github.com/egunawan85/kash-cards/pull/58), merged): `card/carddetail.aspx` brought from the old Metronic theme onto the NewDesign bar (header, panels, form fields, fee summary, cyan primary action, card visual with the per-type artwork). Markup-only; all 43 server controls + buy-flow wiring preserved (precompile-verified).
+- [x] Confirmed no dropped server-control wiring after each markup touch (verified via `aspnet_compiler` precompile).
+- [ ] Remaining: full page-walk of the other in-scope screens (`mycarddetail`, `txcard`/history, settings) vs. the NewDesign bar, plus any defects surfaced during the Phase 2 click-through (not yet run).
+
+> **Deploy/preview blocked (infra).** Visual verification of the re-skin on the dev box is pending a deploy. `update`/`build`/`sync` to `vm-kash-dev` currently fail at the source-fetch step because the incremental git-based fetch (PR #50) needs **git installed on the box**, which it is not (verified 2026-06-26 — the box still serves pre-Plan-09 markup). Fix: install git on `vm-kash-dev`, then `update dashboard` deploys merged `main` (incl. `CardArtUrl`) and the re-skin previews cleanly.
 
 ### Tracking matrix (fill during Phase 2)
 
