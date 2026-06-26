@@ -23,5 +23,10 @@ namespace QryptoCard.INT.Callback.Service.v1
 
         [OperationContract]
         void reTopup(string tid);
+
+        // Reconciliation sweep entry point (invoked by the scheduled trigger over the loopback
+        // endpoint). Returns the number of stranded orders handled this pass.
+        [OperationContract]
+        int ReconcilePendingProvider();
     }
 }

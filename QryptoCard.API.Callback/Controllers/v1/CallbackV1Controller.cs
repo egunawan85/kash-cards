@@ -28,6 +28,22 @@ namespace QryptoCard.API.Callback.Controllers.v1
             return ctx != null ? ctx.Request.Headers[name] : null;
         }
 
+        // Scheduled reconciliation-sweep trigger. Loopback-only by deployment (its Cloudflare route is
+        // internal) AND gated by a shared secret in X-Scheduler-Auth — fail-closed, constant-time
+        // compared, rejected before any work. The on-box scheduled task presents the secret each tick.
+        [Route("reconcile/pending")]
+        [HttpPost]
+        public HttpResponseMessage reconcilePending()
+        {
+            if (!SharedSecretAuth.IsAuthorized(Header("X-Scheduler-Auth"), "SCHEDULER_SHARED_SECRET"))
+                return Request.CreateResponse(HttpStatusCode.Unauthorized);
+
+            int resolved = sr.ReconcilePendingProvider();
+            HttpResponseMessage response = Request.CreateResponse(HttpStatusCode.OK);
+            response.Content = new StringContent("{\"resolved\":" + resolved + "}", Encoding.UTF8, "application/json");
+            return response;
+        }
+
         // WasabiCard signs the exact raw request body (SHA256withRSA), base64 in X-WSB-SIGNATURE,
         // verified with the platform public key. Verify BEFORE any parse or forward to the INT tier.
         [Route("wasabicard")]

@@ -196,59 +196,28 @@ namespace QryptoCard.INT.Callback.Service.v1
                     {
                         if (q.status == "success")
                         {
-                            var cr = db.tblT_Card.Where(p => p.ID == q.merchantOrderNo && (p.Status == PGStatusModel.InProgress || p.Status == PGStatusModel.PendingProvider)).FirstOrDefault();
-                            if (cr != null)
+                            // Money-critical finalization (bind card, provider cross-check, activate,
+                            // record card balance) is shared with the reconciliation sweep so it lives
+                            // in one place; the sensitive PAN/CVV enrichment below stays webhook-only.
+                            var fo = CardFinalizationService.FinalizeOpenSuccess(q.merchantOrderNo, q.cardNo);
+                            if (fo == CardFinalizationService.FinalizeOutcome.Confirmed)
                             {
-                                cr.CardNo = q.cardNo;
-                                cr.Status = PGStatusModel.OpenCard;
-                                db.SaveChanges();
-
-
-                                WCCardInfoRequestModel qq = new WCCardInfoRequestModel();
-                                qq.cardNo = cr.CardNo;
-                                qq.onlySimpleInfo = false;
-                                var res = WasabiCardService.getCardInfo(qq);
-                                // Post-verify cross-check (defense-in-depth): the order is already bound to
-                                // this card by the InProgress + merchantOrderNo row match above; here we
-                                // additionally require WasabiCard to recognise the card before we mark it
-                                // active. The credited balance is read from the provider's card-info response
-                                // below, never from the webhook body. On an unconfirmed result the card stays
-                                // in OpenCard for a later retry rather than crediting.
-                                if (res != null && res.data != null &&
-                                    WebhookCrossCheckEvaluator.EvaluateCardOpen(cr.CardNo, res.data.cardNo) == CrossCheckOutcome.Confirmed)
+                                var cr = db.tblT_Card.Where(p => p.ID == q.merchantOrderNo).FirstOrDefault();
+                                if (cr != null && !string.IsNullOrEmpty(cr.CardNo))
                                 {
-                                    cr.isActive = 1;
-                                    cr.Status = PGStatusModel.Success;
-
                                     var qqq = new WCCardInfoSensitiveRequestModel();
                                     qqq.cardNo = cr.CardNo;
                                     var ressen = WasabiCardService.getCardInfoSensitive(qqq);
-
-                                    cr.CardNumber = decryptSensitive(ressen.data.cardNumber);
-                                    cr.CVV = ressen.data.cvv;
-                                    cr.ValidPeriod = ressen.data.expireDate;
-                                    db.SaveChanges();
-
-                                    var ckb = db.tblT_Card_Balance.Where(p => p.CardNo == cr.CardNo).FirstOrDefault();
-                                    if (ckb != null)
+                                    if (ressen != null && ressen.data != null)
                                     {
-                                        ckb.Amount = Convert.ToDouble(res.data.balanceInfo.amount);
+                                        cr.CardNumber = decryptSensitive(ressen.data.cardNumber);
+                                        cr.CVV = ressen.data.cvv;
+                                        cr.ValidPeriod = ressen.data.expireDate;
                                         db.SaveChanges();
                                     }
-                                    else
-                                    {
-                                        tblT_Card_Balance cb = new tblT_Card_Balance();
-                                        cb.ID = cr.ID;
-                                        cb.CardNo = cr.CardNo;
-                                        cb.Currency = cr.Currency;
-                                        cb.Amount = Convert.ToDouble(res.data.balanceInfo.amount);
-                                        db.tblT_Card_Balance.Add(cb);
-                                        db.SaveChanges();
-                                    }
-
-                                    //do send email
                                 }
 
+                                //do send email
                             }
                         }
                         
@@ -261,8 +230,8 @@ namespace QryptoCard.INT.Callback.Service.v1
                         {
                             if (cr != null)
                             {
-                                cr.Status = PGStatusModel.Success;
-                                db.SaveChanges();
+                                // Shared money-critical finalization (also used by the reconciliation sweep).
+                                CardFinalizationService.FinalizeTopUpSuccess(q.merchantOrderNo);
 
                                 //do send email
                                 
@@ -476,6 +445,19 @@ namespace QryptoCard.INT.Callback.Service.v1
             return;
         }
 
+
+        public int ReconcilePendingProvider()
+        {
+            try
+            {
+                return ReconciliationService.ReconcilePendingProvider();
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Trace.TraceError("ReconcilePendingProvider failed: " + ex.GetType().FullName);
+                return 0;
+            }
+        }
 
         public void reTopup(string tid)
         {

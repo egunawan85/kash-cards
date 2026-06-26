@@ -443,8 +443,14 @@ namespace QryptoCard.API.Callback.CallbackV1Service {
         
         [System.ServiceModel.OperationContractAttribute(Action="http://tempuri.org/ICallbackV1Service/reTopup", ReplyAction="http://tempuri.org/ICallbackV1Service/reTopupResponse")]
         System.Threading.Tasks.Task reTopupAsync(string tid);
+
+        [System.ServiceModel.OperationContractAttribute(Action="http://tempuri.org/ICallbackV1Service/ReconcilePendingProvider", ReplyAction="http://tempuri.org/ICallbackV1Service/ReconcilePendingProviderResponse")]
+        int ReconcilePendingProvider();
+
+        [System.ServiceModel.OperationContractAttribute(Action="http://tempuri.org/ICallbackV1Service/ReconcilePendingProvider", ReplyAction="http://tempuri.org/ICallbackV1Service/ReconcilePendingProviderResponse")]
+        System.Threading.Tasks.Task<int> ReconcilePendingProviderAsync();
     }
-    
+
     [System.CodeDom.Compiler.GeneratedCodeAttribute("System.ServiceModel", "4.0.0.0")]
     public interface ICallbackV1ServiceChannel : QryptoCard.API.Callback.CallbackV1Service.ICallbackV1Service, System.ServiceModel.IClientChannel {
     }
@@ -507,9 +513,17 @@ namespace QryptoCard.API.Callback.CallbackV1Service {
         public void reTopup(string tid) {
             base.Channel.reTopup(tid);
         }
-        
+
         public System.Threading.Tasks.Task reTopupAsync(string tid) {
             return base.Channel.reTopupAsync(tid);
+        }
+
+        public int ReconcilePendingProvider() {
+            return base.Channel.ReconcilePendingProvider();
+        }
+
+        public System.Threading.Tasks.Task<int> ReconcilePendingProviderAsync() {
+            return base.Channel.ReconcilePendingProviderAsync();
         }
     }
 }
