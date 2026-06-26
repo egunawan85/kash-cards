@@ -13,7 +13,13 @@ namespace QryptoCard.INT.Model
         // --- Non-secret config ---
         public static string PGCRYPTO_API_URL = "https://api.runegate.co";
         public static string QRYPTO_PAY_URL = "https://pay-otc.qrypto.trade/pay?id=";
-        public static string WASABICARD_API_URL = "https://sandbox-api-merchant.wasabicard.com";
+        // The WasabiCard base URL is the ONLY switch between the test (sandbox) and real-money
+        // (prod) environment — the same credentials authenticate against both — so it must never
+        // carry a silent default that could quietly route real money to the wrong host. It is
+        // Required (no fallback): a box missing WASABICARD_API_URL faults rather than guessing.
+        // The deploy plumbing injects it per app-pool (inject-secrets.ps1, seeded from
+        // deploy/secrets/.env), so requiring it is safe.
+        public static string WASABICARD_API_URL => SecretsConfig.Require("WASABICARD_API_URL");
         public static string QRYPTO_URL_FORGOT_PASSWORD = "https://kash.cards/newpassword?id=";
         public static string QRYPTO_ENVIRONMENT => SecretsConfig.GetOptional("QRYPTO_ENVIRONMENT", "dev");
 
