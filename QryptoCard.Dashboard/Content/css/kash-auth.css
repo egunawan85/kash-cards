@@ -286,7 +286,7 @@ section { position: relative; }
 .checkbox { display: inline-flex; align-items: center; gap: .55em; color: var(--ink-2); cursor: pointer; user-select: none; }
 .checkbox input { appearance: none; width: 18px; height: 18px; border-radius: 6px; border: 1px solid var(--line-2); background: var(--surface); display: grid; place-items: center; transition: background .2s, border-color .2s; }
 .checkbox input:checked { background: var(--cyan); border-color: var(--cyan); }
-.checkbox input:checked::after { content: "✓"; color: var(--cyan-ink); font-size: 12px; font-weight: 700; }
+.checkbox input:checked::after { content: "\2713"; color: var(--cyan-ink); font-size: 12px; font-weight: 700; }
 .auth-divider { display: flex; align-items: center; gap: 14px; margin: 26px 0; color: var(--ink-faint); font-size: .82rem; }
 .auth-divider::before, .auth-divider::after { content:""; flex:1; height:1px; background: var(--line); }
 .social-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }

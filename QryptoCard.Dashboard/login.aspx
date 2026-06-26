@@ -30,7 +30,7 @@
                         <div class="qcard-inner">
                             <div class="qcard-top"><div class="qcard-brand">K<b>ash</b></div><span class="qcard-tag">Virtual</span></div>
                             <div><div class="qcard-chip"></div></div>
-                            <div class="qcard-num"><span>4929</span><span>••••</span><span>••••</span><span>8317</span></div>
+                            <div class="qcard-num"><span>4929</span><span>&#8226;&#8226;&#8226;&#8226;</span><span>&#8226;&#8226;&#8226;&#8226;</span><span>8317</span></div>
                             <div class="qcard-bottom">
                                 <div><div class="lab">Card holder</div><div class="val">SATOSHI N.</div></div>
                                 <div><div class="lab">Funded with</div><div class="val">USDT</div></div>
@@ -71,7 +71,7 @@
                     <div class="field">
                         <label for="txtPassword">Password</label>
                         <div class="ctrl">
-                            <input type="password" runat="server" id="txtPassword" placeholder="••••••••" name="password" autocomplete="current-password" />
+                            <input type="password" runat="server" id="txtPassword" placeholder="&#8226;&#8226;&#8226;&#8226;&#8226;&#8226;&#8226;&#8226;" name="password" autocomplete="current-password" />
                             <button type="button" class="toggle" data-toggle-pw aria-label="Show password"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7-10-7-10-7z" /><circle cx="12" cy="12" r="3" /></svg></button>
                         </div>
                     </div>

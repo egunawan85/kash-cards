@@ -30,7 +30,7 @@
                         <div class="qcard-inner">
                             <div class="qcard-top"><div class="qcard-brand">K<b>ash</b></div><span class="qcard-tag">Virtual</span></div>
                             <div><div class="qcard-chip"></div></div>
-                            <div class="qcard-num"><span>4929</span><span>••••</span><span>••••</span><span>8317</span></div>
+                            <div class="qcard-num"><span>4929</span><span>&#8226;&#8226;&#8226;&#8226;</span><span>&#8226;&#8226;&#8226;&#8226;</span><span>8317</span></div>
                             <div class="qcard-bottom">
                                 <div><div class="lab">Card holder</div><div class="val">YOUR NAME</div></div>
                                 <div><div class="lab">Funded with</div><div class="val">USDT</div></div>
