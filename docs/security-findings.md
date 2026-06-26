@@ -61,24 +61,44 @@ the dependency remains.
   with no public ingress (perimeter work), and treat any change that widens its exposure as a
   go/no-go gate. Consider extending the shared-secret behavior to the rest of the INT surface.
 
-## 4. OTP brute-force lockout — *Open · Blocker: db*
+## 4. OTP brute-force lockout — *Mitigated · Blocker: code (hardening)*
 
-Real OTP generation, bearer tokens, and 2FA shipped, but there is **no attempt-count lockout** on
-OTP verification, so codes can be brute-forced at request rate. Closing it needs an `Attempts`
-(and lock-until) column plus a verification handler that enforces a threshold and backoff.
+Shipped (PR #25). Every OTP verify handler (login / register / email-change / key-OTP, user and
+admin) now atomically increments an unmapped `FailureCount` on the OTP-session row and flips
+`isVerify = -1` at 5 failures, after which the existing `isVerify == 0` lookup treats the row as
+not-found — a brute-forcer is cut off after 5 guesses per session with no oracle. The atomic
+`UPDATE … CASE` is race-safe; the columns are unmapped so no EDMX regen was needed (DDL
+`create-otp-lockout-columns.sql`, applied before the code deploys).
 
-- **To close:** add the attempts column + lockout logic; pair with the rate-limiting handler in
-  item 5.
+Companion control — **password brute-force lockout** (also PR #25): 5 wrong passwords lock the
+account for 15 minutes via unmapped `FailureCount` + `LockoutEnd` on `tblM_User` / `tblM_Admin`. A
+locked account returns the same "password is incorrect" message as an ordinary wrong password, so
+the lock is not an enumeration oracle; an expired window auto-resets to prevent a perpetual-lock
+DoS; and the failure UPDATE is gated on not-currently-locked so a concurrent burst can't over-count
+past the lock. These sit *in front of* the OTP factor (an attacker must clear the password gate to
+mint an OTP session at all) and behind the rate limiting in item 5.
 
-## 5. Rate limiting + trusted-proxy client IP — *Open · Blocker: code/cloud*
+- **Remaining (hardening, defense-in-depth):** per-account OTP lockout — the current OTP lockout is
+  per-session; a fresh random code per session plus the rate limit already make brute-force
+  infeasible, but a per-account counter would harden it further. Soften lock-griefing (anyone who
+  knows an email can lock that account for 15 min) by notifying the user on lockout and/or allowing
+  an immediate unlock via a successful second factor.
 
-There is no rate-limiting ahead of the auth endpoints, and no resolver that trusts the real client
-IP only from the perimeter proxy's CIDRs (so a client IP can currently be spoofed in any header).
-Both are implementable in code but are paired with the perimeter rollout (the trusted CIDRs come
-from the deployed proxy).
+## 5. Rate limiting + trusted-proxy client IP — *Mitigated · Blocker: code (hardening)*
 
-- **To close:** add a rate-limiting handler and a `CF-Connecting-IP`-style resolver gated on
-  trusted proxy CIDRs.
+Shipped (PR #25). A per-IP sliding-window rate limiter fronts every `AuthV1Controller` action on
+the user and admin API tiers (login / verify / resend, register / verify / resend,
+forgot-password, refresh, revoke), returning HTTP 429 + `Retry-After` on breach. The client IP is
+resolved by a peer-gated resolver that trusts `CF-Connecting-IP` / `True-Client-IP` /
+`X-Forwarded-For` only when the request peer is the cloudflared loopback (including the IPv4-mapped
+`::ffff:127.0.0.1` form), so a direct-ingress client cannot spoof its bucket key. Limits are
+environment-tunable.
+
+- **Remaining (hardening):** add a `maxTrackedKeys` cap with fail-closed eviction to the in-process
+  bucket store (today unbounded — fine at single-instance scale, but a cap guards against a
+  direct-ingress IP-spray memory DoS), and emit a metric/alert on a high `"unknown"`-IP rate (a
+  broad peer-resolution failure would collapse every such request into one bucket and throttle the
+  whole tier). Swap to a shared store (Redis) if the API tiers ever scale horizontally.
 
 ## 6. Crypto-at-rest migration (passwords, API secrets, 2FA) — *Open · Blocker: db*
 
@@ -139,6 +159,32 @@ The read-only forensic queries were run against the live canonical database (`ka
 **Note:** the forensic script `tmp/forensics.sql` filters the suspect on `tblM_User.ID`, but in
 this schema the GUID lives in `UserID` (`ID` is a bigint) — use `UserID` when re-running.
 
+## 10. Auth response enumeration oracle — *Open · Blocker: code*
+
+Login and forgot-password return **distinct messages** for a non-existent email (`"Your email is
+not registered"`) versus a valid email with a wrong password, so an unauthenticated caller can
+enumerate which emails are registered (and, on login, active/banned status). This is **pre-existing**
+and was deliberately left unchanged by the lockout work (item 4): the password lockout uses the same
+message for locked and wrong-password so it adds no *new* oracle, but the underlying email oracle
+remains. Closing it is a user-facing contract change (the front-end currently shows the specific
+messages), which is why it was deferred rather than bundled.
+
+- **To close:** return a uniform "invalid email or password" (and a generic "if that email is
+  registered, you'll receive a reset link" for forgot-password) for every failure branch, with
+  matched timing; coordinate the front-end copy change.
+
+## 11. 2FA enrolled but never verified — *Open · Blocker: code*
+
+`tblM_User_2FA` stores an (encrypted) TOTP secret and `enable2FA` / `get2FA` let a user enroll, but
+there is **no `verify2FA` endpoint and no TOTP check on login** — the authenticator code is never
+actually validated. A user who turns on 2FA gets no second-factor protection, while believing they
+do (a false sense of security). Surfaced by the verification-surface review during the brute-force
+work.
+
+- **To close:** add TOTP verification (validate the time-based code against the stored secret) and
+  enforce it as a step in the login flow for users with active 2FA; rate-limit / lockout that step
+  like the OTP factor in item 4.
+
 ---
 
 ## Carried notes (low severity)
@@ -150,6 +196,11 @@ this schema the GUID lives in `UserID` (`ID` is a bigint) — use `UserID` when 
   ordering existed before the cross-check work and was confirmed out-of-scope by both red-team
   passes), but it is a real availability gap on a money path. To close: null-guard the balance row
   and bail before claiming the deposit, or wrap the claim + credit in a single transaction.
+- **`updatePassword` current-password check is not lockout-guarded.** The authenticated
+  change-password path verifies the current password but is not covered by the login password
+  lockout (item 4). Brute-force value is low (the caller is already an authenticated session for
+  that account), so it was left out of scope; guard it if/when current-password confirmation becomes
+  a higher-value target.
 - **Stale generated WCF client proxies.** Removing the unused server-side operations
   (`testEmail` / `testAPI` and the `SecurityService` crypto oracles) leaves the auto-generated
   client proxies (`Connected Services/*/Reference.cs`) still declaring those operations. They are
