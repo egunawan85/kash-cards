@@ -11,7 +11,8 @@ Master roll-up; each plan doc has its own detailed checklist. `[x]` = code subst
 - [ ] **Plan 2 — Redeploy & perimeter:** Stage A automation merged (#14); WAF build-out, BACPAC data-move, and CI pipeline still open; ⏳ prod cutover → see `02`
 - [x] **Plan 7 — Prepaid balance:** core + reconciliation sweep shipped (#16/#19/#26/#29/#31); shakeout items remain → see `07`
 - [x] **Plan 8 — Dashboard wiring & redesign:** **shipped to `main` 2026-06-26** (PRs #37–#49) — Phase 1 wiring fixes, full NewDesign sidebar adoption, Settings, and the wallet panel + buy/top-up → pay-from-balance money path (builds on Plan 7). Only open item: DD-7 per-card card art → see `08`
-- [ ] **Plan 9 — Pre-cutover sandbox polish:** exercise every money/card flow end-to-end front-to-back against the WasabiCard sandbox; fix the INT/Callback URL mismatch; close the Runegate deposit-side gap; visual/UX polish. 📝 draft, awaiting sign-off → see `09`
+- [x] **Plan 9 — Pre-cutover sandbox polish:** signed off and executed — `WASABICARD_API_URL` made Required in both tiers (#53), WasabiCard webhook signature verify (found already-verified → reconciled #57), dev-only env-gated test-credit tool (#52), per-card-type artwork (#54), UX sweep (#56) all merged; wallet money-path verification in progress. → see `09`
+- [x] **Plan 10 — Referral commission:** pay a referrer 10% of the platform **fee** on a referee's card buy/top-up, credited to their wallet balance (loss-proof cap, per-order dedup index wired into deploy + fail-closed runtime guard). Shipped to `main` (#64; deploy/docs follow-up #66); external red-team (Opus + Sonnet) clean. → see `10`
 
 **Stale "open" notes that are actually DONE (verified in code; corrected in the per-plan docs):**
 - [x] OTP-lockout + rate-limiter + IP-resolver (was P3·S5 "top residual")
@@ -60,6 +61,8 @@ Numbered in **implementation order** — rotation → deployment → hardening:
 - [`05-execution-runbook.md`](05-execution-runbook.md) — **operational plan of record**: dev shakeout → prod cutover (how the code-complete hardening goes live)
 - [`07-runegate-prepaid-balance.md`](07-runegate-prepaid-balance.md) — feature design: deposit to a Runegate address → reusable prepaid balance → spend on cards (money-path refactor + security review; 📝 draft, awaiting sign-off)
 - [`08-dashboard-wiring-and-redesign.md`](08-dashboard-wiring-and-redesign.md) — cardholder Dashboard FE↔BE review: wiring/correctness fixes (Phase 1) → full NewDesign adoption (Phase 2; **pre-login pages done via PR #35**, logged-in app + sidebar chrome + Settings remain) → wallet UI (Phase 3 = **Plan 7 T4.5**: the prepaid-balance engine is already shipped/red-teamed; this exposes its read methods to the Dashboard tier + builds the UI). Parallelizable in waves; Phase-3 decisions resolved by Plan 7. Backend feature gaps logged in [`../non_security_findings.md`](../non_security_findings.md) NS-4. 📝 draft, awaiting sign-off
+- [`09-sandbox-polish.md`](09-sandbox-polish.md) — pre-production-cutover polish of the WasabiCard sandbox: make `WASABICARD_API_URL` Required, webhook-signature monitor-mode (found already-verified → reconciled), a dev-only env-gated test-credit tool, per-card-type artwork, and a UX sweep. Largely shipped to `main`.
+- [`10-referral-commission.md`](10-referral-commission.md) — pay a referrer a share (default 10%) of the platform **fee** on a referee's card buy/top-up, credited to their wallet balance. Loss-proof (cap at the fee), per-order dedup index (deploy-wired + fail-closed guard), external-red-teamed. Shipped to `main`.
 
 ## Progress (live status)
 
