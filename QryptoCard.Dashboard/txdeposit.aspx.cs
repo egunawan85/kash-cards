@@ -111,7 +111,7 @@ namespace QryptoCard.Dashboard
                     badgepaid.Visible = false;
 
                     hfExpDate.Value = dt.DateExpired.ToString();
-                    lblTime.Text = CalculateTimeDifference(DateTime.Now, dt.DateExpired.Value);
+                    lblTime.Text = Common.CalculateTimeDifference(DateTime.Now, dt.DateExpired.Value);
                 }
                 else if (dt.Status == "completed" || dt.Status == "success")
                 {
@@ -182,40 +182,26 @@ namespace QryptoCard.Dashboard
             }
             else
             {
-                Response.Redirect("~/dashboard");
-                //rptCard.DataSource = null;
-                //rptCard.DataBind();
+                // Don't swallow the failure with a silent bounce to the dashboard —
+                // tell the user why the deposit couldn't be loaded.
+                ShowAlert(op.Message);
             }
         }
 
         void generateQRCode(string addr)
         {
-            QRCodeGenerator qrGenerator = new QRCodeGenerator();
-            QRCodeData qrCodeData = qrGenerator.CreateQrCode(addr, QRCodeGenerator.ECCLevel.Q);
-            QRCode qrCode = new QRCode(qrCodeData);
-            Bitmap qrCodeImage = qrCode.GetGraphic(20);
-
-            System.IO.MemoryStream ms = new MemoryStream();
-            qrCodeImage.Save(ms, ImageFormat.Jpeg);
-            byte[] byteImage = ms.ToArray();
-            var SigBase64 = Convert.ToBase64String(byteImage);
-            imgQR.ImageUrl = "data:image/jpeg;base64," + SigBase64;
+            imgQR.ImageUrl = Common.GenerateQrDataUri(addr);
             imgQR.Visible = true;
         }
 
-        public string CalculateTimeDifference(DateTime startDate, DateTime endDate)
+        // Surfaces a backend error message to the user. This screen has no styled
+        // alert modal yet (added when it's re-skinned), so fall back to a client alert.
+        void ShowAlert(string message)
         {
-            int days = 0; int hours = 0; int mins = 0; int secs = 0;
-            string final = string.Empty;
-            if (endDate > startDate)
-            {
-                //days = (endDate - startDate).Days;
-                hours = (endDate - startDate).Hours;
-                mins = (endDate - startDate).Minutes;
-                secs = (endDate - startDate).Seconds;
-                final = string.Format("{0} h : {1} m : {2} s", hours, mins, secs);
-            }
-            return final;
+            if (string.IsNullOrEmpty(message))
+                message = "Something went wrong. Please try again.";
+            string js = "alert('" + HttpUtility.JavaScriptStringEncode(message) + "');";
+            ClientScript.RegisterStartupScript(GetType(), "txDepositError", js, true);
         }
 
         protected void Timer1_Tick(object sender, EventArgs e)
@@ -224,10 +210,10 @@ namespace QryptoCard.Dashboard
         }
 
         void getCounter() {
-            if (hfStatus.Value == "creatred")
+            if (hfStatus.Value == "created")
             {
-                if (hfExpDate.Value != null | hfExpDate.Value != "")
-                    lblTime.Text = CalculateTimeDifference(DateTime.Now, Convert.ToDateTime(hfExpDate.Value));
+                if (!string.IsNullOrEmpty(hfExpDate.Value))
+                    lblTime.Text = Common.CalculateTimeDifference(DateTime.Now, Convert.ToDateTime(hfExpDate.Value));
             }
         }
     }

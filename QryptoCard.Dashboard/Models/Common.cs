@@ -1,5 +1,8 @@
-﻿using System;
+﻿using QRCoder;
+using System;
 using System.Collections.Generic;
+using System.Drawing;
+using System.Drawing.Imaging;
 using System.IO;
 using System.Linq;
 using System.Net;
@@ -50,6 +53,38 @@ namespace QryptoCard.Dashboard.Models
                 return true;
             else
                 return false;
+        }
+
+        // Shared by the deposit/card-transaction screens (txdeposit, txcard), which
+        // run identical expiry-countdown + QR rendering. Kept here so both screens —
+        // and the per-second Timer tick — use one implementation.
+        public static string CalculateTimeDifference(DateTime startDate, DateTime endDate)
+        {
+            string final = string.Empty;
+            if (endDate > startDate)
+            {
+                int hours = (endDate - startDate).Hours;
+                int mins = (endDate - startDate).Minutes;
+                int secs = (endDate - startDate).Seconds;
+                final = string.Format("{0} h : {1} m : {2} s", hours, mins, secs);
+            }
+            return final;
+        }
+
+        // Renders a deposit address as a base64 JPEG data URI for an <img> src.
+        public static string GenerateQrDataUri(string addr)
+        {
+            QRCodeGenerator qrGenerator = new QRCodeGenerator();
+            QRCodeData qrCodeData = qrGenerator.CreateQrCode(addr, QRCodeGenerator.ECCLevel.Q);
+            QRCode qrCode = new QRCode(qrCodeData);
+            Bitmap qrCodeImage = qrCode.GetGraphic(20);
+
+            using (MemoryStream ms = new MemoryStream())
+            {
+                qrCodeImage.Save(ms, ImageFormat.Jpeg);
+                byte[] byteImage = ms.ToArray();
+                return "data:image/jpeg;base64," + Convert.ToBase64String(byteImage);
+            }
         }
 
         public static string Base64Encode(string plainText)
