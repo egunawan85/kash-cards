@@ -80,6 +80,29 @@ namespace QryptoCard.API.Admin.Controllers.v1
             return op;
         }
 
+        // Dev-only test-credit tool (SD-2). The acting admin identity comes from the
+        // bearer token (getEmail()), never the body. All three walls — environment
+        // hard-gate (fail-closed), root-admin-only, and audit-logging — are enforced
+        // in the INT-tier service, the authoritative money boundary that a direct WCF
+        // caller cannot bypass.
+        [Route("dev/credit")]
+        [HttpPost]
+        public OutputModel devCreditWallet(DevCreditModel x)
+        {
+            try
+            {
+                op = sr.devCreditWallet(getEmail(), x.UserId, x.Amount, x.Reference);
+            }
+            catch (Exception ex)
+            {
+                op.Status = "error";
+                op.Message = ex.Message;
+                op.Data = null;
+            }
+
+            return op;
+        }
+
         [Route("ban")]
         [HttpDelete]
         public OutputModel banAdmin(tblM_Admin x)

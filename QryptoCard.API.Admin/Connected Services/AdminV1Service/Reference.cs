@@ -2237,7 +2237,13 @@ namespace QryptoCard.API.Admin.AdminV1Service {
         
         [System.ServiceModel.OperationContractAttribute(Action="http://tempuri.org/IAdminV1Service/banAdmin", ReplyAction="http://tempuri.org/IAdminV1Service/banAdminResponse")]
         System.Threading.Tasks.Task<QryptoCard.API.Admin.AdminV1Service.OutputModel> banAdminAsync(string em, QryptoCard.API.Admin.AdminV1Service.tblM_Admin x);
-        
+
+        [System.ServiceModel.OperationContractAttribute(Action="http://tempuri.org/IAdminV1Service/devCreditWallet", ReplyAction="http://tempuri.org/IAdminV1Service/devCreditWalletResponse")]
+        QryptoCard.API.Admin.AdminV1Service.OutputModel devCreditWallet(string em, string userId, decimal amount, string reference);
+
+        [System.ServiceModel.OperationContractAttribute(Action="http://tempuri.org/IAdminV1Service/devCreditWallet", ReplyAction="http://tempuri.org/IAdminV1Service/devCreditWalletResponse")]
+        System.Threading.Tasks.Task<QryptoCard.API.Admin.AdminV1Service.OutputModel> devCreditWalletAsync(string em, string userId, decimal amount, string reference);
+
         [System.ServiceModel.OperationContractAttribute(Action="http://tempuri.org/IAdminV1Service/testEmail", ReplyAction="http://tempuri.org/IAdminV1Service/testEmailResponse")]
         void testEmail();
         
@@ -2405,7 +2411,15 @@ namespace QryptoCard.API.Admin.AdminV1Service {
         public System.Threading.Tasks.Task<QryptoCard.API.Admin.AdminV1Service.OutputModel> banAdminAsync(string em, QryptoCard.API.Admin.AdminV1Service.tblM_Admin x) {
             return base.Channel.banAdminAsync(em, x);
         }
-        
+
+        public QryptoCard.API.Admin.AdminV1Service.OutputModel devCreditWallet(string em, string userId, decimal amount, string reference) {
+            return base.Channel.devCreditWallet(em, userId, amount, reference);
+        }
+
+        public System.Threading.Tasks.Task<QryptoCard.API.Admin.AdminV1Service.OutputModel> devCreditWalletAsync(string em, string userId, decimal amount, string reference) {
+            return base.Channel.devCreditWalletAsync(em, userId, amount, reference);
+        }
+
         public void testEmail() {
             base.Channel.testEmail();
         }
