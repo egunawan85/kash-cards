@@ -22,6 +22,7 @@
 # Usage:
 #   ENV=dev ./deploy/deploy.sh update [svc] [--with-schema]
 #   ENV=dev ./deploy/deploy.sh build  [svc]
+#   ENV=dev ./deploy/deploy.sh sync   <svc> [files...] [--recycle]
 #   ENV=dev ./deploy/deploy.sh restart [svc]
 #   ENV=dev ./deploy/deploy.sh start  [svc]
 #   ENV=dev ./deploy/deploy.sh stop   [svc]
@@ -38,6 +39,16 @@
 #   build [svc]    Build + publish from the source already ON the box (no fetch,
 #                  no secret inject). Fast iterate; assumes a prior `update`
 #                  populated config + secrets on the box.
+#   sync <svc>     Front-end fast lane: copy CHANGED static assets + ASP.NET
+#                  markup (.aspx/.ascx/.master/.css/.js/images...) from your LOCAL
+#                  working tree straight into the live site root on the box. No
+#                  GitHub push, no fetch, no NuGet restore, no MSBuild, no secret
+#                  inject -- seconds, not minutes. Changed files are auto-detected
+#                  (git diff vs origin/<branch> + untracked) under the tier's
+#                  project, or list them explicitly. REFUSES to sync anything that
+#                  needs a compile (.cs/.csproj/.resx/packages.config) or patched
+#                  config (*.config) -- use `build`/`update` for those. Add
+#                  --recycle to also recycle the pool (rarely needed).
 #   restart [svc]  Recycle running pool(s); start any that are stopped (never
 #                  no-ops a down tier). re-reads the existing per-pool env.
 #   start [svc]    Start pool(s) and VERIFY each reaches Started (the guarantee).
@@ -58,8 +69,15 @@ export MSYS_NO_PATHCONV=1
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 DEPLOY_SCRIPTS="$SCRIPT_DIR/scripts/deploy"
+REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"   # repo root (deploy/ lives one level down)
+SITES_JSON="$SCRIPT_DIR/config/sites.json"
 ENV="${ENV:-dev}"
 CFG="$SCRIPT_DIR/config/.env.provision.${ENV}"
+
+# Max base64 payload for `sync` (run-command caps the inline request). A handful
+# of edited static/markup files gzip to a few KB; this guards against someone
+# syncing a 100 MB Content/ tree. Override with SYNC_MAX_B64 if ever needed.
+SYNC_MAX_B64="${SYNC_MAX_B64:-200000}"   # ~200 KB of base64
 
 log()   { printf '\n=== %s ===\n' "$*"; }
 die()   { printf '[xx] %s\n' "$*" >&2; exit 1; }
@@ -72,6 +90,10 @@ Usage: ENV=dev ./deploy/deploy.sh <command> [svc] [--with-schema]
                  Add --with-schema to re-publish the dacpac first (for migrations).
   build [svc]    Build + publish from the source already on the box (no fetch, no
                  secret inject). Fast iterate; assumes a prior `update`.
+  sync <svc>     Front-end fast lane: copy CHANGED static assets + ASP.NET markup
+                 from your LOCAL tree into the live site root -- no push, no build,
+                 seconds not minutes. Auto-detects changed files (or list them).
+                 Refuses compile-triggers (.cs/.csproj/.config). --recycle optional.
   restart [svc]  Recycle running pool(s); start any that are stopped.
   start [svc]    Start pool(s) and verify each reaches Started (the guarantee).
   stop [svc]     Stop pool(s) + site(s).
@@ -121,22 +143,71 @@ push_config() {
   run_on_vm "$DEPLOY_SCRIPTS/vm-write-config.ps1" "ConfigB64=$cfg_b64 Env=$ENV"
 }
 
+# -- sync helpers ------------------------------------------------------------
+# Resolve a tier selector (alias / pool / project) to its project name. Each site
+# in sites.json is a single JSON line, so a line-grep + sed extract is enough --
+# avoids a jq dependency on the devbox (matches the no-jq style of this script).
+resolve_project() {
+  local tier="$1" line
+  [[ -f "$SITES_JSON" ]] || die "missing $SITES_JSON"
+  line=$(grep -E "\"appPool\"[[:space:]]*:[[:space:]]*\"kash-${tier}\"" "$SITES_JSON" | head -1 || true)
+  [[ -z "$line" ]] && line=$(grep -E "\"appPool\"[[:space:]]*:[[:space:]]*\"${tier}\"" "$SITES_JSON" | head -1 || true)
+  [[ -z "$line" ]] && line=$(grep -E "\"project\"[[:space:]]*:[[:space:]]*\"${tier}\"" "$SITES_JSON" | head -1 || true)
+  [[ -z "$line" ]] && return 1
+  printf '%s' "$line" | sed -n 's/.*"project"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p'
+}
+
+valid_aliases() {
+  printf 'valid tiers: '
+  grep -oE '"appPool"[[:space:]]*:[[:space:]]*"kash-[^"]+"' "$SITES_JSON" \
+    | sed -E 's/.*"kash-([^"]+)"/\1/' | sort | paste -sd' ' - || true
+}
+
+# Run git against the repo root. We can't use `git -C "$REPO_ROOT"`: this script
+# exports MSYS_NO_PATHCONV=1 (so az gets un-rewritten resource IDs), which also
+# stops MSYS from converting the '/c/...'-form REPO_ROOT into the 'C:\...' that
+# native git.exe needs -- `git -C /c/...` then fails with "cannot change to".
+# `cd` is a shell builtin and handles the MSYS path fine, so subshell-cd instead.
+git_repo() { ( cd "$REPO_ROOT" && git "$@" ); }
+
+# Base ref for `sync` change detection: prefer the remote tracking branch (so
+# committed-but-unpushed edits show too), else fall back to local HEAD.
+sync_base_ref() {
+  if git_repo rev-parse --verify --quiet "origin/${REPO_BRANCH}" >/dev/null 2>&1; then
+    printf 'origin/%s' "$REPO_BRANCH"
+  else
+    printf 'HEAD'
+  fi
+}
+
 # -- Parse args --------------------------------------------------------------
 CMD="${1:-}"; [[ -n "$CMD" ]] || usage 2
 shift || true
 
 SVC=""
 WITH_SCHEMA=0
+RECYCLE=0
+SYNC_FILES=()
 for arg in "$@"; do
   case "$arg" in
     --with-schema) WITH_SCHEMA=1 ;;
+    --recycle)     RECYCLE=1 ;;
     -h|--help)     usage 0 ;;
     -*)            die "unknown option: $arg" ;;
-    *)             [[ -z "$SVC" ]] || die "unexpected extra argument: $arg"; SVC="$arg" ;;
+    *)
+      if [[ -z "$SVC" ]]; then
+        SVC="$arg"               # first positional is always the tier
+      elif [[ "$CMD" == "sync" ]]; then
+        SYNC_FILES+=("$arg")     # sync alone takes an explicit file list after the tier
+      else
+        die "unexpected extra argument: $arg"
+      fi
+      ;;
   esac
 done
 
 [[ "$WITH_SCHEMA" -eq 1 && "$CMD" != "update" ]] && die "--with-schema is only valid with 'update'"
+[[ "$RECYCLE" -eq 1 && "$CMD" != "sync" ]] && die "--recycle is only valid with 'sync'"
 
 # -Service param fragment for the run-command parameter list (empty when no svc).
 svc_param() { [[ -n "$SVC" ]] && printf 'Service=%s' "$SVC"; }
@@ -162,6 +233,88 @@ case "$CMD" in
   build)
     # Build + publish from the source already on the box. No fetch, no secrets.
     run_on_vm "$DEPLOY_SCRIPTS/deploy-iis.ps1" "$(svc_param)"
+    ;;
+
+  sync)
+    # Front-end fast lane: ship CHANGED static/markup files from the LOCAL tree
+    # straight into the live site root -- no GitHub push, no fetch, no restore,
+    # no MSBuild, no secret inject. Seconds, not minutes.
+    [[ -n "$SVC" ]] || die "sync requires a tier, e.g. 'sync dashboard' ($(valid_aliases))"
+    proj="$(resolve_project "$SVC")" || true
+    [[ -n "$proj" ]] || die "unknown tier '$SVC' -- $(valid_aliases)"
+    command -v tar >/dev/null 2>&1 || die "tar not found on this devbox -- needed to pack the sync payload"
+
+    # File set: explicit args win; otherwise auto-detect changed files under the
+    # tier's project (working-tree diff vs the remote branch + untracked).
+    files=()
+    if [[ "${#SYNC_FILES[@]}" -gt 0 ]]; then
+      for f in "${SYNC_FILES[@]}"; do
+        if   [[ -e "$REPO_ROOT/$f" ]];        then files+=("$f")
+        elif [[ -e "$REPO_ROOT/$proj/$f" ]];  then files+=("$proj/$f")
+        else die "no such file: $f (looked under $REPO_ROOT and $REPO_ROOT/$proj)"
+        fi
+      done
+    else
+      base="$(sync_base_ref)"
+      log "sync: detecting changed files in $proj/ vs $base"
+      # core.quotePath=false so unicode-named assets come back as real paths
+      # (else git C-quotes them and the on-disk existence check would miss them).
+      mapfile -t files < <(
+        { git_repo -c core.quotePath=false diff --name-only "$base" -- "$proj/";
+          git_repo -c core.quotePath=false ls-files --others --exclude-standard -- "$proj/"; } \
+        | sort -u
+      )
+    fi
+
+    # Partition: compile-triggers BLOCK the whole sync (the fast lane must never
+    # ship a stale binary or clobber a patched config); recognized static/markup
+    # is sent; deletions and unknown types are reported and skipped.
+    block=(); send=(); gone=(); skip=()
+    for f in "${files[@]}"; do
+      [[ -n "$f" ]] || continue
+      case "$f" in "$proj"/*) : ;; *) skip+=("$f [outside $proj/]"); continue ;; esac
+      [[ "/$f/" == *"/../"* ]] && { skip+=("$f [path traversal]"); continue; }
+      fl="${f,,}"   # match extensions case-insensitively (e.g. Site.Master, .CS)
+      if [[ "$fl" =~ \.(cs|csproj|resx|config)$ || "$fl" =~ (^|/)packages\.config$ || "$fl" =~ (^|/)(bin|obj)/ ]]; then
+        block+=("$f")
+      elif [[ "$fl" =~ \.(aspx|ascx|master|cshtml|html?|css|js|map|less|scss|json|png|jpe?g|gif|svg|ico|webp|avif|woff2?|ttf|eot|mp4)$ ]]; then
+        if [[ -e "$REPO_ROOT/$f" ]]; then send+=("$f"); else gone+=("$f"); fi
+      else
+        skip+=("$f [not a syncable static/markup type]")
+      fi
+    done
+
+    [[ "${#skip[@]}" -gt 0 ]] && for s in "${skip[@]}"; do printf '  [skip] %s\n' "$s"; done
+    if [[ "${#gone[@]}" -gt 0 ]]; then
+      printf '[!!] %s file(s) were DELETED locally; sync only copies, it cannot remove them on the box:\n' "${#gone[@]}"
+      for g in "${gone[@]}"; do printf '       %s\n' "$g"; done
+      printf '[!!] run "build %s" / "update %s" if a deletion must take effect.\n' "$SVC" "$SVC"
+    fi
+    if [[ "${#block[@]}" -gt 0 ]]; then
+      printf '[xx] sync refused: %s changed file(s) need a COMPILE (or are patched config):\n' "${#block[@]}" >&2
+      for b in "${block[@]}"; do printf '       %s\n' "$b" >&2; done
+      die "use 'build $SVC' or 'update $SVC' -- the fast lane only ships static assets + markup"
+    fi
+    [[ "${#send[@]}" -gt 0 ]] || { log "sync: nothing to send for $proj (no changed static/markup files)"; exit 0; }
+
+    # Pack relative to the project dir so entries land directly under the site
+    # root (proj/Content/x.css -> Content/x.css), gzip + base64, size-check.
+    rels=(); for f in "${send[@]}"; do rels+=("${f#$proj/}"); done
+    printf '\n=== sync %s -> %s (%s file(s)) ===\n' "$SVC" "$proj" "${#send[@]}"
+    for f in "${send[@]}"; do printf '  %s\n' "$f"; done
+    # --force-local: never treat a 'C:'-style path as a remote host (git-bash tar).
+    # --dereference: pack a symlink's target CONTENT as a regular file, so the
+    # payload can never carry a symlink that would resolve outside the site root
+    # when extracted on the box.
+    b64=$(tar --force-local --dereference -czf - -C "$REPO_ROOT/$proj" "${rels[@]}" | base64 -w0)
+    n=${#b64}
+    if (( n > SYNC_MAX_B64 )); then
+      die "sync payload too large (${n} B base64 > ${SYNC_MAX_B64} B). Too many/large files for the fast lane -- run 'build $SVC' / 'update $SVC', or raise SYNC_MAX_B64."
+    fi
+
+    run_on_vm "$DEPLOY_SCRIPTS/vm-sync-content.ps1" \
+      "PayloadB64=$b64 Service=$SVC Project=$proj$([[ "$RECYCLE" -eq 1 ]] && printf ' Recycle=true')"
+    log "sync complete: ${#send[@]} file(s) -> $proj$([[ "$RECYCLE" -eq 1 ]] && printf ' (recycled)')"
     ;;
 
   restart|start|stop)

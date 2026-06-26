@@ -68,13 +68,45 @@ ENV=dev ./deploy/deploy.sh restart api-callback # recycle one pool (start it if 
 ENV=dev ./deploy/deploy.sh status              # pool/site state + port for every tier
 ENV=dev ./deploy/deploy.sh logs dashboard      # tail the latest IIS log
 ENV=dev ./deploy/deploy.sh start               # start-guarantee: every pool ends Started
+ENV=dev ./deploy/deploy.sh sync dashboard      # front-end fast lane: push CHANGED static/markup from your LOCAL tree
 ```
 
-Commands: `update [svc] [--with-schema]`, `build [svc]`, `restart [svc]`,
-`start [svc]`, `stop [svc]`, `status`, `logs [svc]`, `schema`. A **service alias**
-is the app pool minus the `kash-` prefix: `api api-public api-admin api-callback
-api-scheduler apidocs dashboard dashboard-admin int int-callback int-scheduler
-scrapper`.
+Commands: `update [svc] [--with-schema]`, `build [svc]`, `sync <svc> [files...] [--recycle]`,
+`restart [svc]`, `start [svc]`, `stop [svc]`, `status`, `logs [svc]`, `schema`. A
+**service alias** is the app pool minus the `kash-` prefix: `api api-public
+api-admin api-callback api-scheduler apidocs dashboard dashboard-admin int
+int-callback int-scheduler scrapper`.
+
+### Front-end fast lane (`sync`)
+
+`update` is correct but heavy for a CSS/markup tweak: it pushes through GitHub,
+re-fetches the whole repo zipball, restores NuGet, and does a clean Release
+rebuild — minutes for a change that needs no compile. **`sync`** is the fast lane
+for front-end iteration on the Web Forms tiers (`dashboard`, `dashboard-admin`):
+
+```bash
+ENV=dev ./deploy/deploy.sh sync dashboard                 # auto-detect changed files under the tier
+ENV=dev ./deploy/deploy.sh sync dashboard Content/app.css # or name them explicitly
+ENV=dev ./deploy/deploy.sh sync dashboard --recycle       # also recycle the pool (rarely needed)
+```
+
+It copies **changed static assets + ASP.NET markup** (`.aspx/.ascx/.master/.css/
+.js`/images/…) straight from your **local working tree** into the live site root
+(`C:\inetpub\kash-cards\<project>`) — no GitHub push, no fetch, no restore, no
+MSBuild, no secret inject. IIS serves static content immediately and recompiles
+changed markup on the next request, so a tweak lands in seconds.
+
+- **Auto-detect** = files under the tier's project that differ from
+  `origin/<branch>` plus untracked ones (so committed-but-unpushed edits ship
+  too). The exact file list is printed before anything is sent — eyeball it.
+- **Refuses anything that needs a compile.** If a `.cs` / `.csproj` / `.resx` /
+  `packages.config` (or any `*.config`, which on the box is patched) is in the
+  change set, `sync` stops and tells you to run `build`/`update` — the fast lane
+  can never silently ship a stale binary or clobber a patched `Web.config`.
+- **Deletions aren't propagated** (sync only copies); it warns and points you to
+  `build`/`update` if a local delete must take effect.
+- Bounded to a small payload (run-command limit); a large change set fails with a
+  message to use `build` instead. Override the cap with `SYNC_MAX_B64` if needed.
 
 - **`update`** is app-only by default — it never touches the DB. Pass
   `--with-schema` (or run `deploy.sh schema`) to re-publish the schema-only dacpac
@@ -86,7 +118,9 @@ scrapper`.
 
 The on-box halves live in `scripts/deploy/`: `deploy-iis.ps1` and
 `inject-secrets.ps1` take an optional `-Service <alias>`; `vm-iis-ops.ps1` owns
-the lifecycle verbs (start/stop/restart/status/logs + the start-guarantee).
+the lifecycle verbs (start/stop/restart/status/logs + the start-guarantee);
+`vm-sync-content.ps1` is the on-box half of `sync` (validate the payload, extract
+into the site root, optional recycle).
 
 ## Scheduled jobs
 
