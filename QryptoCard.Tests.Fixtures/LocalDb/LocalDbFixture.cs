@@ -115,6 +115,7 @@ namespace QryptoCard.Tests.Fixtures.LocalDb
             ApplyTokenSchema();
             ApplyWalletIndexes();
             ApplyWebhookDedupIndex();
+            ApplyReferralCommissionDedupIndex();
             SeedData();
         }
 
@@ -250,6 +251,11 @@ namespace QryptoCard.Tests.Fixtures.LocalDb
 
         static string ResolveWebhookDedupIndexPath()
             => ResolveRepoFilePath("deploy", "sql", "create-webhook-dedup-index.sql");
+
+        // The referral-commission dedup unique index — the replay defence the referral payout
+        // relies on (filtered to Type='ReferralCommission', sibling to the PGCrypto index).
+        void ApplyReferralCommissionDedupIndex()
+            => RunScriptFile(ResolveRepoFilePath("deploy", "sql", "create-referral-commission-dedup-index.sql"));
 
         void RunScriptFile(string path)
         {

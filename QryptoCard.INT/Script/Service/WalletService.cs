@@ -38,6 +38,7 @@ namespace QryptoCard.INT.Script.Service
         public const string TypeCardOpenReversal = "Card Open Reversal";
         public const string TypeCardTopupReversal = "Card Topup Reversal";
         public const string TypeDepositRefund = "Deposit Refund";
+        public const string TypeReferralCommission = "Referral Commission";
 
         /// <summary>Outcome of an atomic balance mutation.</summary>
         public class BalanceMutationResult
@@ -210,6 +211,37 @@ namespace QryptoCard.INT.Script.Service
                 noRowReason: "wallet_missing",
                 dedupType: "PGCrypto",
                 dedupKey: dedupKey,
+                dedupRequest: dedupRequest);
+        }
+
+        /// <summary>
+        /// Credit a referrer's wallet with the commission earned on a referee's finalized card
+        /// buy/top-up, deduped per referee order in the SAME transaction as the credit (dedup row
+        /// tblH_Partner_Webhook_ID, Type='ReferralCommission', TXID=&lt;referee order id&gt;). A re-run
+        /// (redelivered webhook, or the reconciliation sweep racing the webhook) hits the constraint
+        /// and rolls back as "duplicate_event" — no double payout. The Type is namespaced so a referee
+        /// order id can never collide with a PGCrypto deposit TXID. Caller computes
+        /// amount = referrer-rate * referee-fee (capped at the fee) and ensures the referrer's wallet
+        /// exists. Kept in parity with the Callback-tier copy, which is where the finalize invokes it.
+        /// </summary>
+        public static BalanceMutationResult CreditReferralCommission(
+            string referrerUserId, decimal amount, string refereeOrderId, string dedupRequest)
+        {
+            if (amount <= 0m) return BalanceMutationResult.Fail("non_positive_commission");
+            return Mutate(
+                userId: referrerUserId,
+                balanceDelta: amount,
+                requireMinBalance: false,
+                minBalance: 0m,
+                ledgerAmount: amount,
+                ledgerCommission: 0m,
+                ledgerCommissionPct: 0d,
+                type: TypeReferralCommission,
+                transactionId: refereeOrderId,
+                status: null,
+                noRowReason: "wallet_missing",
+                dedupType: "ReferralCommission",
+                dedupKey: refereeOrderId,
                 dedupRequest: dedupRequest);
         }
 
