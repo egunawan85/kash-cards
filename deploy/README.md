@@ -80,9 +80,9 @@ int-callback int-scheduler scrapper`.
 ### Front-end fast lane (`sync`)
 
 `update` is correct but heavy for a CSS/markup tweak: it pushes through GitHub,
-re-fetches the whole repo zipball, restores NuGet, and does a clean Release
-rebuild — minutes for a change that needs no compile. **`sync`** is the fast lane
-for front-end iteration on the Web Forms tiers (`dashboard`, `dashboard-admin`):
+restores NuGet, and does a clean Release rebuild — minutes for a change that needs
+no compile. **`sync`** is the fast lane for front-end iteration on the Web Forms
+tiers (`dashboard`, `dashboard-admin`):
 
 ```bash
 ENV=dev ./deploy/deploy.sh sync dashboard                 # auto-detect changed files under the tier
@@ -121,6 +121,18 @@ The on-box halves live in `scripts/deploy/`: `deploy-iis.ps1` and
 the lifecycle verbs (start/stop/restart/status/logs + the start-guarantee);
 `vm-sync-content.ps1` is the on-box half of `sync` (validate the payload, extract
 into the site root, optional recycle).
+
+`update`'s source step (`vm-fetch-source.ps1`) keeps a **persistent git clone** at
+`C:\src\kash-cards` and fetches **incrementally**: first run clones, every run
+after is `git fetch` + `git reset --hard origin/<branch>` + `git clean -ffd` —
+only the changed objects move, in seconds. `-ffd` (not `-ffdx`) deliberately keeps
+gitignored content, so the `packages/` NuGet cache and the on-box `config/` survive
+a fetch (no needless re-restore); `obj/`/`bin/` are cleaned per-project by
+`deploy-iis.ps1`. The repo token comes from Key Vault (`REPO-TOKEN`) and is handed
+to git via an environment-injected `http.extraheader` — never written to disk, the
+remote URL, or argv. (The **first** `update` after this change re-clones from
+scratch, since the box still holds the old non-git source tree; subsequent ones are
+incremental.) git must be installed on the VM.
 
 ## Scheduled jobs
 
