@@ -9,7 +9,7 @@
     <style>
         .cards-intro { color: var(--ink-3); font-size: .95rem; line-height: 1.55; }
         .cards-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 18px; margin-top: 20px; }
-        .card-tile { cursor: pointer; border-radius: 18px; padding: 22px; color: #eaf6f8; background: linear-gradient(135deg, #0c121a, #16222e 55%, #0b2b32); border: 1px solid var(--line-2); transition: border-color .2s, transform .2s; }
+        .card-tile { cursor: pointer; border-radius: 18px; padding: 22px; color: #eaf6f8; background: linear-gradient(135deg, #0c121a, #16222e 55%, #0b2b32); background-size: cover; background-position: center; border: 1px solid var(--line-2); transition: border-color .2s, transform .2s; text-shadow: 0 1px 3px rgba(0, 0, 0, .55); }
         .card-tile:hover { border-color: rgba(0, 230, 255, .35); transform: translateY(-2px); }
         .card-tile-top { display: flex; justify-content: space-between; align-items: flex-start; min-height: 28px; }
         .card-tile-price { font-family: var(--font-display); font-weight: 700; font-size: 1.5rem; }
@@ -39,7 +39,7 @@
         <div class="cards-grid">
             <asp:Repeater ID="rptCard" runat="server">
                 <ItemTemplate>
-                    <div class="card-tile" onclick="window.location.href='<%# Eval("DetailURL") %>';">
+                    <div class="card-tile" style='background-image: linear-gradient(135deg, rgba(8, 14, 22, .80), rgba(7, 28, 36, .62)), url(<%# Eval("ArtURL") %>);' onclick="window.location.href='<%# Eval("DetailURL") %>';">
                         <div class="card-tile-top">
                             <span class="card-tile-price"><%# Eval("CardPrice") %></span>
                         </div>

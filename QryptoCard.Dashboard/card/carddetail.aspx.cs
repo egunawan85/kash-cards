@@ -369,5 +369,45 @@ namespace QryptoCard.Dashboard.card
                 btnBuyX.Text = "Buy Card (" + lblTotalX.InnerHtml + ")";
             }
         }
+
+        // Card background artwork (DD-7). Derived from the persisted card data so it
+        // survives the page's auto-postbacks (deposit amount / quick-amount buttons),
+        // rather than only being correct on the initial load. Falls back to the static
+        // brand card whenever the type or its scheme is unknown.
+        //
+        // Security note: hfCardData round-trips through a client hidden field, so its
+        // contents are attacker-controllable on postback and this value is emitted into
+        // a CSS url(...). We therefore key the artwork ONLY off the card scheme, which
+        // can do nothing but select among a fixed set of vetted, app-relative asset
+        // paths — never a free-form URL carried in the posted-back data.
+        protected string CardArtUrl()
+        {
+            try
+            {
+                if (string.IsNullOrEmpty(hfCardData.Value))
+                    return ResolveUrl("~/Content/media/card-bg.png");
+
+                var dt = JsonConvert.DeserializeObject<CardTypeModel>(hfCardData.Value);
+                return ResolveCardArt(dt.Organization);
+            }
+            catch
+            {
+                return ResolveUrl("~/Content/media/card-bg.png");
+            }
+        }
+
+        // Pick a vendored image by card scheme, with the static brand card as the final
+        // fallback for an unmapped scheme. Returns only fixed, app-relative paths.
+        string ResolveCardArt(string organization)
+        {
+            if (organization == "Visa")
+                return ResolveUrl("~/Content/media/cards/visa.svg");
+            if (organization == "MasterCard")
+                return ResolveUrl("~/Content/media/cards/mastercard.svg");
+            if (organization == "Discover")
+                return ResolveUrl("~/Content/media/cards/discover.svg");
+
+            return ResolveUrl("~/Content/media/card-bg.png");
+        }
     }
 }

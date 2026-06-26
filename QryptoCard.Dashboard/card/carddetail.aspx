@@ -60,7 +60,7 @@
                             <!--begin::Form-->
                             <!-- Classic Card -->
                             <div class="col-xs-12 col-sm-12 col-md-12 clearfix mb-10" style="cursor: pointer;">
-                                <div class="credit-card text-white p-4 d-flex flex-column justify-content-between" style="background-image: url(../Content/media/card-bg.png); background-size:100%;">
+                                <div class="credit-card text-white p-4 d-flex flex-column justify-content-between" style="background-image: url(<%= CardArtUrl() %>); background-size: cover; background-position: center;">
                                     <div class="d-flex justify-content-between align-items-center">
                                         <h1><span></span></h1>
                                         <h1><span runat="server" class="text-white mt-3" id="lblCardPrice">0 USD</span></h1>

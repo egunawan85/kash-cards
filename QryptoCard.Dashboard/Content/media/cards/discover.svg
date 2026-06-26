@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 252" role="img" aria-label="Card artwork">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#141414"/>
+      <stop offset="0.55" stop-color="#241a10"/>
+      <stop offset="1" stop-color="#301a06"/>
+    </linearGradient>
+    <linearGradient id="chip" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#ffe0bd"/>
+      <stop offset="1" stop-color="#c4731f"/>
+    </linearGradient>
+  </defs>
+  <rect width="400" height="252" rx="18" fill="url(#bg)"/>
+  <path d="M0 252 L400 110 L400 252 Z" fill="#f47216" opacity="0.18"/>
+  <circle cx="338" cy="64" r="46" fill="#f47216" opacity="0.65"/>
+  <rect x="30" y="92" width="46" height="34" rx="6" fill="url(#chip)"/>
+  <path d="M30 109 h46 M53 92 v34" stroke="#141414" stroke-width="2" opacity="0.5"/>
+  <rect x="30" y="150" width="150" height="6" rx="3" fill="#f6ead9" opacity="0.22"/>
+  <rect x="30" y="166" width="96" height="6" rx="3" fill="#f6ead9" opacity="0.14"/>
+</svg>
