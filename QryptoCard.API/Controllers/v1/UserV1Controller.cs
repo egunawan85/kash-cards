@@ -185,5 +185,89 @@ namespace QryptoCard.API.Controllers.v1
 
             return op;
         }
+
+        // Update the authenticated caller's own profile (name/phone). The INT tier keys the
+        // update on the bearer identity (getEmail()), never on any id in the body, so a caller
+        // can only ever edit their own record (IDOR-safe).
+        [Route("data")]
+        [HttpPut]
+        public OutputModel updateUserData(tblM_User x)
+        {
+            try
+            {
+                op = sr.updateUserData(getEmail(), x);
+            }
+            catch (Exception ex)
+            {
+                op.Status = "error";
+                op.Message = ex.Message;
+                op.Data = null;
+            }
+
+            return op;
+        }
+
+        // Change the authenticated caller's own password. The INT tier verifies the supplied
+        // current password against the caller's stored credential (resolved from getEmail())
+        // before applying the new one; identity never comes from the body.
+        [Route("password")]
+        [HttpPut]
+        public OutputModel updatePassword(PasswordChangeModel x)
+        {
+            try
+            {
+                op = sr.updatePassword(getEmail(), x);
+            }
+            catch (Exception ex)
+            {
+                op.Status = "error";
+                op.Message = ex.Message;
+                op.Data = null;
+            }
+
+            return op;
+        }
+
+        // Step 1 of an email change: issue a one-time code to the proposed new address for the
+        // authenticated caller (getEmail()). Returns the OTP session id in op.Data. The change
+        // is only applied after the code is confirmed at /v1/user/email.
+        [Route("email/otp")]
+        [HttpPost]
+        public OutputModel updateEmailOTP(tblM_User x)
+        {
+            try
+            {
+                op = sr.updateEmailOTP(getEmail(), x);
+            }
+            catch (Exception ex)
+            {
+                op.Status = "error";
+                op.Message = ex.Message;
+                op.Data = null;
+            }
+
+            return op;
+        }
+
+        // Step 2 of an email change: confirm the OTP and apply the new address for the
+        // authenticated caller (getEmail()). The OTP session is scoped to the caller in INT,
+        // so a caller can only confirm their own pending change (IDOR-safe).
+        [Route("email")]
+        [HttpPut]
+        public OutputModel updateEmail(tblH_User_OTP x)
+        {
+            try
+            {
+                op = sr.updateEmail(getEmail(), x);
+            }
+            catch (Exception ex)
+            {
+                op.Status = "error";
+                op.Message = ex.Message;
+                op.Data = null;
+            }
+
+            return op;
+        }
     }
 }

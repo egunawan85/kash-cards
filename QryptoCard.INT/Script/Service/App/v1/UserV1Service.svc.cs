@@ -761,6 +761,10 @@ namespace QryptoCard.INT.Script.Service.App.v1
                     a.OTPID = Guid.NewGuid().ToString();
                     a.UserID = uid;
                     a.Name = "Change Email";
+                    // Bind the intended new address to the OTP record at request time. The confirm
+                    // step applies THIS server-stored value, never a client-supplied one, so the
+                    // verified code can only ever commit the address the code was issued for.
+                    a.MerchantID = x.Email;
 
                     //Random r = new Random();
                     //var z = r.Next(0, 1000000);
@@ -801,7 +805,10 @@ namespace QryptoCard.INT.Script.Service.App.v1
             {
                 string uid = getUserId(em);
 
-                var otp = db.tblH_User_OTP.Where(p => p.isVerify == 0 && p.UserID == uid && p.OTPID == x.OTPID).OrderByDescending(p => p.DateCreated).FirstOrDefault();
+                // Scope to change-email OTPs only. Other flows (e.g. generateKeyOTP / "View Card
+                // Detail") also write tblH_User_OTP but leave MerchantID null; without this filter a
+                // caller could confirm one of those here and null their own account email.
+                var otp = db.tblH_User_OTP.Where(p => p.isVerify == 0 && p.UserID == uid && p.OTPID == x.OTPID && p.Name == "Change Email").OrderByDescending(p => p.DateCreated).FirstOrDefault();
                 if (otp == null)
                 {
                     op.Status = "failed";
@@ -821,11 +828,33 @@ namespace QryptoCard.INT.Script.Service.App.v1
                     }
                     else
                     {
+                        // The new address bound at request time. Guard against a malformed OTP
+                        // record (defence in depth) so a missing target can never blank the email.
+                        if (string.IsNullOrEmpty(otp.MerchantID))
+                        {
+                            op.Status = "failed";
+                            op.Message = "This verification code is not valid for an email change.";
+                            return op;
+                        }
+
+                        // Re-assert uniqueness at confirm time: the request-time check leaves a
+                        // window (the OTP TTL) in which another user could claim the same address,
+                        // which would create duplicate emails and break getUserId's FirstOrDefault.
+                        if (db.tblM_User.Any(p => p.Email == otp.MerchantID && p.UserID != uid
+                                && p.isActive == 1 && p.isVerified == 1 && p.isBanned == 0))
+                        {
+                            op.Status = "failed";
+                            op.Message = "That email address is no longer available. Please try another.";
+                            return op;
+                        }
+
                         otp.isVerify = 1;
                         db.SaveChanges();
 
                         var data = db.tblM_User.Where(p => p.UserID == uid).FirstOrDefault();
-                        data.Email = x.MerchantID;
+                        // Use the address bound to the OTP at request time, not anything the client
+                        // sends now — the code proves control of the address it was issued for.
+                        data.Email = otp.MerchantID;
                         db.SaveChanges();
 
                         op.Status = "success";
