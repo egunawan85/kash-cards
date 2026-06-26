@@ -1,4 +1,4 @@
-﻿<%@ Master Language="C#" AutoEventWireup="true" CodeBehind="Site.master.cs" Inherits="QryptoCard.Dashboard.SiteMaster" %>
+<%@ Master Language="C#" AutoEventWireup="true" CodeBehind="Site.master.cs" Inherits="QryptoCard.Dashboard.SiteMaster" %>
 
 <!DOCTYPE html>
 
@@ -6,409 +6,96 @@
 <head runat="server">
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title><%: Page.Title %> - Kash.Cards</title>
-    <link rel="shortcut icon" href="Content/media/favicon.ico" />
-    <!--begin::Fonts(mandatory for all pages)-->
-    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Inter:300,400,500,600,700" />
-    <!--end::Fonts-->
-    <!--begin::Vendor Stylesheets(used for this page only)-->
-    <link href="Content/plugins/custom/fullcalendar/fullcalendar.bundle.css" rel="stylesheet" type="text/css" />
-    <link href="Content/plugins/custom/datatables/datatables.bundle.css" rel="stylesheet" type="text/css" />
-    <!--end::Vendor Stylesheets-->
-    <!--begin::Global Stylesheets Bundle(mandatory for all pages)-->
-    <link href="Content/plugins/global/plugins.bundle.css" rel="stylesheet" type="text/css" />
-    <link href="Content/css/style.bundle.css" rel="stylesheet" type="text/css" />
-    <!--end::Global Stylesheets Bundle-->
-
-    <!-- Pagination -->
-    <link href="Content/bootstrap-pagination.css" rel="stylesheet">
-
-    <style type="text/css">
-        .datepicker td, th {
-            text-align: center;
-            padding: 8px 12px;
-            font-size: 14px;
-        }
-    </style>
-
-    <link href="~/favicon.ico" rel="shortcut icon" type="image/x-icon" />
-
+    <meta name="robots" content="noindex, nofollow" />
+    <meta name="theme-color" content="#05070a" />
+    <title><%: Page.Title %> - Kash</title>
+    <link rel="shortcut icon" href='<%= ResolveUrl("~/Content/media/landing/kash-logo.png") %>' type="image/png" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700;800&family=Hanken+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href='<%= ResolveUrl("~/Content/css/premium.css") %>' />
+    <link rel="stylesheet" href='<%= ResolveUrl("~/Content/css/app.css") %>' />
 </head>
-<body id="kt_app_body" data-kt-app-sidebar-enabled="true" data-kt-app-sidebar-fixed="true" data-kt-app-sidebar-push-toolbar="true" data-kt-app-sidebar-push-footer="true" data-kt-app-toolbar-enabled="true" class="app-default">
+<body>
+    <div class="bg-fx"></div>
+    <div class="grain"></div>
+
     <form runat="server">
 
-        <!--begin::Theme mode setup on page load-->
-        <script>var defaultThemeMode = "light"; var themeMode; if (document.documentElement) { if (document.documentElement.hasAttribute("data-bs-theme-mode")) { themeMode = document.documentElement.getAttribute("data-bs-theme-mode"); } else { if (localStorage.getItem("data-bs-theme") !== null) { themeMode = localStorage.getItem("data-bs-theme"); } else { themeMode = defaultThemeMode; } } if (themeMode === "system") { themeMode = window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light"; } document.documentElement.setAttribute("data-bs-theme", themeMode); }</script>
-        <!--end::Theme mode setup on page load-->
-        <!--begin::App-->
-        <div class="d-flex flex-column flex-root app-root" id="kt_app_root">
-            <!--begin::Page-->
-            <div class="app-page flex-column flex-column-fluid" id="kt_app_page">
-                <!--begin::Header-->
-                <div id="kt_app_header" class="app-header" data-kt-sticky="true" data-kt-sticky-activate-="true" data-kt-sticky-name="app-header-sticky" data-kt-sticky-offset="{default: '200px', lg: '300px'}">
-                    <!--begin::Header container-->
-                    <div class="app-container container-xxl d-flex align-items-stretch justify-content-between" id="kt_app_header_container">
-                        <!--begin::Header wrapper-->
-                        <div class="app-header-wrapper d-flex flex-grow-1 align-items-stretch justify-content-between" id="kt_app_header_wrapper">
-                            <!--begin::Logo wrapper-->
-                            <div class="app-header-logo d-flex flex-shrink-0 align-items-center justify-content-between justify-content-lg-center">
-                                <!--begin::Logo wrapper-->
-                                <button class="btn btn-icon btn-color-gray-600 btn-active-color-primary ms-n3 me-2 d-flex d-lg-none" id="kt_app_sidebar_toggle">
-                                    <i class="ki-outline ki-abstract-14 fs-2"></i>
-                                </button>
-                                <!--end::Logo wrapper-->
-                                <!--begin::Logo image-->
-                                <a href='<%= ResolveUrl("~/dashboard")%>'>
-                                    <img alt="Logo" src='<%= ResolveUrl("~/Content/media/logos/kn-logo.png")%>' class="logo-sticky h-30px" />
-                                    <%--<img alt="Logo" src='<%= ResolveUrl("~/Content/media/logos/default-small.svg")%>' class="h-30px h-lg-40px theme-light-show" />
-                                    <img alt="Logo" src='<%= ResolveUrl("~/Content/media/logos/default-small-dark.svg")%>' class="h-30px h-lg-40px theme-dark-show" />--%>
-                                </a>
-                                <!--end::Logo image-->
-                            </div>
-                            <!--end::Logo wrapper-->
-                            <!--begin::Menu wrapper-->
-                            <div id="kt_app_header_menu_wrapper" class="d-flex align-items-center w-100">
-                                <!--begin::Header menu-->
-                                <div class="app-header-menu app-header-mobile-drawer align-items-start align-items-lg-center w-100" data-kt-drawer="true" data-kt-drawer-name="app-header-menu" data-kt-drawer-activate="{default: true, lg: false}" data-kt-drawer-overlay="true" data-kt-drawer-width="250px" data-kt-drawer-direction="end" data-kt-drawer-toggle="#kt_app_header_menu_toggle" data-kt-swapper="true" data-kt-swapper-mode="{default: 'append', lg: 'prepend'}" data-kt-swapper-parent="{default: '#kt_app_body', lg: '#kt_app_header_menu_wrapper'}">
-                                    <!--begin::Menu-->
-                                    <div class="menu menu-rounded menu-column menu-lg-row menu-active-bg menu-state-primary menu-title-gray-700 menu-arrow-gray-500 menu-bullet-gray-500 my-5 my-lg-0 align-items-stretch fw-semibold px-2 px-lg-0" id="#kt_header_menu" data-kt-menu="true">
-                                        <!--begin:Menu item-->
-                                        <div data-kt-menu-trigger="{default: 'click', lg: 'hover'}" data-kt-menu-placement="bottom-start" class="menu-item menu-here-bg me-0 me-lg-2">
-                                            <%--here show--%>
-                                            <!--begin:Menu link-->
-                                            <a class="menu-link py-3" href='<%= ResolveUrl("~/dashboard")%>'>
-                                                <span class="menu-title">Dashboards</span>
-                                                <%--<span class="menu-arrow d-lg-none"></span>--%>
-                                            </a>
-                                            <!--end:Menu link-->
-                                        </div>
-                                        <!--end:Menu item-->
-                                        <!--begin:Menu item-->
-                                        <div data-kt-menu-trigger="{default: 'click', lg: 'hover'}" data-kt-menu-placement="bottom-start" class="menu-item menu-here-bg me-0 me-lg-2">
-                                            <%--here show--%>
-                                            <!--begin:Menu link-->
-                                            <a class="menu-link py-3" href='<%= ResolveUrl("~/card/mycardlist")%>'>
-                                                <span class="menu-title">My Cards</span>
-                                                <%--<span class="menu-arrow d-lg-none"></span>--%>
-                                            </a>
-                                            <!--end:Menu link-->
-                                        </div>
-                                        <!--end:Menu item-->
-                                        <!--begin:Menu item-->
-                                        <div data-kt-menu-trigger="{default: 'click', lg: 'hover'}" data-kt-menu-placement="bottom-start" class="menu-item menu-here-bg me-0 me-lg-2">
-                                            <%--here show--%>
-                                            <!--begin:Menu link-->
-                                            <a class="menu-link py-3" href='<%= ResolveUrl("~/card/cardlist")%>'>
-                                                <span class="menu-title">Buy Card</span>
-                                                <%--<span class="menu-arrow d-lg-none"></span>--%>
-                                            </a>
-                                            <!--end:Menu link-->
-                                        </div>
-                                        <!--end:Menu item-->
-                                        <!--begin:Menu item-->
-                                        <div data-kt-menu-trigger="{default: 'click', lg: 'hover'}" data-kt-menu-placement="bottom-start" class="menu-item menu-lg-down-accordion menu-sub-lg-down-indention me-0 me-lg-2">
-                                            <!--begin:Menu link-->
-                                            <span class="menu-link">
-                                                <span class="menu-title">Transaction</span>
-                                                <span class="menu-arrow d-lg-none"></span>
-                                            </span>
-                                            <!--end:Menu link-->
-                                            <!--begin:Menu sub-->
-                                            <div class="menu-sub menu-sub-lg-down-accordion menu-sub-lg-dropdown px-lg-2 py-lg-4 w-lg-200px">
-                                                <!--begin:Menu item-->
-                                                <div class="menu-item">
-                                                    <!--begin:Menu link-->
-                                                    <a class="menu-link" href='<%= ResolveUrl("~/tx/cardhistory")%>'>
-                                                        <span class="menu-icon">
-                                                            <i class="ki-outline ki-chart fs-2"></i>
-                                                        </span>
-                                                        <span class="menu-title">Card History</span>
-                                                    </a>
-                                                    <!--end:Menu link-->
-                                                </div>
-                                                <!--end:Menu item-->
-                                                
-                                            </div>
-                                            <!--end:Menu sub-->
-                                        </div>
-                                        <!--end:Menu item-->
-                                    </div>
-                                    <!--end::Menu-->
-                                </div>
-                                <!--end::Header menu-->
-                            </div>
-                            <!--end::Menu wrapper-->
-                            <!--begin::Navbar-->
-                            <div class="app-navbar flex-shrink-0">
-                                <!--begin::User menu-->
-                                <div class="app-navbar-item ms-3 ms-lg-5" id="kt_header_user_menu_toggle">
-                                    <!--begin::Menu wrapper-->
-                                    <div class="cursor-pointer symbol symbol-35px symbol-md-40px" data-kt-menu-trigger="{default: 'click', lg: 'hover'}" data-kt-menu-attach="parent" data-kt-menu-placement="bottom-end">
-                                        <img class="symbol symbol-circle symbol-35px symbol-md-40px" src='<%= ResolveUrl("~/Content/media/avatars/blank.png")%>' alt="user" />
-                                    </div>
-                                    <!--begin::User account menu-->
-                                    <div class="menu menu-sub menu-sub-dropdown menu-column menu-rounded menu-gray-800 menu-state-bg menu-state-color fw-semibold py-4 fs-6 w-275px" data-kt-menu="true">
-                                        <!--begin::Menu item-->
-                                        <div class="menu-item px-3">
-                                            <div class="menu-content d-flex align-items-center px-3">
-                                                <!--begin::Avatar-->
-                                                <div class="symbol symbol-50px me-5">
-                                                    <img alt="Logo" src='<%= ResolveUrl("~/Content/media/avatars/blank.png")%>' />
-                                                </div>
-                                                <!--end::Avatar-->
-                                                <!--begin::Username-->
-                                                <div class="d-flex flex-column">
-                                                    <div class="fw-bold d-flex align-items-center fs-5">
-                                                        <asp:Label runat="server" ID="lblFullname" Text="Test" />
-
-                                                        <%--<span class="badge badge-light-success fw-bold fs-8 px-2 py-1 ms-2">Verified</span>--%>
-                                                    </div>
-                                                    <asp:Label runat="server" ID="lblEmail" CssClass="fw-semibold text-muted text-hover-primary fs-7" Text="test@email.com" />
-                                                    <%--<asp:Label runat="server" ID="lblRole" CssClass="fw-semibold text-muted text-hover-primary fs-7" />--%>
-                                                    <%--<a href="#" class="fw-semibold text-muted text-hover-primary fs-7">max@kt.com</a>--%>
-                                                </div>
-                                                <!--end::Username-->
-                                            </div>
-                                        </div>
-                                        <!--end::Menu item-->
-                                        <!--begin::Menu separator-->
-                                        <div class="separator my-2"></div>
-                                        <!--end::Menu separator-->
-                                        <!--begin::Menu item-->
-                                        <div class="menu-item px-5">
-                                            <a href='<%= ResolveUrl("~/account")%>' class="menu-link px-5">My Profile</a>
-                                        </div>
-                                        <!--end::Menu item-->
-                                        <!--begin::Menu separator-->
-                                        <div class="separator my-2"></div>
-                                        <!--end::Menu separator-->
-                                        <!--begin::Menu item-->
-                                        <div class="menu-item px-5">
-                                            <a href='<%= ResolveUrl("~/logout")%>' class="menu-link px-5">Sign Out</a>
-                                        </div>
-                                        <!--end::Menu item-->
-                                    </div>
-                                    <!--end::User account menu-->
-                                    <!--end::Menu wrapper-->
-                                </div>
-                                <!--end::User menu-->
-                                <!--begin::Header menu toggle-->
-                                <div class="app-navbar-item d-lg-none ms-2 me-n3" title="Show header menu">
-                                    <div class="btn btn-icon btn-custom btn-active-color-primary btn-color-gray-700 w-35px h-35px w-md-40px h-md-40px" id="kt_app_header_menu_toggle">
-                                        <i class="ki-outline ki-text-align-left fs-1"></i>
-                                    </div>
-                                </div>
-                                <!--end::Header menu toggle-->
-                            </div>
-                            <!--end::Navbar-->
+        <div class="dash">
+            <!-- SIDEBAR -->
+            <aside class="dash-side" id="side">
+                <a class="brand" href='<%= ResolveUrl("~/dashboard") %>'>
+                    <img class="brand-logo" src='<%= ResolveUrl("~/Content/media/landing/kash-logo.png") %>' alt="Kash logo" /> Kash
+                </a>
+                <nav class="dash-nav">
+                    <a class='<%= NavClass("dashboard.aspx") %>' href='<%= ResolveUrl("~/dashboard") %>'>
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><rect x="3" y="3" width="7" height="9" rx="1.5" /><rect x="14" y="3" width="7" height="5" rx="1.5" /><rect x="14" y="12" width="7" height="9" rx="1.5" /><rect x="3" y="16" width="7" height="5" rx="1.5" /></svg> Dashboard
+                    </a>
+                    <a class='<%= NavClass("mycardlist.aspx", "mycarddetail.aspx") %>' href='<%= ResolveUrl("~/card/mycardlist") %>'>
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><rect x="2" y="5" width="20" height="14" rx="3" /><path d="M2 10h20" /></svg> My Cards
+                    </a>
+                    <a class='<%= NavClass("cardlist.aspx", "carddetail.aspx") %>' href='<%= ResolveUrl("~/card/cardlist") %>'>
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><rect x="2" y="5" width="20" height="14" rx="3" /><path d="M2 10h20M16 16h3" /></svg> Buy a card
+                    </a>
+                    <a class='<%= NavClass("cardhistory.aspx", "txcard.aspx", "txdeposit.aspx") %>' href='<%= ResolveUrl("~/tx/cardhistory") %>'>
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M4 5h16v14H4z" /><path d="M4 9h16M8 14h5" /></svg> Transactions
+                    </a>
+                </nav>
+                <div class="side-foot">
+                    <div class="dash-user">
+                        <span class="av"><%= AvatarInitial() %></span>
+                        <div>
+                            <div class="nm"><asp:Label runat="server" ID="lblFullname" Text="Hi there!" /></div>
+                            <div class="em"><asp:Label runat="server" ID="lblEmail" Text="" /></div>
                         </div>
-                        <!--end::Header wrapper-->
                     </div>
-                    <!--end::Header container-->
+                    <a class="dash-signout" href='<%= ResolveUrl("~/logout") %>'>
+                        <svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M16 17l5-5-5-5M21 12H9M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4" /></svg> Sign out
+                    </a>
                 </div>
-                <!--end::Header-->
-                <!--begin::Wrapper-->
-                <div class="app-wrapper flex-column flex-row-fluid" id="kt_app_wrapper">
-                    <!--begin::Wrapper container-->
-                    <div class="app-container container-xxl d-flex flex-row-fluid">
-                        <!--begin::Sidebar-->
-                        <div id="kt_app_sidebar" class="app-sidebar flex-column" data-kt-drawer="true" data-kt-drawer-name="app-sidebar" data-kt-drawer-activate="{default: true, lg: false}" data-kt-drawer-overlay="true" data-kt-drawer-width="275px" data-kt-drawer-direction="start" data-kt-drawer-toggle="#kt_app_sidebar_toggle">
-                            <!--begin::Sidebar nav-->
-                            <div class="app-sidebar-wrapper py-8 py-lg-10" id="kt_app_sidebar_wrapper">
-                                <!--begin::Nav wrapper-->
-                                <div id="kt_app_sidebar_nav_wrapper" class="d-flex flex-column px-8 px-lg-10 hover-scroll-y" data-kt-scroll="true" data-kt-scroll-activate="true" data-kt-scroll-max-height="auto" data-kt-scroll-dependencies="{default: false, lg: '#kt_app_header'}" data-kt-scroll-wrappers="#kt_app_sidebar, #kt_app_sidebar_wrapper" data-kt-scroll-offset="{default: '10px', lg: '40px'}">
-                                    <h3 class="text-gray-800 fw-bold mb-8">Your Balance</h3>
-                                    <span class="text-gray-900 fw-bold fs-lg-2x mb-12" runat="server" id="lblBalance">USD 0</span>
-                                    <!--begin::Links-->
-                                    <div class="mb-0">
-                                        <!--begin::Title-->
-                                        <h3 class="text-gray-800 fw-bold mb-8">Your Cards ( <span runat="server" id="lblTotalCards">0</span> )</h3>
-                                        <!--end::Title-->
-                                        <asp:Repeater ID="rptCard" runat="server">
-                                            <ItemTemplate>
-                                                <!--begin::Row-->
-                                                <!-- Classic Card -->
-                                                <div class="col w-100 mb-5" onclick="window.location.href='<%# Eval("DetailURL") %>';" style="cursor: pointer;">
-                                                    <div class="credit-card bg-primary text-white p-4 d-flex flex-column justify-content-between" style="background-image: url(/Content/media/card-bg.png);">
-                                                        <div class="d-flex justify-content-between align-items-center">
-                                                            <%--<h4>Qrypto Card</h4>--%>
-                                                            <%--<i class="fab fa-cc-mastercard fa-2x"></i>--%>
-                                                        </div>
-                                                        <div class="card-number my-3 mt-10">
-                                                            <%# Eval("CardNumber") %>
-                                                        </div>
-                                                        <div class="d-flex justify-content-between">
-                                                            <div>
-                                                                <div class="card-holder"><%# Eval("FirstName") %> <%# Eval("Lastname") %></div>
-                                                                <%--<div>Valid Thru: 12/25</div>--%>
-                                                            </div>
-                                                            <img src='<%# Eval("LogoURL") %>' alt="Chip" width="40">
-                                                            <%--<img src="https://www.svgrepo.com/show/508703/mastercard.svg" alt="Chip" width="40">--%>
-                                                            <%--<img src="https://www.svgrepo.com/show/362035/visa-3.svg" alt="Chip" width="40">--%>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                                <!-- Classic Card -->
-                                                <!--end::Row-->
-                                            </ItemTemplate>
-                                        </asp:Repeater>
-                                        
-                                    </div>
-                                    <!--end::Links-->
-                                </div>
-                                <!--end::Nav wrapper-->
-                            </div>
-                            <!--end::Sidebar nav-->
-                        </div>
-                        <!--end::Sidebar-->
-                        <!--begin::Main-->
-                        <div class="app-main flex-column flex-row-fluid" id="kt_app_main">
+            </aside>
+            <div class="dash-scrim" id="scrim"></div>
 
+            <!-- MAIN -->
+            <main class="dash-main">
+                <button class="menu-btn" id="menu" type="button" aria-label="Open menu">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M3 12h18M3 18h18" /></svg>
+                </button>
 
+                <!--begin::Content wrapper-->
+                <asp:ContentPlaceHolder ID="MainContent" runat="server">
+                </asp:ContentPlaceHolder>
+                <!--end::Content wrapper-->
 
-
-
-
-                            <!--begin::Content wrapper-->
-                            <asp:ContentPlaceHolder ID="MainContent" runat="server">
-                            </asp:ContentPlaceHolder>
-                            <!--end::Content wrapper-->
-
-
-
-                            <!--begin::Footer-->
-                            <div id="kt_app_footer" class="app-footer d-flex flex-column flex-md-row align-items-center flex-center flex-md-stack py-2 py-lg-4">
-                                <!--begin::Copyright-->
-                                <div class="text-gray-900 order-2 order-md-1">
-                                    <span class="text-muted fw-semibold me-1">2025&copy;</span>
-                                    <a href="https://kash.cards" target="_blank" class="text-gray-800 text-hover-primary">Kash.Cards</a>
-                                </div>
-                                <!--end::Copyright-->
-                                <!--begin::Menu-->
-                                <ul class="menu menu-gray-600 menu-hover-primary fw-semibold order-1">
-                                    <li class="menu-item">
-                                        <a href="#" target="_blank" class="menu-link px-2">About</a>
-                                    </li>
-                                    <li class="menu-item">
-                                        <a href="#" target="_blank" class="menu-link px-2">Support</a>
-                                    </li>
-                                </ul>
-                                <!--end::Menu-->
-                            </div>
-                            <!--end::Footer-->
-                        </div>
-                        <!--end:::Main-->
-                    </div>
-                    <!--end::Wrapper container-->
-                </div>
-                <!--end::Wrapper-->
-            </div>
-            <!--end::Page-->
+                <!--begin::Footer-->
+                <footer class="dash-foot">
+                    <span>&copy; <%= DateTime.Now.Year %> <a href="https://kash.cards" target="_blank" rel="noopener">Kash.Cards</a></span>
+                    <nav>
+                        <a href='<%= ResolveUrl("~/About") %>'>About</a>
+                        <a href='<%= ResolveUrl("~/Contact") %>'>Support</a>
+                    </nav>
+                </footer>
+                <!--end::Footer-->
+            </main>
         </div>
-        <!--end::App-->
 
         <!--begin::Drawers-->
-
         <asp:ContentPlaceHolder ID="DrawerContent" runat="server">
         </asp:ContentPlaceHolder>
-
         <!--end::Drawers-->
 
-
-
-        <!--begin::Scrolltop-->
-
-        <div id="kt_scrolltop" class="scrolltop" data-kt-scrolltop="true">
-            <i class="ki-outline ki-arrow-up"></i>
-        </div>
-
-        <!--end::Scrolltop-->
-
-
         <!--begin::Modals-->
-
-
         <asp:ContentPlaceHolder ID="ModalContent" runat="server">
         </asp:ContentPlaceHolder>
-
         <!--end::Modals-->
 
-
-
-        <style type="text/css">
-            .label-name {
-                float: right;
-                width: 100%;
-                height: 100%;
-                text-align: center;
-                vertical-align: central;
-            }
-
-            .credit-card {
-                height: 160px;
-                border-radius: 15px;
-                transition: all 0.3s ease;
-            }
-
-                .credit-card:hover {
-                    transform: translateY(-5px);
-                    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
-                }
-
-            .card-number {
-                font-size: 1.2rem;
-                letter-spacing: 1.5px;
-            }
-
-            .card-holder {
-                text-transform: uppercase;
-            }
-        </style>
-
-        <script src="https://code.jquery.com/jquery-2.2.4.js"></script>
-
-
+        <!--begin::Page scripts-->
         <asp:ContentPlaceHolder ID="ScriptContent" runat="server">
         </asp:ContentPlaceHolder>
+        <!--end::Page scripts-->
 
-        <!--begin::Javascript-->
-        <script>var hostUrl = "Content/";</script>
-        <!--begin::Global Javascript Bundle(mandatory for all pages)-->
-        <script src='<%= ResolveUrl("~/Content/plugins/global/plugins.bundle.js")%>'></script>
-        <script src='<%= ResolveUrl("~/Content/js/scripts.bundle.js")%>'></script>
-
-        <!--end::Global Javascript Bundle-->
-        <!--begin::Vendors Javascript(used for this page only)-->
-        <script src='<%= ResolveUrl("~/Content/plugins/custom/fullcalendar/fullcalendar.bundle.js")%>'></script>
-        <script src="https://cdn.amcharts.com/lib/5/index.js"></script>
-        <script src="https://cdn.amcharts.com/lib/5/xy.js"></script>
-        <script src="https://cdn.amcharts.com/lib/5/percent.js"></script>
-        <script src="https://cdn.amcharts.com/lib/5/radar.js"></script>
-        <script src="https://cdn.amcharts.com/lib/5/themes/Animated.js"></script>
-        <script src="https://cdn.amcharts.com/lib/5/map.js"></script>
-        <script src="https://cdn.amcharts.com/lib/5/geodata/worldLow.js"></script>
-        <script src="https://cdn.amcharts.com/lib/5/geodata/continentsLow.js"></script>
-        <script src="https://cdn.amcharts.com/lib/5/geodata/usaLow.js"></script>
-        <script src="https://cdn.amcharts.com/lib/5/geodata/worldTimeZonesLow.js"></script>
-        <script src="https://cdn.amcharts.com/lib/5/geodata/worldTimeZoneAreasLow.js"></script>
-        <script src='<%= ResolveUrl("~/Content/plugins/custom/datatables/datatables.bundle.js")%>'></script>
-        <!--end::Vendors Javascript-->
-        <!--begin::Custom Javascript(used for this page only)-->
-        <script src='<%= ResolveUrl("~/Content/js/widgets.bundle.js")%>'></script>
-        <script src='<%= ResolveUrl("~/Content/js/custom/widgets.js")%>'></script>
-        <script src='<%= ResolveUrl("~/Content/js/custom/apps/chat/chat.js")%>'></script>
-        <script src='<%= ResolveUrl("~/Content/js/custom/utilities/modals/upgrade-plan.js")%>'></script>
-        <script src='<%= ResolveUrl("~/Content/js/custom/utilities/modals/create-app.js")%>'></script>
-        <script src='<%= ResolveUrl("~/Content/js/custom/utilities/modals/new-target.js")%>'></script>
-        <script src='<%= ResolveUrl("~/Content/js/custom/utilities/modals/users-search.js")%>'></script>
-        <!--end::Custom Javascript-->
-        <!--end::Javascript-->
-
-        <!--begin::Custom Javascript(used for this page only)-->
-        <%--<script src='<%= ResolveUrl("~/Content/js/custom/authentication/sign-in/two-factor.js")%>'></script>--%>
-
-        <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-datepicker/1.9.0/js/bootstrap-datepicker.min.js"></script>
-
+        <script src='<%= ResolveUrl("~/Content/js/dashboard.js") %>'></script>
 
     </form>
 </body>
