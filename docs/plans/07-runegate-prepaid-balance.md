@@ -1,10 +1,27 @@
 # Plan 7 — Runegate Prepaid Balance (deposit → wallet → spend on cards)
 
-> **Status: 📝 DRAFT for alignment.** Nothing is built until the design decisions
-> below are signed off. This plan introduces a **reusable prepaid balance** funded
-> by Runegate deposits and spent on KashCards, refactors the money path it touches,
-> and audits the security of that path. Code is built in a worktree behind a gated
-> PR (per the workflow); the DB schema deltas apply during the dev shakeout / launch.
+> **Status: ✅ CORE SHIPPED** (as of 2026-06-26). The deposit → wallet-credit → spend →
+> ledger core, the user read surfaces, the money-path security hardening, and the
+> reconciliation sweep all merged — PRs #16/#19 (core), #20/#22 (durability), #26/#29/#31
+> (reconciliation sweep + trigger + endpoint hardening). The per-task checkboxes below are
+> flipped to match the merged code (verified, not assumed). What remains is unchecked.
+>
+> **Remaining — code:**
+> - [ ] **T3.4** — idempotency key on the spend endpoints (double-submit guard)
+> - [ ] **T4.5 / T4.6** — user wallet dashboard + admin read-only balance/ledger view (the read *endpoints* T4.1–T4.3 are done; the UI screens are not)
+> - [ ] **T5.6** — fix `PGCryptoModel.Commision` → `Commission` (ledger-cosmetic)
+> - [ ] **T5.3 / T5.7 / T5.8 / T5.4 / T5.10** — optional DRY refactors (shared PGCrypto + WasabiCard HTTP helpers, shared fee calculator, decimal money-type at the boundary, dead-code deletion) — fee math is still inline in ~4 places
+> - [ ] **One-time backfill** — `EnsureUserProvisioned` sweep over pre-feature users (new users self-provision; this is belt-and-braces)
+>
+> **Remaining — on-box / shakeout (no code):**
+> - [ ] **T1.4** — apply the wallet/dedup unique indexes on the live DB (scripts exist + wired into deploy; the protection isn't live until a deploy runs them)
+> - [ ] **T2.7** — operational cutover: drain/cancel open `Created` orders + brief new-order freeze (the legacy direct-to-card credit path is already removed in code)
+> - [ ] **T7.2** — run the tiered dev-shakeout E2E once schema is applied
+> - [ ] **Ops** — set a strong `SCHEDULER_SHARED_SECRET` before the next API.Callback deploy (now in the startup Preload); set the Runegate merchant deposit commission to ~0; extend the Plan 3 forensic queries to the new ledger
+>
+> *Original plan intro (for context):* a reusable prepaid balance funded by Runegate
+> deposits and spent on KashCards, refactoring the money path it touches and auditing
+> the security of that path.
 
 ## Overview (plain English)
 
@@ -213,16 +230,16 @@ address-less while the verify response says "error"** — and a retry hits "sess
 (`isVerify` already 1). So the fix is to *decouple* provisioning from verify, not to
 patch the in-line failure.
 
-- [ ] **T1.1 — Decouple provisioning from OTP-verify.** Move wallet + deposit-address
+- [x] **T1.1 — Decouple provisioning from OTP-verify.** Move wallet + deposit-address
   creation **out of the `RegisterVerify` transaction** into an idempotent ensure-step
   (T1.2). OTP-verify must always succeed once the code is valid; a gateway hiccup can
   never leave a half-provisioned account or return a spurious error. Remove the
   un-null-checked gateway dereferences from the verify path.
-- [ ] **T1.2 — Idempotent ensure-accessor.** `ensureWallet(userId)` /
+- [x] **T1.2 — Idempotent ensure-accessor.** `ensureWallet(userId)` /
   `ensureDepositAddress(userId)` that lazily provision on first access, **repair**
   users who registered before this feature or whose address creation failed, and never
   duplicate. Plus a one-time **backfill** pass over existing users at the shakeout.
-- [ ] **T1.3 — Single read accessor.** `getBalance(userId)` / `getDepositAddress(userId)`
+- [x] **T1.3 — Single read accessor.** `getBalance(userId)` / `getDepositAddress(userId)`
   in the INT tier, replacing the ad-hoc `tblM_User_Crypto_Deposit`/`tblM_User_Balance`
   re-queries scattered across **4** sites (`App` + `API` `CardV1Service`, ≈ L274/752/302/845).
 - [ ] **T1.4 — Uniqueness (DB-gated, ties to R14).** `init.sql` has **no unique
@@ -230,7 +247,7 @@ patch the in-line failure.
   `tblM_User_Crypto_Deposit(UserID, NetworkID)` and `tblM_User_Balance(UserID, Currency)`
   (active rows) so provisioning is race-safe via the constraint (not check-then-insert)
   and the Slice 2 credit-match resolves an address to **exactly one** wallet.
-- [ ] **T1.5 — Tests.** Unit-test the ensure/repair logic + accessors. Note: the
+- [x] **T1.5 — Tests.** Unit-test the ensure/repair logic + accessors. Note: the
   **dev simulate-deposit harness** needed for D1.3 does not exist yet — the Smoke **T3
   lifecycle is a documented stub** (steps 2–4 are comments); the Slice 2 integration
   test is what implements it (signed callback against the synthetic dev address), so
@@ -284,7 +301,7 @@ PGCrypto webhook handler.
   `Status`/`isPaid`; the **existing** provisioning path never checks them. The credit
   branch must gate on the confirmed/settled status (T2.3).
 
-- [ ] **T2.1 — Wallet-credit branch (wallet-only, per R1).** In
+- [x] **T2.1 — Wallet-credit branch (wallet-only, per R1).** In
   `CallbackV1Service.PGCrypto(...)`, a verified **confirmed** USDT deposit whose `Address`
   matches an active `tblM_User_Crypto_Deposit` row (→ owning `UserID`) **always credits
   that owner's wallet** — no order matching. `ensureWallet(userId)` (T1.2) first so a
@@ -292,12 +309,12 @@ PGCrypto webhook handler.
   Created` card/deposit-order match (it becomes dead code once card funding is balance-only
   — see Slice 5 cleanup). Net effect: no order-vs-wallet ambiguity, and the old
   provision-without-status-check path is gone.
-- [ ] **T2.2 — Shared atomic credit (R5/R15).** Conditional `UPDATE tblM_User_Balance`
+- [x] **T2.2 — Shared atomic credit (R5/R15).** Conditional `UPDATE tblM_User_Balance`
   + append to `tblH_User_Balance` (`BalancePrevious`, `Amount`, `Commission`, `Balance`,
   `Type = "Crypto Deposit"`, `TransactionID = PGCryptoID`) in one transaction; verify
   exactly 1 row affected. **Credit the webhook `Total` (net); record gross `Amount` +
   `Commission` in the ledger** for reconciliation.
-- [ ] **T2.3 — Confirmed-status gate + per-event idempotency (R6; adopts I-2/I-3/I-4).**
+- [x] **T2.3 — Confirmed-status gate + per-event idempotency (R6; adopts I-2/I-3/I-4).**
   Credit **only** on the confirmed/settled status transition (`isPaid`/`Status`),
   **exactly once**, via the existing `tblH_Partner_Webhook_ID` dedup table: insert a row
   keyed on the **provider `TransactionID` alone** (as built — the upstream `isPaid == 1` gate
@@ -306,7 +323,7 @@ PGCrypto webhook handler.
   a filtered unique index, and swallow the duplicate-key (`SqlException 2601`) as a no-op. A
   pre-confirmation or replayed delivery therefore cannot credit or double-credit. See
   "Sister-project callback patterns" above.
-- [ ] **T2.4 — Address-ownership safety + edge cases.** Credit strictly the user who
+- [x] **T2.4 — Address-ownership safety + edge cases.** Credit strictly the user who
   owns the destination address; never infer the user from the webhook body. Edge
   handling: a deposit to an **unknown/inactive** address is ledger-logged + alerted,
   never credited; a deposit to a **banned/disabled** user's address is credited to the
@@ -318,8 +335,8 @@ PGCrypto webhook handler.
   from balance) rather than silently going unmatched. A short pre-cutover freeze on new
   `Created` orders avoids races. No money is lost — pre-cutover deposits already settled
   via the old path; only *unpaid* pending orders are drained.
-- [ ] **T2.5 — Min-deposit / dust** per R12 (anti-dust floor on the net credited amount).
-- [ ] **T2.6 — Tests.** Unit-test matching + credit (owned/unowned address, pending-vs-
+- [x] **T2.5 — Min-deposit / dust** per R12 (anti-dust floor on the net credited amount).
+- [x] **T2.6 — Tests.** Unit-test matching + credit (owned/unowned address, pending-vs-
   confirmed status, replay, min-deposit, net-vs-gross, decimal precision); DB-gated
   Integration test for verified-webhook → ledger credit (this implements the Smoke T3
   stub, per T1.5).
@@ -382,20 +399,20 @@ provisioning block is removed (Slice 2 / T2.1).
 The mechanic is **ported from runegate's `createWithdrawal`** — the closest analog
 (debit-before-outbound), already red-teamed via F-0031d / F-0066 / F-0116.
 
-- [ ] **T3.1 — Spend path (open + top-up).** Add `openCardFromBalance` /
+- [x] **T3.1 — Spend path (open + top-up).** Add `openCardFromBalance` /
   `topUpFromBalance` (or a `payFromBalance` mode on `openCard`/`createCardDeposit`)
   replacing the static-address wait with a balance debit, then calling the
   **factored-out** WasabiCard provisioning step (extracted from the callback — C3.a). The
   4 address-lookup sites (C1.b) become balance checks; *"No crypto address found"* →
   *"Insufficient balance."*
-- [ ] **T3.2 — Atomic debit-first (adopts runegate `createWithdrawal` + I-8).** Inside a
+- [x] **T3.2 — Atomic debit-first (adopts runegate `createWithdrawal` + I-8).** Inside a
   `BeginTransaction(Serializable)`: `UPDATE tblM_User_Balance SET Balance = Balance − @amt
   WHERE … AND Balance >= @amt OUTPUT deleted.Balance, inserted.Balance`; affected ≠ 1 →
   rollback + "insufficient" (R11 hard floor); else insert the `tblH_User_Balance` ledger
   row (`Type="Card Open"/"Card Topup"`, negative `Amount`, OUTPUT before/after). **Debit
   commits before the WasabiCard call** — never call the provider on an undebited balance.
   Same shared helper as the credit path (Slice 5 / T5.1).
-- [ ] **T3.3 — Provider outcome handling (definitive vs. ambiguous).** Clear success
+- [x] **T3.3 — Provider outcome handling (definitive vs. ambiguous).** Clear success
   (`code==200`) → order `InProgress`, debit stands, the existing WasabiCard webhook
   finalizes to `Success`. Definitive failure (business error / known non-retryable code)
   → **reverse** the debit (compensating credit ledger row) + order `Failed`. **Ambiguous**
@@ -409,7 +426,7 @@ The mechanic is **ported from runegate's `createWithdrawal`** — the closest an
   opportunistic pre-check + `IsDuplicateKeyException` race backstop that **rolls back the
   debit** and returns the cached result; body-hash mismatch → "IdempotencyKey reused with
   different body" (Stripe 422). Stops double-click / network-retry double-debit.
-- [ ] **T3.5 — Tests.** Unit: debit / insufficient / reverse / ambiguous-no-reverse
+- [x] **T3.5 — Tests.** Unit: debit / insufficient / reverse / ambiguous-no-reverse
   branches. Integration (DB-gated): deposit-credit → open-from-balance → top-up-from-
   balance, asserting the ledger reconciles (`Σ credits − Σ debits == Balance`) and a
   double-submit debits once. Port runegate's `F0031d_IdempotencyKey_AttackTests` shapes.
@@ -439,25 +456,25 @@ The mechanic is **ported from runegate's `createWithdrawal`** — the closest an
 
 Mostly **extend**, not build — the spike found a lot already present (see deep dive).
 
-- [ ] **T4.1 — Balance read: extend the existing endpoint.** `POST /v1/user/balance`
+- [x] **T4.1 — Balance read: extend the existing endpoint.** `POST /v1/user/balance`
   (`UserV1Service.getBalance`, Bearer, already IDOR-scoped by `UserID`) exists — point it
   at the live wallet; no new endpoint. Confirm it returns the running `Balance` + currency.
-- [ ] **T4.2 — Deposit-address read: NEW endpoint.** Add `getDepositAddress` reading
+- [x] **T4.2 — Deposit-address read: NEW endpoint.** Add `getDepositAddress` reading
   `tblM_User_Crypto_Deposit` for the authenticated user (+ network/coin + QR-friendly
   payload), scoped `WHERE UserID == uid`; calls `ensureDepositAddress` (T1.2) so a
   not-yet-provisioned user gets one on first view. (No read endpoint exists today.)
-- [ ] **T4.3 — Ledger history: NEW endpoint.** Add `getLedger`/`getStatement` over
+- [x] **T4.3 — Ledger history: NEW endpoint.** Add `getLedger`/`getStatement` over
   `tblH_User_Balance` for the authenticated user, **paginated** (the card-trx list caps at
   "last 20"; the ledger needs paging), exposing `Type/Amount/Balance/Date/reference` and
   **hiding internal `BalanceID`**.
-- [ ] **T4.4 — `payFromBalance` on card open / top-up** (Slice 3 surface).
+- [x] **T4.4 — `payFromBalance` on card open / top-up** (Slice 3 surface).
 - [ ] **T4.5 — User dashboard (`QryptoCard.Dashboard`).** New wallet view: deposit
   address + QR (**reuse the existing `txdeposit.aspx` QR component**), live balance, and
   ledger history; add "pay from balance" to the card flows.
 - [ ] **T4.6 — Admin read-only view (`QryptoCard.Dashboard.Admin`).** View a user's
   balance + ledger for support/reconciliation, **read-only**, mirroring the existing
   commission/fee admin pattern's role gate (`isDeniedAdminRead`). No balance *write* (R17).
-- [ ] **T4.7 — Smoke coverage.** Extend T2 (read: balance/address/ledger) and T3
+- [x] **T4.7 — Smoke coverage.** Extend T2 (read: balance/address/ledger) and T3
   (mutation: credit → open-from-balance lifecycle, dev-only).
 
 ### Design concerns surfaced (deep dive)
@@ -484,7 +501,7 @@ Opportunistic, scoped to code this feature touches — not a blanket rewrite.
 > accessor). The rest of Slice 5 (gateway dedup, type bridge, counter-race, spelling fix)
 > stays as later cleanup.
 
-- [ ] **T5.1 — One atomic balance-mutation helper (a SAFETY fix, not just DRY).** The
+- [x] **T5.1 — One atomic balance-mutation helper (a SAFETY fix, not just DRY).** The
   **only** existing balance mutation in the codebase is the refund path
   (`CallbackV1Service` L343–360): a **non-atomic read-modify-write**
   (`bal.Balance = bal.Balance + …`) on a row read with `FirstOrDefault()` and **no null
@@ -494,7 +511,7 @@ Opportunistic, scoped to code this feature touches — not a blanket rewrite.
   (Slice 3), **and** the refund path (migrate it through the helper — closes T6.9). The
   registration `.Add` (UserV1Service L205) and this are the only two balance-write sites,
   so the surface is fully bounded.
-- [ ] **T5.2** **De-duplicate `tblM_User_Crypto_Deposit` / balance lookups** behind the
+- [x] **T5.2** **De-duplicate `tblM_User_Crypto_Deposit` / balance lookups** behind the
   Slice 1 accessor (removes the ~4 copy-pasted queries across `App`/`API`
   `CardV1Service`).
 - [ ] **T5.3** **De-duplicate the PGCrypto gateway HttpClient boilerplate.** Every
@@ -517,7 +534,7 @@ Opportunistic, scoped to code this feature touches — not a blanket rewrite.
   Total = …`) is copy-pasted across **4 sites** (App `openCard` L421, App `depositCard`
   L736, + the two API-tier twins) that Slice 3 reworks. Extract one calculator — a formula
   fix shouldn't need four edits on a money path.
-- [ ] **T5.9 — Atomic order-ID generation** (closes C1.e/C3.d). Replace the racy
+- [x] **T5.9 — Atomic order-ID generation** (closes C1.e/C3.d). Replace the racy
   `tblM_Setting_Counter` read-increment-save (ID `1`=card, `2`=deposit) with an atomic
   increment (`UPDATE … OUTPUT` or a SQL `SEQUENCE`); concurrent opens can currently collide
   on the same ID.
@@ -555,7 +572,7 @@ Opportunistic, scoped to code this feature touches — not a blanket rewrite.
 - [ ] **T5.4** **Money-type consistency** (R7): make the deposit/credit/debit boundary
   convert `double`↔`decimal` in exactly one place; keep all balance arithmetic in
   `decimal`.
-- [ ] **T5.5** Confirm the refactor is behaviour-preserving via the existing Unit +
+- [x] **T5.5** Confirm the refactor is behaviour-preserving via the existing Unit +
   Integration suites (and the new ones from Slices 2–3) before/after.
 
 ## Slice 6 — Security investigation & hardening *(security thread)*
@@ -564,30 +581,30 @@ The feature adds a **new credited money surface**, so it gets a focused review. 
 that turn out DB- or provider-gated are staged like the rest of the program (build the
 code now; apply the index/migration at shakeout).
 
-- [ ] **T6.0** **Money-flow invariant checklist + regression armor (adopts I-1…I-10).**
+- [x] **T6.0** **Money-flow invariant checklist + regression armor (adopts I-1…I-10).**
   Walk the wallet credit + spend paths against the runegate loss-of-funds invariants
   (signature-gates-all-mutation, DB-layer per-event dedup, monotonic transition, amount
   cross-checked, currency/user from our row, atomic read+write, rejected-never-credits),
   and add a regression test per invariant **even where already compliant** (the house
   "permanent armor" rule). Port the runegate test shapes (see Sister-project patterns).
-- [ ] **T6.1** **Durable replay defense (R6; adopts I-2/I-3):** wire the existing
+- [x] **T6.1** **Durable replay defense (R6; adopts I-2/I-3):** wire the existing
   `tblH_Partner_Webhook_ID` dedup table with a **filtered unique index** on the
   `TransactionID` alone (`WHERE Type='PGCrypto'`) + `SqlException 2601` swallow, so a
   replayed webhook cannot double-credit across process restarts. Ship the index as
   `deploy/sql/*.sql` (DB-gated); pre-apply a duplicate-probe/cleanup like runegate's
   `F0031a_duplicate_probe_and_cleanup.sql`.
-- [ ] **T6.2** **Race / double-spend audit:** prove the credit and debit helpers are
+- [x] **T6.2** **Race / double-spend audit:** prove the credit and debit helpers are
   safe under concurrent + replayed delivery (two webhooks, simultaneous spends,
   spend-during-credit). The conditional `UPDATE` 1-row check is the gate; verify no
   read-modify-write path exists.
-- [ ] **T6.3** **Address-ownership & spoofing:** confirm a deposit can only ever
+- [x] **T6.3** **Address-ownership & spoofing:** confirm a deposit can only ever
   credit the address's owner; a forged/replayed body cannot redirect a credit
   (the signature is already verified upstream by `RunegateWebhookVerifier`; this is
   the post-verify authorization check).
-- [ ] **T6.4** **IDOR sweep** on the new read/spend endpoints (balance, address,
+- [x] **T6.4** **IDOR sweep** on the new read/spend endpoints (balance, address,
   ledger, pay-from-balance) using the Plan 4 / #12 subject-scoping patterns — a user
   can never read or spend another user's balance.
-- [ ] **T6.5** **Deposit-address write surface (re-scoped — see spike below).** The
+- [x] **T6.5** **Deposit-address write surface (re-scoped — see spike below).** The
   unauthenticated `AutomationV1Controller.InsertAddress` (old T3.4) was **removed by PR #13**
   (security loose-ends close-out) and is confirmed absent from the codebase (grep finds it
   only in docs now). The real property to assert and test: **no unauthenticated write to
@@ -597,16 +614,16 @@ code now; apply the index/migration at shakeout).
   must preserve it (create-if-missing only, never overwrite). Note: the `00-overview.md`
   P3·S3 progress row and `03-security-hardening.md` still show T3.4 as open — pre-existing
   doc lag vs the #13 closure, worth reconciling separately.
-- [ ] **T6.6** **Precision / overflow / negative guards:** decimal rounding, negative
+- [x] **T6.6** **Precision / overflow / negative guards:** decimal rounding, negative
   or zero amounts, and overflow on the credit/debit math fail closed (ties to R7/R11).
-- [ ] **T6.7** **Post-verify cross-check (defense-in-depth; adopts I-5).** Re-fetch the
+- [x] **T6.7** **Post-verify cross-check (defense-in-depth; adopts I-5).** Re-fetch the
   deposit from Runegate's REST record (`v1/transaction/static` / `v1/transaction/detail`,
   **confirmed to exist**) and confirm amount/status before crediting — a wallet top-up has
   no pre-recorded amount to match, so this is the I-5 substitute for "amount from our row."
   Mirrors `WebhookCrossCheckEvaluator` on the Wasabi path.
-- [ ] **T6.8** **Internal red-team** the credit/spend paths inside the worktree; fix
+- [x] **T6.8** **Internal red-team** the credit/spend paths inside the worktree; fix
   findings before the PR.
-- [ ] **T6.9** **Fix the refund-path balance null-deref (carried low-sev).**
+- [x] **T6.9** **Fix the refund-path balance null-deref (carried low-sev).**
   `CallbackV1Service.Wasabi`'s deposit-fail refund dereferences the `tblM_User_Balance`
   row from `FirstOrDefault()` without a null check (a user with no balance row throws,
   leaving the deposit `Failed` with no refund). Centralizing balance mutation (T5.1) +
@@ -636,17 +653,17 @@ code now; apply the index/migration at shakeout).
 
 ## Slice 7 — Verification & red-team
 
-- [ ] **T7.1** Build all affected projects + run `dotnet test QryptoCard.Tests.sln`
+- [x] **T7.1** Build all affected projects + run `dotnet test QryptoCard.Tests.sln`
   (Unit: credit/debit/replay/precision logic; Integration: deposit→credit→spend
   lifecycle + ledger-reconciles invariant against LocalDB).
 - [ ] **T7.2** Extend the Smoke tiers (T4.5) and run the dev-shakeout E2E once schema
   is applied.
-- [ ] **T7.3** **Full model-diverse external red-team** (Opus + Sonnet, separate
+- [x] **T7.3** **Full model-diverse external red-team** (Opus + Sonnet, separate
   headless sessions, verdicts posted verbatim on the PR) — this is a money-crediting +
   money-spending surface, the highest-risk class. Attack: double-credit via replay,
   double-spend via race, credit redirection / address spoofing, negative/overflow,
   cross-user IDOR, and reserve-then-confirm reconciliation gaps.
-- [ ] **T7.4** Open the gated PR (plain-English summary + technical section + red-team
+- [x] **T7.4** Open the gated PR (plain-English summary + technical section + red-team
   verdicts verbatim). Never merge without your go-ahead.
 
 ## Database changes (additive, DB-gated)

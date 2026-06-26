@@ -1,5 +1,27 @@
 # Plan 3 — Security Hardening & Forensics
 
+## Status checklist (as of 2026-06-26)
+
+Verified against merged code (several inline "STILL ⬜" notes further down are stale — see T3.4). `[x]` done · `[ ]` outstanding · ⏳ = on-box/provider/owner action. The webhook-integrity + auth/IDOR/role + dead-code surfaces are closed; the **crypto migration (T5.1) is the largest remaining code gap** and forensics tails are owner/provider-gated.
+
+**Done (in code):**
+- [x] **T1.1** forensic queries run (results in `docs/security-findings.md`; no mass forged-callback theft found)
+- [x] **T2.1** verify-first + raw-body capture · **T2.2** WasabiCard RSA verify · **T2.3** Runegate HMAC verify
+- [x] **T3.1** real OTP + 2FA + email · **T3.2** IDOR fixes (by-id scoped to `uid`) · **T3.3** admin role deny-by-default
+- [x] **T3.4** open write endpoint **removed** (`AutomationV1*` deleted in `b28a2c9`) — *the doc's inline "STILL ⬜" note below is stale*
+- [x] **T4.1** hardcoded fee GUID gone · **T4.2** commission credited only via verified callback (`ManualService` removed) · **T4.3** TLS-bypass removed, TLS 1.2 pinned · **T4.4** debug/leftover code removed
+- [x] **T5.2** rate limiting + trusted-proxy IP resolver · **T6.1** tests · **T6.2** internal RT · **T6.3** external model-diverse RT
+
+**Outstanding (code):**
+- [ ] **T5.1 — crypto migration (bcrypt + AES-256-GCM): fully OPEN.** Passwords/secrets still reversible `Secure.APPtoDB`; 2FA still Rijndael with `IV==key`. No `AesGcm`/`BCrypt` exists — the code isn't written yet (not merely an unrun migration). Blocked-with/gated on the launch DB migration.
+- [ ] **T2.4** post-verify cross-check — done for WasabiCard (deposit-refund + card-open) but **PGCrypto/Runegate credit path has none** (Runegate exposes no status REST endpoint — provider blocker)
+- [ ] **T5.3** safe error logging — callback logs type-only, but the **auth service logs full `ex`**, and SHA-256 body-hash-prefix logging is absent
+- [ ] *Caveats on done items:* **T2.1** no 500-on-internal-error (returns 200); **T2.3** uses the global `PGCRYPTO_WEBHOOK_SECRET`, not the per-merchant `CallbackSigningKey` column
+
+**On-box / provider / owner (⏳):**
+- [ ] ⏳ **T2.5** wire up Runegate (prod-gated `QRYPTO_ENVIRONMENT==prod`; default still `dev`) · **D-PGCrypto** provider signing + status endpoint
+- [ ] ⏳ **T1.2** external-evidence correlation (provider audit log + access-log IPs) · **T1.3 / D10** conditional IR + duplicate-`Txhash` (~$44k) — owner decision before cutover
+
 ## Objective
 
 Determine whether funds were **already** stolen, then close the money-theft and

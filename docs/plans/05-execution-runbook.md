@@ -1,5 +1,16 @@
 # Execution Runbook — Dev Shakeout → Prod Cutover
 
+## Status checklist (as of 2026-06-26)
+
+The code is complete; this runbook is about taking it live. `[x]` done · `[ ]` outstanding · ⏳ = operator/box action.
+
+- [x] All **code-only** items closed (signature verify, money-tier auth, IDOR, OTP+bearer+2FA, dead-op/TLS-bypass removal)
+- [x] Resolved decisions: schema source = schema-only DACPAC · canonical DB = `kashnow` · Azure region/subscription · WasabiCard sandbox validated
+- [x] **Stage A — author:** `deploy/` + `QryptoCard.Tests.Smoke` + seeds merged (#14)
+- [ ] ⏳ **Stage B — dev shakeout:** run once against `s16.xyz` per `06`; re-runnable but operator/Azure-side
+- [ ] ⏳ **Stage C — production cutover:** NOT executed — prod DB move + swap, launch crypto/bcrypt migration, provider rotation, callback IP-lock, decommission (all gated)
+- [ ] ⏳ Pending: decommission old host + old Azure SQL (post-cutover)
+
 ## Why this doc exists
 
 Plans 01–04 are **design** documents (what to change and why). This is the **operational

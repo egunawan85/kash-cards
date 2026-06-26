@@ -1,5 +1,29 @@
 # kash-cards — Takeover Hardening & Redeployment: Overview
 
+## Status checklist (as of 2026-06-26)
+
+Master roll-up; each plan doc has its own detailed checklist. `[x]` = code substantially done · `[ ]` = material gaps remain · ⏳ = on-box/launch. **The "Shipped #1–#13" narrative below is accurate but frozen at PR #13** — the repo has since merged Plan 7 prepaid-balance (#16/#19), Postmark (#21), OTP-lockout/rate-limit (#25), and the reconciliation sweep (#26/#29/#31).
+
+**By plan:**
+- [x] **Plan 1 — Secret rotation:** code-side done (env/Key Vault, fail-fast accessor, hardcoded removed); ⏳ the actual provider rotations + history scrub remain → see `01`
+- [x] **Plan 4 — Auth tokens & 2FA:** built & merged (#7–#11); residual deviations (2FA mandatory-vs-opt-in) + purge worker → see `04`
+- [ ] **Plan 3 — Security hardening:** webhook integrity + IDOR/role + dead-code closed, **but T5.1 crypto migration (bcrypt/AES-GCM) is still unwritten**; forensics tails owner-gated → see `03`
+- [ ] **Plan 2 — Redeploy & perimeter:** Stage A automation merged (#14); WAF build-out, BACPAC data-move, and CI pipeline still open; ⏳ prod cutover → see `02`
+- [x] **Plan 7 — Prepaid balance:** core + reconciliation sweep shipped (#16/#19/#26/#29/#31); shakeout items remain → see `07`
+
+**Stale "open" notes that are actually DONE (verified in code; corrected in the per-plan docs):**
+- [x] OTP-lockout + rate-limiter + IP-resolver (was P3·S5 "top residual")
+- [x] `InsertAddress` / open write endpoint removed (P3·S3/S4, commit `b28a2c9`)
+- [x] `SecurityService` / `trustConnection` / dead-op cleanup (P3·S4)
+- [x] Postmark migration incl. forgot-password + admin-invite (06 "known gaps")
+- [x] DevSeed → SQL-seed replacement
+
+**Genuinely still OPEN in-repo:**
+- [ ] **CI pipeline** (Plan 2 S6) — no `.github/workflows/` exists despite the test projects landing
+- [ ] **T5.1 crypto migration** — bcrypt/AES-GCM code not written (launch-gated)
+
+**On-box / launch gates (⏳):** prod DB move + swap · provider rotations · git-history scrub · the launch crypto/bcrypt **data** migration · WAF/zone hardening · decommission old host.
+
 ## Context
 
 kash-cards (a.k.a. QryptoCard) is a crypto→prepaid-card platform: users deposit

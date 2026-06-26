@@ -1,5 +1,28 @@
 # Plan 1 — Secret Rotation
 
+## Status checklist (as of 2026-06-26)
+
+Verified against merged code/config. `[x]` done · `[ ]` outstanding · ⏳ = on-box/provider action (the actual rotations are inherently external).
+
+**Done (in code):**
+- [x] **T1.1** `deploy/` scaffold + secret convention (gitignored `secrets/.vault`+`.env`, committed `.example`s)
+- [x] **T1.2** fail-fast accessor (`SecretsConfig.Require`/`Preload`, called at every tier's `Application_Start`)
+- [x] **T1.3** hardcoded secrets removed (KeyModel literals emptied; Web.config passwords empty; DB password injected on box)
+- [x] **T2.4** email → Postmark + OTP/reset re-enabled *(minor: dead commented spacemail blocks not deleted)*
+- [x] **T3.3** dev secrets/paths stripped from source (guard `check-no-secrets.sh`)
+- (**T3.1** app encryption keys `DBKey`/`APPKey` → **deferred to Plan 3** by design)
+
+**Outstanding (code):**
+- [ ] **T1.4** secret minimization — per-pool scoping is dev-sprays-all (prod `switch` only commented); the specified cross-project name-guard **build test** doesn't exist (the shell guard checks values, not names)
+- [ ] **T2.1** (code part) — drop redundant WasabiCard key encodings: all four are still `Require()`d; plan said keep only `_PRIVATE_KEY_XML`
+- [ ] **T3.2** (code part) — disable dev's `syapril@qrypto.trade` admin row (seed is insert-only, no disable path)
+- [ ] **T4.1** — pre-commit hook + gitleaks + GitHub secret-scanning not wired (only `.gitignore` + the standalone guard)
+- [ ] **T4.2** — git-history scrub (correctly gated on rotations completing first; cosmetic)
+
+**On-box / provider (⏳):**
+- [ ] ⏳ **T2.1 / T2.2 / T2.3** the actual rotations — WasabiCard keypair + API key, Runegate merchant key, Azure SQL logins — plus the old-credential-rejected check
+- [ ] ⏳ **T3.2 / T3.3** disable dev admin on live DB; dev self-revokes own credentials & access
+
 ## Objective
 
 Rotate every credential that was committed to the (formerly public) repository,
