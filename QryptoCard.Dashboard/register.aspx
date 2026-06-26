@@ -85,7 +85,7 @@
                         <div class="ctrl"><input type="text" runat="server" id="txtReferralCode" placeholder="Enter a referral code" name="referral code" autocomplete="off" /></div>
                     </div>
                     <div class="auth-meta" style="margin-top: 14px;">
-                        <label class="checkbox"><input type="checkbox" /> I agree to the <a href="#">Terms</a> &amp; <a href="#">Privacy Policy</a></label>
+                        <label class="checkbox"><input type="checkbox" /> I agree to the Terms &amp; Privacy Policy</label>
                     </div>
                     <asp:Button runat="server" ID="btnRegisterX" OnClick="btnRegister_ServerClick" CssClass="btn btn-cyan btn-block btn-lg" Text="Create my account" OnClientClick="this.disabled=true;" UseSubmitBehavior="false" />
                 </form>

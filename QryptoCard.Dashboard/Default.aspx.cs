@@ -17,7 +17,6 @@ namespace QryptoCard.Dashboard
                 btnRegister.Visible = false;
                 btnRegister2.Visible = false;
                 txtGetStarted.Visible = false;
-                txtEmail.Visible = false;
             }
             else
             {

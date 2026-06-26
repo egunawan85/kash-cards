@@ -264,7 +264,6 @@
                     <h2 class="display">Your USDT is ready.<br><span class="grad">Is your card?</span></h2>
                     <p>Be first in line for the next batch of Kash virtual cards. No spam &mdash; just one email when your spot opens.</p>
                     <div class="cta-form">
-                        <input type="email" runat="server" id="txtEmail" placeholder="you@email.com" aria-label="Email address" />
                         <a class="btn btn-cyan" href="register" runat="server" id="btnRegister2">Reserve my card</a>
                     </div>
                 </div>
@@ -280,8 +279,8 @@
                         <p class="footer-about">The virtual card you top up with USDT and spend anywhere. Instant conversion, one simple fee.</p>
                     </div>
                     <div class="footer-col"><h4>Product</h4><a href="#features">Features</a><a href="#how">How it works</a><a href="#fees">Fees</a><a href="register">Get a card</a></div>
-                    <div class="footer-col"><h4>Company</h4><a href="#security">Security</a><a href="#">About</a><a href="#">Careers</a><a href="#">Contact</a></div>
-                    <div class="footer-col"><h4>Legal</h4><a href="#">Terms of Service</a><a href="#">Privacy Policy</a></div>
+                    <div class="footer-col"><h4>Company</h4><a href="#security">Security</a><a href="about">About</a><a href="contact">Contact</a></div>
+                    <div class="footer-col"><h4>Legal</h4><span>Terms of Service</span><span>Privacy Policy</span></div>
                 </div>
                 <div class="footer-bottom">
                     <span>&copy; 2026 Kash. All rights reserved.</span>
