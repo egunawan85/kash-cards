@@ -55,17 +55,17 @@ success and induced-failure paths, and any defects found are fixed or logged.
 **Sandbox-build vs. live-test split (SD-10).** Because no card product is provisioned on
 the sandbox merchant (U6) and we are **not** pursuing provisioning, "done" splits in two:
 
-- **Built + verified in sandbox now:** all code changes (SD-1, SD-9 monitor-mode, SD-2,
-  DD-7) compiled + unit/integration-tested; the **wallet money path** end-to-end (test
+- **Built + verified in sandbox now:** all code changes (SD-1, SD-2, DD-7 — SD-9 needs no
+  code, already verified fail-closed at the edge) compiled + unit/integration-tested; the **wallet money path** end-to-end (test
   credit → balance → ledger → deposit-address panel); the **buy/top-up money logic up to
   the provider boundary** (balance debit, fee math, insufficient-balance, and the
   provider-failure → refund/rollback path — exercisable because the WasabiCard call fails
   cleanly with no card product); and all visual/UX polish.
 - **Validated in the live environment later:** the **card-issuance E2E success paths**
   (successful buy / top-up / `/card/sensitive` PAN-CVV / `/card/transaction` / cancel),
-  real provider-driven webhooks, KYC behavior, and the SD-11 flip of webhook verification
-  from monitor to fail-closed (needs a real webhook sample to confirm). Prod additionally
-  requires WasabiCard IP-whitelisting.
+  real provider-driven webhooks, KYC behavior, and confirming the (already fail-closed)
+  webhook verifier accepts a real WasabiCard signature (SD-11 (c); needs a real webhook
+  sample). Prod additionally requires WasabiCard IP-whitelisting.
 
 ---
 
@@ -125,31 +125,56 @@ is a helpful backstop, but **the `WASABICARD_API_URL` switch is the real sandbox
 boundary** (hence SD-1: make it Required, never defaulted). The auth code (signing,
 headers, TLS 1.2) is already implemented. Nothing to obtain.
 
-### 3.4 Finding — the WasabiCard webhook signature is NOT verified
+### 3.4 Finding — the WasabiCard webhook signature IS verified (the original "not verified" finding was wrong)
 
-**Surfaced during this phase's code trace; verified by direct read.** The WasabiCard
-callback handler `CallbackV1Service.Wasabi(cat, sign, req, a)`
+> **⚠️ CORRECTION (2026-06-26).** The finding below — that the WasabiCard webhook
+> signature is never verified — is **incorrect and superseded**. It traced only the INT
+> WCF tier (`CallbackV1Service.Wasabi`) and missed that that tier is **not
+> internet-facing**. The webhook is verified **fail-closed, over the exact raw body,
+> before any parse or forward**, at the public edge — and has been since **2026-06-24**
+> (commit `b9f054b`, "Verify webhook signatures at the deposit callback before
+> crediting"), two days before this plan was written. **SD-9 and SD-11 are therefore
+> moot; slice S2 (Phase 1, §9) is resolved by prior work and ships no code.** See the
+> corrected description immediately below; the original (wrong) analysis is kept after it
+> for the record.
+
+**Corrected understanding — the actual topology.** WasabiCard's webhook does not reach the
+INT WCF service directly. It hits the public REST edge
+`QryptoCard.API.Callback/Controllers/v1/CallbackV1Controller.wasabi()` (`[Route("v1/payment/wasabicard")]`),
+which:
+
+1. reads the **exact raw request bytes** (`Request.Content.ReadAsByteArrayAsync()`),
+2. rejects an empty body, then
+3. calls `WasabiSignatureVerifier.Verify(X-WSB-SIGNATURE, rawBody, WASABICARD_WSBPUBLIC_KEY)`
+   and **returns 401 fail-closed on mismatch — before any parse**, and only then
+4. forwards the **exact verified bytes** to the INT tier
+   (`sr.Wasabi(category, signature, requestId, UTF8.GetString(rawBody))`).
+
+The INT WCF handler `CallbackV1Service.Wasabi` doesn't re-verify because it can only be
+reached **through that edge**: the INT callback tier is network-isolated and gated by the
+`X-Int-Auth` shared secret (`IntAuthBehavior` / `INT_CALLBACK_SHARED_SECRET`), so it
+receives only already-verified payloads. The same edge commit also verifies the
+**Runegate/PGCrypto** deposit webhook fail-closed (`RunegateWebhookVerifier`, `X-Runegate-Signature`),
+which likewise corrects the "related finding" note in §7.
+
+**What actually remains (live, not a sandbox code task):** the verifier is proven against
+self-signed fixtures but has not yet been confirmed against a **real** WasabiCard
+signature (gated on **U2** — whether the sandbox fires webhooks at all). That is a
+live-environment validation, not a build task, and it does not change the fact that the
+edge is already fail-closed today.
+
+---
+
+**Original finding (SUPERSEDED — retained for the record; do not action).** *Surfaced
+during this phase's code trace; the trace was incomplete (it stopped at the INT WCF tier
+and never looked at the API.Callback edge).* The WasabiCard callback handler
+`CallbackV1Service.Wasabi(cat, sign, req, a)`
 (`QryptoCard.INT.Callback/Service/v1/CallbackV1Service.svc.cs:60`) receives the
-`X-WSB-SIGNATURE` as `sign` and only **logs** it (`tes.Header = sign;`, line 67) — it
-**never verifies** it before acting on the payload. `WasabiSignatureVerifier.Verify()`
-(in `QryptoCard.Sec`, with passing unit tests) is **not referenced anywhere in the
-Callback project**. The PR #2/#13 "callback signature verification" hardening covered the
-**Runegate/PGCrypto deposit webhook** (the original money-crediting hole) — not this one.
-
-This contradicts the "verified via X-WSB-SIGNATURE" assumption. **Impact:** the Wasabi
-webhook isn't the direct wallet-credit path (that's PGCrypto), but it finalizes card
-orders, ingests 3DS/auth records, decrypts sensitive PAN on `card_transaction:create`,
-and triggers refund credits on `card_transaction:deposit` failure. A forged webhook could
-forge a finalization/auth record or a refund credit. The deposit-failure **refund** path
-has a partial compensating control — a provider re-query cross-check
-(`getDepositOperation`) — but the other branches do not, and signature verification is
-absent across the board.
-
-Whether to **fix this now** (we're already exercising webhooks this phase, hold the
-signing keys, and have a synthetic-webhook harness — wiring `Verify()` in is small and
-directly de-risks cutover) or **log it for a dedicated pre-cutover hardening pass** is
-decision **SD-9** (§7). Either way it should not silently ride to cutover under a false
-"verified" assumption.
+`X-WSB-SIGNATURE` as `sign` and only **logs** it (`tes.Header = sign;`, line 67) — it does
+not verify it. From the INT tier alone this *looked* like the signature was never checked.
+It is — at the edge (see the correction above), so the impact described here (forged
+finalization/auth/refund records) does **not** apply: a forged webhook is rejected with
+401 before it ever reaches this handler.
 
 ### 3.3 Unknowns to resolve early
 
@@ -261,7 +286,7 @@ names the hops to confirm at each layer.
 | **Sensitive (PAN/CVV)** | OTP-gated reveal | sensitive read | `/card/sensitive` |
 | **Transactions / history** | `txcard.aspx` | tx read | `/card/transaction` |
 | **Cancel card** | card detail action | cancel | `/card/cancel` |
-| **Webhooks** | n/a (inbound) | `CallbackV1Service.Wasabi` — **⚠ signature NOT verified today (§3.4, SD-9)** | `card_transaction` (create/deposit finalize), `card_auth_transaction` (spend auth), `card_3ds` (OTP), `card_fee_patch`, `card_holder` (KYC) |
+| **Webhooks** | n/a (inbound) | edge `CallbackV1Controller.wasabi()` verifies `X-WSB-SIGNATURE` **fail-closed before forward** (✅ §3.4 correction, SD-9 moot) → INT `CallbackV1Service.Wasabi` (via `X-Int-Auth`) | `card_transaction` (create/deposit finalize), `card_auth_transaction` (spend auth), `card_3ds` (OTP), `card_fee_patch`, `card_holder` (KYC) |
 
 ### 5.2 Wallet / balance flows (Plan 07 surface)
 
@@ -321,19 +346,22 @@ input.
 | **SD-4** | DD-7 card artwork | ✔ **In scope.** Harvest the card artwork from the **NewDesign template** (already on disk locally, untracked) — the owner likes that look. Vendor the images into `Content/media/cards/`, add the nullable art field (INT card-type → API `/v1/card/type` → `CardTypeModel`), render per-type with the static brand card as fallback. Needs a full `update` (touches `.cs`), not the `sync` fast lane. |
 | **SD-5** | Test strategy | ✔ **Manual click-through primary** + targeted automated checks for read/signing paths; mutating sandbox calls exercised manually first, automate only the stable ones. |
 | **SD-6** | Webhook driving | ✔ Confirm tunnel exposure if the sandbox delivers (U2); otherwise **synthesise signed webhooks on-box** (we hold the keys). Same harness backs the SD-2 test-credit tool. |
-| **SD-7** | Red-team posture | ✔ **Internal-only, per money-touching change.** No external (sandbox, no real money) unless a change alters the prod money/auth surface. The SD-9 webhook-verify fix and the SD-2 test-credit tool each get an internal red-team. |
+| **SD-7** | Red-team posture | ✔ **Internal-only, per money-touching change.** No external (sandbox, no real money) unless a change alters the prod money/auth surface. The SD-2 test-credit tool gets an internal red-team. (SD-9 needs no change — already verified fail-closed at the edge.) |
 | **SD-8** | Credentials | ✔ **Not a blocker — we already have working credentials.** The **same** WasabiCard creds work for sandbox and prod (`.vault` is seeded); prod is gated *only* by **server-IP whitelisting**, which the dev box does not have — a useful backstop, but **the `WASABICARD_API_URL` switch is the real sandbox/prod boundary** (→ reinforces SD-1's "Required, no default"). |
-| **SD-9** | WasabiCard webhook signature not verified (§3.4) | ✔ **Fix now, staged rollout (see SD-11).** Wire `WasabiSignatureVerifier.Verify()` into `CallbackV1Service.Wasabi`. Internal red-team. (We're already in this code with the keys + a synthetic-webhook harness.) |
+| **SD-9** | WasabiCard webhook signature not verified (§3.4) | ⤫ **MOOT — already fixed (2026-06-26 correction).** The premise was wrong: the signature is already verified **fail-closed, over the exact raw body, before parse/forward** at the public edge (`CallbackV1Controller.wasabi()`, commit `b9f054b`, 2026-06-24). The INT WCF handler is reached only through that edge (network-isolated + `X-Int-Auth`). No code change; nothing to wire. See the §3.4 correction. |
 | **SD-10** | Sandbox card-product gap (U6) — pursue or defer? | ✔ **Defer to live; no WasabiCard email.** We do **not** chase sandbox card-product provisioning. Build everything sandbox can exercise now (see split below); the **card-issuance E2E** (successful buy / top-up / sensitive / transactions / cancel, real provider webhooks, KYC) is validated in the **live** environment later (prod needs WasabiCard IP-whitelisting). Sandbox stays the build/verify environment for code + the wallet/money-logic paths. |
-| **SD-11** | SD-9 rollout safety (verifier unproven vs. real WasabiCard signatures) | ✔ **Build verification in MONITOR mode first, enforce later.** The verifier is internally correct but only tested against self-signed fixtures — flipping fail-closed blind risks rejecting *every* real webhook in live. So: (a) implement verification over the **exact raw body at ingress** (verify-before-parse — confirm where the untouched raw body is available in the WCF path); (b) ship it **logging match/mismatch but still processing** (monitor); (c) capture a **real** webhook + signature in live, confirm it verifies; (d) **then flip to fail-closed reject**. The flip to enforce is a small follow-up, gated on real-sample confirmation — not part of the sandbox build. |
+| **SD-11** | SD-9 rollout safety (verifier unproven vs. real WasabiCard signatures) | ⤫ **MOOT as a build step — the edge is already fail-closed.** The monitor-first staging was predicated on SD-9 being unbuilt; it isn't. Verification already runs over the exact raw body at ingress and rejects on mismatch (it never went through a monitor phase). The one genuine residual is the SD-11 (c) step — confirm the verifier accepts a **real** WasabiCard signature, gated on **U2** (does the sandbox fire webhooks?). That is a **live** validation, not sandbox code. If a real sample ever fails, revisit then; do not pre-emptively weaken the edge to monitor mode. |
 
-**Related finding noted, not in this phase's scope:** the **Runegate/PGCrypto** webhook
-(`PGCrypto(...)`) also performs no cryptographic signature check — its T2.5 signature
+**Related finding — also already corrected (2026-06-26):** the note below claimed the
+**Runegate/PGCrypto** webhook performs no cryptographic signature check. That is **no longer
+true** — the same edge commit (`b9f054b`) verifies it fail-closed via
+`RunegateWebhookVerifier` over `X-Runegate-Signature` at `CallbackV1Controller.pgcrypto()`,
+before parse/credit. The SD-2 dev test-credit tool does **not** depend on the PGCrypto
+webhook being signature-light; it routes through the internal `WalletService` credit path
+and is walled by the environment hard-gate (see SD-2). *Original note (superseded):* the
+`PGCrypto(...)` webhook "also performs no cryptographic signature check — its T2.5 signature
 wire-up was deferred in Plan 3; it relies on user-from-our-record + `isPaid` +
-`TransactionID` idempotency + the planned Cloudflare edge IP-lock for prod. That is *why*
-the SD-2 fake-deposit injection is straightforward on the dev box. Tracked as a Plan 3 /
-cutover hardening item; not fixed here (unlike SD-9, which we touch because this phase is
-already in the Wasabi webhook).
+`TransactionID` idempotency + the planned Cloudflare edge IP-lock for prod."
 
 **Facts still to gather early (one smoke test or one email to WasabiCard staff): U1 (fund
 the sandbox merchant wallet), U2 (do webhooks fire in sandbox?), U3 (KYC auto-approved +
@@ -353,8 +381,8 @@ before any worktree or code edit. After sign-off:
 2. **Env-switch fix (SD-1)** — small worktree: make `WASABICARD_API_URL` Required in both
    `QryptoCard.INT` and `QryptoCard.INT.Callback`; build + run suites; deploy via `update`.
    Confirm the dev box still resolves to the sandbox URL after the change.
-3. **WasabiCard webhook signature verify (SD-9)** — wire `WasabiSignatureVerifier.Verify()`
-   into `CallbackV1Service.Wasabi`, fail-closed; internal red-team; build + suites.
+3. ~~**WasabiCard webhook signature verify (SD-9)**~~ — **already done (no code).** Verified
+   fail-closed at the edge since commit `b9f054b` (2026-06-24); see the §3.4 correction.
 4. **Dev-only test-credit tool (SD-2)** — env-hard-gated + root-admin-only + audit-logged,
    routing through `WalletService.CreditDeposit` / synthetic `PGCrypto` webhook; internal
    red-team (the env gate is the security-critical surface).
@@ -364,9 +392,9 @@ before any worktree or code edit. After sign-off:
    markup/CSS.
 6. **DD-7 card art (SD-4)** — art field + template images; full `update`.
 7. **Per-change verification + internal red-team (SD-7)** before each PR; PRs branch off
-   `main` from a worktree, never stacked; **merge stays a human gate**. The SD-9 verify fix
-   and the SD-2 test-credit tool are the two money/security-touching changes that each get
-   an internal red-team.
+   `main` from a worktree, never stacked; **merge stays a human gate**. The SD-2 test-credit
+   tool is the money/security-touching change that gets an internal red-team (SD-9 needed no
+   change — already verified at the edge).
 
 **Verification bar (every gate):** build the affected projects + test projects, run the
 relevant suites, state pass/fail/skip counts. "Verified" = ran it and saw it pass.
@@ -410,15 +438,16 @@ read it from env and **refuse to start if it's unset**, rather than silently def
 
 ### Phase 1 — Security & money-path corrections (the two changes with teeth)
 
-**Slice 1.1 — Verify the WasabiCard webhook signature (SD-9).** *(no dependency)*
-The card-event webhook currently logs `X-WSB-SIGNATURE` but never checks it, so a forged
-notification is trusted. Wire in the existing verifier, fail-closed, before any action.
-- [ ] Call `WasabiSignatureVerifier.Verify()` in `CallbackV1Service.Wasabi` (`...Callback/Service/v1/CallbackV1Service.svc.cs:60`) **before** processing — reject on failure (no DB writes, no side effects)
-- [ ] Confirm verify-before-act ordering: the journal row may record the attempt, but event handlers (`card_3ds`/`card_auth_transaction`/`card_fee_patch`/`card_transaction`) run only on a valid signature
-- [ ] Unit/integration: valid signature → processed; tampered/absent → rejected, no state change
-- [ ] Build + run suites; record counts
-- [ ] **Internal red-team:** forge attempts, replay, signature-stripping, malformed body
-- [ ] PR (`worktree-09-wasabi-webhook-verify`)
+**Slice 1.1 — Verify the WasabiCard webhook signature (SD-9). — ✅ ALREADY DONE (prior work; no code this phase).**
+The original premise ("the webhook logs `X-WSB-SIGNATURE` but never checks it") was a
+mis-trace of the INT WCF tier. The signature is already verified **fail-closed, over the
+exact raw body, before any parse or forward** at the public edge
+(`QryptoCard.API.Callback/Controllers/v1/CallbackV1Controller.wasabi()`, commit `b9f054b`,
+2026-06-24); the INT handler is reached only through that edge (network-isolated +
+`X-Int-Auth`). See the §3.4 correction and SD-9/SD-11. Nothing to wire.
+- [x] Verified at ingress (`CallbackV1Controller.wasabi()`): raw bytes read, empty body rejected, `WasabiSignatureVerifier.Verify(...)` → **401 on mismatch before parse**, then exact bytes forwarded to INT
+- [x] Forged/tampered/absent/empty are rejected at the edge (the original "internal red-team" items are satisfied by the edge's fail-closed return)
+- [ ] *Live only (gated on U2):* confirm the verifier accepts a **real** WasabiCard signature once the sandbox actually fires a webhook — not a sandbox code task
 
 **Slice 1.2 — Dev-only test-credit tool (SD-2).** *(no dependency; needed before Phase 2 spend flows)*
 Runegate's sandbox has no USDT, so we can't rehearse the real deposit. Build a tool that
@@ -471,7 +500,7 @@ prod. The environment gate is the security-critical surface.
 - [ ] `card_transaction` (create + deposit finalize) — happy + failure/refund branches
 - [ ] `card_auth_transaction` (spend auth) — incl. failure email
 - [ ] `card_3ds` (OTP) ; `card_fee_patch` ; `card_holder` (KYC) recorded correctly
-- [ ] All exercised **through the now-verified handler** (Slice 1.1) — confirm forged/tampered are rejected
+- [ ] All exercised **through the fail-closed edge verifier** (`CallbackV1Controller.wasabi()`, §3.4 correction) — confirm forged/tampered are rejected with 401 before forward
 
 ### Phase 3 — Visual / UX polish
 
@@ -509,15 +538,18 @@ state, never in a repo file. Claim = branch + draft PR; dependency gate = PR mer
 merge to `main` is a human gate.
 
 **Wave A — 4 parallel sessions, disjoint files, no inter-deps (start now):**
-- **S1** SD-1 URL-Required · **S2** SD-9/SD-11 webhook verify (monitor mode) · **S3** SD-2
-  test-credit tool · **S4** SD-4 card art.
+- **S1** SD-1 URL-Required · ~~**S2** SD-9/SD-11 webhook verify~~ **(✅ closed — already
+  done; the webhook is verified fail-closed at the edge, see §3.4 correction / SD-9)** ·
+  **S3** SD-2 test-credit tool · **S4** SD-4 card art.
 
 **Wave B — sequential / gated:**
 - **S5** wallet money-path verification — after **S3** merges (needs the test-credit tool).
 - **S6** UX polish sweep — after **S4** + relevant re-skins; opportunistic, last.
 
 **Deferred to live (not sessions):** card-issuance E2E success paths, real provider webhooks,
-KYC, and the SD-11 monitor→fail-closed flip.
+KYC, and confirming the already-fail-closed webhook verifier accepts a real WasabiCard
+signature (SD-11 (c); there is no monitor→fail-closed flip to make — the edge is already
+fail-closed).
 
 **Unattended-run rule (verified against the `git-write-guard` hook):** create branch+worktree
 in one step (`git worktree add -b <branch> .claude/worktrees/<dir> origin/main`); commit/push
