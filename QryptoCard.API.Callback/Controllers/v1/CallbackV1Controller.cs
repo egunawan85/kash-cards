@@ -28,13 +28,21 @@ namespace QryptoCard.API.Callback.Controllers.v1
             return ctx != null ? ctx.Request.Headers[name] : null;
         }
 
-        // Scheduled reconciliation-sweep trigger. Loopback-only by deployment (its Cloudflare route is
-        // internal) AND gated by a shared secret in X-Scheduler-Auth — fail-closed, constant-time
-        // compared, rejected before any work. The on-box scheduled task presents the secret each tick.
+        // Scheduled reconciliation-sweep trigger. The API.Callback host is publicly reachable via the
+        // Cloudflare tunnel, so this money-moving endpoint is defended two ways, both BEFORE any work:
+        //   1. Reject anything that arrived THROUGH Cloudflare. The tunnel stamps CF-* headers on every
+        //      proxied request; the on-box scheduled task hits 127.0.0.1:8084 directly and has none.
+        //      So in practice only the box can reach this. 404 (not 401) so an external prober can't
+        //      even tell the endpoint exists.
+        //   2. A shared secret in X-Scheduler-Auth (fail-closed, constant-time).
         [Route("reconcile/pending")]
         [HttpPost]
         public HttpResponseMessage reconcilePending()
         {
+            // Arrived through the public Cloudflare tunnel -> not the on-box scheduler -> pretend absent.
+            if (!string.IsNullOrEmpty(Header("CF-Connecting-IP")) || !string.IsNullOrEmpty(Header("CF-Ray")))
+                return Request.CreateResponse(HttpStatusCode.NotFound);
+
             if (!SharedSecretAuth.IsAuthorized(Header("X-Scheduler-Auth"), "SCHEDULER_SHARED_SECRET"))
                 return Request.CreateResponse(HttpStatusCode.Unauthorized);
 
