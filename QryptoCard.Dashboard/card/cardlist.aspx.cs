@@ -104,14 +104,16 @@ namespace QryptoCard.Dashboard.card
             return ResolveUrl("~/Content/media/card-bg.png");
         }
 
-        // Surfaces a backend error message to the user. This screen has no styled
-        // alert modal yet (added when it's re-skinned), so fall back to a client alert.
+        // Surfaces a backend error inline, in the same NewDesign alert idiom used
+        // elsewhere in the re-skin, instead of a native browser alert() — so an
+        // upstream failure reads as a styled, in-page message rather than a jarring
+        // popup (and is never mistaken for an empty card list).
         void ShowAlert(string message)
         {
-            if (string.IsNullOrEmpty(message))
-                message = "Unable to load cards. Please try again.";
-            string js = "alert('" + HttpUtility.JavaScriptStringEncode(message) + "');";
-            ClientScript.RegisterStartupScript(GetType(), "cardListError", js, true);
+            pnlAlert.Visible = true;
+            lblAlert.Text = Server.HtmlEncode(string.IsNullOrEmpty(message)
+                ? "Unable to load cards. Please try again."
+                : message);
         }
     }
 }

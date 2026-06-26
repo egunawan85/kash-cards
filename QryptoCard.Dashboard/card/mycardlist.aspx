@@ -18,6 +18,7 @@
         .mycard-label { font-family: var(--font-mono); font-size: .58rem; letter-spacing: .12em; text-transform: uppercase; color: var(--ink-faint); }
         .mycard-holder { font-weight: 600; font-size: .95rem; margin-top: 2px; }
         .mycard-foot img { height: 28px; }
+        .cards-alert { border-radius: 12px; padding: .85em 1.1em; margin-top: 16px; font-size: .9rem; font-weight: 500; color: #ff8585; background: rgba(255, 70, 70, .07); border: 1px solid rgba(255, 90, 90, .32); }
     </style>
 
     <!--begin::Page header-->
@@ -33,6 +34,10 @@
         </div>
     </div>
     <!--end::Page header-->
+
+    <asp:Panel runat="server" ID="pnlAlert" CssClass="cards-alert" Visible="false">
+        <asp:Label runat="server" ID="lblAlert" />
+    </asp:Panel>
 
     <div class="mycards-grid">
         <asp:Repeater ID="rptCard" runat="server">
