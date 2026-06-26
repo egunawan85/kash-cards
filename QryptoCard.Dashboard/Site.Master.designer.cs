@@ -33,33 +33,6 @@ namespace QryptoCard.Dashboard
         protected global::System.Web.UI.WebControls.Label lblEmail;
 
         /// <summary>
-        /// lblBalance control.
-        /// </summary>
-        /// <remarks>
-        /// Auto-generated field.
-        /// To modify move field declaration from designer file to code-behind file.
-        /// </remarks>
-        protected global::System.Web.UI.HtmlControls.HtmlGenericControl lblBalance;
-
-        /// <summary>
-        /// lblTotalCards control.
-        /// </summary>
-        /// <remarks>
-        /// Auto-generated field.
-        /// To modify move field declaration from designer file to code-behind file.
-        /// </remarks>
-        protected global::System.Web.UI.HtmlControls.HtmlGenericControl lblTotalCards;
-
-        /// <summary>
-        /// rptCard control.
-        /// </summary>
-        /// <remarks>
-        /// Auto-generated field.
-        /// To modify move field declaration from designer file to code-behind file.
-        /// </remarks>
-        protected global::System.Web.UI.WebControls.Repeater rptCard;
-
-        /// <summary>
         /// MainContent control.
         /// </summary>
         /// <remarks>

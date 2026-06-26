@@ -126,6 +126,17 @@
 .copy-btn:hover{border-color:var(--cyan);color:var(--cyan-bright)}
 .copy-btn.done{border-color:var(--cyan);color:var(--cyan-bright)}
 
+/* sidebar sign-out (shares .dash-nav anchor styling) */
+.dash-signout{display:flex;align-items:center;gap:12px;padding:11px 12px;border-radius:12px;color:var(--ink-3);font-weight:500;font-size:.94rem;margin-top:4px;transition:background .2s,color .2s}
+.dash-signout svg{flex:0 0 auto;opacity:.85}
+.dash-signout:hover{background:rgba(255,255,255,.05);color:var(--ink)}
+
+/* app footer (shared chrome) */
+.dash-foot{display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap;margin-top:40px;padding-top:20px;border-top:1px solid var(--line);color:var(--ink-3);font-size:.84rem}
+.dash-foot a{color:var(--ink-2);font-weight:500}
+.dash-foot a:hover{color:var(--cyan-bright)}
+.dash-foot nav{display:flex;gap:18px}
+
 /* responsive */
 @media (max-width:920px){
   .dash{grid-template-columns:1fr}
@@ -133,7 +144,7 @@
   .dash-side.open{transform:none}
   .dash-scrim{display:block;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:80;opacity:0;pointer-events:none;transition:opacity .3s}
   .dash-scrim.show{opacity:1;pointer-events:auto}
-  .menu-btn{display:inline-grid;place-items:center;width:42px;height:42px;border-radius:11px;border:1px solid var(--line-2);background:rgba(255,255,255,.04);color:var(--ink);cursor:pointer}
+  .menu-btn{display:inline-grid;place-items:center;width:42px;height:42px;border-radius:11px;border:1px solid var(--line-2);background:rgba(255,255,255,.04);color:var(--ink);cursor:pointer;margin-bottom:18px}
   .dash-main{padding:20px}
   .dash-grid{grid-template-columns:1fr}
   .card-panel{grid-column:1;grid-row:auto}
