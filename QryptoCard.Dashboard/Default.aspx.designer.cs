@@ -51,15 +51,6 @@ namespace QryptoCard.Dashboard
         protected global::System.Web.UI.HtmlControls.HtmlAnchor txtGetStarted;
 
         /// <summary>
-        /// txtEmail control.
-        /// </summary>
-        /// <remarks>
-        /// Auto-generated field.
-        /// To modify move field declaration from designer file to code-behind file.
-        /// </remarks>
-        protected global::System.Web.UI.HtmlControls.HtmlInputGenericControl txtEmail;
-
-        /// <summary>
         /// btnRegister2 control.
         /// </summary>
         /// <remarks>
