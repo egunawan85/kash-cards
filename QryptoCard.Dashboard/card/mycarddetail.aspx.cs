@@ -450,7 +450,7 @@ namespace QryptoCard.Dashboard.card
             if (txtDepositAmount.Text == "")
             {
                 btnDepositConfirm.Enabled = true;
-                lblfaileddeposit.Text = "Deposit amount cannot be empty";
+                lblfaileddeposit.InnerText = "Deposit amount cannot be empty";
                 divfaileddeposit.Visible = true;
                 ScriptManager.RegisterClientScriptBlock(this, GetType(), "Pop", "var isModalRecharge = true", true);
                 return;
@@ -458,7 +458,7 @@ namespace QryptoCard.Dashboard.card
             if (!checkMinimumDeposit())
             {
                 btnDepositConfirm.Enabled = true;
-                lblfaileddeposit.Text = "Minimum deposit amount is " + hfMinDeposit.Value + " USD";
+                lblfaileddeposit.InnerText = "Minimum deposit amount is " + hfMinDeposit.Value + " USD";
                 divfaileddeposit.Visible = true;
                 ScriptManager.RegisterClientScriptBlock(this, GetType(), "Pop", "var isModalRecharge = true", true);
                 return;
@@ -466,7 +466,7 @@ namespace QryptoCard.Dashboard.card
             if (!checkMaximumDeposit())
             {
                 btnDepositConfirm.Enabled = true;
-                lblfaileddeposit.Text = "Maximum deposit amount is " + hfMaxDeposit.Value + " USD";
+                lblfaileddeposit.InnerText = "Maximum deposit amount is " + hfMaxDeposit.Value + " USD";
                 divfaileddeposit.Visible = true;
                 ScriptManager.RegisterClientScriptBlock(this, GetType(), "Pop", "var isModalRecharge = true", true);
                 return;
@@ -487,7 +487,7 @@ namespace QryptoCard.Dashboard.card
             else
             {
                 btnDepositConfirm.Enabled = true;
-                lblfaileddeposit.Text = BuildSpendError(res.Message);
+                lblfaileddeposit.InnerHtml = BuildSpendError(res.Message);
                 divfaileddeposit.Visible = true;
                 ScriptManager.RegisterClientScriptBlock(this, GetType(), "Pop", "var isModalRecharge = true", true);
                 return;
@@ -629,20 +629,8 @@ namespace QryptoCard.Dashboard.card
             }
         }
 
-        protected void gvDepositList_SelectedIndexChanged(object sender, EventArgs e)
-        {
-            foreach (GridViewRow row in gvDepositList.Rows)
-            {
-                if (row.RowIndex == gvDepositList.SelectedIndex)
-                {
-                    var refs = ((HiddenField)row.FindControl("hfID")).Value;
-                    Session["ID"] = refs;
-
-                    //var a = Common.Base64Encode(refs);
-
-                    Response.Redirect("~/txdeposit?id=" + refs);
-                }
-            }
-        }
+        // The per-card deposit-detail navigation is retired (top-ups pay from the wallet
+        // balance now), so the row select handler and its redirect to the old ~/txdeposit?id=
+        // page were removed along with the row onclick wiring above. The list is read-only history.
     }
 }

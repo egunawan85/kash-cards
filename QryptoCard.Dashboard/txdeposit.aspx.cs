@@ -32,8 +32,18 @@ namespace QryptoCard.Dashboard
 
         void bindData()
         {
-            getBalance();
-            getDepositAddress();
+            // Each read is isolated: a failure (or a malformed-but-success payload that fails to
+            // deserialize) leaves its own section at its default state instead of failing the page.
+            try { getBalance(); } catch { /* leave balance at the markup default ("—") */ }
+            try
+            {
+                getDepositAddress();
+            }
+            catch
+            {
+                viewDeposit.Visible = false;
+                viewNoAddress.Visible = true;
+            }
         }
 
         void getBalance()
@@ -56,7 +66,7 @@ namespace QryptoCard.Dashboard
                 var dt = JsonConvert.DeserializeObject<DepositAddressModel>(op.Data.ToString());
                 if (dt != null && !string.IsNullOrEmpty(dt.Address))
                 {
-                    lbladdress.InnerHtml = dt.Address;
+                    lbladdress.InnerText = dt.Address;
                     hfAddress.Value = dt.Address;
                     imgQR.ImageUrl = Common.GenerateQrDataUri(dt.Address);
                     imgQR.Visible = true;

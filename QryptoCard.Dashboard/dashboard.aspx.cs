@@ -61,13 +61,23 @@ namespace QryptoCard.Dashboard
         }
 
         // Live wallet panel (S-F). Every figure shown here is server-returned; nothing is
-        // computed client-side. Each read is independent so one failing endpoint doesn't blank
-        // the others.
+        // computed client-side. Each read is isolated in its own try/catch so one failing (or
+        // malformed-but-success) endpoint leaves its own panel at its default state instead of
+        // throwing out of Page_Load and blanking every panel.
         void bindWallet()
         {
-            getWalletBalance();
-            getDepositAddress();
-            bindLedger();
+            try { getWalletBalance(); } catch { /* leave balance at the markup default ("—") */ }
+            try { getDepositAddress(); } catch { viewDeposit.Visible = false; }
+            try
+            {
+                bindLedger();
+            }
+            catch
+            {
+                divNoLedger.Visible = true;
+                gvLedger.Visible = false;
+                ledgerPager.Visible = false;
+            }
         }
 
         void getWalletBalance()
@@ -108,24 +118,41 @@ namespace QryptoCard.Dashboard
             int.TryParse(Request.QueryString["lpage"], out page);
             if (page < 1) page = 1;
 
-            OutputModel op = us.getLedger(page, pageSize);
-            if (op.Status == "success" && op.Data != null)
+            LedgerModel dt = readLedgerPage(page, pageSize);
+
+            // A hand-typed ?lpage past the end returns an empty page even though history exists.
+            // Re-bind the last real page instead of showing the empty-state.
+            if (dt != null && dt.Total > 0 && (dt.Items == null || dt.Items.Count == 0))
             {
-                var dt = JsonConvert.DeserializeObject<LedgerModel>(op.Data.ToString());
-                if (dt != null && dt.Items != null && dt.Items.Count > 0)
+                int lastPage = (int)Math.Ceiling((double)dt.Total / pageSize);
+                if (lastPage >= 1 && lastPage != page)
                 {
-                    divNoLedger.Visible = false;
-                    gvLedger.Visible = true;
-                    gvLedger.DataSource = dt.Items;
-                    gvLedger.DataBind();
-                    renderLedgerPager(dt.Page, dt.PageSize, dt.Total);
-                    return;
+                    page = lastPage;
+                    dt = readLedgerPage(page, pageSize);
                 }
+            }
+
+            if (dt != null && dt.Items != null && dt.Items.Count > 0)
+            {
+                divNoLedger.Visible = false;
+                gvLedger.Visible = true;
+                gvLedger.DataSource = dt.Items;
+                gvLedger.DataBind();
+                renderLedgerPager(dt.Page, dt.PageSize, dt.Total);
+                return;
             }
             // Empty or failed: show the empty-state, hide grid + pager.
             divNoLedger.Visible = true;
             gvLedger.Visible = false;
             ledgerPager.Visible = false;
+        }
+
+        LedgerModel readLedgerPage(int page, int pageSize)
+        {
+            OutputModel op = us.getLedger(page, pageSize);
+            if (op.Status == "success" && op.Data != null)
+                return JsonConvert.DeserializeObject<LedgerModel>(op.Data.ToString());
+            return null;
         }
 
         // Query-string pager (?lpage=N): plain links, so a page change is a GET that re-binds the
