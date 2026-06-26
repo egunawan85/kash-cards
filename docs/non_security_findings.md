@@ -63,3 +63,35 @@ paths (low sensitivity, since the caller already holds a valid session id). Touc
 code, so it warrants its own red-team.
 
 **Found:** diagnosing the OTP-login failure (PR #27), 2026-06-26.
+
+---
+
+## NS-3. Deploy is all-or-nothing (no app-only / per-tier) + leaves pools Stopped — *To do (approved, deferred to a later session)*
+
+**What.** kash has exactly one deploy mode — the full `provision-and-bootstrap.sh --with-deploy`
+pipeline (~30-45 min, rebuilds all 12 sites). There is no app-only redeploy and no per-tier
+build/restart. Worse, the pipeline **leaves several app pools Stopped** at the end: after the
+merged-main redeploy, `kash-int`, `kash-dashboard`, `kash-int-scheduler`, `kash-scrapper`, and
+`kash-api-callback` were all Stopped and had to be started by hand (they started cleanly — no
+faults, just never started by the deploy). A deploy that ends with the WCF money tier down is a
+correctness gap.
+
+**Why it matters.** Every code-only change forces the whole 30-45 min pipeline; much of the
+multi-hour OTP debug was hand-rolling per-tier rebuilds the tooling should provide.
+
+**Fix — model on the sibling apps.** runegate (PGCrypto) and qrypto-omni already ship this:
+their `deploy-iis.ps1` is a multi-command tool (`setup`/`deploy`/`update`/`build [svc]`/`restart
+[svc]`/`status`/`logs`). kash is the outlier (bundled into one orchestrator). Port that surface
+as a laptop-side `deploy/deploy.sh <cmd> [svc]` (the box is NSG-dark, so it wraps `az
+run-command`):
+- `update` — app-only: fetch main -> clean-build all -> inject-secrets -> recycle (~5-10 min)
+- `build [svc]` / `restart [svc]` — per-tier (`int`, `int-callback`, `api`, `dashboard`, ... aliases from sites.json)
+- `status` / `logs [svc]`
+- **a `start` step that guarantees every pool ends Started** (closes the gap above)
+- **Open decision:** should `update` also re-publish schema, or stay strictly app-only?
+
+**Also fold in:** strengthen the `.vault.example` comment so `SCHEDULER_SHARED_SECRET` is flagged
+as a HARD startup dependency (API.Callback faults at startup if it's unset).
+
+**Raised:** 2026-06-26, after the merged-main redeploy validated OTP login. Owner approved; not
+done in that session.
