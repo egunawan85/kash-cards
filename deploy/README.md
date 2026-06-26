@@ -50,6 +50,30 @@ ENV=dev ./deploy/provision-and-bootstrap.sh --with-deploy
 # then: load deploy/secrets/.smoke.env and run `dotnet test QryptoCard.Tests.Smoke`
 ```
 
+## Scheduled jobs
+
+The **reconciliation sweep** recovers card spends stranded at `pending provider` (the balance
+was debited but the WasabiCard outcome was ambiguous). It runs on a recurring **Windows
+scheduled task** registered by `vm-bootstrap.ps1` (Step 6):
+
+- Task `KashCards-ReconcilePending`, SYSTEM, **every 10 min**, `-MultipleInstances IgnoreNew`.
+- It invokes `deploy/scripts/scheduler-trigger.ps1 -VaultName <kv>`, which reads
+  `SCHEDULER-SHARED-SECRET` from Key Vault (via the VM managed identity) and **POSTs** to the
+  API.Callback loopback endpoint `http://127.0.0.1:8084/v1/payment/reconcile/pending` with an
+  `X-Scheduler-Auth` header. Success/failure is written to the `KashCardsScheduler` Application
+  event-log source.
+
+**Security note:** the API.Callback host is publicly reachable via the Cloudflare tunnel, so the
+endpoint is gated by the shared secret (constant-time, fail-closed) — not network isolation.
+Keep `SCHEDULER_SHARED_SECRET` strong and rotate it with the rest of the Key Vault material.
+
+Verify after a deploy:
+```powershell
+Get-ScheduledTask -TaskName 'KashCards-ReconcilePending' | Format-Table TaskName, State
+Start-ScheduledTask -TaskName 'KashCards-ReconcilePending'
+Get-EventLog -LogName Application -Source KashCardsScheduler -Newest 5
+```
+
 ## How secrets reach the app
 
 The app reads secrets from **process environment variables only** (see
