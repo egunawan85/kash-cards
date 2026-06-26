@@ -9,7 +9,8 @@ config, and resource groups — not co-tenant with the sister apps.
 
 ```
 deploy/
-  provision-and-bootstrap.sh   # orchestrator: provision -> bootstrap [-> --with-deploy]
+  provision-and-bootstrap.sh   # orchestrator: provision -> bootstrap [-> --with-deploy] (build the world)
+  deploy.sh                    # modular redeploy: update/build/restart/start/stop/status/logs/schema
   config/
     .env.provision.dev.example # infra params (sub, region, RG, VM size, KV, Cloudflare)
     sites.json                 # the 12 IIS sites: ports, dev hostnames, WCF/connstr rewrites
@@ -27,8 +28,8 @@ deploy/
     load-env.ps1      # local dev: load .env + .vault into the current process env
     check-no-secrets.sh # secret-shape guard (CI)
     provision/        # azure-vm-provision.sh, vm-bootstrap.ps1
-    deploy/           # deploy-iis.ps1, inject-secrets.ps1, vm-fetch-source.ps1,
-                      #   vm-install-sqlpackage.ps1, vm-publish-schema.ps1, vm-seed.ps1
+    deploy/           # deploy-iis.ps1, inject-secrets.ps1, vm-iis-ops.ps1, vm-fetch-source.ps1,
+                      #   vm-install-sqlpackage.ps1, vm-publish-schema.ps1, vm-write-config.ps1, vm-seed.ps1
     perimeter/        # cloudflare-setup.sh, vm-install-cloudflared.ps1
     secrets/          # seed-kv-secrets.sh   (.env/.vault -> Key Vault; names '_' -> '-')
     verify/           # vm-verify.ps1        (NSG/loopback/callback/perimeter checks)
@@ -49,6 +50,43 @@ cp deploy/secrets/.vault.example deploy/secrets/.vault                         #
 ENV=dev ./deploy/provision-and-bootstrap.sh --with-deploy
 # then: load deploy/secrets/.smoke.env and run `dotnet test QryptoCard.Tests.Smoke`
 ```
+
+## Redeploying app code (modular deploy)
+
+`provision-and-bootstrap.sh` builds the world (~30-45 min). Once the box exists,
+use **`deploy/deploy.sh`** for the common case — redeploy app code, all tiers or
+just one, without re-provisioning, without the perimeter, and (by default)
+without touching the schema. It runs from your **operator devbox** (the machine
+with `az` auth and the filled `config/` + `secrets/`); the VM is NSG-dark, so each
+step is dispatched via `az vm run-command invoke`, same as the orchestrator.
+
+```bash
+ENV=dev ./deploy/deploy.sh update              # all tiers: fetch -> build -> inject -> recycle -> start
+ENV=dev ./deploy/deploy.sh update int          # just the INT money tier
+ENV=dev ./deploy/deploy.sh update --with-schema # app deploy + re-publish the dacpac (for a migration)
+ENV=dev ./deploy/deploy.sh restart api-callback # recycle one pool (start it if stopped)
+ENV=dev ./deploy/deploy.sh status              # pool/site state + port for every tier
+ENV=dev ./deploy/deploy.sh logs dashboard      # tail the latest IIS log
+ENV=dev ./deploy/deploy.sh start               # start-guarantee: every pool ends Started
+```
+
+Commands: `update [svc] [--with-schema]`, `build [svc]`, `restart [svc]`,
+`start [svc]`, `stop [svc]`, `status`, `logs [svc]`, `schema`. A **service alias**
+is the app pool minus the `kash-` prefix: `api api-public api-admin api-callback
+api-scheduler apidocs dashboard dashboard-admin int int-callback int-scheduler
+scrapper`.
+
+- **`update`** is app-only by default — it never touches the DB. Pass
+  `--with-schema` (or run `deploy.sh schema`) to re-publish the schema-only dacpac
+  when a change needs a migration; the publish is an incremental diff, so it is
+  safe to re-run.
+- **`update` / `build` / `restart` / `start`** all end by guaranteeing every
+  targeted pool reaches the **Started** state (and fail loudly if one cannot) — so
+  a deploy can never silently leave a WCF money tier down.
+
+The on-box halves live in `scripts/deploy/`: `deploy-iis.ps1` and
+`inject-secrets.ps1` take an optional `-Service <alias>`; `vm-iis-ops.ps1` owns
+the lifecycle verbs (start/stop/restart/status/logs + the start-guarantee).
 
 ## Scheduled jobs
 

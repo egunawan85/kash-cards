@@ -91,7 +91,16 @@ log "Phase 5: Cloudflare perimeter (tunnel + token)"
 ENV="$ENV" "$SCRIPT_DIR/scripts/perimeter/cloudflare-setup.sh"
 run_on_vm "$SCRIPT_DIR/scripts/perimeter/vm-install-cloudflared.ps1" "KvName=$KEYVAULT_NAME Env=$ENV"
 
-# ── Phase 5: verify ──────────────────────────────────────────────────────────
+# ── Phase 6: start-guarantee ──────────────────────────────────────────────────
+# Belt-and-braces: deploy-iis starts each pool and inject-secrets recycles them,
+# but a Start-WebAppPool that no-ops or errors under -ErrorAction SilentlyContinue
+# can leave a tier silently Stopped (the WCF money tiers were observed Stopped at
+# the end of a full run). This phase explicitly starts every pool and VERIFIES it
+# reaches Started, failing the orchestrator ([xx]) if any does not -- so the
+# pipeline can never finish with a money tier down.
+run_on_vm "$SCRIPT_DIR/scripts/deploy/vm-iis-ops.ps1" "Action=start"
+
+# ── Phase 7: verify ──────────────────────────────────────────────────────────
 run_on_vm "$SCRIPT_DIR/scripts/verify/vm-verify.ps1"
 
 log "DONE (full dev shakeout). Load deploy/secrets/.smoke.env and run: dotnet test QryptoCard.Tests.Smoke"

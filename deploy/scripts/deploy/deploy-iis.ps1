@@ -37,8 +37,15 @@
 #
 # Usage (run as Administrator, or as SYSTEM via 'az vm run-command invoke'):
 #   pwsh -File deploy-iis.ps1 [-Env dev] [-DbPassword <pw>] [-RepoRoot <path>]
+#                             [-Service <alias>]
 # The DB password resolves in this order: -DbPassword param, then Key Vault
 # (KEYVAULT_NAME from config/.env.provision.<env>).
+#
+# -Service narrows the run to ONE tier (the app-only / per-tier redeploy path);
+# without it, all 12 sites deploy (the full-stack path). The alias is the app
+# pool minus 'kash-' (e.g. 'int' -> kash-int). All other behaviour -- the
+# loopback-only binding invariant, the WCF/connstr rewrites, the clean rebuild --
+# is identical whether one tier or all twelve are targeted.
 
 [CmdletBinding()]
 param(
@@ -55,7 +62,14 @@ param(
     # DB password for the EF connection string. If omitted, pulled from Key
     # Vault (secret name DB_PASSWORD) using KEYVAULT_NAME from the env file.
     # Passed as a param mainly for local dry-runs; on the VM, prefer KV.
-    [string]$DbPassword
+    [string]$DbPassword,
+
+    # Optional per-tier targeting. When set, build/publish ONLY this one site
+    # instead of all 12 (the app-only / per-tier redeploy path driven by
+    # deploy/deploy.sh). The alias is the app pool minus the 'kash-' prefix
+    # (e.g. 'int' -> kash-int); the full pool name or the project name are also
+    # accepted. Omit for the full-stack deploy (the original behaviour).
+    [string]$Service
 )
 
 $ErrorActionPreference = 'Stop'
@@ -235,6 +249,25 @@ $rewrites      = @($sites.wcfEndpointRewrites)
 $csProjects    = @($sites.connectionStringTiers.projects)
 $allSites      = $publicSites + $internalSites
 Write-Ok "sites: $($publicSites.Count) public + $($internalSites.Count) internal = $($allSites.Count) total"
+
+# -- Optional per-tier targeting (the app-only / per-tier redeploy path). When
+# -Service is set, narrow $allSites to the single matching site; the rest of the
+# script then loops over just that one. The solution-wide NuGet restore below
+# STILL runs in full so a single tier's shared HintPath deps (e.g. QryptoCard.Sec
+# -> BouncyCastle, declared in QryptoCard.INT's packages.config) resolve even
+# when that tier itself isn't being built. Match on the 'kash-'-stripped alias,
+# the full pool name, or the project name; unknown -> fail with the valid list.
+if ($Service) {
+    $match = @($allSites | Where-Object {
+        $_.appPool -eq "kash-$Service" -or $_.appPool -eq $Service -or $_.project -eq $Service
+    })
+    if ($match.Count -eq 0) {
+        $aliases = (($allSites | ForEach-Object { $_.appPool -replace '^kash-', '' }) | Sort-Object) -join ', '
+        Stop-Deploy "unknown -Service '$Service' -- valid aliases: $aliases"
+    }
+    $allSites = $match
+    Write-Ok "per-tier target: $($match[0].project) (pool $($match[0].appPool), port $($match[0].port))"
+}
 
 # -- IIS app pool: managed runtime v4.0, integrated pipeline. ----------------
 function Ensure-AppPool {
@@ -505,8 +538,10 @@ Write-Host ''
 Write-Host '==========================================================================='
 Write-Host "  kash-cards IIS deploy complete: $env:COMPUTERNAME"
 Write-Host '==========================================================================='
-Write-Host "  Sites:       $($allSites.Count) (all bound 127.0.0.1 only)"
-Write-Host "  Public:      $($publicSites.Count)  Internal: $($internalSites.Count)"
+Write-Host "  Sites:       $($allSites.Count) (all bound 127.0.0.1 only)$(if ($Service) { " -- per-tier: $Service" })"
+$pubCount = @($allSites | Where-Object { $publicSites.project -contains $_.project }).Count
+$intCount = $allSites.Count - $pubCount
+Write-Host "  Public:      $pubCount  Internal: $intCount"
 Write-Host "  Publish root: $PublishRoot"
 Write-Host "  DB:          $DbServer / $DbName (single dev DB for all INT tiers)"
 Write-Host ''
