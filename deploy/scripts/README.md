@@ -1,13 +1,21 @@
 # deploy/scripts/
 
-| Path | Purpose | Status |
-|---|---|---|
-| `load-env.ps1` | Local dev: load `secrets/.env` + `.vault` into the current process env | ready |
-| `provision/` | Azure VM + Key Vault + network (NSG default-deny, no inbound 443) | Plan 2 |
-| `deploy/` | `deploy-iis.ps1` (build + IIS sites) + `inject-secrets.ps1` (KV → app-pool env) | Plan 2 |
-| `perimeter/` | Cloudflare tunnel install + `cloudflare-setup` (routes, WAF, callback IP-lock) | Plan 2 |
-| `secrets/` | `seed-kv-secrets.ps1` (upload `.vault`/`.env` → Key Vault) | Plan 2 |
+Provisioning, deployment, and verification scripts for the VM / IIS / SQL /
+Cloudflare stack. See [`../README.md`](../README.md) for how these fit together
+and how to run a redeploy.
 
-Scripts under `provision/`, `deploy/`, `perimeter/`, `secrets/` are adapted from the
-sister `runegate-infra` repo and will be authored in Plan 2. Each will carry a header
-noting the `runegate-infra` file it was derived from, so security fixes can be re-synced.
+| Path | Purpose |
+|---|---|
+| `load-env.ps1` | Local dev: load `secrets/.env` + `.vault` into the current process env |
+| `check-no-secrets.sh` | Guard that fails if secrets would be committed |
+| `scheduler-trigger.ps1` | Invoke a scheduled job on demand |
+| `provision/` | `azure-vm-provision.sh` (VM + network, NSG default-deny, no inbound 443) + `vm-bootstrap.ps1` (first-boot setup) |
+| `deploy/` | Build + ship to IIS: `deploy-iis.ps1`, `inject-secrets.ps1` (KV → app-pool env), `vm-fetch-source.ps1`, `vm-iis-ops.ps1`, `vm-write-config.ps1`, `vm-sync-content.ps1`, plus DB ops (`vm-install-sqlpackage.ps1`, `vm-migrate.ps1`, `vm-seed.ps1`) |
+| `dev-seed/` | `generate-dev-seed.ps1` — build the dev seed dataset |
+| `perimeter/` | `vm-install-cloudflared.ps1` + `cloudflare-setup.sh` (tunnel, routes, WAF, callback IP-lock) |
+| `secrets/` | `seed-kv-secrets.sh` (upload `.vault` / `.env` → Key Vault) |
+| `verify/` | `vm-verify.ps1` + `vm-verify-walletpath.ps1` — post-deploy smoke checks |
+
+The `provision/`, `deploy/`, `perimeter/`, and `secrets/` scripts are adapted
+from the sister `runegate-infra` repo; each carries a header noting the
+`runegate-infra` file it derived from, so security fixes can be re-synced.

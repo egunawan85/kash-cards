@@ -98,10 +98,9 @@ done in that session.
 
 ---
 
-## NS-4. Dashboard redesign — backend feature gaps surfaced by the FE↔BE review — *Open (tracked in plan 08)*
+## NS-4. Dashboard redesign — backend feature gaps surfaced by the FE↔BE review — *Open*
 
-Found while planning the cardholder Dashboard redesign
-([`plans/08-dashboard-wiring-and-redesign.md`](plans/08-dashboard-wiring-and-redesign.md)).
+Found while planning the cardholder Dashboard redesign.
 These are **missing/under-exposed features** the new design wants but the back-end does not
 currently provide to the front end. None are bugs in shipped behaviour; they are scope the
 redesign either builds (Phase 3) or hides for v1.
@@ -110,26 +109,26 @@ redesign either builds (Phase 3) or hides for v1.
   standing balance + deposit address up front. `getDashboardData` returns commission/card
   stats only; `getBalance` returns a balance with **no address**; the only deposit `Address`
   hangs off `tblT_Card_Deposit` (per-card). The reusable balance-deposit capability exists in
-  the INT tier (Plan 07 / `WalletService`) but is **not plumbed to the Dashboard API**.
-  → **Built in plan 08 Phase 3** (money-path, security-reviewed).
+  the INT tier (`WalletService`) but is **not plumbed to the Dashboard API**.
+  → **Built** in the dashboard redesign money-path (security-reviewed).
 - **b) Dashboard "recent activity" feed missing.** The prototype shows recent transactions
   across the account; today transactions are **card-scoped only** (`trxCardList`). No aggregate
-  per-user feed exists. → **Decided (plan 08 DD-8): card-scoped for v1**; aggregate feed deferred.
+  per-user feed exists. → **Decided: card-scoped for v1**; aggregate feed deferred.
 - **c) 2FA toggle not exposed to the cardholder FE.** `enable2FA`/`get2FA` + `tblM_User_2FA`
   exist in the INT/WCF `UserV1Service`, but there is **no Dashboard-API route or `UserService`
-  method** for them, so the Settings page can't read/flip 2FA without new plumbing. (Also open
-  from Plan 4: is 2FA meant to be user-optional or mandatory?) → **Decided (plan 08 DD-8): hidden in v1**, deferred until mandatory-vs-optional is resolved.
+  method** for them, so the Settings page can't read/flip 2FA without new plumbing. (Open
+  question: is 2FA meant to be user-optional or mandatory?) → **Decided: hidden in v1**, deferred until mandatory-vs-optional is resolved (see [`deferred.md`](deferred.md) and the 2FA item in [`security-findings.md`](security-findings.md)).
 - **d) No per-card-type card artwork from the backend.** `CardTypeModel` has no image/art/URL
   field, so the redesigned cards/buy/detail pages have no real per-BIN card render — only the
-  prototype's static design assets. → **Decided (plan 08 DD-7): add a card-art field** (distinct per type, brand fallback) in Slice 2.3.
+  prototype's static design assets. → **Decided: add a card-art field** (distinct per type, brand fallback).
 - **e) No Settings/account features for: account deletion ("danger zone") and notification
-  preferences.** No endpoints exist; hidden in the plan-08 Settings page for v1.
+  preferences.** No endpoints exist; hidden in the Settings page for v1.
 
 **Found:** Dashboard FE↔BE review + redesign planning, 2026-06-26.
 
 ---
 
-## NS-5. Referral/commission system was scaffolded but never paid out — *Resolved (built in plan 10)*
+## NS-5. Referral/commission system was scaffolded but never paid out — *Resolved*
 
 Surfaced while reviewing the cardholder Settings page (name/password/email-change/referral) for
 FE↔BE wiring. The referral and commission surfaces were fully scaffolded but **earned nothing**:
@@ -144,8 +143,7 @@ FE↔BE wiring. The referral and commission surfaces were fully scaffolded but *
 
 **Resolution:** the earn side is now built — a referrer is paid a share (default 10%) of the
 platform **fee** on a referee's confirmed card buy/top-up, credited to their wallet balance, with
-a loss-proof cap, per-order dedup, and an external red-team (Opus + Sonnet). See
-[`plans/10-referral-commission.md`](plans/10-referral-commission.md).
+a loss-proof cap, per-order dedup, and an external red-team (Opus + Sonnet).
 
 **Found:** Settings FE↔BE review, 2026-06-26.
 
