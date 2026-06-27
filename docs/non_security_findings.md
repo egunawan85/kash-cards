@@ -148,3 +148,66 @@ a loss-proof cap, per-order dedup, and an external red-team (Opus + Sonnet). See
 [`plans/10-referral-commission.md`](plans/10-referral-commission.md).
 
 **Found:** Settings FE↔BE review, 2026-06-26.
+
+---
+
+## NS-6. Password-reset (and sibling) email links hardcoded to the wrong domain — *Open (fix recommended)*
+
+**Symptom.** The cardholder "Forgot password" email sends a reset link to
+**`https://kash.cards/newpassword?id=…`** — the *production* domain — regardless of environment.
+On the dev box the link therefore leaves the dev deployment (different host, different DB), so a
+dev-generated reset id can't be exercised and the flow is untestable from `app-dev.s16.xyz`.
+
+**Root cause.** The base URL is a hardcoded literal, not environment-derived:
+`QryptoCard.INT/Model/KeyModel.cs:23` —
+`public static string QRYPTO_URL_FORGOT_PASSWORD = "https://kash.cards/newpassword?id=";`
+consumed by `NotificationMailkitService.cs:350` (`id = KeyModel.QRYPTO_URL_FORGOT_PASSWORD + id`).
+The sibling `WASABICARD_API_URL` directly above it (line 22) was already converted to
+`SecretsConfig.Require(...)` by SD-1; this URL was missed.
+
+**Same class of bug (other hardcoded, environment-wrong link domains):**
+- `QryptoCard.INT/Script/Service/Admin/v1/AdminV1Service.svc.cs:662` — admin invitation link →
+  `https://admin-dev.qrypto.trade:88/InvitedAccount?id=…` (a *different*, stale dev domain —
+  `qrypto.trade:88`, not `s16.xyz`).
+- `QryptoCard.INT/Model/KeyModel.cs:15` `QRYPTO_PAY_URL` and
+  `QryptoCard.Dashboard.Admin/Models/KeyModel.cs:17` `PAYMENT_LINK` — legacy `qrypto.trade` pay
+  links (likely unused in kash-cards; confirm and remove or env-ify).
+
+**Impact.** Forgot-password and admin-invite flows can't be tested on dev. In prod the cardholder
+reset happens to land on the right host (kash.cards) but is not environment-aware; the admin invite
+points at a dead `qrypto.trade:88` host even in prod. A wrong silent default on an auth-bearing link
+is the same risk class SD-1 fixed for the provider URL.
+
+**Recommended fix.** Make the link base URL environment-derived like SD-1 did for
+`WASABICARD_API_URL` — read it from config (e.g. a `DASHBOARD_BASE_URL` / `QRYPTO_URL_FORGOT_PASSWORD`
+env var seeded per environment, defaulting to the dev host) so dev links resolve to `app-dev.s16.xyz`.
+Audit the admin-invite + pay links in the same pass. Touches auth-adjacent notification code — low
+risk, worth a quick internal review.
+
+**Found:** Phase 2 shakeout click-through (forgot-password), 2026-06-27.
+
+---
+
+## NS-7. Login button (and other `.btn` inputs) lack a pointer cursor on hover — *Open (trivial fix)*
+
+**Symptom.** The "Sign in" button on the cardholder login page shows the default arrow cursor on
+hover instead of the pointer that signals clickability — inconsistent with the links and other
+controls on the page, which do show the pointer.
+
+**Root cause.** The button is an `<asp:Button>`, which renders as
+`<input type="button" class="btn btn-primary btn-block btn-lg">` — an `<input>`, **not** a
+`<button>`. In `Content/css/kash-auth.css`:
+- `button { … cursor: pointer; … }` (line 62) gives `<button>` elements a pointer, and `<a>` links
+  get one by default —
+- but the `.btn` class (line 97) does **not** set `cursor`, so a `.btn` that renders as an `<input>`
+  falls through to the default arrow.
+
+**Impact.** Cosmetic affordance only — the button works. Affects any `.btn` rendered as
+`<input>`/`<asp:Button>` across the NewDesign auth pages (login, register, forgot-password,
+new-password).
+
+**Fix.** Add `cursor: pointer;` to the `.btn` rule in `kash-auth.css` (covers all `.btn` regardless
+of element type). CSS-only — deployable via `deploy.sh sync` (no rebuild). Worth checking the
+in-app shell CSS (`app.css` / `premium.css`) for the same `.btn`-without-`cursor` gap.
+
+**Found:** Phase 2 shakeout click-through (login page), 2026-06-27.
