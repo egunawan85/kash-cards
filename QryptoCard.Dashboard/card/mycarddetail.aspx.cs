@@ -126,11 +126,11 @@ namespace QryptoCard.Dashboard.card
                 lblCardBrand.InnerHtml = CardBrandMark(dt.Organization);
 
                 if (dt.HolderID != null)
-                    lblCardname.InnerHtml = dt.FirstName + " " + dt.LastName;
+                    lblCardname.InnerHtml = Server.HtmlEncode(dt.FirstName + " " + dt.LastName);
 
                 hfDepositFeeRate.Value = dt.RechargeFeeRate;
 
-                lblCardBalance.InnerHtml = dt.Param5 + " " + dt.Currency;
+                lblCardBalance.InnerHtml = Server.HtmlEncode(dt.Param5 + " " + dt.Currency);
 
                 hfCardNumber.Value = dt.CardNumber;
                 hfCVV.Value = dt.CVV;
@@ -163,13 +163,16 @@ namespace QryptoCard.Dashboard.card
         {
             viewdetails.Visible = true;
             long cardNumberVal;
-            lblCardNumber.InnerHtml = Int64.TryParse(hfCardNumber.Value, out cardNumberVal)
+            string cardNumberDisp = Int64.TryParse(hfCardNumber.Value, out cardNumberVal)
                 ? String.Format("{0:0000 0000 0000 0000}", cardNumberVal)
                 : (hfCardNumber.Value ?? "");
-            lblCVV.InnerHtml = Common.decrypt(hfCVV.Value);
-            hfCVVDecr.Value = lblCVV.InnerHtml;
-            lblExpDate.InnerHtml = Common.decrypt(hfExpDate.Value);
-            hfExpDateDecr.Value = lblExpDate.InnerHtml;
+            lblCardNumber.InnerHtml = Server.HtmlEncode(cardNumberDisp);
+            string cvvPlain = Common.decrypt(hfCVV.Value);
+            hfCVVDecr.Value = cvvPlain;
+            lblCVV.InnerHtml = Server.HtmlEncode(cvvPlain);
+            string expPlain = Common.decrypt(hfExpDate.Value);
+            hfExpDateDecr.Value = expPlain;
+            lblExpDate.InnerHtml = Server.HtmlEncode(expPlain);
 
             if (hfHolderID.Value != "")
             {
@@ -184,29 +187,31 @@ namespace QryptoCard.Dashboard.card
                     if (op.Status == "success")
                     {
                         dt = JsonConvert.DeserializeObject<CardholderModel>(op.Data.ToString());
-                        lblCardholder.InnerHtml = dt.FirstName + " " + dt.LastName;
-                        hfCardholder.Value = lblCardholder.InnerHtml;
+                        string holderName = dt.FirstName + " " + dt.LastName;
+                        hfCardholder.Value = holderName;
+                        lblCardholder.InnerHtml = Server.HtmlEncode(holderName);
 
-                        lblPhone.InnerHtml = dt.AreaCode + dt.Mobile;
-                        hfPhone.Value = lblPhone.InnerHtml;
+                        string holderPhone = dt.AreaCode + dt.Mobile;
+                        hfPhone.Value = holderPhone;
+                        lblPhone.InnerHtml = Server.HtmlEncode(holderPhone);
 
-                        lblEmail.InnerHtml = dt.Email;
-                        hfEmail.Value = lblEmail.InnerHtml;
+                        hfEmail.Value = dt.Email;
+                        lblEmail.InnerHtml = Server.HtmlEncode(dt.Email);
 
-                        lblAddress.InnerHtml = dt.Address;
-                        hfAddress.Value = lblAddress.InnerHtml;
+                        hfAddress.Value = dt.Address;
+                        lblAddress.InnerHtml = Server.HtmlEncode(dt.Address);
 
-                        lblCity.InnerHtml = dt.TownStr;
-                        hfCity.Value = lblCity.InnerHtml;
+                        hfCity.Value = dt.TownStr;
+                        lblCity.InnerHtml = Server.HtmlEncode(dt.TownStr);
 
-                        lblState.InnerHtml = dt.StateStr;
-                        hfState.Value = lblState.InnerHtml;
+                        hfState.Value = dt.StateStr;
+                        lblState.InnerHtml = Server.HtmlEncode(dt.StateStr);
 
-                        lblCountry.InnerHtml = dt.CountryStr;
-                        hfCountry.Value = lblCountry.InnerHtml;
+                        hfCountry.Value = dt.CountryStr;
+                        lblCountry.InnerHtml = Server.HtmlEncode(dt.CountryStr);
 
-                        lblZipCode.InnerHtml = dt.PostCode;
-                        hfZipCode.Value = lblZipCode.InnerHtml;
+                        hfZipCode.Value = dt.PostCode;
+                        lblZipCode.InnerHtml = Server.HtmlEncode(dt.PostCode);
 
                         viewholder.Visible = true;
                     }
@@ -226,11 +231,11 @@ namespace QryptoCard.Dashboard.card
             if (op.Status == "success")
             {
                 dt = JsonConvert.DeserializeObject<CardTypeModel>(op.Data.ToString());
-                lblUsage.InnerHtml = (dt.CardDesc ?? "").Replace(",", ", ");
-                lblDepositFee.InnerHtml = "Deposit Fee : " + dt.RechargeFeeRate + "%";
+                lblUsage.InnerHtml = Server.HtmlEncode((dt.CardDesc ?? "").Replace(",", ", "));
+                lblDepositFee.InnerHtml = Server.HtmlEncode("Deposit Fee : " + dt.RechargeFeeRate + "%");
 
-                lblMinDeposit.InnerHtml = "Minimum Deposit : " + dt.DepositAmountMinQuotaForActiveCard + " " + dt.FiatCurrency;
-                lblMaxDeposit.InnerHtml = "Maximum Deposit : " + dt.DepositAmountMaxQuotaForActiveCard + " " + dt.FiatCurrency;
+                lblMinDeposit.InnerHtml = Server.HtmlEncode("Minimum Deposit : " + dt.DepositAmountMinQuotaForActiveCard + " " + dt.FiatCurrency);
+                lblMaxDeposit.InnerHtml = Server.HtmlEncode("Maximum Deposit : " + dt.DepositAmountMaxQuotaForActiveCard + " " + dt.FiatCurrency);
 
 
                 hfCardTypeID.Value = dt.CardTypeId.ToString();
