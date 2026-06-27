@@ -218,33 +218,61 @@ done
 # -Service param fragment for the run-command parameter list (empty when no svc).
 svc_param() { [[ -n "$SVC" ]] && printf 'Service=%s' "$SVC"; }
 
-# Build targets, one per line: the single SVC if given, else every tier alias from
-# sites.json (the 'kash-'-stripped appPool name).
-build_targets() {
+# -- Build orchestration -----------------------------------------------------
+# Single tier: one run-command builds just that project (fits a single call cleanly).
+# All tiers: copy the runegate sister's single warm INCREMENTAL pass, but -- since the box
+# is NSG-dark and we can't RDP in to run it locally -- LAUNCH it as a DETACHED on-box job
+# (Option B) and POLL a log + done-marker. The build runs full-speed off the run-command
+# clock (the thing that cut a slow all-12 single call off mid-loop), node reuse warm, with a
+# parallel /m solution compile, and deploy-iis's incremental-aware source-mtime guard fails
+# loud if any tier ships a binary older than its source.
+run_build() {
   if [[ -n "$SVC" ]]; then
-    printf '%s\n' "$SVC"
-  else
-    grep -oE '"appPool"[[:space:]]*:[[:space:]]*"kash-[^"]+"' "$SITES_JSON" \
-      | sed -E 's/.*"kash-([^"]+)"/\1/'
+    run_on_vm "$DEPLOY_SCRIPTS/deploy-iis.ps1" "Service=$SVC"
+    return
   fi
+  log "launching DETACHED all-tiers build (Option B)"
+  run_on_vm "$DEPLOY_SCRIPTS/vm-build-detached.ps1" "Action=launch Env=$ENV"
+  poll_build
 }
 
-# Build+publish each target via its OWN run-command. The all-tiers update/build does
-# NOT build all 12 in a single deploy-iis call: a per-tier run-command is an isolated
-# process, so no MSBuild/Roslyn worker carries an obj lock into the next tier (that was
-# the silent stale-DLL bug), and each build fits the run-command time budget (one all-12
-# call ran long enough to be cut off mid-loop once builds actually recompiled).
-# deploy-iis.ps1's per-tier staleness guard then fails the deploy loudly if any tier
-# still ships a stale binary.
-run_deploy_iis() {
-  local tier n=0
-  while IFS= read -r tier; do
-    [[ -z "$tier" ]] && continue
-    run_on_vm "$DEPLOY_SCRIPTS/deploy-iis.ps1" "Service=$tier"
-    n=$((n + 1))
-  done < <(build_targets)
-  # Never let a malformed/empty target list pass as a "successful" no-op deploy.
-  [[ "$n" -gt 0 ]] || die "no build targets resolved (check $SITES_JSON) -- refusing a no-op deploy"
+# Poll the detached build's log + done-marker until it finishes (or the watchdog trips).
+# Each poll is a cheap run-command that emits only the NEW log lines (since $seen) plus a
+# BUILD_LINES:<n> / BUILD_STATUS:<...> sentinel. Override cadence/limit with
+# BUILD_POLL_INTERVAL / BUILD_WATCHDOG.
+poll_build() {
+  local seen=0 elapsed=0 interval="${BUILD_POLL_INTERVAL:-30}" max="${BUILD_WATCHDOG:-3600}" out lines status code
+  log "polling detached build (every ${interval}s, watchdog ${max}s)"
+  while :; do
+    out=$(az vm run-command invoke -g "$COMPUTE_RG" -n "$VM_NAME" \
+        --command-id RunPowerShellScript --scripts "@$(winpath "$DEPLOY_SCRIPTS/vm-build-detached.ps1")" \
+        --parameters "Action=poll" "SinceLine=$seen" --query "value[0].message" -o tsv 2>/dev/null) || true
+    # Echo new build log lines (drop the trailing sentinels). Extract the sentinels with
+    # anchor-free grep so it works even if `az -o tsv` doesn't preserve line breaks.
+    printf '%s\n' "$out" | grep -avE 'BUILD_(LINES|STATUS):' || true
+    lines=$(printf '%s' "$out"  | grep -oaE 'BUILD_LINES: [0-9]+' | tail -1 | grep -oE '[0-9]+' || true)
+    status=$(printf '%s' "$out" | grep -oaE 'BUILD_STATUS: (running|no-task|done exit=[0-9]+|state=[A-Za-z]+)' | tail -1 | sed 's/^BUILD_STATUS: //' || true)
+    [[ "$lines" =~ ^[0-9]+$ ]] && seen="$lines"
+    case "$status" in
+      "done exit="*)
+        code="${status#done exit=}"
+        if [[ "$code" != "0" ]] || printf '%s' "$out" | grep -q '\[xx\]'; then
+          die "detached build FAILED (exit=$code) -- see the build log above"
+        fi
+        log "detached build complete (exit 0)"
+        return 0
+        ;;
+      running) : ;;
+      no-task) die "detached build task vanished before completing -- check the box (tmp/deploy-build.log)" ;;
+      "")      printf '[!!] poll returned no status (transient run-command hiccup) -- retrying\n' ;;
+      *)       printf '[!!] build status: %s\n' "$status" ;;
+    esac
+    elapsed=$((elapsed + interval))
+    if (( elapsed >= max )); then
+      die "build watchdog: ${max}s elapsed without completion -- aborting the poll (the build task may still be running on the box; check tmp/deploy-build.log)"
+    fi
+    sleep "$interval"
+  done
 }
 
 case "$CMD" in
@@ -259,7 +287,7 @@ case "$CMD" in
     if [[ "$WITH_SCHEMA" -eq 1 ]]; then
       run_on_vm "$DEPLOY_SCRIPTS/vm-migrate.ps1" "Env=$ENV"
     fi
-    run_deploy_iis
+    run_build
     run_on_vm "$DEPLOY_SCRIPTS/inject-secrets.ps1" "$(svc_param)"
     run_on_vm "$DEPLOY_SCRIPTS/vm-iis-ops.ps1"     "Action=start $(svc_param)"
     log "update complete${SVC:+ (tier: $SVC)}"
@@ -267,7 +295,7 @@ case "$CMD" in
 
   build)
     # Build + publish from the source already on the box. No fetch, no secrets.
-    run_deploy_iis
+    run_build
     ;;
 
   sync)
