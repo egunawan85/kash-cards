@@ -335,3 +335,6 @@ Write-Ok "[$AppLogin] has db_datareader + db_datawriter + EXECUTE on [$DbName]"
 
 Write-Host ''
 Write-Ok "schema migrate complete for [$DbName] (schema only -- no data seeded)"
+# Final completion marker -- deploy.sh requires it so a run-command cut-off mid-migration (which
+# leaves partial output with no [xx] and is otherwise read as success) becomes a hard failure.
+Write-Host "MIGRATE_RESULT: PASS ($DbName)"

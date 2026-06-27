@@ -139,18 +139,8 @@ if (-not $VaultName) {
 }
 Write-Ok "Key Vault: $VaultName"
 
-# -- az CLI + login --identity -----------------------------------------------
-$az = (Get-Command az -ErrorAction SilentlyContinue).Source
-if (-not $az) {
-    $cand = 'C:\Program Files\Microsoft SDKs\Azure\CLI2\wbin\az.cmd'
-    if (Test-Path $cand) { $az = $cand }
-}
-if (-not $az) { Stop-Inject "az CLI not found on PATH -- needed to pull secrets from Key Vault" }
-
-Write-Step "az login --identity (VM managed identity)"
-& $az login --identity --output none 2>$null
-if ($LASTEXITCODE -ne 0) { Stop-Inject "az login --identity failed (exit $LASTEXITCODE)" }
-Write-Ok "logged in as VM managed identity"
+# Secrets are pulled directly from Key Vault over REST using a managed-identity token from IMDS
+# (see Get-Secrets) -- no `az` CLI / `az login` needed here anymore.
 
 # -- The full app secret set the app reads via SecretsConfig (names only). ---
 # These are the env-var names the app reads via SecretsConfig. KV secret names

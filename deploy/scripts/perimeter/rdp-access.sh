@@ -65,15 +65,39 @@ case "$ACTION" in
   open)
     IP="${IP_ARG:-$(detect_ip)}"
     [[ "$IP" == */* ]] || IP="$IP/32"
+    # Validate BEFORE opening. Only the auto-detect path is regex-checked; an EXPLICIT arg
+    # ('0.0.0.0/0', '*', 'Internet', 'Any', an Azure service tag, a fat-fingered CIDR) would
+    # otherwise pass straight to --source-address-prefixes and expose 3389 to the whole internet
+    # (priority 110 overrides the default deny; RDP creds become the only barrier). Require a real
+    # IPv4 address or CIDR no broader than /24.
+    if [[ ! "$IP" =~ ^(25[0-5]|2[0-4][0-9]|1?[0-9]?[0-9])(\.(25[0-5]|2[0-4][0-9]|1?[0-9]?[0-9])){3}/([0-9]|[12][0-9]|3[0-2])$ ]]; then
+      die "refusing to open RDP to '$IP' -- not a valid single IPv4 address or CIDR"
+    fi
+    if (( ${IP##*/} < 24 )); then
+      die "refusing to open RDP to '$IP' -- /${IP##*/} is too broad (need /24 or narrower; a single host is /32)"
+    fi
+    [[ "${IP%%/*}" == "0.0.0.0" ]] && die "refusing to open RDP to 0.0.0.0 -- that is the whole internet"
     log "OPEN perimeter to $IP (RDP 3389)"
     set_rule "Allow-RDP" 110 3389 "$IP" Allow "DIY-JIT: RDP open to operator IP; 'close' re-seals to Deny"
     ok "perimeter OPEN to $IP -- run 'close' when done so the box re-seals"
     ;;
   close)
-    log "CLOSE perimeter (re-seal RDP)"
-    # Deny + a TEST-NET (RFC5737) placeholder source so no live operator IP lingers in the rule.
-    set_rule "Allow-RDP" 110 3389 "192.0.2.0/24" Deny "DIY-JIT: RDP sealed (dark)"
-    ok "perimeter CLOSED -- box is dark again"
+    log "CLOSE perimeter (re-seal RDP) + verify"
+    # Re-sealing is safety-critical: RETRY on a transient az failure, then VERIFY by reading the
+    # rule back -- never report 'closed' on an unconfirmed write. Deny + a TEST-NET (RFC5737)
+    # placeholder source so no live operator IP lingers in the rule.
+    sealed=false
+    for attempt in 1 2 3; do
+      set_rule "Allow-RDP" 110 3389 "192.0.2.0/24" Deny "DIY-JIT: RDP sealed (dark)" 2>/dev/null || true
+      acc=$(az network nsg rule show -g "$COMPUTE_RG" --nsg-name "$NSG_NAME" -n "Allow-RDP" --query access -o tsv 2>/dev/null || true)
+      if [[ "$acc" == "Deny" ]]; then sealed=true; break; fi
+      [[ $attempt -lt 3 ]] && { printf '[..] re-seal attempt %s did not confirm Deny; retrying in 5s...\n' "$attempt"; sleep 5; }
+    done
+    if $sealed; then
+      ok "perimeter CLOSED -- box is dark again (verified Allow-RDP=Deny)"
+    else
+      die "PERIMETER MAY STILL BE OPEN -- could not confirm Allow-RDP=Deny after 3 tries. RE-RUN 'rdp-close' NOW, or set the NSG rule to Deny manually."
+    fi
     ;;
   status)
     az network nsg rule show -g "$COMPUTE_RG" --nsg-name "$NSG_NAME" -n "Allow-RDP" \

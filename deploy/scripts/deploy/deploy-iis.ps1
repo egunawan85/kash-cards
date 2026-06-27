@@ -403,10 +403,15 @@ function Build-And-Publish {
                             -ErrorAction SilentlyContinue |
                           Where-Object { $_.FullName -notmatch '\\(obj|bin)\\' } |
                           Measure-Object -Property LastWriteTime -Maximum).Maximum
-            if ($srcNewest -and $dllTime -lt $srcNewest) {
+            if (-not $srcNewest) {
+                # No source files matched (wrong path / permission / -ErrorAction-hidden failure).
+                # Make the skipped check VISIBLE rather than silently shipping the DLL unchallenged.
+                Write-Warn "$Project`: staleness guard could not enumerate source files -- check SKIPPED (not blocking); verify the project path"
+            } elseif ($dllTime -lt $srcNewest) {
                 Stop-Deploy "$Project`: deployed $Project.dll ($($dllTime.ToString('s'))) is OLDER than newest source ($($srcNewest.ToString('s'))) -- incremental build skipped a needed recompile; aborting rather than ship code that does not match source"
+            } else {
+                Write-Ok "$Project`: build verified ($Project.dll @ $($dllTime.ToString('s')) >= newest source)"
             }
-            Write-Ok "$Project`: build verified ($Project.dll @ $($dllTime.ToString('s')) >= newest source)"
         }
     } elseif (Test-Path (Join-Path $DestDir 'Web.config')) {
         Write-Ok "$Project`: published to $DestDir"
@@ -508,7 +513,11 @@ $apphost = Join-Path $env:windir 'System32\inetsrv\config\applicationHost.config
 if (Test-Path $apphost) {
     $bakStamp = Get-Date -Format 'yyyyMMdd-HHmmss'
     Copy-Item $apphost "$apphost.bak-$bakStamp" -Force
-    Write-Ok "applicationHost.config backed up -> applicationHost.config.bak-$bakStamp"
+    # The live applicationHost.config carries inline secret env vars from the previous inject, so
+    # this .bak does too. A fresh copy inherits the directory ACL, not the live file's hardened
+    # (inheritance-removed, Admin+SYSTEM-only) ACEs -- re-apply the same lockdown to the copy.
+    & icacls "$apphost.bak-$bakStamp" /inheritance:r /grant:r 'Administrators:F' 'SYSTEM:F' 2>&1 | Out-Null
+    Write-Ok "applicationHost.config backed up -> applicationHost.config.bak-$bakStamp (locked down)"
     Get-ChildItem "$apphost.bak-*" -ErrorAction SilentlyContinue | Sort-Object LastWriteTime -Descending |
         Select-Object -Skip 5 | Remove-Item -Force -ErrorAction SilentlyContinue
 }

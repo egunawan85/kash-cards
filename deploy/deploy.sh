@@ -244,7 +244,7 @@ case "$CMD" in
     run_on_vm "$DEPLOY_SCRIPTS/vm-fetch-source.ps1" "RepoUrl=$REPO_URL Branch=$REPO_BRANCH KvName=$KEYVAULT_NAME"
     push_config
     if [[ "$WITH_SCHEMA" -eq 1 ]]; then
-      run_on_vm "$DEPLOY_SCRIPTS/vm-migrate.ps1" "Env=$ENV"
+      run_on_vm "$DEPLOY_SCRIPTS/vm-migrate.ps1" "Env=$ENV" "MIGRATE_RESULT: PASS"
     fi
     run_on_vm "$DEPLOY_SCRIPTS/deploy-iis.ps1"     "Env=$ENV $(svc_param)"        "DEPLOY_RESULT: PASS"
     run_on_vm "$DEPLOY_SCRIPTS/inject-secrets.ps1" "$(svc_param)"                  "INJECT_RESULT: PASS"
@@ -360,7 +360,7 @@ case "$CMD" in
     # already-provisioned box just runs whatever migrations it has not yet recorded.
     [[ -z "$SVC" ]] || die "schema takes no service argument"
     push_config
-    run_on_vm "$DEPLOY_SCRIPTS/vm-migrate.ps1" "Env=$ENV"
+    run_on_vm "$DEPLOY_SCRIPTS/vm-migrate.ps1" "Env=$ENV" "MIGRATE_RESULT: PASS"
     ;;
 
   seed)
