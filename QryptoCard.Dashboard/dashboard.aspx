@@ -37,12 +37,25 @@
         <section class="panel card-panel">
             <div class="panel-h"><h3>Your card</h3><a href='<%= ResolveUrl("~/card/mycardlist") %>'>Manage</a></div>
             <div runat="server" id="viewCard" visible="false">
-                <div class="card-shot"><img src='<%= ResolveUrl("~/Content/media/landing/hero-card.png") %>' alt="Kash virtual card" /></div>
-                <div class="card-meta">
-                    <span><span runat="server" id="lblCardNetwork">Kash Virtual</span> &middot; <span class="v" runat="server" id="lblCardLast4">&#8226;&#8226;&#8226;&#8226;</span></span>
-                    <span>Exp <span class="v" runat="server" id="lblCardExp">&mdash;</span></span>
+                <div class="card3d-wrap">
+                    <div class="card-3d">
+                        <div class="qcard">
+                            <div class="qcard-inner">
+                                <div class="qcard-top">
+                                    <div class="qcard-brand">K<b>ash</b></div>
+                                    <span class="qcard-tag"><span runat="server" id="lblCardNetwork">Virtual</span></span>
+                                </div>
+                                <div><div class="qcard-chip"></div></div>
+                                <div class="qcard-num"><span runat="server" id="lblCardLast4">&#8226;&#8226;&#8226;&#8226;</span></div>
+                                <div class="qcard-bottom">
+                                    <div><div class="lab">Expires</div><div class="val"><span runat="server" id="lblCardExp">&mdash;</span></div></div>
+                                    <div class="qcard-logo">K</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
-                <div class="card-controls" style="grid-template-columns: 1fr;">
+                <div class="card-controls" style="grid-template-columns: 1fr; margin-top: 18px;">
                     <a class="ctrl-btn" runat="server" id="lnkCardDetails" href="#">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><circle cx="12" cy="12" r="3" /><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7-10-7-10-7z" /></svg> Details
                     </a>
@@ -178,5 +191,30 @@
             var copyText = document.getElementById("<%= hfReferralLink.ClientID %>");
             navigator.clipboard.writeText(copyText.value).then(function () { }).catch(function () { });
         }
+    </script>
+    <script type="text/javascript">
+        // 3D tilt + idle float for the dashboard virtual card (.card-3d in .card3d-wrap). Reduced-motion safe.
+        (function () {
+            if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+            [].slice.call(document.querySelectorAll('.card-3d')).forEach(function (card) {
+                var wrap = card.parentElement, face = card.querySelector('.qcard');
+                var raf = null, tx = 0, ty = 0, cx = 0, cy = 0;
+                function apply() {
+                    cx += (tx - cx) * 0.14; cy += (ty - cy) * 0.14;
+                    card.style.transform = 'rotateY(' + cx + 'deg) rotateX(' + (-cy) + 'deg)';
+                    if (face) { face.style.setProperty('--mx', (cx * 2.2) + '%'); face.style.setProperty('--my', (cy * 2.2) + '%'); }
+                    if (Math.abs(tx - cx) > 0.05 || Math.abs(ty - cy) > 0.05) raf = requestAnimationFrame(apply); else raf = null;
+                }
+                function queue() { if (!raf) raf = requestAnimationFrame(apply); }
+                wrap.addEventListener('mousemove', function (e) {
+                    var r = wrap.getBoundingClientRect();
+                    tx = ((e.clientX - r.left) / r.width - 0.5) * 22;
+                    ty = ((e.clientY - r.top) / r.height - 0.5) * 22;
+                    card.classList.remove('qcard-float'); queue();
+                });
+                wrap.addEventListener('mouseleave', function () { tx = 0; ty = 0; queue(); setTimeout(function () { card.classList.add('qcard-float'); }, 400); });
+                card.classList.add('qcard-float');
+            });
+        })();
     </script>
 </asp:Content>
