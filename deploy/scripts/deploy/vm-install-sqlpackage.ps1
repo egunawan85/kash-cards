@@ -1,5 +1,6 @@
 # vm-install-sqlpackage.ps1 -- install Microsoft sqlpackage on the dev VM so
-# vm-publish-schema.ps1 can publish the schema-only DACPAC to on-box SQL Express.
+# vm-migrate.ps1 can publish the schema-only DACPAC baseline to on-box SQL Express
+# (the one-time fresh-box baseline; migrations after that need only sqlcmd).
 #
 # Adapted from runegate-infra/scripts/deploy/vm-install-sqlpackage.ps1. The
 # sister installs the self-contained Windows .zip to a fixed C:\Tools path. We
