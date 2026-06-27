@@ -185,3 +185,29 @@ Audit the admin-invite + pay links in the same pass. Touches auth-adjacent notif
 risk, worth a quick internal review.
 
 **Found:** Phase 2 shakeout click-through (forgot-password), 2026-06-27.
+
+---
+
+## NS-7. Login button (and other `.btn` inputs) lack a pointer cursor on hover — *Open (trivial fix)*
+
+**Symptom.** The "Sign in" button on the cardholder login page shows the default arrow cursor on
+hover instead of the pointer that signals clickability — inconsistent with the links and other
+controls on the page, which do show the pointer.
+
+**Root cause.** The button is an `<asp:Button>`, which renders as
+`<input type="button" class="btn btn-primary btn-block btn-lg">` — an `<input>`, **not** a
+`<button>`. In `Content/css/kash-auth.css`:
+- `button { … cursor: pointer; … }` (line 62) gives `<button>` elements a pointer, and `<a>` links
+  get one by default —
+- but the `.btn` class (line 97) does **not** set `cursor`, so a `.btn` that renders as an `<input>`
+  falls through to the default arrow.
+
+**Impact.** Cosmetic affordance only — the button works. Affects any `.btn` rendered as
+`<input>`/`<asp:Button>` across the NewDesign auth pages (login, register, forgot-password,
+new-password).
+
+**Fix.** Add `cursor: pointer;` to the `.btn` rule in `kash-auth.css` (covers all `.btn` regardless
+of element type). CSS-only — deployable via `deploy.sh sync` (no rebuild). Worth checking the
+in-app shell CSS (`app.css` / `premium.css`) for the same `.btn`-without-`cursor` gap.
+
+**Found:** Phase 2 shakeout click-through (login page), 2026-06-27.
