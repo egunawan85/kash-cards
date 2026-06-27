@@ -6,63 +6,22 @@
     <asp:HiddenField runat="server" ID="hfReferralCode" />
     <asp:HiddenField runat="server" ID="hfID" />
     <asp:HiddenField runat="server" ID="hfReferralLink" />
-    <div class="d-flex flex-column flex-column-fluid">
-        <!--begin::Toolbar-->
-        <div id="kt_app_toolbar" class="app-toolbar d-flex pb-3 pb-lg-5">
-            <!--begin::Toolbar container-->
-            <div class="d-flex flex-stack flex-row-fluid">
-                <!--begin::Toolbar container-->
-                <div class="d-flex flex-column flex-row-fluid">
-                    <!--begin::Toolbar wrapper-->
-                    <!--begin::Page title-->
-                    <div class="page-title d-flex align-items-center me-3">
-                        <!--begin::Title-->
-                        <h1 class="page-heading d-flex flex-column justify-content-center text-gray-900 fw-bold fs-lg-2x gap-2">
-                            <span>Card History</span>
-                            <!--begin::Description-->
-                            <%--<span class="page-desc text-gray-600 fs-base fw-semibold">You are logged in as a Cloud Owner</span>--%>
-                            <!--end::Description-->
-                        </h1>
-                        <!--end::Title-->
-                    </div>
-                    <!--end::Page title-->
-                </div>
-                <!--end::Toolbar container-->
-                <!--begin::Actions-->
-                <div class="d-flex align-self-center flex-center flex-shrink-0">
-                    <%--<a href='<%= ResolveUrl("~/card/cardlist")%>' class="btn btn-sm btn-success d-flex flex-center ms-3 px-4 py-3">
-                        <i class="ki-outline ki-plus-square fs-2"></i>
-                        <span>Buy Card</span>
-                    </a>--%>
-                    <%--<a href="#" class="btn btn-sm btn-dark ms-3 px-4 py-3" data-bs-toggle="modal" data-bs-target="#kt_modal_new_target">Create 
-						
-                    <span class="d-none d-sm-inline">Target</span></a>--%>
-                </div>
-                <!--end::Actions-->
-            </div>
-            <!--end::Toolbar container-->
+    <div class="dash-top">
+        <div>
+            <h1>Card History</h1>
+            <div class="sub">Your card purchases and their status.</div>
         </div>
-        <!--end::Toolbar-->
-        <!--begin::Content-->
-        <div id="kt_app_content" class="app-content flex-column-fluid">
-            <!--begin::Row-->
-            <div class="row g-5 g-xl-10 mb-5 mb-xl-0">
-                <!--begin::Col-->
-                
-                <!--end::Col-->
-            </div>
-            <!--end::Row-->
-
-
-            <div class="card">
+    </div>
+    <!--begin::Content-->
+    <div>
+            <div class="panel">
                 <!--begin::Row-->
-                <div class="card-body py-3 bg-white rounded-4">
+                <div>
                     <!--begin::Table container-->
-                    <div class="table-responsive mt-5">
+                    <div class="table-responsive">
                         <!--begin::Table-->
 
-                        <%--table table-striped gy-5 gs-7--%>
-                        <asp:GridView CssClass="table table-striped gs-7" ID="gvListItem" HeaderStyle-CssClass="header-table" runat="server" AutoGenerateColumns="false" DataKeyNames="ID" AllowPaging="True" PageSize="50" AllowCustomPaging="False" OnPageIndexChanging="gvListItem_PageIndexChanging" OnRowCreated="gvListItem_RowCreated">
+                        <asp:GridView CssClass="data-table" ID="gvListItem" HeaderStyle-CssClass="header-table" runat="server" AutoGenerateColumns="false" DataKeyNames="ID" AllowPaging="True" PageSize="50" AllowCustomPaging="False" OnPageIndexChanging="gvListItem_PageIndexChanging" OnRowCreated="gvListItem_RowCreated">
                             <PagerStyle HorizontalAlign="Center" CssClass="bs4-aspnet-pager" />
                             <Columns>
                                 <asp:TemplateField HeaderText="No." ItemStyle-HorizontalAlign="Center" ItemStyle-VerticalAlign="Middle" HeaderStyle-Width="50px">
@@ -129,7 +88,7 @@
                     </div>
                     <!--end::Table container-->
 
-                    <div class="align-content-center" style="margin-bottom: 20px" runat="server" id="divnorow">
+                    <div class="data-empty" runat="server" id="divnorow">
                         <center>
                             <asp:Label runat="server" ID="lblNoRow" Text="No card transaction at the moment." /></center>
                     </div>
@@ -138,7 +97,6 @@
             </div>
         </div>
         <!--end::Content-->
-    </div>
 </asp:Content>
 <asp:Content ID="Content2" ContentPlaceHolderID="DrawerContent" runat="server">
 </asp:Content>
