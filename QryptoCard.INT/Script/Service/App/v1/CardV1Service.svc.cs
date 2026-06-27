@@ -613,7 +613,11 @@ namespace QryptoCard.INT.Script.Service.App.v1
                 // Return the card's full recent activity (incl. declined / $0 / verification /
                 // void rows) most-recent first — the cardholder feed surfaces everything and
                 // filters client-side. Owner check above still scopes this to the caller's card.
-                var data = db.tblT_Card_Transaction.Where(p => p.CardNo == x.CardNo).OrderByDescending(p => p.TransactionTime).Take(150).ToList();
+                // AsNoTracking + strip the internal gateway fields (Payload / Param*) so raw
+                // processor request/response data never reaches the cardholder client; the feed
+                // only needs the display fields (merchant / amount / type / status / time).
+                var data = db.tblT_Card_Transaction.AsNoTracking().Where(p => p.CardNo == x.CardNo).OrderByDescending(p => p.TransactionTime).Take(150).ToList();
+                foreach (var d in data) { d.Payload = null; d.Param1 = null; d.Param2 = null; d.Param3 = null; }
 
                 if (data == null)
                 {
