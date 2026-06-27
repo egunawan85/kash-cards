@@ -1,4 +1,4 @@
-﻿using Newtonsoft.Json;
+using Newtonsoft.Json;
 using QryptoCard.Dashboard.Models;
 using QryptoCard.Dashboard.Models.Service;
 using QryptoCard.Dashboard.Services;
@@ -7,6 +7,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Web;
 using System.Web.UI;
+using System.Web.UI.HtmlControls;
 using System.Web.UI.WebControls;
 
 namespace QryptoCard.Dashboard.card
@@ -18,34 +19,17 @@ namespace QryptoCard.Dashboard.card
         {
             if (Common.checkID())
             {
-
-                if (!IsPostBack)
-                {
-                    getData();
-
-                }
-                else
-                {
-                    //bindData("00000000000000000001");
-                }
+                if (!IsPostBack) { getData(); getOrders(); }
             }
             else
             {
                 if (Master.checkCookies())
                 {
-                    if (!IsPostBack)
-                    {
-                        getData();
-                    }
-                    else
-                    {
-                        //bindData("00000000000000000001");
-                    }
+                    if (!IsPostBack) { getData(); getOrders(); }
                 }
                 else
                     Master.forceLogin();
             }
-            //getData();
         }
 
 
@@ -110,6 +94,115 @@ namespace QryptoCard.Dashboard.card
                 ShowAlert(op.Message);
             }
 
+        }
+
+        // ====================================================================
+        // Card orders (all states: active / pending-payment / cancelled / expired).
+        // The user's card *purchase orders* with their status + the pay-link and
+        // Cancel actions. Server-returned via getCardListAll; relocated here so the
+        // Transactions page can be a pure spend feed.
+        // ====================================================================
+        void getOrders()
+        {
+            List<CardModel> dt;
+            OutputModel op = new OutputModel();
+            CardModel req = new CardModel();
+            op = cs.getCardListAll(req);
+            if (op.Status == "success")
+            {
+                dt = JsonConvert.DeserializeObject<List<CardModel>>(op.Data.ToString());
+                if (dt.Count > 0)
+                {
+                    for (int i = 0; i < dt.Count; i++)
+                    {
+                        dt[i].FirstName = dt[i].FirstName + " " + dt[i].LastName;
+                        dt[i].DetailURL = KeyModel.TXCARD_URL + dt[i].ID;
+                    }
+                    gvListItem.Visible = true;
+                    gvListItem.DataSource = null;
+                    gvListItem.DataSource = dt;
+                    gvListItem.DataBind();
+                    divnorow.Visible = false;
+                }
+                else
+                {
+                    gvListItem.DataSource = null;
+                    gvListItem.DataBind();
+                    gvListItem.Visible = false;
+                    divnorow.Visible = true;
+                }
+            }
+            else
+            {
+                gvListItem.DataSource = null;
+                gvListItem.DataBind();
+                gvListItem.Visible = false;
+                divnorow.Visible = true;
+            }
+        }
+
+        protected Boolean IsStatusCreated(string i) { return i == "created"; }
+        protected Boolean IsStatusInProgress(string i) { return i == "in progress"; }
+        protected Boolean IsStatusPaid(string i) { return i == "paid"; }
+        protected Boolean IsStatusCreatedBadge(string i) { return i == "created"; }
+        protected Boolean IsStatusCompleted(string i) { return i == "completed" || i == "success"; }
+        protected Boolean IsStatusCancelled(string i) { return i == "cancelled"; }
+        protected Boolean IsStatusExpired(string i) { return i == "expired"; }
+
+        protected void gvListItem_PageIndexChanging(object sender, GridViewPageEventArgs e)
+        {
+            gvListItem.PageIndex = e.NewPageIndex;
+            getOrders();
+        }
+
+        protected void gvListItem_RowCreated(object sender, GridViewRowEventArgs e)
+        {
+        }
+
+        // A row's Cancel button posts back here; surface a SERVER-rendered confirm overlay
+        // (Visible toggled in code) rather than a JS-shown modal — the shell loads no Bootstrap.
+        protected void btnCancel_ServerClick(object sender, EventArgs e)
+        {
+            HtmlButton btn = (HtmlButton)sender;
+            GridViewRow row = (GridViewRow)btn.NamingContainer;
+            hfID.Value = ((HiddenField)row.FindControl("hfID")).Value;
+            pnlCancelConfirm.Visible = true;
+        }
+
+        protected void btnCloseConfirm_Click(object sender, EventArgs e)
+        {
+            pnlCancelConfirm.Visible = false;
+        }
+
+        protected void btnCancelExec_Click(object sender, EventArgs e)
+        {
+            pnlCancelConfirm.Visible = false;
+
+            CardModel z = new CardModel();
+            z.ID = hfID.Value;
+
+            var q = cs.cancelCardTransaction(z);
+            if (q.Status == "success")
+            {
+                getData();
+                getOrders();
+                ShowBanner(Server.HtmlEncode(q.Message), true);
+            }
+            else
+            {
+                ShowBanner(Server.HtmlEncode(q.Message), false);
+            }
+        }
+
+        // Server-rendered inline result banner (no Bootstrap/jQuery needed).
+        void ShowBanner(string html, bool ok)
+        {
+            pnlMsg.Visible = true;
+            pnlMsg.CssClass = "hist-banner " + (ok ? "ok" : "err");
+            lblMsg.InnerHtml = html;
+            string js = "(function(){var m=document.getElementById('" + pnlMsg.ClientID
+                + "');if(m){m.scrollIntoView({behavior:'smooth',block:'center'});}})();";
+            ScriptManager.RegisterClientScriptBlock(this, GetType(), "Pop", js, true);
         }
 
         // Surfaces a backend error inline, matching the NewDesign alert idiom used

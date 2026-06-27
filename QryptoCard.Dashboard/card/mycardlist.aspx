@@ -39,6 +39,11 @@
         <asp:Label runat="server" ID="lblAlert" />
     </asp:Panel>
 
+    <asp:HiddenField runat="server" ID="hfID" />
+    <asp:Panel runat="server" ID="pnlMsg" Visible="false" CssClass="hist-banner err">
+        <span runat="server" id="lblMsg"></span>
+    </asp:Panel>
+
     <div class="mycards-grid">
         <asp:Repeater ID="rptCard" runat="server">
             <ItemTemplate>
@@ -59,10 +64,80 @@
             </ItemTemplate>
         </asp:Repeater>
     </div>
+
+    <!--begin::Card orders (all states) — purchase orders + pay-link / Cancel, relocated from the
+        Transactions page so that page can be a pure spend feed. -->
+    <div class="dash-top" style="margin-top: 30px;">
+        <div>
+            <h2 style="font-size: 1.25rem; letter-spacing: -.02em;">Card orders</h2>
+            <div class="sub">Your card purchases and their status.</div>
+        </div>
+    </div>
+    <div>
+        <div class="panel">
+            <div class="table-responsive">
+                <asp:GridView CssClass="data-table" ID="gvListItem" HeaderStyle-CssClass="header-table" runat="server" AutoGenerateColumns="false" DataKeyNames="ID" AllowPaging="True" PageSize="50" AllowCustomPaging="False" OnPageIndexChanging="gvListItem_PageIndexChanging" OnRowCreated="gvListItem_RowCreated">
+                    <PagerStyle HorizontalAlign="Center" CssClass="bs4-aspnet-pager" />
+                    <Columns>
+                        <asp:TemplateField HeaderText="No." ItemStyle-HorizontalAlign="Center" ItemStyle-VerticalAlign="Middle" HeaderStyle-Width="50px">
+                            <ItemTemplate>
+                                <asp:HiddenField runat="server" ID="hfID" Value='<%# Eval("ID") %>' />
+                                <asp:HiddenField runat="server" ID="hfURL" Value='<%# Eval("DetailURL") %>' />
+                                <%# Container.DataItemIndex + 1 %>
+                            </ItemTemplate>
+                        </asp:TemplateField>
+                        <asp:BoundField DataField="CardName" HeaderText="Card Bin" ItemStyle-HorizontalAlign="Center" ItemStyle-VerticalAlign="Middle" HeaderStyle-Width="50px" />
+                        <asp:BoundField DataField="Organization" HeaderText="Provider" ItemStyle-HorizontalAlign="Center" ItemStyle-VerticalAlign="Middle" HeaderStyle-Width="50px" />
+                        <asp:BoundField DataField="FirstName" HeaderText="Cardholder" ItemStyle-HorizontalAlign="Center" ItemStyle-VerticalAlign="Middle" HeaderStyle-Width="50px" />
+                        <asp:BoundField DataField="Currency" HeaderText="Currency" ItemStyle-HorizontalAlign="Center" ItemStyle-VerticalAlign="Middle" HeaderStyle-Width="50px" />
+                        <asp:BoundField DataField="Price" HeaderText="Price" ItemStyle-HorizontalAlign="Center" ItemStyle-VerticalAlign="Middle" HeaderStyle-Width="50px" />
+                        <asp:BoundField DataField="InitialDeposit" HeaderText="Initial Deposit" ItemStyle-HorizontalAlign="Center" ItemStyle-VerticalAlign="Middle" HeaderStyle-Width="50px" />
+                        <asp:BoundField DataField="Total" HeaderText="Total" ItemStyle-HorizontalAlign="Center" ItemStyle-VerticalAlign="Middle" HeaderStyle-Width="50px" />
+                        <asp:TemplateField HeaderText="Status" ItemStyle-HorizontalAlign="Center" ItemStyle-VerticalAlign="Middle" HeaderStyle-Width="100px">
+                            <ItemTemplate>
+                                <center>
+                                    <span class="badge badge-light-warning" runat="server" visible='<%# IsStatusCreated((string)Eval("Status")) %>'>Pending Payment</span>
+                                    <span class="badge badge-light-success" runat="server" visible='<%# IsStatusCompleted((string)Eval("Status")) %>'>Completed!</span>
+                                    <span class="badge badge-light-info" runat="server" visible='<%# IsStatusInProgress((string)Eval("Status")) %>'>In Progress</span>
+                                    <span class="badge badge-light-info" runat="server" visible='<%# IsStatusInProgress((string)Eval("Status")) %>'>Paid</span>
+                                    <span class="badge badge-light-danger" runat="server" visible='<%# IsStatusCancelled((string)Eval("Status")) %>'>Cancelled</span>
+                                    <span class="badge badge-light-danger" runat="server" visible='<%# IsStatusExpired((string)Eval("Status")) %>'>Expired</span>
+                                </center>
+                            </ItemTemplate>
+                        </asp:TemplateField>
+                        <asp:TemplateField HeaderText="Actions" ItemStyle-HorizontalAlign="Center" ItemStyle-VerticalAlign="Middle" HeaderStyle-Width="170px">
+                            <ItemTemplate>
+                                <div class="row-actions" runat="server" visible='<%# IsStatusCreatedBadge((string)Eval("Status")) %>'>
+                                    <a class="btn btn-line btn-sm" href='<%# Eval("DetailURL") %>' target="_blank" rel="noopener">Payment link</a>
+                                    <button runat="server" id="btnCancel" onserverclick="btnCancel_ServerClick" class="btn btn-danger btn-sm">Cancel</button>
+                                </div>
+                            </ItemTemplate>
+                        </asp:TemplateField>
+                    </Columns>
+                </asp:GridView>
+            </div>
+            <div class="data-empty" runat="server" id="divnorow">
+                <center>
+                    <asp:Label runat="server" ID="lblNoRow" Text="No card orders at the moment." /></center>
+            </div>
+        </div>
+    </div>
+    <!--end::Card orders-->
 </asp:Content>
 <asp:Content ID="Content2" ContentPlaceHolderID="DrawerContent" runat="server">
 </asp:Content>
 <asp:Content ID="Content3" ContentPlaceHolderID="ModalContent" runat="server">
+    <%-- Cancel confirmation. Server-rendered overlay (Visible toggled in code-behind). --%>
+    <asp:Panel runat="server" ID="pnlCancelConfirm" Visible="false" CssClass="hist-modal">
+        <div class="hist-modal-card">
+            <h3>Cancel card transaction</h3>
+            <p class="hist-modal-text">Are you sure you want to cancel this card transaction? This can't be undone.</p>
+            <div class="hist-modal-actions">
+                <asp:Button CssClass="btn btn-line" runat="server" ID="btnCloseConfirm" Text="Keep it" OnClick="btnCloseConfirm_Click" CausesValidation="false" />
+                <asp:Button CssClass="btn btn-danger" runat="server" ID="btnCancelExec" Text="Yes, cancel" OnClick="btnCancelExec_Click" />
+            </div>
+        </div>
+    </asp:Panel>
 </asp:Content>
 <asp:Content ID="Content4" ContentPlaceHolderID="ScriptContent" runat="server">
 </asp:Content>
