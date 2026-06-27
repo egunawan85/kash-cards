@@ -80,9 +80,14 @@ namespace QryptoCard.Dashboard.card
                 hfCardData.Value = JsonConvert.SerializeObject(dt, Formatting.None);
 
                 lblCardPrice.InnerHtml = dt.CardPrice + " " + dt.CardPriceCurrency;
-                lblCardBin.InnerHtml = String.Format("{0:0000 0000 0000 0000}", (Int64.Parse(dt.BankCardBin + "0000000000")));
+                // BankCardBin may be null/blank or non-numeric — only reformat when it parses,
+                // else show the raw value rather than throwing FormatException.
+                long cardBinVal;
+                lblCardBin.InnerHtml = Int64.TryParse((dt.BankCardBin ?? "") + "0000000000", out cardBinVal)
+                    ? String.Format("{0:0000 0000 0000 0000}", cardBinVal)
+                    : (dt.BankCardBin ?? "");
                 lblDepositFeeRate.InnerHtml = dt.RechargeFeeRate + "%";
-                lblDepositLimit.InnerHtml = dt.DepositAmountMinQuotaForActiveCard.ToString() + " - " + dt.DepositAmountMaxQuotaForActiveCard + " " + dt.FiatCurrency;
+                lblDepositLimit.InnerHtml = (dt.DepositAmountMinQuotaForActiveCard ?? "") + " - " + dt.DepositAmountMaxQuotaForActiveCard + " " + dt.FiatCurrency;
                 if (dt.Organization == "Visa")
                     imgOrg.Src = "https://www.svgrepo.com/show/362035/visa-3.svg";
                 else if (dt.Organization == "MasterCard")
@@ -90,7 +95,7 @@ namespace QryptoCard.Dashboard.card
                 else
                     imgOrg.Src = "https://www.svgrepo.com/show/328132/discover.svg";
 
-                lblUsage.InnerHtml = dt.CardDesc.Replace(",", ", ");
+                lblUsage.InnerHtml = (dt.CardDesc ?? "").Replace(",", ", ");
                 lblDepositFee.InnerHtml = "Deposit Fee : " + dt.RechargeFeeRate + "%";
                 lblCardFee.InnerHtml = "Card Fee : " + dt.CardPrice + " " + dt.CardPriceCurrency;
                 

@@ -78,7 +78,11 @@ namespace QryptoCard.Dashboard.card
                 dt = JsonConvert.DeserializeObject<CardModel>(op.Data.ToString());
                 hfCardID.Value = dt.ID;
                 hfCardNo.Value = dt.CardNo;
-                lblCardNo.InnerHtml = String.Format("{0:0000 0000 0000 0000}", (Int64.Parse(dt.CardNumber)));
+                // Masked PAN (e.g. "4024 00** **** 0001") can't be parsed — show as-is.
+                long cardNoVal;
+                lblCardNo.InnerHtml = Int64.TryParse(dt.CardNumber, out cardNoVal)
+                    ? String.Format("{0:0000 0000 0000 0000}", cardNoVal)
+                    : (dt.CardNumber ?? "");
                 if (dt.Organization == "Visa")
                     imgOrg.Src = "https://www.svgrepo.com/show/362035/visa-3.svg";
                 else if (dt.Organization == "MasterCard")
@@ -123,7 +127,10 @@ namespace QryptoCard.Dashboard.card
         void getCardDetails()
         {
             viewdetails.Visible = true;
-            lblCardNumber.InnerHtml = String.Format("{0:0000 0000 0000 0000}", (Int64.Parse(hfCardNumber.Value)));
+            long cardNumberVal;
+            lblCardNumber.InnerHtml = Int64.TryParse(hfCardNumber.Value, out cardNumberVal)
+                ? String.Format("{0:0000 0000 0000 0000}", cardNumberVal)
+                : (hfCardNumber.Value ?? "");
             lblCVV.InnerHtml = Common.decrypt(hfCVV.Value);
             hfCVVDecr.Value = lblCVV.InnerHtml;
             lblExpDate.InnerHtml = Common.decrypt(hfExpDate.Value);
@@ -184,7 +191,7 @@ namespace QryptoCard.Dashboard.card
             if (op.Status == "success")
             {
                 dt = JsonConvert.DeserializeObject<CardTypeModel>(op.Data.ToString());
-                lblUsage.InnerHtml = dt.CardDesc.Replace(",", ", ");
+                lblUsage.InnerHtml = (dt.CardDesc ?? "").Replace(",", ", ");
                 lblDepositFee.InnerHtml = "Deposit Fee : " + dt.RechargeFeeRate + "%";
 
                 lblMinDeposit.InnerHtml = "Minimum Deposit : " + dt.DepositAmountMinQuotaForActiveCard + " " + dt.FiatCurrency;

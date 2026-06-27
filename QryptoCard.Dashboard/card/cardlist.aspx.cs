@@ -62,7 +62,11 @@ namespace QryptoCard.Dashboard.card
                         dt[i].DetailURL = KeyModel.DETAIL_URL + dt[i].CardTypeId;
 
                         dt[i].RechargeFeeRate = dt[i].RechargeFeeRate + "%";
-                        dt[i].BankCardBin = String.Format("{0:0000 0000 0000 0000}", (Int64.Parse(dt[i].BankCardBin + "0000000000")));
+                        // Only reformat when the BIN actually parses — a null/non-numeric BIN
+                        // must not throw FormatException and blank the catalog.
+                        long cardBinVal;
+                        if (Int64.TryParse((dt[i].BankCardBin ?? "") + "0000000000", out cardBinVal))
+                            dt[i].BankCardBin = String.Format("{0:0000 0000 0000 0000}", cardBinVal);
                     }
                     rptCard.DataSource = dt;
                     rptCard.DataBind();

@@ -62,18 +62,33 @@ namespace QryptoCard.Dashboard.card
                 {
                     for (int i = 0; i < dt.Count; i++)
                     {
-                        if (dt[i].Organization == "Visa")
-                            dt[i].LogoURL = "https://www.svgrepo.com/show/362035/visa-3.svg";
-                        else if (dt[i].Organization == "MasterCard")
-                            dt[i].LogoURL = "https://www.svgrepo.com/show/508703/mastercard.svg";
-                        else
-                            dt[i].LogoURL = "https://www.svgrepo.com/show/328132/discover.svg";
+                        try
+                        {
+                            if (dt[i].Organization == "Visa")
+                                dt[i].LogoURL = "https://www.svgrepo.com/show/362035/visa-3.svg";
+                            else if (dt[i].Organization == "MasterCard")
+                                dt[i].LogoURL = "https://www.svgrepo.com/show/508703/mastercard.svg";
+                            else
+                                dt[i].LogoURL = "https://www.svgrepo.com/show/328132/discover.svg";
 
-                        dt[i].CardNumber = String.Format("{0:0000 0000 0000 0000}", (Int64.Parse(dt[i].CardNumber)));
+                            // Card numbers come back MASKED (e.g. "4024 00** **** 0001") — the
+                            // real provider never returns a full PAN. Only a clean integer can be
+                            // re-grouped; otherwise keep the stored (already grouped + masked)
+                            // value as-is. Never Int64.Parse a masked PAN — it throws
+                            // FormatException and used to take the whole list down.
+                            long pan;
+                            if (Int64.TryParse(dt[i].CardNumber, out pan))
+                                dt[i].CardNumber = String.Format("{0:0000 0000 0000 0000}", pan);
 
-                        dt[i].DetailURL = KeyModel.DETAIL_OWN_URL + dt[i].ID;
+                            dt[i].DetailURL = KeyModel.DETAIL_OWN_URL + dt[i].ID;
 
-                        dt[i].Param5 = dt[i].Param5 + " " + dt[i].Currency;
+                            dt[i].Param5 = dt[i].Param5 + " " + dt[i].Currency;
+                        }
+                        catch
+                        {
+                            // One malformed row must not blank the entire list — leave this
+                            // row's raw values and keep rendering the rest.
+                        }
                     }
                     rptCard.DataSource = dt;
                     rptCard.DataBind();
