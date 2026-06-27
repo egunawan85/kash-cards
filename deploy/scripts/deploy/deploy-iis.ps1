@@ -394,9 +394,14 @@ function Build-And-Publish {
         $mainDll = Join-Path $DestDir "bin\$Project.dll"
         if (Test-Path $mainDll) {
             $dllTime   = (Get-Item $mainDll).LastWriteTime
+            # EXCLUDE obj/ and bin/: MSBuild regenerates files there (transformed Web.config,
+            # AssemblyInfo, TemporaryGeneratedFile*.cs, the PackageTmp tree) with a FRESH timestamp
+            # on EVERY build, so including them makes "newest source" always newer than the DLL and
+            # the guard would false-fail every time. Only true hand-edited source counts.
             $srcNewest = (Get-ChildItem -LiteralPath $projDir -Recurse -File `
                             -Include '*.cs', '*.aspx', '*.ascx', '*.master', '*.config', '*.csproj', '*.resx' `
                             -ErrorAction SilentlyContinue |
+                          Where-Object { $_.FullName -notmatch '\\(obj|bin)\\' } |
                           Measure-Object -Property LastWriteTime -Maximum).Maximum
             if ($srcNewest -and $dllTime -lt $srcNewest) {
                 Stop-Deploy "$Project`: deployed $Project.dll ($($dllTime.ToString('s'))) is OLDER than newest source ($($srcNewest.ToString('s'))) -- incremental build skipped a needed recompile; aborting rather than ship code that does not match source"
@@ -524,9 +529,16 @@ if (Test-Path $solution) {
 # NOTE: this compiles the whole solution, which INCLUDES the QryptoCard.Tests.* projects. If a test
 # project fails to build on the box, the fallback is a .slnf solution filter listing only the 12
 # deployable projects -- flagged for on-box verification.
+# Disable MSBuild node reuse for the WHOLE build (env var covers the /m compile + every
+# per-project publish msbuild below). The detached harness runs deploy-iis via
+# Start-Process -RedirectStandardOutput; reused worker nodes INHERIT that stdout handle and
+# linger after the build, which blocks the harness's -Wait so the done-marker is never written
+# (the build succeeds but never signals done). Negligible cost: we do a single /m compile per
+# deploy, so there is no repeat build to keep the nodes warm for anyway.
+$env:MSBUILDDISABLENODEREUSE = '1'
 if (-not $Service -and (Test-Path $solution)) {
     Write-Step "msbuild compile (solution, parallel /m): $solution"
-    & $MSBuild $solution /p:Configuration=Release /nologo /verbosity:minimal /m
+    & $MSBuild $solution /p:Configuration=Release /nologo /verbosity:minimal /m /nodeReuse:false
     if ($LASTEXITCODE -ne 0) { Stop-Deploy "solution parallel compile failed (exit $LASTEXITCODE)" }
     Write-Ok "solution compiled in parallel (per-project publish below is incremental)"
 }
@@ -554,8 +566,17 @@ foreach ($site in $allSites) {
     # Build-And-Publish stopped the pool to release file locks for the PackageTmp copy.
     # Wake it now that Web.config is fully patched so the site actually serves (a stopped
     # pool answers 503). inject-secrets later recycles it to pick up the per-pool env vars.
-    Start-WebAppPool -Name $pool -ErrorAction SilentlyContinue
-    Write-Ok "$project`: app pool '$pool' started"
+    # WAS can transiently reject the start right after a stop with COM 0x80070425 ("service
+    # cannot accept control messages at this time") -- and that exception is TERMINATING even
+    # with -ErrorAction SilentlyContinue, so retry a few times before giving up (the final
+    # vm-iis-ops 'start' after the build is the backstop that guarantees every pool is up).
+    $started = $false
+    for ($try = 1; $try -le 6; $try++) {
+        try { Start-WebAppPool -Name $pool -ErrorAction Stop; $started = $true; break }
+        catch { if ($try -lt 6) { Start-Sleep -Seconds 2 } }
+    }
+    if ($started) { Write-Ok "$project`: app pool '$pool' started" }
+    else { Write-Warn "$project`: pool '$pool' did not start after retries (final 'start' step will recover it)" }
 }
 
 # ===========================================================================

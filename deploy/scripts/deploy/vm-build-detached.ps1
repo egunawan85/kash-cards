@@ -49,12 +49,30 @@ if ($Action -eq 'run') {
         Set-Content -Path $Done -Value '0'
         exit 0
     }
-    # Real build: run deploy-iis.ps1 (all tiers) as a CHILD powershell so its `exit N`
-    # (Stop-Deploy) sets our $LASTEXITCODE instead of terminating this runner.
-    & powershell.exe -NoProfile -ExecutionPolicy Bypass -File $DeployIis -Env $Env 2>&1 |
-        Out-File -FilePath $Log -Encoding utf8
-    $code = $LASTEXITCODE
+    # Real build: run deploy-iis.ps1 (all tiers) as a CHILD process, STREAMING its output to the
+    # log LIVE (Start-Process -RedirectStandardOutput) -- so progress is visible during the build
+    # and nothing is lost if the build dies mid-way (the old `| Out-File` buffered everything to
+    # the end, so a crashed task left an empty log + no clue). Child process so deploy-iis's
+    # `exit N` (Stop-Deploy) becomes our recorded exit code, not a kill of this runner.
+    $errLog = "$Log.err"
+    Remove-Item $errLog -ErrorAction SilentlyContinue
+    try {
+        $p = Start-Process -FilePath 'powershell.exe' `
+            -ArgumentList @('-NoProfile', '-ExecutionPolicy', 'Bypass', '-File', $DeployIis, '-Env', $Env) `
+            -RedirectStandardOutput $Log -RedirectStandardError $errLog `
+            -WindowStyle Hidden -PassThru -Wait -ErrorAction Stop
+        $code = $p.ExitCode
+    } catch {
+        ("[xx] runner failed to start/await deploy-iis: " + $_.Exception.Message) | Out-File -FilePath $Log -Append -Encoding utf8
+        $code = 1
+    }
     if ($null -eq $code) { $code = 0 }
+    # Fold any stderr into the log so a failure is visible in one place.
+    if ((Test-Path $errLog) -and (Get-Item $errLog).Length -gt 0) {
+        Add-Content -Path $Log -Value '----- deploy-iis STDERR -----'
+        Get-Content -LiteralPath $errLog | Add-Content -Path $Log
+    }
+    Remove-Item $errLog -ErrorAction SilentlyContinue
     Set-Content -Path $Done -Value ([string]$code)
     exit 0
 }
