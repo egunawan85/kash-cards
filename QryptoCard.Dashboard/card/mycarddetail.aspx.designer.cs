@@ -852,6 +852,51 @@ namespace QryptoCard.Dashboard.card
         protected global::System.Web.UI.HtmlControls.HtmlGenericControl Label1;
 
         /// <summary>
+        /// lblCardBrand control.
+        /// </summary>
+        protected global::System.Web.UI.HtmlControls.HtmlGenericControl lblCardBrand;
+
+        /// <summary>
+        /// litSpent control.
+        /// </summary>
+        protected global::System.Web.UI.WebControls.Literal litSpent;
+
+        /// <summary>
+        /// litTopped control.
+        /// </summary>
+        protected global::System.Web.UI.WebControls.Literal litTopped;
+
+        /// <summary>
+        /// pnlRecharge control.
+        /// </summary>
+        protected global::System.Web.UI.WebControls.Panel pnlRecharge;
+
+        /// <summary>
+        /// btnRechargeClose control.
+        /// </summary>
+        protected global::System.Web.UI.WebControls.Button btnRechargeClose;
+
+        /// <summary>
+        /// pnlDetailOTP control.
+        /// </summary>
+        protected global::System.Web.UI.WebControls.Panel pnlDetailOTP;
+
+        /// <summary>
+        /// btnDetailClose control.
+        /// </summary>
+        protected global::System.Web.UI.WebControls.Button btnDetailClose;
+
+        /// <summary>
+        /// pnlAlert control.
+        /// </summary>
+        protected global::System.Web.UI.WebControls.Panel pnlAlert;
+
+        /// <summary>
+        /// btnAlertClose control.
+        /// </summary>
+        protected global::System.Web.UI.WebControls.Button btnAlertClose;
+
+        /// <summary>
         /// Master property.
         /// </summary>
         /// <remarks>
