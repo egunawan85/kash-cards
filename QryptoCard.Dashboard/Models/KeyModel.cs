@@ -17,9 +17,12 @@ namespace QryptoCard.Dashboard.Models
 
         // Public-facing base for links SHARED OUTSIDE the app (the referral/register
         // link a user hands to someone else) — must be an absolute URL with the host,
-        // so it can't be relative. Config-driven per deployment; defaults to dev.
+        // so it can't be relative. PUBLIC_BASE_URL is the cardholder app host
+        // (app-<env>.kash.cards), the same key the INT reset link uses. Required (no silent
+        // default): the prior dash-dev.kash.cards default mapped to no route and silently
+        // shipped a wrong host, so — like the INT reset link — require it and fault if unset.
         public static string REFERRAL_URL =>
-            SecretsConfig.GetOptional("PUBLIC_BASE_URL", "https://dash-dev.kash.cards").TrimEnd('/') + "/register?id=";
+            SecretsConfig.Require("PUBLIC_BASE_URL").TrimEnd('/') + "/register?id=";
 
         // In-app navigation targets — root-relative so a tile click / post-buy redirect
         // stays on whatever host is serving the page (previously hardcoded to dev).
