@@ -336,46 +336,18 @@ function Build-And-Publish {
     $packages = Join-Path $projDir 'packages.config'
     if (-not (Test-Path $csproj)) { Stop-Deploy "$Project`: csproj not found at $csproj" }
 
-    # Captured BEFORE the clean+build so the post-publish staleness guard (below) can prove
-    # the deployed DLL was actually (re)compiled in THIS run, not shipped stale.
-    $buildStart = Get-Date
-
-    if (Test-Path $packages) {
-        Write-Step "$Project`: nuget restore"
-        & $NuGet restore $packages -PackagesDirectory (Join-Path $RepoRoot 'packages') -NonInteractive
-        if ($LASTEXITCODE -ne 0) { Stop-Deploy "$Project`: nuget restore failed (exit $LASTEXITCODE)" }
-    } else {
-        Write-Warn "$Project`: no packages.config -- skipping restore"
-    }
-
-    # Force a clean compile. vm-fetch-source keeps the gitignored obj/ and bin/ from a PRIOR
-    # build (git clean -ffd, no -x), so incremental MSBuild can see a stale assembly as
-    # "up-to-date" against the re-fetched source and SKIP recompiling -- silently shipping an
-    # OLD binary that no longer matches source. (A fixed AuthV1Service once deployed as its
-    # pre-fix build, rejecting every valid login OTP; and an all-tiers deploy once shipped stale
-    # Dashboard/INT DLLs because this delete failed SILENTLY -- a lingering MSBuild/Roslyn worker
-    # from a prior tier held the obj locked.) So the delete is now AUTHORITATIVE: if it can't
-    # clear the intermediates, kill the stray build servers and retry; if it still can't, ABORT.
-    foreach ($stale in @((Join-Path $projDir 'obj'), (Join-Path $projDir 'bin'))) {
-        if (-not (Test-Path $stale)) { continue }
-        Write-Step "$Project`: clean $stale"
-        Remove-Item $stale -Recurse -Force -ErrorAction SilentlyContinue
-        if (Test-Path $stale) {
-            Write-Warn "$Project`: clean of $stale blocked (locked) -- killing stray build servers and retrying"
-            Get-Process -Name 'VBCSCompiler', 'MSBuild' -ErrorAction SilentlyContinue | Stop-Process -Force -ErrorAction SilentlyContinue
-            Start-Sleep -Milliseconds 500
-            Remove-Item $stale -Recurse -Force -ErrorAction SilentlyContinue
-        }
-        if (Test-Path $stale) { Stop-Deploy "$Project`: could not remove stale $stale (locked) -- aborting rather than ship a binary that may not match source" }
-    }
-
+    # No forced obj/bin clean (runegate's model). We rely on MSBuild INCREMENTAL plus the fresh
+    # mtimes that `git reset --hard` stamps on changed files, plus the up-front parallel /m
+    # solution pre-compile. Packages were restored solution-wide above, so there is no per-project
+    # restore here either. The INCREMENTAL-AWARE source-mtime guard after the publish (below)
+    # catches the rare skipped-but-needed recompile LOUDLY -- so we never silently ship stale code,
+    # without the forced-clean that itself failed silently under worker locks (the old bug).
     Write-Step "$Project`: msbuild publish -> $DestDir"
     # WebPublishMethod=FileSystem publishes the web app (transformed, content +
     # bin) to publishUrl. DeployOnBuild wires the publish target into the build.
-    # UseSharedCompilation=false + nodeReuse:false: do NOT leave persistent MSBuild /
-    # Roslyn (VBCSCompiler) worker processes alive between tiers. A reused worker can hold
-    # the NEXT tier's obj/ locked (defeating the clean above) -- the root cause of the
-    # all-tiers stale-DLL bug; single-tier builds didn't accumulate the lingering workers.
+    # Node reuse + shared compilation left ON (runegate model): the up-front parallel /m
+    # solution compile already built every project, so this per-project publish is incremental --
+    # it should just PACKAGE the already-compiled output, not recompile. Warm workers = fast.
     & $MSBuild $csproj `
         /p:Configuration=Release `
         /p:DeployOnBuild=true `
@@ -385,8 +357,7 @@ function Build-And-Publish {
         /p:ExcludeApp_Data=true `
         /p:publishUrl="$DestDir" `
         /p:DeleteExistingFiles=false `
-        /p:UseSharedCompilation=false `
-        /nologo /verbosity:minimal /m /nodeReuse:false
+        /nologo /verbosity:minimal /m
     if ($LASTEXITCODE -ne 0) { Stop-Deploy "$Project`: msbuild publish failed (exit $LASTEXITCODE)" }
 
     # .NET Framework web projects with the MSDeploy package targets write the
@@ -413,18 +384,29 @@ function Build-And-Publish {
         Copy-Item "$pkgTmp\*" $DestDir -Recurse -Force
         Write-Ok "$Project`: published (PackageTmp -> $DestDir)"
 
-        # Fail-loud staleness guard. Copy-Item preserves the source DLL's timestamp, so a
-        # deployed <project>.dll older than this run's $buildStart means MSBuild SKIPPED the
-        # recompile and we just shipped OLD code. Refuse to pass -- this turns the previously
-        # SILENT stale-ship (the all-tiers bug) into a hard, obvious failure, for every tier
-        # that produces its own code assembly. (Content-only tiers with no such DLL are skipped.)
+        # Fail-loud, INCREMENTAL-AWARE staleness guard. Under incremental builds an unchanged tier
+        # legitimately does NOT recompile, so we can't demand "newer than this run" (that would
+        # false-fail unchanged tiers). Instead: the deployed <project>.dll must be at least as new
+        # as the NEWEST source file in the project. If any source is newer than the DLL, a needed
+        # recompile was SKIPPED and we'd ship code that doesn't match source (the AuthV1Service
+        # class of bug) -- abort. Unchanged tiers (DLL >= all source) pass; only a real skipped
+        # recompile fails. Content-only tiers with no own DLL are skipped.
         $mainDll = Join-Path $DestDir "bin\$Project.dll"
         if (Test-Path $mainDll) {
-            $dllTime = (Get-Item $mainDll).LastWriteTime
-            if ($dllTime -lt $buildStart) {
-                Stop-Deploy "$Project`: deployed $Project.dll is STALE ($($dllTime.ToString('s')) < build start $($buildStart.ToString('s'))) -- recompile was skipped; aborting to avoid shipping code that does not match source"
+            $dllTime   = (Get-Item $mainDll).LastWriteTime
+            # EXCLUDE obj/ and bin/: MSBuild regenerates files there (transformed Web.config,
+            # AssemblyInfo, TemporaryGeneratedFile*.cs, the PackageTmp tree) with a FRESH timestamp
+            # on EVERY build, so including them makes "newest source" always newer than the DLL and
+            # the guard would false-fail every time. Only true hand-edited source counts.
+            $srcNewest = (Get-ChildItem -LiteralPath $projDir -Recurse -File `
+                            -Include '*.cs', '*.aspx', '*.ascx', '*.master', '*.config', '*.csproj', '*.resx' `
+                            -ErrorAction SilentlyContinue |
+                          Where-Object { $_.FullName -notmatch '\\(obj|bin)\\' } |
+                          Measure-Object -Property LastWriteTime -Maximum).Maximum
+            if ($srcNewest -and $dllTime -lt $srcNewest) {
+                Stop-Deploy "$Project`: deployed $Project.dll ($($dllTime.ToString('s'))) is OLDER than newest source ($($srcNewest.ToString('s'))) -- incremental build skipped a needed recompile; aborting rather than ship code that does not match source"
             }
-            Write-Ok "$Project`: fresh-build verified ($Project.dll @ $($dllTime.ToString('s')))"
+            Write-Ok "$Project`: build verified ($Project.dll @ $($dllTime.ToString('s')) >= newest source)"
         }
     } elseif (Test-Path (Join-Path $DestDir 'Web.config')) {
         Write-Ok "$Project`: published to $DestDir"
@@ -536,6 +518,32 @@ if (Test-Path $solution) {
 }
 
 # ===========================================================================
+# Parallel solution COMPILE (once, up front) -- the big speed win (owner pick 1b).
+# ===========================================================================
+# For an all-tiers deploy, compile the WHOLE solution in ONE msbuild call with /m so the projects
+# build CONCURRENTLY across CPU cores, instead of compiling them one-at-a-time in the per-project
+# publish loop. Each per-project publish below is then INCREMENTAL -- it just packages the
+# already-built output (verify on-box: it must NOT recompile). Skipped for a single -Service build
+# (one project; its own publish compiles it). Incremental + warm node reuse, no forced clean
+# (runegate model); the source-mtime guard after each publish catches any skipped recompile.
+# NOTE: this compiles the whole solution, which INCLUDES the QryptoCard.Tests.* projects. If a test
+# project fails to build on the box, the fallback is a .slnf solution filter listing only the 12
+# deployable projects -- flagged for on-box verification.
+# Disable MSBuild node reuse for the WHOLE build (env var covers the /m compile + every
+# per-project publish msbuild below). The detached harness runs deploy-iis via
+# Start-Process -RedirectStandardOutput; reused worker nodes INHERIT that stdout handle and
+# linger after the build, which blocks the harness's -Wait so the done-marker is never written
+# (the build succeeds but never signals done). Negligible cost: we do a single /m compile per
+# deploy, so there is no repeat build to keep the nodes warm for anyway.
+$env:MSBUILDDISABLENODEREUSE = '1'
+if (-not $Service -and (Test-Path $solution)) {
+    Write-Step "msbuild compile (solution, parallel /m): $solution"
+    & $MSBuild $solution /p:Configuration=Release /nologo /verbosity:minimal /m /nodeReuse:false
+    if ($LASTEXITCODE -ne 0) { Stop-Deploy "solution parallel compile failed (exit $LASTEXITCODE)" }
+    Write-Ok "solution compiled in parallel (per-project publish below is incremental)"
+}
+
+# ===========================================================================
 # Main pass: per site, app pool -> site -> build/publish -> Web.config patch.
 # ===========================================================================
 foreach ($site in $allSites) {
@@ -558,8 +566,17 @@ foreach ($site in $allSites) {
     # Build-And-Publish stopped the pool to release file locks for the PackageTmp copy.
     # Wake it now that Web.config is fully patched so the site actually serves (a stopped
     # pool answers 503). inject-secrets later recycles it to pick up the per-pool env vars.
-    Start-WebAppPool -Name $pool -ErrorAction SilentlyContinue
-    Write-Ok "$project`: app pool '$pool' started"
+    # WAS can transiently reject the start right after a stop with COM 0x80070425 ("service
+    # cannot accept control messages at this time") -- and that exception is TERMINATING even
+    # with -ErrorAction SilentlyContinue, so retry a few times before giving up (the final
+    # vm-iis-ops 'start' after the build is the backstop that guarantees every pool is up).
+    $started = $false
+    for ($try = 1; $try -le 6; $try++) {
+        try { Start-WebAppPool -Name $pool -ErrorAction Stop; $started = $true; break }
+        catch { if ($try -lt 6) { Start-Sleep -Seconds 2 } }
+    }
+    if ($started) { Write-Ok "$project`: app pool '$pool' started" }
+    else { Write-Warn "$project`: pool '$pool' did not start after retries (final 'start' step will recover it)" }
 }
 
 # ===========================================================================

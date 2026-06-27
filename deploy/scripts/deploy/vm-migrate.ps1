@@ -234,6 +234,28 @@ if ($isFresh) {
     Write-Ok "[$DbName] is ONLINE"
 }
 
+# -- S6b: BACK UP the database before vm-migrate changes anything, so a bad migration (or a bad
+# `update --with-schema`) is recoverable. Only for an already-provisioned (non-fresh) DB -- a
+# fresh baseline has nothing worth saving. Writes to the SQL instance's DEFAULT backup directory
+# (a RELATIVE filename, which the SQL service account can always write -- no ACL juggling), then
+# prunes to the 5 most recent for this DB. SQL Express supports BACKUP DATABASE (no COMPRESSION).
+if (-not $isFresh) {
+    $bakStamp = Get-Date -Format 'yyyyMMdd-HHmmss'
+    $bakName  = "$DbName-premigrate-$bakStamp.bak"
+    Write-Step "DB backup before migrate: BACKUP DATABASE [$DbName] -> $bakName (default backup dir)"
+    & $sqlcmd @dbArgs -Q "BACKUP DATABASE [$DbName] TO DISK = N'$bakName' WITH INIT, FORMAT, NAME = N'$DbName pre-migrate $bakStamp';"
+    if ($LASTEXITCODE -ne 0) { Stop-Run "DB backup failed (exit $LASTEXITCODE) -- refusing to migrate without a recoverable backup" }
+    Write-Ok "DB backed up: $bakName"
+    $bakDir = Invoke-Scalar -BaseArgs $masterArgs -Query "SELECT CAST(SERVERPROPERTY('InstanceDefaultBackupPath') AS nvarchar(4000))"
+    if ($bakDir -and (Test-Path -LiteralPath $bakDir)) {
+        Get-ChildItem -LiteralPath $bakDir -Filter "$DbName-premigrate-*.bak" -ErrorAction SilentlyContinue |
+            Sort-Object LastWriteTime -Descending | Select-Object -Skip 5 |
+            Remove-Item -Force -ErrorAction SilentlyContinue
+    } else {
+        Write-Ok "  (backup prune skipped: default backup dir not resolvable on this SQL version)"
+    }
+}
+
 # -- 3. Ensure the migrations ledger exists, then record the baseline marker. On an adopted
 # box this records 0000-baseline-dacpac WITHOUT having run the dacpac (the box already has
 # the baseline schema from a prior provision).

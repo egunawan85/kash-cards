@@ -106,6 +106,11 @@ Usage: ENV=dev ./deploy/deploy.sh <command> [svc] [--with-schema]
   schema         Apply pending schema migrations (idempotent; opt-in).
   seed           Re-apply committed seed SQL (reference + admin, plus the dev-only
                  smoke user + synthetic display dataset). Data-only; no build/IIS.
+  rdp-open [ip]  OPERATOR access: open the NSG for RDP from your IP (default: auto-
+                 detect your public IP), so you can RDP into the dark box. Re-seal
+                 with rdp-close when done. (The deploy itself does NOT use RDP.)
+  rdp-close      Re-seal the box (deny RDP) -- always run this when finished.
+  rdp-status     Show the current RDP NSG rule state (open to whom, or dark).
 
   svc (service alias) = app pool minus the 'kash-' prefix:
     api  api-public  api-admin  api-callback  api-scheduler  apidocs
@@ -218,56 +223,27 @@ done
 # -Service param fragment for the run-command parameter list (empty when no svc).
 svc_param() { [[ -n "$SVC" ]] && printf 'Service=%s' "$SVC"; }
 
-# Build targets, one per line: the single SVC if given, else every tier alias from
-# sites.json (the 'kash-'-stripped appPool name).
-build_targets() {
-  if [[ -n "$SVC" ]]; then
-    printf '%s\n' "$SVC"
-  else
-    grep -oE '"appPool"[[:space:]]*:[[:space:]]*"kash-[^"]+"' "$SITES_JSON" \
-      | sed -E 's/.*"kash-([^"]+)"/\1/'
-  fi
-}
-
-# Build+publish each target via its OWN run-command. The all-tiers update/build does
-# NOT build all 12 in a single deploy-iis call: a per-tier run-command is an isolated
-# process, so no MSBuild/Roslyn worker carries an obj lock into the next tier (that was
-# the silent stale-DLL bug), and each build fits the run-command time budget (one all-12
-# call ran long enough to be cut off mid-loop once builds actually recompiled).
-# deploy-iis.ps1's per-tier staleness guard then fails the deploy loudly if any tier
-# still ships a stale binary.
-run_deploy_iis() {
-  local tier n=0
-  while IFS= read -r tier; do
-    [[ -z "$tier" ]] && continue
-    run_on_vm "$DEPLOY_SCRIPTS/deploy-iis.ps1" "Service=$tier"
-    n=$((n + 1))
-  done < <(build_targets)
-  # Never let a malformed/empty target list pass as a "successful" no-op deploy.
-  [[ "$n" -gt 0 ]] || die "no build targets resolved (check $SITES_JSON) -- refusing a no-op deploy"
-}
-
 case "$CMD" in
 
   update)
-    # App-only redeploy (optionally schema-first). For a private repo the
-    # zipball needs REPO-TOKEN in Key Vault -- vm-fetch-source pulls it via KvName.
+    # ONE on-box pass: vm-update.ps1 runs fetch -> write-config -> [db-backup + migrate] ->
+    # build+publish -> inject-secrets -> start, all locally on the box in a single warm process.
+    # That makes this a SINGLE az run-command (not ~6 round-trips + a per-tier build loop), which
+    # is where the wall-clock went. For a private repo the zipball needs REPO-TOKEN in Key Vault
+    # -- vm-fetch-source pulls it via KvName. ConfigB64 carries the gitignored env file the fetch
+    # would otherwise wipe. WithSchema=1 backs up the DB then applies pending migrations first.
     : "${REPO_URL:?set in $CFG}"
-    log "modular update${SVC:+ (tier: $SVC)}${WITH_SCHEMA:+ +schema}"
-    run_on_vm "$DEPLOY_SCRIPTS/vm-fetch-source.ps1" "RepoUrl=$REPO_URL Branch=$REPO_BRANCH KvName=$KEYVAULT_NAME"
-    push_config
-    if [[ "$WITH_SCHEMA" -eq 1 ]]; then
-      run_on_vm "$DEPLOY_SCRIPTS/vm-migrate.ps1" "Env=$ENV"
-    fi
-    run_deploy_iis
-    run_on_vm "$DEPLOY_SCRIPTS/inject-secrets.ps1" "$(svc_param)"
-    run_on_vm "$DEPLOY_SCRIPTS/vm-iis-ops.ps1"     "Action=start $(svc_param)"
+    log "on-box update${SVC:+ (tier: $SVC)}${WITH_SCHEMA:+ +schema}"
+    cfg_b64=$(base64 -w0 "$CFG")
+    run_on_vm "$DEPLOY_SCRIPTS/vm-update.ps1" \
+      "RepoUrl=$REPO_URL Branch=$REPO_BRANCH KvName=$KEYVAULT_NAME ConfigB64=$cfg_b64 Env=$ENV WithSchema=$WITH_SCHEMA${SVC:+ Service=$SVC}"
     log "update complete${SVC:+ (tier: $SVC)}"
     ;;
 
   build)
-    # Build + publish from the source already on the box. No fetch, no secrets.
-    run_deploy_iis
+    # Build + publish from the source already on the box (no fetch, no secrets). One on-box pass:
+    # deploy-iis builds ALL tiers (or one) in a single warm parallel compile.
+    run_on_vm "$DEPLOY_SCRIPTS/deploy-iis.ps1" "Env=$ENV${SVC:+ Service=$SVC}"
     ;;
 
   sync)
@@ -389,6 +365,15 @@ case "$CMD" in
     log "seed complete (Env=$ENV)"
     ;;
 
+  rdp-open|rdp-close|rdp-status)
+    # DIY just-in-time OPERATOR access: toggle the NSG Allow-RDP rule to your current
+    # public IP (open) and back to Deny (close), so you can RDP in to inspect/debug a
+    # box that is otherwise NSG-dark. The automated deploy does NOT use this -- `update`
+    # runs on-box via a single az run-command (control plane, no inbound). Always run
+    # `rdp-close` when you're done. `rdp-open [IP]` (default: auto-detect your public IP).
+    ENV="$ENV" bash "$SCRIPT_DIR/scripts/perimeter/rdp-access.sh" "${CMD#rdp-}" "${SVC:-}"
+    ;;
+
   -h|--help|help) usage 0 ;;
-  *)              die "unknown command: $CMD (try: update build restart start stop status logs schema seed)" ;;
+  *)              die "unknown command: $CMD (try: update build restart start stop status logs schema seed rdp-open rdp-close rdp-status)" ;;
 esac
