@@ -50,6 +50,7 @@ namespace QryptoCard.Dashboard.tx
             public string AmountText;
             public string GroupLabel;
             public string SearchKey;
+            public string TypeLabel;  // humanized type for the sub-line (Purchase / Refund / Top-up / …)
         }
         public class FeedGroup { public string Label { get; set; } public List<FeedRow> Rows { get; set; } }
 
@@ -106,7 +107,7 @@ namespace QryptoCard.Dashboard.tx
                 rptGroups.DataSource = groups;
                 rptGroups.DataBind();
                 divNoFeed.Visible = false;
-                divCardFilter.InnerHtml = BuildCardChips(ordered);
+                divCardFilter.InnerHtml = BuildCardSelect(ordered);
             }
             else
             {
@@ -126,6 +127,8 @@ namespace QryptoCard.Dashboard.tx
                         : "spend";
             bool credit = (cat == "refund");
             string tag = declined ? "Declined" : (cat == "refund" ? "Refund" : "");
+            string typeLabel = cat == "refund" ? "Refund" : cat == "fee" ? "Card fee"
+                             : type == "verification" ? "Card check" : type == "void" ? "Reversal" : "Purchase";
             decimal amt = (decimal)(t.Amount ?? 0);
             decimal auth = (decimal)(t.AuthorizedAmount ?? 0);
             string cur = string.IsNullOrEmpty(t.Currency) ? "USD" : t.Currency;
@@ -139,7 +142,8 @@ namespace QryptoCard.Dashboard.tx
                 IsDeclined = declined,
                 Tag = tag,
                 AmountText = MoneyText(credit, amt, cur, auth),
-                SearchKey = (t.MerchantName ?? "").ToLowerInvariant()
+                SearchKey = (t.MerchantName ?? "").ToLowerInvariant(),
+                TypeLabel = typeLabel
             };
         }
 
@@ -159,7 +163,8 @@ namespace QryptoCard.Dashboard.tx
                 IsDeclined = false,
                 Tag = ok ? "" : "Pending",
                 AmountText = MoneyText(true, amt, cur, amt),
-                SearchKey = "top up " + sym.ToLowerInvariant()
+                SearchKey = "top up " + sym.ToLowerInvariant(),
+                TypeLabel = "Top-up"
             };
         }
 
@@ -197,14 +202,15 @@ namespace QryptoCard.Dashboard.tx
             return "Earlier";
         }
 
-        string BuildCardChips(List<FeedRow> rows)
+        string BuildCardSelect(List<FeedRow> rows)
         {
             var cards = rows.Select(r => r.CardLast4).Where(c => !string.IsNullOrEmpty(c)).Distinct().ToList();
             if (cards.Count < 2) { divCardFilter.Visible = false; return ""; }
             var sb = new System.Text.StringBuilder();
-            sb.Append("<button type=\"button\" class=\"tx-chip is-active\" data-card=\"all\">All cards</button>");
+            sb.Append("<label class=\"tx-cardselect\">Card <select id=\"tx-card-select\"><option value=\"all\">All cards</option>");
             foreach (var c in cards)
-                sb.Append("<button type=\"button\" class=\"tx-chip\" data-card=\"" + Server.HtmlEncode(c) + "\">•••• " + Server.HtmlEncode(c) + "</button>");
+                sb.Append("<option value=\"" + Server.HtmlEncode(c) + "\">•••• " + Server.HtmlEncode(c) + "</option>");
+            sb.Append("</select></label>");
             return sb.ToString();
         }
 
@@ -223,6 +229,17 @@ namespace QryptoCard.Dashboard.tx
             var r = o as FeedRow;
             if (r == null || string.IsNullOrEmpty(r.CardLast4)) return "";
             return "<span class=\"cardchip\">•••• " + Server.HtmlEncode(r.CardLast4) + "</span>";
+        }
+        // Muted sub-line under the merchant: humanized type · date · masked-card chip.
+        protected string FeedSubline(object o)
+        {
+            var r = o as FeedRow;
+            if (r == null) return "";
+            var parts = new List<string>();
+            if (!string.IsNullOrEmpty(r.TypeLabel)) parts.Add(Server.HtmlEncode(r.TypeLabel));
+            parts.Add(Server.HtmlEncode(r.When.ToString("dd MMM, HH:mm", CultureInfo.InvariantCulture)));
+            if (!string.IsNullOrEmpty(r.CardLast4)) parts.Add("<span class=\"cardchip\">•••• " + Server.HtmlEncode(r.CardLast4) + "</span>");
+            return string.Join(" · ", parts);
         }
         protected string FeedTag(object o)
         {

@@ -39,7 +39,7 @@
                                 <div class='<%# FeedIcClass(Container.DataItem) %>'><%# FeedIcon(Container.DataItem) %></div>
                                 <div class="meta">
                                     <div class="merchant"><%# FeedMerchant(Container.DataItem) %><%# FeedTag(Container.DataItem) %></div>
-                                    <div class="when"><%# FeedWhen(Container.DataItem) %> <%# FeedCardChip(Container.DataItem) %></div>
+                                    <div class="when"><%# FeedSubline(Container.DataItem) %></div>
                                 </div>
                                 <div class='<%# FeedAmtClass(Container.DataItem) %>'><%# FeedAmt(Container.DataItem) %></div>
                             </div>
@@ -58,12 +58,11 @@
 </asp:Content>
 <asp:Content ID="Content4" ContentPlaceHolderID="ScriptContent" runat="server">
     <script type="text/javascript">
-        // Client-side filter (type chips + per-card chips + merchant search) over the rendered
+        // Client-side filter (type chips + per-card dropdown + merchant search) over the rendered
         // feed rows. No data round-trip — all rows are already on the page.
         (function () {
             var typeChips = [].slice.call(document.querySelectorAll('#tx-type .tx-chip'));
-            var cardWrap = document.querySelector('.tx-cardfilter');
-            var cardChips = cardWrap ? [].slice.call(cardWrap.querySelectorAll('.tx-chip')) : [];
+            var cardSelect = document.getElementById('tx-card-select');
             var search = document.getElementById('tx-search-input');
             var rows = [].slice.call(document.querySelectorAll('.tx-group .txn'));
             var groups = [].slice.call(document.querySelectorAll('.tx-group[data-group]'));
@@ -87,7 +86,7 @@
                 });
             }
             wire(typeChips, function (c) { fType = c.getAttribute('data-filter'); });
-            wire(cardChips, function (c) { fCard = c.getAttribute('data-card'); });
+            if (cardSelect) cardSelect.addEventListener('change', function () { fCard = cardSelect.value; apply(); });
             if (search) search.addEventListener('input', apply);
         })();
     </script>
