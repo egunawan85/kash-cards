@@ -237,3 +237,30 @@
 .hist-modal-card h3{margin:0 0 10px;color:var(--ink)}
 .hist-modal-text{color:var(--ink-3);font-size:.92rem;line-height:1.5;margin:0}
 .hist-modal-actions{display:flex;gap:10px;justify-content:flex-end;margin-top:22px}
+
+/* ===================== 3D virtual card (ported from the auth-page .qcard) =====================
+   Drop-shadowed, perspective-tilting card used on My Cards + the dashboard card panel. The
+   dashboard/cards pages load app.css + premium.css (not kash-auth.css), so the styles live here;
+   tilt + float are driven by a small inline script on each page (respects reduced-motion). */
+.card3d-wrap{perspective:1400px}
+.card-3d{width:100%;aspect-ratio:1.586/1;position:relative;transform-style:preserve-3d;transition:transform .25s var(--ease);will-change:transform}
+.qcard{position:absolute;inset:0;border-radius:20px;overflow:hidden;transform-style:preserve-3d;background:linear-gradient(135deg,#0c121a 0%,#18232f 46%,#0c2d34 100%);box-shadow:0 36px 90px rgba(7,11,17,.18),0 10px 30px rgba(7,11,17,.09),inset 0 1px 1px rgba(255,255,255,.16),inset 0 -1px 2px rgba(0,0,0,.4)}
+.qcard::before{content:"";position:absolute;inset:0;opacity:.6;background-image:linear-gradient(rgba(255,255,255,.05) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.05) 1px,transparent 1px);background-size:26px 26px;-webkit-mask-image:radial-gradient(120% 100% at 80% 0%,#000,transparent 75%);mask-image:radial-gradient(120% 100% at 80% 0%,#000,transparent 75%)}
+.qcard::after{content:"";position:absolute;inset:-40%;background:conic-gradient(from 0deg,transparent,rgba(0,210,230,0) 18%,rgba(37,240,255,.6) 34%,rgba(120,90,255,.25) 46%,transparent 62%);transform:translate(var(--mx,0),var(--my,0)) rotate(8deg);mix-blend-mode:screen;opacity:.85;transition:transform .2s var(--ease)}
+.qcard-inner{position:absolute;inset:0;padding:22px 24px;display:flex;flex-direction:column;justify-content:space-between;transform:translateZ(40px);color:#eaf6f8}
+.qcard-top{display:flex;align-items:flex-start;justify-content:space-between}
+.qcard-brand{font-family:var(--font-display);font-weight:700;font-size:1.15rem;letter-spacing:-.03em}
+.qcard-brand b{color:var(--cyan-bright)}
+.qcard-tag{font-family:var(--font-mono);font-size:.56rem;letter-spacing:.16em;text-transform:uppercase;padding:.35em .6em;border:1px solid rgba(37,240,255,.4);border-radius:6px;color:var(--cyan-bright);white-space:nowrap}
+.qcard-chip{width:46px;height:34px;border-radius:7px;background:linear-gradient(135deg,#e9c97a,#b8862f 55%,#f3e0a3);box-shadow:inset 0 0 0 1px rgba(0,0,0,.2),inset 0 2px 3px rgba(255,255,255,.5);position:relative}
+.qcard-chip::before,.qcard-chip::after{content:"";position:absolute;background:rgba(0,0,0,.22)}
+.qcard-chip::before{left:0;right:0;top:50%;height:1px}
+.qcard-chip::after{top:0;bottom:0;left:33%;width:1px;box-shadow:14px 0 0 rgba(0,0,0,.22)}
+.qcard-num{font-family:var(--font-mono);font-size:1.05rem;letter-spacing:.1em}
+.qcard-bottom{display:flex;align-items:flex-end;justify-content:space-between;gap:12px}
+.qcard-bottom .lab{font-size:.54rem;letter-spacing:.16em;text-transform:uppercase;color:rgba(234,246,248,.5);font-family:var(--font-mono)}
+.qcard-bottom .val{font-size:.88rem;font-weight:600;letter-spacing:.02em}
+.qcard-logo{font-family:var(--font-display);font-weight:800;font-style:italic;font-size:1.25rem;color:rgba(234,246,248,.85)}
+.qcard-float{animation:qcardfloat 7s var(--ease) infinite}
+@keyframes qcardfloat{0%,100%{transform:translateY(0)}50%{transform:translateY(-10px)}}
+@media (prefers-reduced-motion: reduce){.qcard-float{animation:none}.card-3d{transition:none}}
