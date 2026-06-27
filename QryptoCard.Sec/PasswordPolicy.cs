@@ -87,8 +87,9 @@ namespace QryptoCard.Sec
             }
 
             if (IsSingleCharRepeated(password)) return true;   // "aaaaaaaaaaaa"
-            if (IsShortBlockRepeated(password)) return true;   // "123412341234", "abababab..."
+            if (IsBlockRepeated(password)) return true;        // "123412341234", "Abc123Abc123", "abababab..."
             if (IsMonotonicSequence(lower)) return true;       // "0123456789ab", "zyxwvutsrqpo"
+            if (HasLowCharacterDiversity(password)) return true; // "Aa1!Aa1!Aa1!" — too few distinct chars
 
             return false;
         }
@@ -100,10 +101,13 @@ namespace QryptoCard.Sec
             return true;
         }
 
-        // True if s is a block of length 1..4 repeated to fill the whole string.
-        private static bool IsShortBlockRepeated(string s)
+        // True if s is any block repeated to fill the whole string — block length
+        // 1..s.Length/2. Catches "123412341234" (len 4) and "Abc123Abc123" (len 6);
+        // the earlier bound of 4 missed period-5/6 repeats. Only exact full-period
+        // repeats match, so genuinely strong passwords are unaffected.
+        private static bool IsBlockRepeated(string s)
         {
-            for (int len = 1; len <= 4 && len < s.Length; len++)
+            for (int len = 1; len <= s.Length / 2; len++)
             {
                 if (s.Length % len != 0) continue;
                 string block = s.Substring(0, len);
@@ -127,6 +131,16 @@ namespace QryptoCard.Sec
             for (int i = 2; i < s.Length; i++)
                 if (s[i] - s[i - 1] != step) return false;
             return true;
+        }
+
+        // True if the password draws on too few distinct characters for its length
+        // (e.g. "Aa1!Aa1!Aa1!" — 4 distinct over 12). Threshold: fewer than 40% distinct.
+        // A genuinely strong password of a given length uses many more distinct chars.
+        private static bool HasLowCharacterDiversity(string s)
+        {
+            var distinct = new System.Collections.Generic.HashSet<char>();
+            foreach (char c in s) distinct.Add(c);
+            return distinct.Count * 100 < s.Length * 40;
         }
     }
 }

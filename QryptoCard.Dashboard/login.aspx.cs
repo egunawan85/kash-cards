@@ -65,7 +65,7 @@ namespace QryptoCard.Dashboard
                 // Login endpoint still expects the encrypted password; the OTP
                 // step then mints tokens. No longer cache it in session — the
                 // dashboard authenticates with Bearer tokens after mint.
-                adm.Password = Secure.EncryptAPP(txtPassword.Value);
+                adm.Password = Secure.EncryptAPP((txtPassword.Value ?? "").Trim());
                 var admin = ad.login(adm);
                 if (admin.Status == "success")
                 {
