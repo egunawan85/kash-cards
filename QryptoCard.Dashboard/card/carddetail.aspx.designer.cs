@@ -60,6 +60,15 @@ namespace QryptoCard.Dashboard.card
         protected global::System.Web.UI.WebControls.HiddenField hfCardData;
 
         /// <summary>
+        /// hfBuyRef control.
+        /// </summary>
+        /// <remarks>
+        /// Auto-generated field.
+        /// To modify move field declaration from designer file to code-behind file.
+        /// </remarks>
+        protected global::System.Web.UI.WebControls.HiddenField hfBuyRef;
+
+        /// <summary>
         /// hfMinDeposit control.
         /// </summary>
         /// <remarks>

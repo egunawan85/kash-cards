@@ -54,14 +54,47 @@ namespace QryptoCard.INT.Script.Service
             if (deposit != decimal.Truncate(deposit))
                 return new SpendResult { Success = false, Status = StatusModel.Failed, Message = "Deposit amount must be a whole number" };
 
-            // 1. Persist the order up front.
+            // 1. Persist the order up front. IDEMPOTENCY: a double-click / two-tab / Back-resubmit
+            // carries the SAME per-attempt UserReferenceID, which collides on the filtered unique
+            // index UIX_tblT_Card_User_Ref (UserID, UserReferenceID). Catch that and REPLAY the
+            // original order — no second insert, no second debit, no second card. (A check-then-insert
+            // in app code races; the DB constraint is the authority, matching the webhook/referral
+            // dedup pattern.)
             x.Status = StatusModel.Created;
             x.isActive = 0;
             if (x.DateCreated == null) x.DateCreated = DateTime.Now;
-            using (var ctx = new DBEntities())
+            try
             {
-                ctx.tblT_Card.Add(x);
-                ctx.SaveChanges();
+                using (var ctx = new DBEntities())
+                {
+                    ctx.tblT_Card.Add(x);
+                    ctx.SaveChanges();
+                }
+            }
+            catch (Exception dupEx) when (!string.IsNullOrEmpty(x.UserReferenceID) && WalletService.IsDuplicateKey(dupEx))
+            {
+                // The winning submit already created (and owns the money path for) this order.
+                // Return ITS outcome, pointing the caller's x.ID at the original order. No debit here.
+                using (var re = new DBEntities())
+                {
+                    var existing = re.tblT_Card
+                        .Where(p => p.UserID == x.UserID && p.UserReferenceID == x.UserReferenceID)
+                        .OrderBy(p => p.DateCreated)
+                        .FirstOrDefault();
+                    if (existing != null)
+                    {
+                        x.ID = existing.ID;
+                        x.Status = existing.Status;
+                        return new SpendResult
+                        {
+                            Success = existing.Status != StatusModel.Failed,
+                            Status = existing.Status,
+                            Message = "Request already submitted"
+                        };
+                    }
+                }
+                // Re-read found nothing (extremely rare race) — fail closed, never debit.
+                return new SpendResult { Success = false, Status = StatusModel.Failed, Message = "Request already submitted" };
             }
 
             // 2. Debit-first, atomically transitioning the order Created -> PendingProvider in the

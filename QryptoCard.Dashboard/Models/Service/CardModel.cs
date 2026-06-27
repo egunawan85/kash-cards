@@ -62,5 +62,9 @@ namespace QryptoCard.Dashboard.Models.Service
         public string OriginalRechargeFee { get; set; }
         public string LogoURL { get; set; }
         public string DetailURL { get; set; }
+        // Per-attempt idempotency key for a card buy — minted per page load on the buy page and
+        // carried to the INT tier, where a filtered unique index on (UserID, UserReferenceID)
+        // collapses a double-click / two-tab resubmit onto one order (no double-charge).
+        public string UserReferenceID { get; set; }
     }
 }

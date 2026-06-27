@@ -147,6 +147,24 @@ $order2 = Sql "SET NOCOUNT ON; SELECT COUNT(*) FROM dbo.tblT_Card WHERE UserID='
 Check 'T4 insufficient balance refused'   ($buy2.body -notmatch 'refund' -and $buy2.body -match '(?i)balance|insufficient|fund') "msg=$(($buy2.body) -replace '\s+',' ')"
 Check 'T4 no debit on refusal'            ($balAfter2 -eq 5) "bal=$balAfter2 (expect 5)"
 
+# -- T5: idempotency -- same UserReferenceID submitted twice collapses to ONE ---
+# order and ONE debit (the filtered unique index + duplicate-key replay in
+# CardSpendService.OpenCard). The provider rejects (no card product, U6) so the one
+# order debits then refunds -> net-zero; the key invariant is that the SECOND submit
+# neither inserts a second order nor debits again.
+CreditDeposit 200
+$balB5 = Bal
+$ref5 = [Guid]::NewGuid().ToString('N')
+$i1 = Api 'POST' 'v1/transaction/card/purchase' @{ CardTypeId = $CardTypeId; InitialDeposit = 25; UserReferenceID = $ref5 }
+$i2 = Api 'POST' 'v1/transaction/card/purchase' @{ CardTypeId = $CardTypeId; InitialDeposit = 25; UserReferenceID = $ref5 }
+Start-Sleep -Seconds 4
+$rows5 = Sql "SET NOCOUNT ON; SELECT COUNT(*) FROM dbo.tblT_Card WHERE UserID='$UserId' AND UserReferenceID='$ref5'"
+$open5 = Sql "SET NOCOUNT ON; SELECT COUNT(*) FROM dbo.tblH_User_Balance WHERE UserID='$UserId' AND Type='Card Open' AND TransactionID IN (SELECT ID FROM dbo.tblT_Card WHERE UserReferenceID='$ref5')"
+$balA5 = Bal
+Check 'T5 same-ref twice -> ONE order row'     ([int]$rows5 -eq 1) "rows=$rows5 (expect 1)"
+Check 'T5 same-ref twice -> at most ONE debit' ([int]$open5 -le 1) "card-open ledger rows=$open5 (expect <=1)"
+Check 'T5 idempotent retry is net-zero'        ($balA5 -eq $balB5) "before=$balB5 after=$balA5"
+
 # -- restore starting balance -------------------------------------------------
 SetBal $startBal
 Write-Host ("restored balance -> " + (Bal))
