@@ -185,68 +185,51 @@ namespace QryptoCard.Dashboard.tx
             //}
         }
 
-        protected void btnInfo_ServerClick(object sender, EventArgs e)
-        {
-            HtmlButton btn = (HtmlButton)sender;
-            GridViewRow row = (GridViewRow)btn.NamingContainer;
-            hfID.Value = ((HiddenField)row.FindControl("hfID")).Value;
-
-            ScriptManager.RegisterClientScriptBlock(this, GetType(), "Pop", "var isModalDetail = true", true);
-            //hfMerchantID.Value = id;
-            //lblBalanceTopup.Text = row.Cells[8].Text;
-            //lblNameTopup.Text = row.Cells[1].Text;
-            //lblBatchTopup.Text = row.Cells[6].Text;
-
-            //getCustomerDetail(row.Cells[1].Text);
-        }
-
-        protected void btnLink_ServerClick(object sender, EventArgs e)
-        {
-            HtmlButton btn = (HtmlButton)sender;
-            GridViewRow row = (GridViewRow)btn.NamingContainer;
-            var a = ((HiddenField)row.FindControl("hfURL")).Value;
-            Page.ClientScript.RegisterClientScriptBlock(this.GetType(), "openModal", "window.open('" + a + "' ,'_blank');", true);
-        }
-
+        // A row's Cancel button posts back here; surface a SERVER-rendered confirm overlay
+        // (Visible toggled in code) rather than a JS-shown modal — the NewDesign shell loads no
+        // Bootstrap/jQuery, so the old `$('#myModalCancel').modal('show')` silently did nothing.
         protected void btnCancel_ServerClick(object sender, EventArgs e)
         {
-            
-
-
             HtmlButton btn = (HtmlButton)sender;
             GridViewRow row = (GridViewRow)btn.NamingContainer;
             hfID.Value = ((HiddenField)row.FindControl("hfID")).Value;
-
-            ScriptManager.RegisterClientScriptBlock(this, GetType(), "Pop", "var isModalCancel = true", true);
+            pnlCancelConfirm.Visible = true;
         }
 
-        protected void btndfailedcancel_ServerClick(object sender, EventArgs e)
+        protected void btnCloseConfirm_Click(object sender, EventArgs e)
         {
-            //divfailedcancel.Visible = false;
-            //ScriptManager.RegisterClientScriptBlock(this, GetType(), "Pop", "var isModalCancel = true", true);
+            pnlCancelConfirm.Visible = false;
         }
 
         protected void btnCancelExec_Click(object sender, EventArgs e)
         {
+            pnlCancelConfirm.Visible = false;
+
             CardModel z = new CardModel();
             z.ID = hfID.Value;
 
             var q = cs.cancelCardTransaction(z);
             if (q.Status == "success")
             {
-                var dt = JsonConvert.DeserializeObject<CardModel>(q.Data.ToString());
-
                 getData();
-                lblSuccess.InnerHtml = q.Message;
-                ScriptManager.RegisterClientScriptBlock(this, GetType(), "Pop", "var isModalSuccess = true", true);
-                return;
+                ShowBanner(Server.HtmlEncode(q.Message), true);
             }
             else
             {
-                lblalert.InnerHtml = q.Message;
-                ScriptManager.RegisterClientScriptBlock(this, GetType(), "Pop", "var isModalAlert = true", true);
-                return;
+                ShowBanner(Server.HtmlEncode(q.Message), false);
             }
+        }
+
+        // Server-rendered inline result banner (replaces the success/error Bootstrap modals that
+        // silently no-op'd in the NewDesign shell). Mirrors carddetail's ShowBuyAlertInline.
+        void ShowBanner(string html, bool ok)
+        {
+            pnlMsg.Visible = true;
+            pnlMsg.CssClass = "hist-banner " + (ok ? "ok" : "err");
+            lblalert.InnerHtml = html;
+            string js = "(function(){var m=document.getElementById('" + pnlMsg.ClientID
+                + "');if(m){m.scrollIntoView({behavior:'smooth',block:'center'});}})();";
+            ScriptManager.RegisterClientScriptBlock(this, GetType(), "Pop", js, true);
         }
     }
 }

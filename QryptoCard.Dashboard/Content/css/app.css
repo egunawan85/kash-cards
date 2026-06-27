@@ -196,3 +196,21 @@
 .dep-qr{text-align:center;margin-top:18px}
 .dep-qr-img{width:200px;height:200px;margin:6px auto 0;border-radius:12px;background:#fff;padding:8px}
 .dep-note{display:flex;gap:12px;align-items:flex-start;margin-top:18px;padding:13px 15px;border-radius:12px;background:rgba(255,191,0,.07);border:1px solid rgba(255,191,0,.22);color:var(--ink-2);font-size:.88rem;line-height:1.5}
+
+/* ===================== CARD HISTORY: row actions, inline result banner, confirm overlay =====================
+   The NewDesign shell loads no Metronic/Bootstrap JS, so the old data-kt-menu dropdown + .modal()
+   calls were inert. These back the server-rendered replacements (inline row buttons, an inline
+   result banner, and a Visible-toggled confirm overlay). premium.css defines .btn/.btn-cyan/.btn-line
+   but not .btn-danger or .btn-sm, so they're added here. */
+.btn-sm{padding:.5em .95em;font-size:.82rem}
+.btn-danger{background:linear-gradient(180deg,#ff7a7a,#e24d4d);color:#fff}
+.btn-danger:hover{transform:translateY(-2px);box-shadow:0 10px 30px rgba(226,77,77,.35)}
+.row-actions{display:flex;gap:8px;justify-content:center;align-items:center;flex-wrap:wrap}
+.hist-banner{margin:14px 0;padding:12px 15px;border-radius:12px;border:1px solid;font-size:.9rem;line-height:1.45}
+.hist-banner.ok{border-color:rgba(0,230,255,.3);background:rgba(0,230,255,.08);color:var(--cyan-bright)}
+.hist-banner.err{border-color:rgba(255,107,107,.32);background:rgba(255,107,107,.08);color:#ff6b6b}
+.hist-modal{position:fixed;inset:0;background:rgba(0,0,0,.6);display:flex;align-items:center;justify-content:center;z-index:1000;padding:18px}
+.hist-modal-card{background:#0f1620;border:1px solid var(--line-2);border-radius:16px;padding:24px;max-width:440px;width:100%;box-shadow:0 20px 60px rgba(0,0,0,.5)}
+.hist-modal-card h3{margin:0 0 10px;color:var(--ink)}
+.hist-modal-text{color:var(--ink-3);font-size:.92rem;line-height:1.5;margin:0}
+.hist-modal-actions{display:flex;gap:10px;justify-content:flex-end;margin-top:22px}
