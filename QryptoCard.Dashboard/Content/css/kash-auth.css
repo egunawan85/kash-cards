@@ -94,7 +94,7 @@ section { position: relative; }
 .mono { font-family: var(--font-mono); }
 
 /* ---------- Buttons ---------- */
-.btn { display: inline-flex; align-items: center; justify-content: center; gap: .55em; font-family: var(--font-display); font-weight: 600; font-size: .97rem; letter-spacing: -.01em; padding: .92em 1.6em; border-radius: var(--radius-pill); transition: transform .35s var(--ease), box-shadow .35s var(--ease), background .3s, color .3s; white-space: nowrap; position: relative; overflow: hidden; }
+.btn { display: inline-flex; align-items: center; justify-content: center; cursor: pointer; gap: .55em; font-family: var(--font-display); font-weight: 600; font-size: .97rem; letter-spacing: -.01em; padding: .92em 1.6em; border-radius: var(--radius-pill); transition: transform .35s var(--ease), box-shadow .35s var(--ease), background .3s, color .3s; white-space: nowrap; position: relative; overflow: hidden; }
 .btn svg { transition: transform .35s var(--ease); }
 .btn-primary { background: linear-gradient(180deg, var(--ink), #131c26); color:#fff; box-shadow: var(--shadow-md); }
 .btn-primary::after { content:""; position:absolute; inset:0; border-radius:inherit; background: linear-gradient(110deg, transparent 30%, rgba(37,240,255,.45) 50%, transparent 70%); transform: translateX(-120%); transition: transform .7s var(--ease); }
@@ -284,7 +284,7 @@ section { position: relative; }
 .auth-meta { display: flex; align-items: center; justify-content: space-between; margin: 4px 0 26px; font-size: .9rem; }
 .auth-meta a { color: var(--cyan-deep); font-weight: 600; }
 .checkbox { display: inline-flex; align-items: center; gap: .55em; color: var(--ink-2); cursor: pointer; user-select: none; }
-.checkbox input { appearance: none; width: 18px; height: 18px; border-radius: 6px; border: 1px solid var(--line-2); background: var(--surface); display: grid; place-items: center; transition: background .2s, border-color .2s; }
+.checkbox input { appearance: none; cursor: pointer; width: 18px; height: 18px; border-radius: 6px; border: 1px solid var(--line-2); background: var(--surface); display: grid; place-items: center; transition: background .2s, border-color .2s; }
 .checkbox input:checked { background: var(--cyan); border-color: var(--cyan); }
 .checkbox input:checked::after { content: "\2713"; color: var(--cyan-ink); font-size: 12px; font-weight: 700; }
 .auth-divider { display: flex; align-items: center; gap: 14px; margin: 26px 0; color: var(--ink-faint); font-size: .82rem; }

@@ -49,7 +49,7 @@ namespace QryptoCard.Dashboard
             {
                 divfailed.Visible = true;
                 lblFailed.Text = "Email and password cannot be empty";
-                btnLogin.Enabled = true;
+                btnLogin.Disabled = false;
                 return;
             }
             try
@@ -89,13 +89,13 @@ namespace QryptoCard.Dashboard
                     divfailed.Visible = true;
                     lblFailed.Text = admin.Message;
                 }
-                btnLogin.Enabled = true;
+                btnLogin.Disabled = false;
             }
             catch (Exception ex)
             {
                 divfailed.Visible = true;
                 lblFailed.Text = ex.Message;
-                btnLogin.Enabled = true;
+                btnLogin.Disabled = false;
             }
         }
     }
