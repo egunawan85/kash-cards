@@ -79,7 +79,7 @@
                         <label class="checkbox"><input type="checkbox" /> Remember me</label>
                         <a href="ForgotPassword">Forgot password?</a>
                     </div>
-                    <asp:Button runat="server" ID="btnLogin" OnClick="btnLogin_ServerClick" CssClass="btn btn-primary btn-block btn-lg" Text="Sign in" OnClientClick="this.disabled=true;" UseSubmitBehavior="false" />
+                    <button type="button" runat="server" id="btnLogin" onserverclick="btnLogin_ServerClick" onclick="this.disabled=true;" class="btn btn-primary btn-block btn-lg">Sign in</button>
                 </form>
 
                 <p class="auth-foot">New to Kash? <a href="register">Create an account</a></p>
