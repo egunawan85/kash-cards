@@ -17,7 +17,10 @@
 html{-webkit-text-size-adjust:100%;overflow-x:clip}
 html.lenis,html.lenis body{height:auto}
 .lenis.lenis-smooth{scroll-behavior:auto!important}
-body{font-family:var(--font-body);background:var(--bg);color:var(--ink);line-height:1.6;font-size:17px;-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility;overflow-x:hidden}
+/* overflow-x:clip (not hidden) prevents horizontal scroll WITHOUT making <body> a
+   scroll container — `hidden` computes overflow-y to `auto`, which breaks the dashboard
+   sidebar's position:sticky. `clip` leaves the other axis `visible`. Matches html (line 17). */
+body{font-family:var(--font-body);background:var(--bg);color:var(--ink);line-height:1.6;font-size:17px;-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility;overflow-x:clip}
 img,svg{display:block;max-width:100%}
 a{color:inherit;text-decoration:none}
 button{font-family:inherit;cursor:pointer;border:none;background:none;color:inherit}
@@ -45,7 +48,7 @@ section{position:relative}
 .grad{background:linear-gradient(100deg,var(--cyan-deep),var(--cyan) 45%,var(--cyan-bright));-webkit-background-clip:text;background-clip:text;color:transparent}
 
 /* buttons */
-.btn{display:inline-flex;align-items:center;justify-content:center;gap:.55em;font-family:var(--font-display);font-weight:600;font-size:.98rem;padding:1em 1.7em;border-radius:var(--pill);position:relative;overflow:hidden;transition:transform .3s var(--ease),box-shadow .3s var(--ease),background .3s,color .3s}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:.55em;font-family:var(--font-display);font-weight:600;font-size:.98rem;padding:1em 1.7em;border-radius:var(--pill);position:relative;overflow:hidden;cursor:pointer;transition:transform .3s var(--ease),box-shadow .3s var(--ease),background .3s,color .3s}
 .btn svg{transition:transform .3s var(--ease)}
 .btn-cyan{background:linear-gradient(180deg,var(--cyan-bright),var(--cyan));color:var(--cyan-ink);box-shadow:var(--glow)}
 .btn-cyan:hover{transform:translateY(-2px)}.btn-cyan:hover svg{transform:translateX(4px)}
