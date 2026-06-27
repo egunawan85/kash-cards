@@ -68,7 +68,7 @@ admin) now atomically increments an unmapped `FailureCount` on the OTP-session r
 `isVerify = -1` at 5 failures, after which the existing `isVerify == 0` lookup treats the row as
 not-found — a brute-forcer is cut off after 5 guesses per session with no oracle. The atomic
 `UPDATE … CASE` is race-safe; the columns are unmapped so no EDMX regen was needed (DDL
-`create-otp-lockout-columns.sql`, applied before the code deploys).
+`deploy/sql/migrations/0005-otp-lockout-columns.sql`, applied before the code deploys).
 
 Companion control — **password brute-force lockout** (also PR #25): 5 wrong passwords lock the
 account for 15 minutes via unmapped `FailureCount` + `LockoutEnd` on `tblM_User` / `tblM_Admin`. A
