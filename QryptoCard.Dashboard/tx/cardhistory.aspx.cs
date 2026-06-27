@@ -20,13 +20,13 @@ namespace QryptoCard.Dashboard.tx
         {
             if (Common.checkID())
             {
-                if (!IsPostBack) { getFeed(); getData(); }
+                if (!IsPostBack) { getFeed(); }
             }
             else
             {
                 if (Master.checkCookies())
                 {
-                    if (!IsPostBack) { getFeed(); getData(); }
+                    if (!IsPostBack) { getFeed(); }
                 }
                 else
                     Master.forceLogin();
@@ -238,112 +238,6 @@ namespace QryptoCard.Dashboard.tx
             if (credit)
                 return "<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.7\"><path d=\"M12 5v14M5 12l7 7 7-7\"/></svg>";
             return "<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.7\"><rect x=\"2\" y=\"5\" width=\"20\" height=\"14\" rx=\"3\"/><path d=\"M2 10h20\"/></svg>";
-        }
-
-        // =====================================================================
-        // Card orders (purchase orders + pay-link / cancel). TRANSITIONAL: this
-        // list relocates to the My Cards page in the follow-up change; kept here
-        // for now so order management is never lost between changes.
-        // =====================================================================
-        void getData()
-        {
-            List<CardModel> dt;
-            OutputModel op = new OutputModel();
-            CardModel req = new CardModel();
-            op = cs.getCardListAll(req);
-            if (op.Status == "success")
-            {
-                dt = JsonConvert.DeserializeObject<List<CardModel>>(op.Data.ToString());
-                if (dt.Count > 0)
-                {
-                    for (int i = 0; i < dt.Count; i++)
-                    {
-                        dt[i].FirstName = dt[i].FirstName + " " + dt[i].LastName;
-                        dt[i].DetailURL = KeyModel.TXCARD_URL + dt[i].ID;
-                    }
-                    gvListItem.Visible = true;
-                    gvListItem.DataSource = null;
-                    gvListItem.DataSource = dt;
-                    gvListItem.DataBind();
-                    divnorow.Visible = false;
-                }
-                else
-                {
-                    gvListItem.DataSource = null;
-                    gvListItem.DataBind();
-                    gvListItem.Visible = false;
-                    divnorow.Visible = true;
-                }
-            }
-            else
-            {
-                gvListItem.DataSource = null;
-                gvListItem.DataBind();
-                gvListItem.Visible = false;
-                divnorow.Visible = true;
-            }
-        }
-
-        protected Boolean IsStatusCreated(string i) { return i == "created"; }
-        protected Boolean IsStatusInProgress(string i) { return i == "in progress"; }
-        protected Boolean IsStatusPaid(string i) { return i == "paid"; }
-        protected Boolean IsStatusCreatedBadge(string i) { return i == "created"; }
-        protected Boolean IsStatusCompleted(string i) { return i == "completed" || i == "success"; }
-        protected Boolean IsStatusCancelled(string i) { return i == "cancelled"; }
-        protected Boolean IsStatusExpired(string i) { return i == "expired"; }
-
-        protected void gvListItem_PageIndexChanging(object sender, GridViewPageEventArgs e)
-        {
-            gvListItem.PageIndex = e.NewPageIndex;
-            getData();
-        }
-
-        protected void gvListItem_RowCreated(object sender, GridViewRowEventArgs e)
-        {
-        }
-
-        // A row's Cancel button posts back here; surface a SERVER-rendered confirm overlay
-        // (Visible toggled in code) rather than a JS-shown modal — the shell loads no Bootstrap.
-        protected void btnCancel_ServerClick(object sender, EventArgs e)
-        {
-            HtmlButton btn = (HtmlButton)sender;
-            GridViewRow row = (GridViewRow)btn.NamingContainer;
-            hfID.Value = ((HiddenField)row.FindControl("hfID")).Value;
-            pnlCancelConfirm.Visible = true;
-        }
-
-        protected void btnCloseConfirm_Click(object sender, EventArgs e)
-        {
-            pnlCancelConfirm.Visible = false;
-        }
-
-        protected void btnCancelExec_Click(object sender, EventArgs e)
-        {
-            pnlCancelConfirm.Visible = false;
-
-            CardModel z = new CardModel();
-            z.ID = hfID.Value;
-
-            var q = cs.cancelCardTransaction(z);
-            if (q.Status == "success")
-            {
-                getData();
-                ShowBanner(Server.HtmlEncode(q.Message), true);
-            }
-            else
-            {
-                ShowBanner(Server.HtmlEncode(q.Message), false);
-            }
-        }
-
-        void ShowBanner(string html, bool ok)
-        {
-            pnlMsg.Visible = true;
-            pnlMsg.CssClass = "hist-banner " + (ok ? "ok" : "err");
-            lblalert.InnerHtml = html;
-            string js = "(function(){var m=document.getElementById('" + pnlMsg.ClientID
-                + "');if(m){m.scrollIntoView({behavior:'smooth',block:'center'});}})();";
-            ScriptManager.RegisterClientScriptBlock(this, GetType(), "Pop", js, true);
         }
     }
 }

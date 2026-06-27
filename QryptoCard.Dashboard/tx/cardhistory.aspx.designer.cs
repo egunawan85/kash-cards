@@ -15,15 +15,6 @@ namespace QryptoCard.Dashboard.tx
     {
 
         /// <summary>
-        /// hfID control.
-        /// </summary>
-        /// <remarks>
-        /// Auto-generated field.
-        /// To modify move field declaration from designer file to code-behind file.
-        /// </remarks>
-        protected global::System.Web.UI.WebControls.HiddenField hfID;
-
-        /// <summary>
         /// divCardFilter control.
         /// </summary>
         protected global::System.Web.UI.HtmlControls.HtmlGenericControl divCardFilter;
@@ -37,78 +28,6 @@ namespace QryptoCard.Dashboard.tx
         /// divNoFeed control.
         /// </summary>
         protected global::System.Web.UI.HtmlControls.HtmlGenericControl divNoFeed;
-
-        /// <summary>
-        /// gvListItem control.
-        /// </summary>
-        /// <remarks>
-        /// Auto-generated field.
-        /// To modify move field declaration from designer file to code-behind file.
-        /// </remarks>
-        protected global::System.Web.UI.WebControls.GridView gvListItem;
-
-        /// <summary>
-        /// divnorow control.
-        /// </summary>
-        /// <remarks>
-        /// Auto-generated field.
-        /// To modify move field declaration from designer file to code-behind file.
-        /// </remarks>
-        protected global::System.Web.UI.HtmlControls.HtmlGenericControl divnorow;
-
-        /// <summary>
-        /// lblNoRow control.
-        /// </summary>
-        /// <remarks>
-        /// Auto-generated field.
-        /// To modify move field declaration from designer file to code-behind file.
-        /// </remarks>
-        protected global::System.Web.UI.WebControls.Label lblNoRow;
-
-        /// <summary>
-        /// pnlMsg control.
-        /// </summary>
-        /// <remarks>
-        /// Auto-generated field.
-        /// To modify move field declaration from designer file to code-behind file.
-        /// </remarks>
-        protected global::System.Web.UI.WebControls.Panel pnlMsg;
-
-        /// <summary>
-        /// lblalert control.
-        /// </summary>
-        /// <remarks>
-        /// Auto-generated field.
-        /// To modify move field declaration from designer file to code-behind file.
-        /// </remarks>
-        protected global::System.Web.UI.HtmlControls.HtmlGenericControl lblalert;
-
-        /// <summary>
-        /// pnlCancelConfirm control.
-        /// </summary>
-        /// <remarks>
-        /// Auto-generated field.
-        /// To modify move field declaration from designer file to code-behind file.
-        /// </remarks>
-        protected global::System.Web.UI.WebControls.Panel pnlCancelConfirm;
-
-        /// <summary>
-        /// btnCloseConfirm control.
-        /// </summary>
-        /// <remarks>
-        /// Auto-generated field.
-        /// To modify move field declaration from designer file to code-behind file.
-        /// </remarks>
-        protected global::System.Web.UI.WebControls.Button btnCloseConfirm;
-
-        /// <summary>
-        /// btnCancelExec control.
-        /// </summary>
-        /// <remarks>
-        /// Auto-generated field.
-        /// To modify move field declaration from designer file to code-behind file.
-        /// </remarks>
-        protected global::System.Web.UI.WebControls.Button btnCancelExec;
 
         /// <summary>
         /// Master property.
