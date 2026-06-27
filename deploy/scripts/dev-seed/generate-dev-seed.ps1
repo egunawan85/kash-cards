@@ -43,8 +43,26 @@ $First = @('Ava','Liam','Mia','Noah','Emma','Ethan','Sofia','Lucas','Aria','Mate
 $Last  = @('Reyes','Khan','Silva','Novak','Okafor','Tan','Patel','Haas','Costa','Mori',
            'Adeyemi','Ivanov','Cruz','Bauer','Singh','Lopez','Kim','Diaz','Weber','Nair',
            'Rossi','Park','Dubois','Mensah','Yilmaz','Vargas','Chen','Sato','Moreno','Lund')
-$Merchants = @('Amazon','Netflix','Spotify','Steam','Uber','Apple','Booking.com',
-               'AliExpress','OpenAI','Notion','GitHub','Figma')
+# Raw card-network merchant descriptors (synthetic, but mirroring the messy real shape:
+# UPPERCASE name + city + country, sometimes a *-prefix) plus the currency the merchant
+# bills in. Foreign-currency rows get a USD AuthorizedAmount via the fixed synthetic FX
+# rate below (the card always settles in USD).
+$Merchants = @(
+    @{ N='ANTHROPIC* CLAUDE SUB  SAN FRANCISCOCAUS'; Cur='USD' },
+    @{ N='OPENAI         *CHATGPT SAN FRANCISCOCAUS'; Cur='USD' },
+    @{ N='GITHUB, INC.           SAN FRANCISCOCAUS'; Cur='USD' },
+    @{ N='AMAZON WEB SERVICES    SEATTLE      WAUS'; Cur='USD' },
+    @{ N='GOOGLE *WORKSPACE      Dublin         IE'; Cur='USD' },
+    @{ N='DNH*GODADDY.COM        AMSTERDAM      NL'; Cur='USD' },
+    @{ N='NAME-CHEAP.COM* 7K2Q9X PHOENIX      AZUS'; Cur='USD' },
+    @{ N='HOSTINGER* HOSTINGER.C WILMINGTON   DEUS'; Cur='USD' },
+    @{ N='CLOUDFLARE             SAN FRANCISCOCAUS'; Cur='USD' },
+    @{ N='AGODA.COM              Berlin         DE'; Cur='IDR' },
+    @{ N='DLOCAL *Starlink Phili Manila         PH'; Cur='PHP' },
+    @{ N='LAYERSTACK             CHEUNG SHA WA  HK'; Cur='HKD' }
+)
+# Fixed synthetic FX rates (local units per 1 USD) for the USD-equivalent (AuthorizedAmount).
+$FxPerUsd = @{ USD = 1.0; IDR = 16500.0; PHP = 58.0; HKD = 7.8 }
 
 $sb = New-Object System.Text.StringBuilder
 function W([string]$s) { [void]$sb.AppendLine($s) }
@@ -163,17 +181,63 @@ for ($i = 1; $i -le $UserCount; $i++) {
         W ("INSERT INTO dbo.tblT_Card (ID, UserID, CardTypeId, CardNo, CardNumber, CVV, ValidPeriod, Currency, Price, Total, Status, isActive, DateCreated) VALUES (N'{0}', N'{1}', {2}, '{3}', N'{4}', '{5}', '{6}/{7}', 'USD', 10.00, 10.00, '{8}', {9}, DATEADD(DAY, -{10}, GETUTCDATE()));" -f $cardId, $uid, $CardTypeId, $cardNo, $masked, $cvv, $expM, $expY, $status, $isAct, $cardAgo)
         $spent = 0.0
         $load  = 100.0 + ($globalCardSeq % 3) * 50.0   # 100/150/200 notional card load
-        $nTx = 3 + ($globalCardSeq % 4)
-        for ($t = 1; $t -le $nTx; $t++) {
-            # Small, plausible purchase amounts (~$2-$24) so a card's spend stays under its load.
-            $amt = [Math]::Round(1.99 + (($globalCardSeq * 13 + $t * 7) % 22), 2)
-            $spent = [Math]::Round($spent + $amt, 2)
-            $merch = $Merchants[(($globalCardSeq + $t) % $Merchants.Count)]
-            $txDay = [Math]::Max(0, $cardAgo - $t * 2)
-            $trade = '5EEDTXN{0:D4}{1:D2}' -f $globalCardSeq, $t
-            $totTxns++
-            W ("INSERT INTO dbo.tblT_Card_Transaction (CardNo, TradeNo, OriginTradeNo, Currency, Amount, Type, TypeStr, Status, StatusStr, MerchantName, Description, TransactionTime) VALUES ('{0}', '{1}', '{1}', 'USD', {2}, 'consume', 'Consume', 'success', 'Success', N'{3}', N'Card purchase at {3}', DATEADD(DAY, -{4}, GETUTCDATE()));" -f $cardNo, $trade, (M $amt), $merch, $txDay)
+        $g = $globalCardSeq
+
+        # This card's activity mirrors the real type/status/currency mix: mostly authorised
+        # spends (one declined), a $0 verification, a maintenance fee, and -- on some cards --
+        # a refund and a void. Foreign-currency rows carry a USD AuthorizedAmount (card settles
+        # in USD). Only successful spends draw down the card balance.
+        $specs = New-Object System.Collections.Generic.List[object]
+        $nSpend = 4 + ($g % 3)
+        for ($t = 1; $t -le $nSpend; $t++) {
+            $m   = $Merchants[(($g * 3) + $t) % $Merchants.Count]
+            $cur = [string]$m.Cur
+            switch ($cur) {
+                'IDR'   { $amt = [double]((($g * 7  + $t * 131) % 380000) + 20000) }
+                'PHP'   { $amt = [double]((($g * 11 + $t * 53)  % 5500)   + 200) }
+                'HKD'   { $amt = [double]((($g * 5  + $t * 29)  % 480)    + 20) }
+                default { $amt = [Math]::Round(1.99 + (($g * 13 + $t * 7) % 120), 2) }
+            }
+            $auth = [Math]::Round($amt / [double]$FxPerUsd[$cur], 2)
+            if ($t -eq 2) {
+                $st = 'failed'; $ss = 'Fail'           # one declined spend per card
+            } else {
+                $st = 'authorized'; $ss = 'Authorized'
+                $spent = [Math]::Round($spent + $auth, 2)
+            }
+            [void]$specs.Add(@{ Cur=$cur; Amt=$amt; Auth=$auth; Type='auth'; TypeStr='Authorization'; Status=$st; StatusStr=$ss; Merch=[string]$m.N })
         }
+        $vm = [string]$Merchants[$g % $Merchants.Count].N
+        [void]$specs.Add(@{ Cur='USD'; Amt=0.0;  Auth=0.0;  Type='verification'; TypeStr='Verification'; Status='succeed'; StatusStr='Succeed'; Merch=$vm })
+        [void]$specs.Add(@{ Cur='USD'; Amt=0.50; Auth=0.50; Type='maintain_fee'; TypeStr='Card fee';     Status='succeed'; StatusStr='Succeed'; Merch=$vm })
+        if ($g % 3 -eq 0) { [void]$specs.Add(@{ Cur='USD'; Amt=[Math]::Round(5.0+($g%20),2); Auth=[Math]::Round(5.0+($g%20),2); Type='refund'; TypeStr='Refund'; Status='succeed'; StatusStr='Success'; Merch=[string]$Merchants[($g+1)%$Merchants.Count].N }) }
+        if ($g % 4 -eq 0) { [void]$specs.Add(@{ Cur='USD'; Amt=[Math]::Round(9.0+($g%15),2); Auth=[Math]::Round(9.0+($g%15),2); Type='Void'; TypeStr='Reversal'; Status='succeed'; StatusStr='Succeed'; Merch=[string]$Merchants[($g+2)%$Merchants.Count].N }) }
+
+        $k = 0
+        foreach ($s in $specs) {
+            $k++
+            $txDay = [Math]::Max(0, $cardAgo - $k)
+            $trade = '5EEDTXN{0:D4}{1:D2}' -f $g, $k
+            $merchSql = ([string]$s.Merch -replace "'", "''")
+            $totTxns++
+            W ("INSERT INTO dbo.tblT_Card_Transaction (CardNo, TradeNo, OriginTradeNo, Currency, Amount, AuthorizedCurrency, AuthorizedAmount, Fee, FeeCurrency, Type, TypeStr, Status, StatusStr, MerchantName, Description, TransactionTime) VALUES ('{0}', '{1}', '{1}', '{2}', {3}, 'USD', {4}, 0.00, 'USD', '{5}', '{6}', '{7}', '{8}', N'{9}', N'{10}', DATEADD(DAY, -{11}, GETUTCDATE()));" -f $cardNo, $trade, $s.Cur, (M ([double]$s.Amt)), (M ([double]$s.Auth)), $s.Type, $s.TypeStr, $s.Status, $s.StatusStr, $merchSql, ('Card ' + $s.Type), $txDay)
+        }
+
+        # On-chain top-ups (credits) for this card so the unified feed shows money in.
+        $nDep = 1 + ($g % 2)
+        for ($d = 1; $d -le $nDep; $d++) {
+            $depAmt = 50.0 + (($g + $d) % 3) * 50.0
+            $depFee = [Math]::Round($depAmt * 0.03, 2)
+            $depTot = [Math]::Round($depAmt + $depFee, 2)
+            $depStatus = if ($g % 7 -eq 0 -and $d -eq $nDep) { 'expired' } else { 'success' }
+            $depDay = [Math]::Max(0, $cardAgo - 1 - ($d - 1) * 4)
+            $depId  = '5eedcd55-0000-0000-{0:D4}-{1:D12}' -f $d, $g
+            $txhash = ('5eeddep' + ('{0:D4}{1:D2}' -f $g, $d)).PadRight(64, '0')
+            $depAddr = 'T' + ('DEVSEEDDEP' + ('{0:D23}' -f ($g * 10 + $d)))
+            $hashSql = if ($depStatus -eq 'success') { "'$txhash'" } else { 'NULL' }
+            W ("INSERT INTO dbo.tblT_Card_Deposit (ID, UserID, OrderNo, CardNo, Network, Symbol, Currency, Amount, Fee, Total, ReceivedAmount, Type, Status, DateTransaction, Address, Txhash) VALUES (N'{0}', N'{1}', '{2}', '{3}', 'TRC20', 'USDT', 'USD', {4}, {5}, {6}, {7}, 'Crypto', '{8}', DATEADD(DAY, -{9}, GETUTCDATE()), '{10}', {11});" -f $depId, $uid, ('5EEDDEPO{0:D4}{1:D2}' -f $g, $d), $cardNo, (M $depAmt), (M $depFee), (M $depTot), (M $depAmt), $depStatus, $depDay, $depAddr, $hashSql)
+        }
+
         $cardBal = [Math]::Max(0.0, [Math]::Round($load - $spent, 2))
         W ("INSERT INTO dbo.tblT_Card_Balance (ID, CardNo, Amount, UsedAmount, Currency) VALUES (N'{0}', '{1}', {2}, {3}, 'USD');" -f (Sid 'cb44' $globalCardSeq), $cardNo, (M $cardBal), (M $spent))
     }

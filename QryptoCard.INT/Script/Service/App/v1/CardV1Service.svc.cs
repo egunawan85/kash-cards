@@ -610,7 +610,10 @@ namespace QryptoCard.INT.Script.Service.App.v1
                     return op;
                 }
 
-                var data = db.tblT_Card_Transaction.Where(p => p.CardNo == x.CardNo && (p.Status == "succeed" || p.Status == "success" || p.Status == "authorized")).OrderByDescending(p => p.TransactionTime).Take(20).ToList();
+                // Return the card's full recent activity (incl. declined / $0 / verification /
+                // void rows) most-recent first — the cardholder feed surfaces everything and
+                // filters client-side. Owner check above still scopes this to the caller's card.
+                var data = db.tblT_Card_Transaction.Where(p => p.CardNo == x.CardNo).OrderByDescending(p => p.TransactionTime).Take(150).ToList();
 
                 if (data == null)
                 {
