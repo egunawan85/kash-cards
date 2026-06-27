@@ -139,7 +139,7 @@ namespace QryptoCard.Dashboard.card
                 // modal instead of leaving the page showing "0 USD" with no feedback.
                 lblalert.InnerHtml = string.IsNullOrEmpty(op.Message)
                     ? "Unable to load card details. Please try again."
-                    : op.Message;
+                    : Server.HtmlEncode(op.Message);
                 ShowBuyAlertInline();
             }
 

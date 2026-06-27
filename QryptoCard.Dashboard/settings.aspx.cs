@@ -184,7 +184,7 @@ namespace QryptoCard.Dashboard
                 var op = us.updatePassword(new PasswordChangeModel
                 {
                     CurrentPassword = Secure.EncryptAPP(cur),
-                    Password = Secure.EncryptAPP(pw)
+                    Password = Secure.EncryptAPP(pw.Trim())
                 });
 
                 if (op.Status == "success")

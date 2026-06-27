@@ -129,7 +129,7 @@ namespace QryptoCard.Dashboard
                 // longer cached in session — registration completes via the OTP
                 // verify step; the user authenticates with Bearer tokens after a
                 // subsequent login/mint.
-                adm.Password = Secure.EncryptAPP(txtPassword.Value);
+                adm.Password = Secure.EncryptAPP((txtPassword.Value ?? "").Trim());
                 var admin = ad.register(adm);
                 if (admin.Status == "success")
                 {
