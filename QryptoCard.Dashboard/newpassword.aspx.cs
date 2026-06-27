@@ -71,10 +71,11 @@ namespace QryptoCard.Dashboard
                 lblFailed.Text = "Confirm password cannot be empty";
                 return;
             }
-            if (txtPassword.Value.Length < 8)
+            string pwMsg;
+            if (!PasswordPolicy.Validate(txtPassword.Value, out pwMsg))
             {
                 divfailed.Visible = true;
-                lblFailed.Text = "Your password should be 8 characters in minimum";
+                lblFailed.Text = pwMsg;
                 return;
             }
             if (txtPassword.Value.Trim() != txtPasswordConfirm.Value.Trim())

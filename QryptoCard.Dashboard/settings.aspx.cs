@@ -172,9 +172,10 @@ namespace QryptoCard.Dashboard
                     showMsg(false, "The new passwords do not match.");
                     return;
                 }
-                if (pw.Length < 8)
+                string pwMsg;
+                if (!PasswordPolicy.Validate(pw, out pwMsg))
                 {
-                    showMsg(false, "Your new password must be at least 8 characters.");
+                    showMsg(false, pwMsg);
                     return;
                 }
 
