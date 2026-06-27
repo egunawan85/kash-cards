@@ -5,7 +5,7 @@
 # the kash twist is the reversible AES (Secure.cs), reproduced here in PowerShell so the
 # password/secret ciphertext is computed at deploy time and passed via -v -- never committed.
 #
-# Invocation (on the VM, after vm-publish-schema):
+# Invocation (on the VM, after vm-migrate):
 #   az vm run-command invoke -g rg-kash-dev -n vm-kash-dev --command-id RunPowerShellScript `
 #     --scripts @deploy/scripts/deploy/vm-seed.ps1 --parameters KvName=kv-kash-dev DbName=qrypto-card
 [CmdletBinding()]

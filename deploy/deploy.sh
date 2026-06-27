@@ -28,14 +28,15 @@
 #   ENV=dev ./deploy/deploy.sh stop   [svc]
 #   ENV=dev ./deploy/deploy.sh status
 #   ENV=dev ./deploy/deploy.sh logs   [svc]
-#   ENV=dev ./deploy/deploy.sh schema           # re-publish the dacpac only
+#   ENV=dev ./deploy/deploy.sh schema           # apply pending schema migrations
 #
 # Commands:
 #   update [svc]   App-only redeploy: fetch main -> rewrite config -> build+publish
 #                  -> inject secrets -> recycle -> start-guarantee. All tiers, or
-#                  one (svc). Add --with-schema to also re-publish the dacpac
-#                  BEFORE the app deploy (use when a change needs a migration; the
-#                  dacpac publish is an incremental diff, so it is safe to run).
+#                  one (svc). Add --with-schema to also apply pending schema
+#                  migrations BEFORE the app deploy (use when a change needs one; the
+#                  migration runner only applies what is not yet recorded, so it is
+#                  safe to run).
 #   build [svc]    Build + publish from the source already ON the box (no fetch,
 #                  no secret inject). Fast iterate; assumes a prior `update`
 #                  populated config + secrets on the box.
@@ -55,8 +56,8 @@
 #   stop [svc]     Stop pool(s) + site(s).
 #   status         Show pool/site state + port for every tier.
 #   logs [svc]     Tail the latest IIS log per tier.
-#   schema         Re-publish the schema-only dacpac (incremental). Opt-in; not
-#                  part of the default `update`.
+#   schema         Apply pending schema migrations (baseline-then-migrations;
+#                  idempotent). Opt-in; not part of the default `update`.
 #   seed           Re-apply the committed seed SQL (reference + admin, plus the
 #                  dev-only smoke user + synthetic display dataset). Data-only:
 #                  fetch source -> sqlcmd the seeds. No build, no IIS, no secrets.
@@ -90,7 +91,7 @@ Usage: ENV=dev ./deploy/deploy.sh <command> [svc] [--with-schema]
 
   update [svc]   App-only redeploy: fetch main -> rewrite config -> build+publish
                  -> inject secrets -> recycle -> start-guarantee. All tiers or one.
-                 Add --with-schema to re-publish the dacpac first (for migrations).
+                 Add --with-schema to apply pending schema migrations first.
   build [svc]    Build + publish from the source already on the box (no fetch, no
                  secret inject). Fast iterate; assumes a prior `update`.
   sync <svc>     Front-end fast lane: copy CHANGED static assets + ASP.NET markup
@@ -102,7 +103,7 @@ Usage: ENV=dev ./deploy/deploy.sh <command> [svc] [--with-schema]
   stop [svc]     Stop pool(s) + site(s).
   status         Show pool/site state + port for every tier.
   logs [svc]     Tail the latest IIS log per tier.
-  schema         Re-publish the schema-only dacpac (incremental; opt-in).
+  schema         Apply pending schema migrations (idempotent; opt-in).
   seed           Re-apply committed seed SQL (reference + admin, plus the dev-only
                  smoke user + synthetic display dataset). Data-only; no build/IIS.
 
@@ -227,7 +228,7 @@ case "$CMD" in
     run_on_vm "$DEPLOY_SCRIPTS/vm-fetch-source.ps1" "RepoUrl=$REPO_URL Branch=$REPO_BRANCH KvName=$KEYVAULT_NAME"
     push_config
     if [[ "$WITH_SCHEMA" -eq 1 ]]; then
-      run_on_vm "$DEPLOY_SCRIPTS/vm-publish-schema.ps1" "Env=$ENV"
+      run_on_vm "$DEPLOY_SCRIPTS/vm-migrate.ps1" "Env=$ENV"
     fi
     run_on_vm "$DEPLOY_SCRIPTS/deploy-iis.ps1"     "$(svc_param)"
     run_on_vm "$DEPLOY_SCRIPTS/inject-secrets.ps1" "$(svc_param)"
@@ -336,11 +337,13 @@ case "$CMD" in
     ;;
 
   schema)
-    # Re-publish the dacpac only (incremental). Config must be on the box; push it
-    # first so a standalone schema run after a fresh fetch still has DB_NAME etc.
+    # Apply pending schema migrations (baseline-then-migrations; idempotent). Config must
+    # be on the box; push it first so a standalone schema run after a fresh fetch still has
+    # DB_NAME etc. The runner only baselines a brand-new empty DB from the dacpac -- an
+    # already-provisioned box just runs whatever migrations it has not yet recorded.
     [[ -z "$SVC" ]] || die "schema takes no service argument"
     push_config
-    run_on_vm "$DEPLOY_SCRIPTS/vm-publish-schema.ps1" "Env=$ENV"
+    run_on_vm "$DEPLOY_SCRIPTS/vm-migrate.ps1" "Env=$ENV"
     ;;
 
   seed)

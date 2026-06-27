@@ -1,6 +1,6 @@
 # deploy/scripts/deploy/vm-write-config.ps1
 # Writes the filled (gitignored) infra config onto the VM so the deploy-phase scripts
-# (vm-publish-schema / deploy-iis / inject-secrets) can source it. The orchestrator
+# (vm-migrate / deploy-iis / inject-secrets) can source it. The orchestrator
 # base64-encodes deploy/config/.env.provision.<env> and passes it as -ConfigB64; this
 # decodes it to the same relative path inside the cloned source. Idempotent (overwrite).
 param(

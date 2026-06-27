@@ -57,9 +57,9 @@ out of that recharge-fee margin — hence the commission is computed against the
 ## 4. Deploy prerequisite (load-bearing)
 
 The no-double-pay guarantee depends on a **filtered unique index**,
-`deploy/sql/create-referral-commission-dedup-index.sql`
+`deploy/sql/migrations/0004-referral-commission-dedup-index.sql`
 (`UNIQUE (TXID) WHERE Type = 'ReferralCommission'`). It is additive and idempotent, and is applied
-by `vm-publish-schema.ps1` alongside the other post-DACPAC DDL.
+by `vm-migrate.ps1` as one of the ordered schema migrations.
 
 As a backstop, `ReferralCommissionService` checks the index exists before any payout and
 **fails closed** (logs and skips, no payout) if it is missing — so a deploy that lands the code
