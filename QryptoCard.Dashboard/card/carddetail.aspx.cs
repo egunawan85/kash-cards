@@ -17,6 +17,14 @@ namespace QryptoCard.Dashboard.card
         CardService cs = new CardService();
         protected void Page_Load(object sender, EventArgs e)
         {
+            // Per-page-load idempotency key for the buy: the same rendered Buy button — re-clicked,
+            // double-posted, or resubmitted via Back — carries this same UserReferenceID, so the INT
+            // tier collapses the duplicates onto one order (filtered unique index on
+            // (UserID, UserReferenceID)). A fresh key is minted only on a new page load (or after a
+            // confirmed spend error, see btnBuy), so a genuine re-purchase still gets its own order.
+            if (!IsPostBack)
+                hfBuyRef.Value = Guid.NewGuid().ToString("N");
+
             if (Common.checkID())
             {
 
@@ -283,6 +291,7 @@ namespace QryptoCard.Dashboard.card
             OutputModel op = new OutputModel();
             req.CardTypeId = Convert.ToInt64(hfCardTypeID.Value);
             req.InitialDeposit = amt;
+            req.UserReferenceID = hfBuyRef.Value;
             op = cs.openCard(req);
             if (op.Status == "success")
             {
@@ -295,6 +304,13 @@ namespace QryptoCard.Dashboard.card
             else
             {
                 enableButton();
+                // Re-mint the idempotency key ONLY on a CONFIRMED decline ("failed") so a retry is a
+                // genuinely new order. On "error" the response was lost/ambiguous (CardService maps a
+                // timeout / transport failure to "error") and the INT tier may have ALREADY committed
+                // the order + debit — so RETAIN the key, letting a retry idempotently REPLAY the
+                // original (dup-key -> the original order if it committed, a fresh insert if it did not).
+                if (op.Status == "failed")
+                    hfBuyRef.Value = Guid.NewGuid().ToString("N");
                 lblalert.InnerHtml = BuildSpendError(op.Message);
                 ShowBuyAlertInline();
                 return;

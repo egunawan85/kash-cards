@@ -8,6 +8,7 @@
     <asp:HiddenField runat="server" ID="hfCardTypeID" />
     <asp:HiddenField runat="server" ID="hfHolderID" />
     <asp:HiddenField runat="server" ID="hfCardData" />
+    <asp:HiddenField runat="server" ID="hfBuyRef" />
     <asp:HiddenField runat="server" ID="hfMinDeposit" />
     <asp:HiddenField runat="server" ID="hfMaxDeposit" />
 
