@@ -73,6 +73,15 @@ function Write-Ok   { param([string]$m) Write-Host "[ok] $m" }
 function Write-Warn { param([string]$m) Write-Host "[!!] $m" -ForegroundColor Yellow }
 function Stop-Run   { param([string]$m) Write-Host "[xx] $m" -ForegroundColor Red; exit 1 }
 
+# Any UNHANDLED terminating error must still emit the [xx] marker the deploy.sh wrapper
+# scans for. `az vm run-command` exits 0 even when this script dies, and
+# $ErrorActionPreference='Stop' makes every cmdlet failure terminating -- so without this
+# trap a crash that never reaches a Stop-Run (e.g. an unexpected cast/Get-Content failure)
+# would print a markerless .NET error and be read as SUCCESS, letting a later app deploy
+# proceed against an un-migrated DB. The trap closes that gap; deliberate Stop-Run exits
+# are normal (non-terminating) and do not re-trigger it.
+trap { Write-Host "[xx] unhandled error: $($_.Exception.Message)" -ForegroundColor Red; exit 1 }
+
 # -- Resolve repo paths relative to this script (deploy/scripts/deploy/...).
 $ScriptDir   = $PSScriptRoot
 # From the repo, deploy root is two dirs up. When sent detached via `az vm run-command`
@@ -182,9 +191,15 @@ $dbExists = Invoke-Scalar -BaseArgs $masterArgs -Query `
     "SELECT CASE WHEN DB_ID(N'$DbName') IS NULL THEN 0 ELSE 1 END"
 $isFresh = $true
 if ($dbExists -eq '1') {
-    $userTables = Invoke-Scalar -BaseArgs $dbArgs -Query "SELECT COUNT(*) FROM sys.tables"
-    if ([int]$userTables -gt 0) { $isFresh = $false }
-    Write-Ok "[$DbName] exists with $userTables user table(s) -> $(if ($isFresh) {'FRESH (empty)'} else {'ADOPT (already provisioned)'})"
+    # "Provisioned" = the baseline's core identity table exists. Using a baseline SENTINEL
+    # (dbo.tblM_User) rather than a generic sys.tables count means our own dbo.SchemaMigrations
+    # ledger -- or any stray operator-created table -- can never tip an unprovisioned DB into the
+    # adopt path; and a half-published baseline missing core tables correctly re-runs the baseline
+    # (CreateNewDatabase=False updates in place). tblM_User is always present after a real baseline.
+    $hasBaseline = Invoke-Scalar -BaseArgs $dbArgs -Query "SELECT CASE WHEN OBJECT_ID(N'dbo.tblM_User') IS NULL THEN 0 ELSE 1 END"
+    if ($hasBaseline -notmatch '^[01]$') { Stop-Run "baseline-sentinel probe returned an unexpected result: '$hasBaseline'" }
+    if ($hasBaseline -eq '1') { $isFresh = $false }
+    Write-Ok "[$DbName] exists; baseline sentinel dbo.tblM_User $(if ($isFresh) {'ABSENT -> FRESH (empty/partial)'} else {'present -> ADOPT (already provisioned)'})"
 } else {
     Write-Ok "[$DbName] does not exist -> FRESH (will create from baseline)"
 }
@@ -233,7 +248,8 @@ BEGIN
     );
 END
 IF NOT EXISTS (SELECT 1 FROM dbo.SchemaMigrations WHERE MigrationId = N'0000-baseline-dacpac')
-    INSERT INTO dbo.SchemaMigrations (MigrationId) VALUES (N'0000-baseline-dacpac');
+    BEGIN TRY INSERT INTO dbo.SchemaMigrations (MigrationId) VALUES (N'0000-baseline-dacpac'); END TRY
+    BEGIN CATCH IF ERROR_NUMBER() <> 2627 THROW; END CATCH; -- 2627 = a concurrent run beat us; benign
 "@
 & $sqlcmd @dbArgs -Q $ledgerSql
 if ($LASTEXITCODE -ne 0) { Stop-Run "ensure-ledger step failed (exit $LASTEXITCODE)" }
@@ -248,6 +264,7 @@ foreach ($m in $Migrations) {
     $id = $m.Name
     $already = Invoke-Scalar -BaseArgs $dbArgs -Query `
         "SELECT COUNT(*) FROM dbo.SchemaMigrations WHERE MigrationId = N'$id'"
+    if ($already -notmatch '^\d+$') { Stop-Run "ledger-count probe for ${id} returned a non-numeric result: '$already'" }
     if ([int]$already -gt 0) {
         Write-Ok "skip (already applied): $id"
         $skipped++
@@ -256,7 +273,10 @@ foreach ($m in $Migrations) {
     Write-Step "applying migration: $id"
     & $sqlcmd @dbArgs -i $m.FullName
     if ($LASTEXITCODE -ne 0) { Stop-Run "migration failed ($id, exit $LASTEXITCODE)" }
-    & $sqlcmd @dbArgs -Q "SET NOCOUNT ON; IF NOT EXISTS (SELECT 1 FROM dbo.SchemaMigrations WHERE MigrationId = N'$id') INSERT INTO dbo.SchemaMigrations (MigrationId) VALUES (N'$id');"
+    # Record the apply. The TRY/CATCH swallows a PK-duplicate (2627) so two overlapping
+    # runs cannot turn a benign "already recorded by the other run" into a hard abort; any
+    # other error re-throws -> sqlcmd -b -> non-zero -> Stop-Run.
+    & $sqlcmd @dbArgs -Q "SET NOCOUNT ON; BEGIN TRY INSERT INTO dbo.SchemaMigrations (MigrationId) VALUES (N'$id'); END TRY BEGIN CATCH IF ERROR_NUMBER() <> 2627 THROW; END CATCH;"
     if ($LASTEXITCODE -ne 0) { Stop-Run "recording migration failed ($id, exit $LASTEXITCODE)" }
     Write-Ok "$id applied + recorded"
     $applied++

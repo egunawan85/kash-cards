@@ -79,7 +79,7 @@ run_on_vm "$SCRIPT_DIR/scripts/deploy/vm-fetch-source.ps1" "RepoUrl=$REPO_URL Br
 CFG_B64=$(base64 -w0 "$CFG")
 run_on_vm "$SCRIPT_DIR/scripts/deploy/vm-write-config.ps1" "ConfigB64=$CFG_B64 Env=$ENV"
 run_on_vm "$SCRIPT_DIR/scripts/deploy/vm-install-sqlpackage.ps1"
-run_on_vm "$SCRIPT_DIR/scripts/deploy/vm-migrate.ps1"            # baseline (38 tables) + migrations -> SQL Express
+run_on_vm "$SCRIPT_DIR/scripts/deploy/vm-migrate.ps1" "Env=$ENV" # baseline (38 tables) + migrations -> SQL Express
 run_on_vm "$SCRIPT_DIR/scripts/deploy/deploy-iis.ps1"             # 12 IIS sites + WCF/connstr rewrites
 run_on_vm "$SCRIPT_DIR/scripts/deploy/inject-secrets.ps1"         # KV -> per-pool env
 run_on_vm "$SCRIPT_DIR/scripts/deploy/vm-seed.ps1" "KvName=$KEYVAULT_NAME DbName=$DB_NAME"
