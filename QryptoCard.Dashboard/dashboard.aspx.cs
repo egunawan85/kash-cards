@@ -57,6 +57,7 @@ namespace QryptoCard.Dashboard
             getDashboardData();
             getReferralList();
             bindWallet();
+            getCard();
 
         }
 
@@ -67,7 +68,6 @@ namespace QryptoCard.Dashboard
         void bindWallet()
         {
             try { getWalletBalance(); } catch { /* leave balance at the markup default ("—") */ }
-            try { getDepositAddress(); } catch { viewDeposit.Visible = false; }
             try
             {
                 bindLedger();
@@ -75,7 +75,7 @@ namespace QryptoCard.Dashboard
             catch
             {
                 divNoLedger.Visible = true;
-                gvLedger.Visible = false;
+                rptLedger.Visible = false;
                 ledgerPager.Visible = false;
             }
         }
@@ -90,25 +90,6 @@ namespace QryptoCard.Dashboard
                     lblBalance.InnerHtml = dt.Balance.Value.ToString("0.00");
             }
             // On failure leave the markup default ("—"); never fabricate a balance.
-        }
-
-        void getDepositAddress()
-        {
-            OutputModel op = us.getDepositAddress();
-            if (op.Status == "success" && op.Data != null)
-            {
-                var dt = JsonConvert.DeserializeObject<DepositAddressModel>(op.Data.ToString());
-                if (dt != null && !string.IsNullOrEmpty(dt.Address))
-                {
-                    txtDepositAddress.Text = dt.Address;
-                    hfDepositAddress.Value = dt.Address;
-                    imgDepositQR.ImageUrl = Common.GenerateQrDataUri(dt.Address);
-                    imgDepositQR.Visible = true;
-                    return;
-                }
-            }
-            // No address yet (or read failed): hide the deposit block rather than show an empty box.
-            viewDeposit.Visible = false;
         }
 
         void bindLedger()
@@ -135,15 +116,15 @@ namespace QryptoCard.Dashboard
             if (dt != null && dt.Items != null && dt.Items.Count > 0)
             {
                 divNoLedger.Visible = false;
-                gvLedger.Visible = true;
-                gvLedger.DataSource = dt.Items;
-                gvLedger.DataBind();
+                rptLedger.Visible = true;
+                rptLedger.DataSource = dt.Items;
+                rptLedger.DataBind();
                 renderLedgerPager(dt.Page, dt.PageSize, dt.Total);
                 return;
             }
-            // Empty or failed: show the empty-state, hide grid + pager.
+            // Empty or failed: show the empty-state, hide the list + pager.
             divNoLedger.Visible = true;
-            gvLedger.Visible = false;
+            rptLedger.Visible = false;
             ledgerPager.Visible = false;
         }
 
@@ -178,6 +159,93 @@ namespace QryptoCard.Dashboard
 
             ledgerPager.InnerHtml = sb.ToString();
             ledgerPager.Visible = true;
+        }
+
+        // Card-at-a-glance (S-F). The card list is server-returned (getCardList). Only the
+        // masked last-4 and the expiry are surfaced here — never the full PAN or the CVV.
+        void getCard()
+        {
+            try
+            {
+                OutputModel op = cs.getCardList(new CardModel());
+                if (op.Status == "success" && op.Data != null)
+                {
+                    var cards = JsonConvert.DeserializeObject<List<CardModel>>(op.Data.ToString());
+                    if (cards != null && cards.Count > 0)
+                    {
+                        // Prefer an active card; otherwise the first. "Manage" covers the rest.
+                        CardModel card = cards.FirstOrDefault(c => c.isActive == 1) ?? cards[0];
+
+                        lblCardNetwork.InnerText = string.IsNullOrEmpty(card.Organization) ? "Kash Virtual" : card.Organization;
+
+                        // CardNumber is already a masked PAN (e.g. "4024 00** **** 0001"); show only
+                        // the trailing four digits, never the whole number.
+                        string digits = new string((card.CardNumber ?? "").Where(char.IsDigit).ToArray());
+                        string last4 = digits.Length >= 4 ? digits.Substring(digits.Length - 4) : digits;
+                        lblCardLast4.InnerHtml = "&#8226;&#8226;&#8226;&#8226; " + Server.HtmlEncode(last4);
+
+                        // Expiry is stored encrypted; decrypt only the expiry for display. The CVV is
+                        // never decrypted or rendered on the dashboard.
+                        string exp = "";
+                        try { exp = Common.decrypt(card.ValidPeriod); } catch { exp = ""; }
+                        lblCardExp.InnerText = string.IsNullOrEmpty(exp) ? "—" : exp;
+
+                        lnkCardDetails.HRef = string.IsNullOrEmpty(card.ID)
+                            ? ResolveUrl("~/card/mycardlist")
+                            : ResolveUrl("~/card/mycarddetail?id=" + HttpUtility.UrlEncode(card.ID));
+
+                        viewCard.Visible = true;
+                        viewNoCard.Visible = false;
+                        return;
+                    }
+                }
+            }
+            catch { /* fall through to the no-card empty state */ }
+
+            viewCard.Visible = false;
+            viewNoCard.Visible = true;
+        }
+
+        // ---- Wallet-ledger row rendering (S-F) -------------------------------------------
+        // Direction is read from the balance movement (Balance vs BalancePrevious) rather than
+        // the Amount sign, so it stays correct regardless of how the server signs Amount.
+        protected bool IsLedgerCredit(object item)
+        {
+            var m = item as LedgerEntryModel;
+            if (m == null) return true;
+            if (m.Balance.HasValue && m.BalancePrevious.HasValue)
+                return m.Balance.Value >= m.BalancePrevious.Value;
+            if (m.Amount.HasValue)
+                return m.Amount.Value >= 0;
+            return true;
+        }
+
+        protected string LedgerType(object item)
+        {
+            var m = item as LedgerEntryModel;
+            string t = m != null ? m.Type : null;
+            return Server.HtmlEncode(string.IsNullOrEmpty(t) ? "Transaction" : t);
+        }
+
+        protected string LedgerWhen(object item)
+        {
+            var m = item as LedgerEntryModel;
+            if (m != null && m.CreatedDate.HasValue)
+                return m.CreatedDate.Value.ToString("dd MMM yyyy, HH:mm");
+            return "";
+        }
+
+        protected string LedgerAmtClass(object item)
+        {
+            return IsLedgerCredit(item) ? "amt in" : "amt out";
+        }
+
+        protected string LedgerAmt(object item)
+        {
+            var m = item as LedgerEntryModel;
+            decimal amt = (m != null && m.Amount.HasValue) ? Math.Abs(m.Amount.Value) : 0m;
+            string sign = IsLedgerCredit(item) ? "+" : "-";
+            return sign + amt.ToString("0.00") + " USDT";
         }
 
         void getDashboardData()

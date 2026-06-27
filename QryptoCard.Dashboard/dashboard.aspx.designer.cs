@@ -33,34 +33,39 @@ namespace QryptoCard.Dashboard
         protected global::System.Web.UI.WebControls.HiddenField hfReferralLink;
 
         /// <summary>
-        /// hfDepositAddress control.
-        /// </summary>
-        protected global::System.Web.UI.WebControls.HiddenField hfDepositAddress;
-
-        /// <summary>
         /// lblBalance control.
         /// </summary>
         protected global::System.Web.UI.HtmlControls.HtmlGenericControl lblBalance;
 
         /// <summary>
-        /// viewDeposit control.
+        /// viewCard control.
         /// </summary>
-        protected global::System.Web.UI.HtmlControls.HtmlGenericControl viewDeposit;
+        protected global::System.Web.UI.HtmlControls.HtmlGenericControl viewCard;
 
         /// <summary>
-        /// txtDepositAddress control.
+        /// lblCardNetwork control.
         /// </summary>
-        protected global::System.Web.UI.WebControls.TextBox txtDepositAddress;
+        protected global::System.Web.UI.HtmlControls.HtmlGenericControl lblCardNetwork;
 
         /// <summary>
-        /// btnCopyAddress control.
+        /// lblCardLast4 control.
         /// </summary>
-        protected global::System.Web.UI.HtmlControls.HtmlButton btnCopyAddress;
+        protected global::System.Web.UI.HtmlControls.HtmlGenericControl lblCardLast4;
 
         /// <summary>
-        /// imgDepositQR control.
+        /// lblCardExp control.
         /// </summary>
-        protected global::System.Web.UI.WebControls.Image imgDepositQR;
+        protected global::System.Web.UI.HtmlControls.HtmlGenericControl lblCardExp;
+
+        /// <summary>
+        /// lnkCardDetails control.
+        /// </summary>
+        protected global::System.Web.UI.HtmlControls.HtmlAnchor lnkCardDetails;
+
+        /// <summary>
+        /// viewNoCard control.
+        /// </summary>
+        protected global::System.Web.UI.HtmlControls.HtmlGenericControl viewNoCard;
 
         /// <summary>
         /// divNoLedger control.
@@ -68,9 +73,9 @@ namespace QryptoCard.Dashboard
         protected global::System.Web.UI.HtmlControls.HtmlGenericControl divNoLedger;
 
         /// <summary>
-        /// gvLedger control.
+        /// rptLedger control.
         /// </summary>
-        protected global::System.Web.UI.WebControls.GridView gvLedger;
+        protected global::System.Web.UI.WebControls.Repeater rptLedger;
 
         /// <summary>
         /// ledgerPager control.

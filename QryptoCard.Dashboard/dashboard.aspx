@@ -4,7 +4,6 @@
 <asp:Content ID="Content1" ContentPlaceHolderID="MainContent" runat="server">
     <asp:HiddenField runat="server" ID="hfReferralCode" />
     <asp:HiddenField runat="server" ID="hfReferralLink" />
-    <asp:HiddenField runat="server" ID="hfDepositAddress" />
 
     <!--begin::Page header-->
     <div class="dash-top">
@@ -22,32 +21,34 @@
 
     <div class="dash-grid">
         <!--begin::Balance — live wallet (S-F). Balance comes from the server (getBalance);
-            no figures are computed or fabricated client-side. Deposit address + QR come from
-            getDepositAddress (one reusable USDT-TRC20 address per user). -->
+            no figures are computed or fabricated client-side. -->
         <section class="panel balance">
             <div class="lab">Available balance</div>
             <div class="amt"><span runat="server" id="lblBalance">&mdash;</span><span class="cur">USDT</span></div>
             <div class="balance-actions">
-                <a class="btn btn-cyan" href='<%= ResolveUrl("~/txdeposit") %>'>Add funds</a>
-                <a class="btn btn-line" href="#wallet-ledger">Statements</a>
-            </div>
-            <div class="wallet-deposit" runat="server" id="viewDeposit" style="margin-top: 16px;">
-                <div class="lab">Your USDT (TRC20) deposit address</div>
-                <div class="copy-row">
-                    <asp:TextBox runat="server" ID="txtDepositAddress" ReadOnly="true" />
-                    <button type="button" class="copy-btn" runat="server" id="btnCopyAddress" onclick="copyDepositAddress();" aria-label="Copy deposit address">
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="9" y="9" width="11" height="11" rx="2" /><path d="M5 15V5a2 2 0 012-2h10" /></svg>
-                    </button>
-                </div>
-                <asp:Image runat="server" ID="imgDepositQR" CssClass="wallet-qr" Visible="false" Style="margin-top: 12px; width: 160px; height: 160px;" />
+                <a class="btn btn-cyan" href='<%= ResolveUrl("~/txdeposit") %>'>Top up</a>
+                <a class="btn btn-line" href='<%= ResolveUrl("~/tx/cardhistory") %>'>Statements</a>
             </div>
         </section>
         <!--end::Balance-->
 
-        <!--begin::Card — RESERVED for Phase 3 (S-F): card visual + controls land with the wallet UI. -->
+        <!--begin::Card — live card-at-a-glance (S-F). Card list is server-returned (getCardList);
+            only the masked last-4 and expiry are shown here, never the full PAN or CVV. -->
         <section class="panel card-panel">
             <div class="panel-h"><h3>Your card</h3><a href='<%= ResolveUrl("~/card/mycardlist") %>'>Manage</a></div>
-            <div class="card-empty" style="color: var(--ink-3); font-size: .95rem; padding: 18px 0;">
+            <div runat="server" id="viewCard" visible="false">
+                <div class="card-shot"><img src='<%= ResolveUrl("~/Content/media/landing/hero-card.png") %>' alt="Kash virtual card" /></div>
+                <div class="card-meta">
+                    <span><span runat="server" id="lblCardNetwork">Kash Virtual</span> &middot; <span class="v" runat="server" id="lblCardLast4">&#8226;&#8226;&#8226;&#8226;</span></span>
+                    <span>Exp <span class="v" runat="server" id="lblCardExp">&mdash;</span></span>
+                </div>
+                <div class="card-controls" style="grid-template-columns: 1fr;">
+                    <a class="ctrl-btn" runat="server" id="lnkCardDetails" href="#">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><circle cx="12" cy="12" r="3" /><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7-10-7-10-7z" /></svg> Details
+                    </a>
+                </div>
+            </div>
+            <div runat="server" id="viewNoCard" class="card-empty" style="color: var(--ink-3); font-size: .95rem; padding: 18px 0;">
                 Your card details will appear here once your card is active.
             </div>
         </section>
@@ -77,20 +78,25 @@
             change is a normal GET that re-binds the whole dashboard, never a postback that would
             blank the other panels. All figures are server-returned (getLedger); none computed here. -->
         <section class="panel txns" id="wallet-ledger">
-            <div class="panel-h"><h3>Wallet transactions</h3></div>
+            <div class="panel-h"><h3>Wallet transactions</h3><a href='<%= ResolveUrl("~/tx/cardhistory") %>'>View all</a></div>
             <div runat="server" id="divNoLedger" class="txns-empty" style="color: var(--ink-3); font-size: .95rem; padding: 18px 0;">
                 No wallet transactions yet.
             </div>
-            <asp:GridView CssClass="dash-table" ID="gvLedger" runat="server" AutoGenerateColumns="false" GridLines="None" Visible="false">
-                <Columns>
-                    <asp:BoundField DataField="CreatedDate" HeaderText="Date" />
-                    <asp:BoundField DataField="Type" HeaderText="Type" />
-                    <asp:BoundField DataField="Amount" HeaderText="Amount" />
-                    <asp:BoundField DataField="Commision" HeaderText="Fee" />
-                    <asp:BoundField DataField="Balance" HeaderText="Balance" />
-                    <asp:BoundField DataField="Status" HeaderText="Status" />
-                </Columns>
-            </asp:GridView>
+            <asp:Repeater ID="rptLedger" runat="server" Visible="false">
+                <ItemTemplate>
+                    <div class="txn">
+                        <div class="ic">
+                            <span runat="server" visible='<%# IsLedgerCredit(Container.DataItem) %>'><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M12 5v14M5 12l7 7 7-7" /></svg></span>
+                            <span runat="server" visible='<%# !IsLedgerCredit(Container.DataItem) %>'><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M12 19V5M5 12l7-7 7 7" /></svg></span>
+                        </div>
+                        <div class="meta">
+                            <div class="merchant"><%# LedgerType(Container.DataItem) %></div>
+                            <div class="when"><%# LedgerWhen(Container.DataItem) %></div>
+                        </div>
+                        <div class='<%# LedgerAmtClass(Container.DataItem) %>'><%# LedgerAmt(Container.DataItem) %></div>
+                    </div>
+                </ItemTemplate>
+            </asp:Repeater>
             <div class="ledger-pager" runat="server" id="ledgerPager" visible="false" style="display:flex; gap:12px; align-items:center; margin-top:12px;"></div>
         </section>
         <!--end::Wallet ledger-->
@@ -170,11 +176,6 @@
 
         function copyReferralLink() {
             var copyText = document.getElementById("<%= hfReferralLink.ClientID %>");
-            navigator.clipboard.writeText(copyText.value).then(function () { }).catch(function () { });
-        }
-
-        function copyDepositAddress() {
-            var copyText = document.getElementById("<%= hfDepositAddress.ClientID %>");
             navigator.clipboard.writeText(copyText.value).then(function () { }).catch(function () { });
         }
     </script>
