@@ -196,25 +196,36 @@ $ConfigNames = @(
 function Get-Secrets {
     param([string[]]$Names)
     $map = @{}
-    foreach ($name in $Names) {
+    # Windows PowerShell 5.1 defaults to TLS 1.0/1.1 for Invoke-RestMethod; Key Vault requires
+    # TLS 1.2, so without this the KV HTTPS handshake hangs (IMDS is plain HTTP and is unaffected).
+    [Net.ServicePointManager]::SecurityProtocol = [Net.ServicePointManager]::SecurityProtocol -bor [Net.SecurityProtocolType]::Tls12
+
+    # Auth ONCE: get a managed-identity access token for Key Vault from IMDS, then reuse it for
+    # every secret via direct REST GETs in THIS session. The old path ran `az keyvault secret show`
+    # per secret -- each a fresh az process that re-authenticated MSI (~several seconds each), so a
+    # full set cost minutes. One token + N cheap REST calls cuts that to seconds. Same MSI identity,
+    # same KV endpoint, same in-memory-only value handling (never logged); only the transport changed.
+    $imds = 'http://169.254.169.254/metadata/identity/oauth2/token?api-version=2018-02-01&resource=https%3A%2F%2Fvault.azure.net'
+    try {
+        $token = (Invoke-RestMethod -Method Get -Uri $imds -Headers @{ Metadata = 'true' } -TimeoutSec 30).access_token
+    } catch {
+        Stop-Inject "failed to obtain a managed-identity token for Key Vault (IMDS): $($_.Exception.Message)"
+    }
+    if ([string]::IsNullOrWhiteSpace($token)) { Stop-Inject 'managed-identity token for Key Vault came back empty' }
+    $authHeader = @{ Authorization = "Bearer $token" }
+
+    foreach ($name in ($Names | Select-Object -Unique)) {
         # KV secret names can't contain '_'; seed-kv-secrets.sh stored them dashed.
         $kvName = $name -replace '_', '-'
         Write-Step "pulling secret '$kvName' from $VaultName"
-        $tmp = New-TemporaryFile
+        $uri = "https://$VaultName.vault.azure.net/secrets/$kvName" + '?api-version=7.4'
         try {
-            $val = & $az keyvault secret show --vault-name $VaultName --name $kvName `
-                --query value --output tsv 2>$tmp
-            if ($LASTEXITCODE -ne 0) {
-                $err = (Get-Content $tmp -Raw) -replace '\s+$', ''
-                Stop-Inject "failed to read '$kvName' from $VaultName (exit $LASTEXITCODE): $err"
-            }
-        } finally {
-            Remove-Item $tmp -ErrorAction SilentlyContinue
+            $val = (Invoke-RestMethod -Method Get -Uri $uri -Headers $authHeader -TimeoutSec 30).value
+        } catch {
+            Stop-Inject "failed to read '$kvName' from $VaultName : $($_.Exception.Message)"
         }
-        # tsv of a single value may arrive as a 1-element array; join + trim the
-        # trailing newline az appends. Do NOT trim interior whitespace (XML keys
-        # / base64 are significant).
-        $val = ($val | Out-String) -replace "`r?`n$", ''
+        # Do NOT trim interior/edge whitespace beyond a stray trailing newline -- XML keys and
+        # base64 values are whitespace-significant; KV returns the value verbatim.
         if ([string]::IsNullOrWhiteSpace($val)) {
             Stop-Inject "secret '$name' is empty in $VaultName -- seed it before injecting"
         }
@@ -243,26 +254,6 @@ function Get-SecretsForPool {
     #       '*scheduler*'{ return @('PGCRYPTO_API_KEY','PGCRYPTO_SECRET_KEY', ...) }
     #       default      { return @('DBKEY','APPKEY', ...) }
     #   }
-}
-
-# -- Write one env var into a pool's <environmentVariables> in
-# applicationHost.config. Create-or-update; idempotent. Uses the
-# WebAdministration config provider so the write lands in
-# applicationHost.config (not web.config). -----------------------------------
-function Set-PoolEnvVar {
-    param([string]$PoolName, [string]$Name, [string]$Value)
-
-    $filter = "system.applicationHost/applicationPools/add[@name='$PoolName']/environmentVariables"
-    # Remove an existing same-named entry first (Set-WebConfigurationProperty
-    # cannot update a collection element keyed by name in place), then add.
-    $existing = Get-WebConfiguration -PSPath 'MACHINE/WEBROOT/APPHOST' `
-        -Filter "$filter/add[@name='$Name']" -ErrorAction SilentlyContinue
-    if ($existing) {
-        Remove-WebConfigurationProperty -PSPath 'MACHINE/WEBROOT/APPHOST' `
-            -Filter $filter -Name '.' -AtElement @{ name = $Name } -ErrorAction SilentlyContinue
-    }
-    Add-WebConfigurationProperty -PSPath 'MACHINE/WEBROOT/APPHOST' `
-        -Filter $filter -Name '.' -Value @{ name = $Name; value = $Value }
 }
 
 # -- ACL applicationHost.config to Administrators + SYSTEM only. --------------
@@ -307,17 +298,37 @@ Write-Ok "target app pools: $($allPools.Count) -- $($allPools -join ', ')"
 # Pull every secret + config value once up front (fail fast if any is missing/empty).
 $secretValues = Get-Secrets -Names ($AllSecretNames + $ConfigNames)
 
-foreach ($pool in $allPools) {
-    if (-not (Test-Path "IIS:\AppPools\$pool")) {
-        Stop-Inject "app pool '$pool' does not exist -- run deploy-iis.ps1 first (it creates the pools)"
+# Write every pool's env vars in ONE applicationHost.config commit. The WebConfiguration cmdlets
+# auto-commit on EACH Add (rewriting + reloading the whole config), so ~62 of them cost minutes.
+# The ServerManager API stages all edits in memory and CommitChanges() writes once -- same end
+# state (per-pool <environmentVariables> entries), seconds instead of minutes.
+Add-Type -Path (Join-Path $env:windir 'System32\inetsrv\Microsoft.Web.Administration.dll')
+$mgr = New-Object Microsoft.Web.Administration.ServerManager
+try {
+    $poolsColl = $mgr.GetApplicationHostConfiguration().GetSection('system.applicationHost/applicationPools').GetCollection()
+    foreach ($pool in $allPools) {
+        $poolEl = $poolsColl | Where-Object { $_.GetAttributeValue('name') -eq $pool } | Select-Object -First 1
+        if (-not $poolEl) { Stop-Inject "app pool '$pool' not found in applicationHost.config -- run deploy-iis.ps1 first (it creates the pools)" }
+        $envColl = $poolEl.GetCollection('environmentVariables')
+        $names = @(Get-SecretsForPool -PoolName $pool) + $ConfigNames
+        Write-Host ''
+        Write-Host "=== $pool : injecting $($names.Count) var(s) ==="
+        foreach ($name in $names) {
+            # name-keyed collection: remove any existing same-named entry, then add (mirrors the
+            # old Get/Remove/Add-WebConfigurationProperty, but staged -- no commit until the end).
+            $existing = $envColl | Where-Object { $_.GetAttributeValue('name') -eq $name } | Select-Object -First 1
+            if ($existing) { [void]$envColl.Remove($existing) }
+            $e = $envColl.CreateElement('add')
+            $e['name']  = $name
+            $e['value'] = $secretValues[$name]
+            [void]$envColl.Add($e)
+            Write-Ok "  $pool <- $name (value hidden)"
+        }
     }
-    $names = @(Get-SecretsForPool -PoolName $pool) + $ConfigNames
-    Write-Host ''
-    Write-Host "=== $pool : injecting $($names.Count) var(s) ==="
-    foreach ($name in $names) {
-        Set-PoolEnvVar -PoolName $pool -Name $name -Value $secretValues[$name]
-        Write-Ok "  $pool <- $name (value hidden)"
-    }
+    $mgr.CommitChanges()   # single write for ALL pools
+    Write-Ok "applicationHost.config committed (all pools in one write)"
+} finally {
+    $mgr.Dispose()
 }
 
 # Lock down the config that now carries the values.
