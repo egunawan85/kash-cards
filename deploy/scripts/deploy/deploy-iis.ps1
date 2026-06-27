@@ -500,6 +500,20 @@ function Rewrite-ConnectionString {
 }
 
 # ===========================================================================
+# Config backup (S6): snapshot applicationHost.config BEFORE this run touches IIS config
+# (app pools, ACL; inject-secrets later writes per-pool env into it too). Emulates runegate's
+# enable-https.ps1 -- timestamped .bak, keep the 5 most recent. The IIS-config rollback point.
+# ===========================================================================
+$apphost = Join-Path $env:windir 'System32\inetsrv\config\applicationHost.config'
+if (Test-Path $apphost) {
+    $bakStamp = Get-Date -Format 'yyyyMMdd-HHmmss'
+    Copy-Item $apphost "$apphost.bak-$bakStamp" -Force
+    Write-Ok "applicationHost.config backed up -> applicationHost.config.bak-$bakStamp"
+    Get-ChildItem "$apphost.bak-*" -ErrorAction SilentlyContinue | Sort-Object LastWriteTime -Descending |
+        Select-Object -Skip 5 | Remove-Item -Force -ErrorAction SilentlyContinue
+}
+
+# ===========================================================================
 # Solution-wide NuGet restore (once, up front).
 # ===========================================================================
 # Per-project restore alone is insufficient: a shared dependency (QryptoCard.Sec)

@@ -135,6 +135,7 @@ winpath() { if command -v cygpath >/dev/null 2>&1; then cygpath -w "$1"; else pr
 run_on_vm() {
   local script="$1"; shift
   local params="${1:-}"
+  local expect="${2:-}"   # optional success marker that MUST appear in the output
   log "VM: $(basename "$script") ${params}"
   local out
   out=$(az vm run-command invoke -g "$COMPUTE_RG" -n "$VM_NAME" \
@@ -143,6 +144,13 @@ run_on_vm() {
   printf '%s\n' "$out"
   if printf '%s' "$out" | grep -q '\[xx\]'; then
     die "VM phase failed: $(basename "$script") -- see [xx] above"
+  fi
+  # az run-command returns 0 even if its inner script was CUT OFF by the run-command timeout
+  # (leaving partial output with no [xx]) -- a silent half-success. For steps that emit a final
+  # success marker, REQUIRE it: run-command keeps the output TAIL, so a real completion marker is
+  # always present, and its absence means the step did not finish. Turns a cut-off into a hard fail.
+  if [[ -n "$expect" ]] && ! printf '%s' "$out" | grep -qF "$expect"; then
+    die "VM phase did not confirm completion ($(basename "$script")): required marker '$expect' missing -- the run-command was cut off or the step aborted before finishing"
   fi
 }
 
@@ -226,24 +234,28 @@ svc_param() { [[ -n "$SVC" ]] && printf 'Service=%s' "$SVC"; }
 case "$CMD" in
 
   update)
-    # ONE on-box pass: vm-update.ps1 runs fetch -> write-config -> [db-backup + migrate] ->
-    # build+publish -> inject-secrets -> start, all locally on the box in a single warm process.
-    # That makes this a SINGLE az run-command (not ~6 round-trips + a per-tier build loop), which
-    # is where the wall-clock went. For a private repo the zipball needs REPO-TOKEN in Key Vault
-    # -- vm-fetch-source pulls it via KvName. ConfigB64 carries the gitignored env file the fetch
-    # would otherwise wipe. WithSchema=1 backs up the DB then applies pending migrations first.
+    # App redeploy as a sequence of run-commands, each a clean isolated context. The speed win vs
+    # the old path is the BUILD: one all-tiers parallel deploy-iis call (one warm /m compile) instead
+    # of a 12-iteration per-tier loop. fetch/migrate/inject/start stay their own run-commands -- each
+    # well under the run-command timeout and not nested, so az-CLI steps (inject-secrets -> Key Vault)
+    # run in a clean context. For a private repo the zipball needs REPO-TOKEN in Key Vault (KvName).
     : "${REPO_URL:?set in $CFG}"
-    log "on-box update${SVC:+ (tier: $SVC)}${WITH_SCHEMA:+ +schema}"
-    cfg_b64=$(base64 -w0 "$CFG")
-    run_on_vm "$DEPLOY_SCRIPTS/vm-update.ps1" \
-      "RepoUrl=$REPO_URL Branch=$REPO_BRANCH KvName=$KEYVAULT_NAME ConfigB64=$cfg_b64 Env=$ENV WithSchema=$WITH_SCHEMA${SVC:+ Service=$SVC}"
+    log "modular update${SVC:+ (tier: $SVC)}$([[ "$WITH_SCHEMA" -eq 1 ]] && printf ' +schema')"
+    run_on_vm "$DEPLOY_SCRIPTS/vm-fetch-source.ps1" "RepoUrl=$REPO_URL Branch=$REPO_BRANCH KvName=$KEYVAULT_NAME"
+    push_config
+    if [[ "$WITH_SCHEMA" -eq 1 ]]; then
+      run_on_vm "$DEPLOY_SCRIPTS/vm-migrate.ps1" "Env=$ENV"
+    fi
+    run_on_vm "$DEPLOY_SCRIPTS/deploy-iis.ps1"     "Env=$ENV $(svc_param)"        "DEPLOY_RESULT: PASS"
+    run_on_vm "$DEPLOY_SCRIPTS/inject-secrets.ps1" "$(svc_param)"
+    run_on_vm "$DEPLOY_SCRIPTS/vm-iis-ops.ps1"     "Action=start $(svc_param)"    "IISOPS_RESULT: PASS"
     log "update complete${SVC:+ (tier: $SVC)}"
     ;;
 
   build)
-    # Build + publish from the source already on the box (no fetch, no secrets). One on-box pass:
-    # deploy-iis builds ALL tiers (or one) in a single warm parallel compile.
-    run_on_vm "$DEPLOY_SCRIPTS/deploy-iis.ps1" "Env=$ENV${SVC:+ Service=$SVC}"
+    # Build + publish from the source already on the box (no fetch, no secrets). One all-tiers
+    # (or single-tier) warm parallel compile. Require the final DEPLOY_RESULT marker (cut-off guard).
+    run_on_vm "$DEPLOY_SCRIPTS/deploy-iis.ps1" "Env=$ENV${SVC:+ Service=$SVC}" "DEPLOY_RESULT: PASS"
     ;;
 
   sync)
