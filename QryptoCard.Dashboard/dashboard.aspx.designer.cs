@@ -43,6 +43,11 @@ namespace QryptoCard.Dashboard
         protected global::System.Web.UI.HtmlControls.HtmlGenericControl viewCard;
 
         /// <summary>
+        /// card3dWrap control.
+        /// </summary>
+        protected global::System.Web.UI.HtmlControls.HtmlGenericControl card3dWrap;
+
+        /// <summary>
         /// lblCardNetwork control.
         /// </summary>
         protected global::System.Web.UI.HtmlControls.HtmlGenericControl lblCardNetwork;

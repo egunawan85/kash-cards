@@ -37,13 +37,13 @@
         <section class="panel card-panel">
             <div class="panel-h"><h3>Your card</h3><a href='<%= ResolveUrl("~/card/mycardlist") %>'>Manage</a></div>
             <div runat="server" id="viewCard" visible="false">
-                <div class="card3d-wrap">
+                <div class="card3d-wrap" runat="server" id="card3dWrap">
                     <div class="card-3d">
                         <div class="qcard">
                             <div class="qcard-inner">
                                 <div class="qcard-top">
                                     <div class="qcard-brand">K<b>ash</b></div>
-                                    <span class="qcard-tag"><span runat="server" id="lblCardNetwork">Virtual</span></span>
+                                    <span runat="server" id="lblCardNetwork"></span>
                                 </div>
                                 <div><div class="qcard-chip"></div></div>
                                 <div class="qcard-num"><span runat="server" id="lblCardLast4">&#8226;&#8226;&#8226;&#8226;</span></div>

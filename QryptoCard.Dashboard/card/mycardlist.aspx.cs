@@ -15,6 +15,7 @@ namespace QryptoCard.Dashboard.card
     public partial class mycardlist : System.Web.UI.Page
     {
         CardService cs = new CardService();
+        UserService us = new UserService();
         protected void Page_Load(object sender, EventArgs e)
         {
             if (Common.checkID())
@@ -35,6 +36,7 @@ namespace QryptoCard.Dashboard.card
 
         void getData()
         {
+            setAvailBalance();
             List<CardModel> dt;
             var req = new CardModel();
             OutputModel op = new OutputModel();
@@ -42,27 +44,20 @@ namespace QryptoCard.Dashboard.card
             if (op.Status == "success")
             {
                 dt = JsonConvert.DeserializeObject<List<CardModel>>(op.Data.ToString());
+                litActiveCards.Text = dt.Count.ToString();
                 if (dt.Count > 0)
                 {
                     for (int i = 0; i < dt.Count; i++)
                     {
                         try
                         {
-                            if (dt[i].Organization == "Visa")
-                                dt[i].LogoURL = "https://www.svgrepo.com/show/362035/visa-3.svg";
-                            else if (dt[i].Organization == "MasterCard")
-                                dt[i].LogoURL = "https://www.svgrepo.com/show/508703/mastercard.svg";
-                            else
-                                dt[i].LogoURL = "https://www.svgrepo.com/show/328132/discover.svg";
-
-                            // Card numbers come back MASKED (e.g. "4024 00** **** 0001") — the
-                            // real provider never returns a full PAN. Only a clean integer can be
-                            // re-grouped; otherwise keep the stored (already grouped + masked)
-                            // value as-is. Never Int64.Parse a masked PAN — it throws
-                            // FormatException and used to take the whole list down.
-                            long pan;
-                            if (Int64.TryParse(dt[i].CardNumber, out pan))
-                                dt[i].CardNumber = String.Format("{0:0000 0000 0000 0000}", pan);
+                            // Masked card-number shape — only the last 4 are real (the provider
+                            // never returns a full PAN). Strip to digits and show the last 4 behind a
+                            // full 16-digit bullet mask. The brand mark is rendered from Organization
+                            // (CardBrandMark), so the old external logo-URL hotlinks are gone.
+                            string digits = new string((dt[i].CardNumber ?? "").Where(char.IsDigit).ToArray());
+                            string last4 = digits.Length >= 4 ? digits.Substring(digits.Length - 4) : digits;
+                            dt[i].CardNumber = "•••• •••• •••• " + last4;
 
                             dt[i].DetailURL = KeyModel.DETAIL_OWN_URL + dt[i].ID;
 
@@ -111,6 +106,7 @@ namespace QryptoCard.Dashboard.card
             if (op.Status == "success")
             {
                 dt = JsonConvert.DeserializeObject<List<CardModel>>(op.Data.ToString());
+                litTotalCards.Text = dt.Count.ToString();
                 if (dt.Count > 0)
                 {
                     for (int i = 0; i < dt.Count; i++)
@@ -139,6 +135,35 @@ namespace QryptoCard.Dashboard.card
                 gvListItem.Visible = false;
                 divnorow.Visible = true;
             }
+        }
+
+        // Wallet USDT balance for the summary bar — same source/format as the dashboard's
+        // "Available balance" (getBalance → tblM_User_Balance). Read-only.
+        void setAvailBalance()
+        {
+            try
+            {
+                OutputModel op = us.getBalance(new UserBalanceModel());
+                if (op.Status == "success" && op.Data != null)
+                {
+                    var b = JsonConvert.DeserializeObject<UserBalanceModel>(op.Data.ToString());
+                    if (b != null && b.Balance.HasValue)
+                        litAvailBal.Text = b.Balance.Value.ToString("0.00") + " USDT";
+                }
+            }
+            catch { /* leave the markup default */ }
+        }
+
+        // Local brand mark for the 3D card, by card-type Organization. No external assets:
+        // Visa/Discover are styled wordmarks, Mastercard the two interlocking discs (CSS).
+        protected string CardBrandMark(string org)
+        {
+            org = (org ?? "").Trim();
+            if (string.Equals(org, "MasterCard", StringComparison.OrdinalIgnoreCase))
+                return "<span class=\"qcard-net mc\" title=\"Mastercard\"><i></i><i></i></span>";
+            if (string.Equals(org, "Discover", StringComparison.OrdinalIgnoreCase))
+                return "<span class=\"qcard-net disc\" title=\"Discover\">DISC<b>O</b>VER</span>";
+            return "<span class=\"qcard-net visa\" title=\"Visa\">VISA</span>";
         }
 
         protected Boolean IsStatusCreated(string i) { return i == "created"; }

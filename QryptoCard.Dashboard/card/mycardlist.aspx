@@ -34,6 +34,14 @@
         <span runat="server" id="lblMsg"></span>
     </asp:Panel>
 
+    <div class="cards-sum">
+        <div class="cards-sum-it"><div class="n"><asp:Literal runat="server" ID="litTotalCards" Text="0" /></div><div class="l">Total cards</div></div>
+        <div class="cards-sum-sep"></div>
+        <div class="cards-sum-it"><div class="n"><asp:Literal runat="server" ID="litActiveCards" Text="0" /></div><div class="l">Active</div></div>
+        <div class="cards-sum-sep"></div>
+        <div class="cards-sum-it"><div class="n"><asp:Literal runat="server" ID="litAvailBal" Text="&#8212;" /></div><div class="l">Available balance</div></div>
+    </div>
+
     <div class="mycards-grid">
         <asp:Repeater ID="rptCard" runat="server">
             <ItemTemplate>
@@ -43,7 +51,7 @@
                             <div class="qcard-inner">
                                 <div class="qcard-top">
                                     <div class="qcard-brand">K<b>ash</b></div>
-                                    <span class="qcard-tag">Virtual</span>
+                                    <%# CardBrandMark((string)Eval("Organization")) %>
                                 </div>
                                 <div><div class="qcard-chip"></div></div>
                                 <div class="qcard-num"><%# Eval("CardNumber") %></div>
@@ -57,6 +65,11 @@
                 </div>
             </ItemTemplate>
         </asp:Repeater>
+        <a class="card-add" href='<%= ResolveUrl("~/card/cardlist") %>'>
+            <span class="card-add-plus"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14" /></svg></span>
+            <b>Add a new card</b>
+            <span>Choose a BIN with the right merchant fit</span>
+        </a>
     </div>
 
     <!--begin::Card orders (all states) — purchase orders + pay-link / Cancel, relocated from the

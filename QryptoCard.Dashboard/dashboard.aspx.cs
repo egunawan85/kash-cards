@@ -161,6 +161,18 @@ namespace QryptoCard.Dashboard
             ledgerPager.Visible = true;
         }
 
+        // Local brand mark for the 3D card, by card-type Organization (no external assets):
+        // Visa/Discover are styled wordmarks, Mastercard the two interlocking discs (CSS).
+        string CardBrandMark(string org)
+        {
+            org = (org ?? "").Trim();
+            if (string.Equals(org, "MasterCard", StringComparison.OrdinalIgnoreCase))
+                return "<span class=\"qcard-net mc\" title=\"Mastercard\"><i></i><i></i></span>";
+            if (string.Equals(org, "Discover", StringComparison.OrdinalIgnoreCase))
+                return "<span class=\"qcard-net disc\" title=\"Discover\">DISC<b>O</b>VER</span>";
+            return "<span class=\"qcard-net visa\" title=\"Visa\">VISA</span>";
+        }
+
         // Card-at-a-glance (S-F). The card list is server-returned (getCardList). Only the
         // masked last-4 and the expiry are surfaced here — never the full PAN or the CVV.
         void getCard()
@@ -176,13 +188,13 @@ namespace QryptoCard.Dashboard
                         // Prefer an active card; otherwise the first. "Manage" covers the rest.
                         CardModel card = cards.FirstOrDefault(c => c.isActive == 1) ?? cards[0];
 
-                        lblCardNetwork.InnerText = string.IsNullOrEmpty(card.Organization) ? "Kash Virtual" : card.Organization;
+                        lblCardNetwork.InnerHtml = CardBrandMark(card.Organization);
 
                         // CardNumber is already a masked PAN (e.g. "4024 00** **** 0001"); show only
                         // the trailing four digits, never the whole number.
                         string digits = new string((card.CardNumber ?? "").Where(char.IsDigit).ToArray());
                         string last4 = digits.Length >= 4 ? digits.Substring(digits.Length - 4) : digits;
-                        lblCardLast4.InnerHtml = "&#8226;&#8226;&#8226;&#8226; " + Server.HtmlEncode(last4);
+                        lblCardLast4.InnerHtml = "&#8226;&#8226;&#8226;&#8226; &#8226;&#8226;&#8226;&#8226; &#8226;&#8226;&#8226;&#8226; " + Server.HtmlEncode(last4);
 
                         // Expiry is stored encrypted; decrypt only the expiry for display. The CVV is
                         // never decrypted or rendered on the dashboard.
@@ -193,6 +205,11 @@ namespace QryptoCard.Dashboard
                         lnkCardDetails.HRef = string.IsNullOrEmpty(card.ID)
                             ? ResolveUrl("~/card/mycardlist")
                             : ResolveUrl("~/card/mycarddetail?id=" + HttpUtility.UrlEncode(card.ID));
+
+                        // The whole card is a click target to the detail page (earns the hand cursor
+                        // + tilt). HRef is already a ResolveUrl'd app path; encode for the JS string.
+                        card3dWrap.Attributes["onclick"] = "window.location.href='" + HttpUtility.JavaScriptStringEncode(lnkCardDetails.HRef) + "';";
+                        card3dWrap.Style["cursor"] = "pointer";
 
                         viewCard.Visible = true;
                         viewNoCard.Visible = false;
