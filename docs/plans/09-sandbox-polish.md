@@ -5,6 +5,15 @@
 ✅ **Signed off 2026-06-26 — executing.** The §7 decisions are approved; slices are being
 built and shipped in parallel worktrees, coordinated live in Issue #51 (merge stays a human gate).
 
+**Progress (2026-06-27).** Dev-box deploy **enabled** ([#65](https://github.com/egunawan85/kash-cards/pull/65), merged): the
+incremental git-fetch deploy had never run end-to-end on `vm-kash-dev`, so four latent prerequisites
+were cleared (git not installed → MinGit in bootstrap; `REPO-TOKEN` not seeded → seeded; `az` not on
+the run-command PATH → resolved by full path; a `Git-Do` `$Args` PowerShell auto-variable collision →
+renamed). The box now runs current `main`, schema confirmed adequate, seed applied. The **wallet
+money-path is verified live** (S5, [#60](https://github.com/egunawan85/kash-cards/pull/60), merged) —
+see Phase 2. Remaining for cutover-time / manual: the FE click-throughs and the U6-gated card-issuance
+success paths.
+
 **What this phase is.** Take what is already shipped and deployed to the dev shakeout
 box and polish it to a realistic, practical state: exercise every money/card flow
 end-to-end against the **WasabiCard sandbox** and confirm each is correctly wired
@@ -481,21 +490,22 @@ prod. The environment gate is the security-critical surface.
 > failure** path renders a correct, legible UI state. Record each in the §5.1 matrix.
 > Defects → focused fix worktrees (markup/CSS via `deploy.sh sync`; code via `update`).
 
-**Slice 2.1 — Wallet panel (address + balance + ledger).**
-- [ ] Deposit address + QR renders (IDOR-scoped to the logged-in user)
-- [ ] Balance reflects a test credit (from Slice 1.2); ledger lists the entry
-- [ ] Induced-failure (read error) surfaces a message, not a blank/zero state
+**Slice 2.1 — Wallet panel (address + balance + ledger). — ◐ engine verified (S5); FE render pending.**
+- [x] Balance reflects a test credit and the ledger records it — verified at the money-path engine: a `Crypto Deposit` credit lands with the chained-ledger invariant `BalancePrevious + Amount = Balance`
+- [ ] Deposit address + QR renders (IDOR-scoped) — **manual FE pass** (visual half)
+- [ ] Induced read-error surfaces a message, not a blank/zero state — **manual FE pass**
 
-**Slice 2.2 — Buy card (open) end-to-end.**
-- [ ] Buy on `card/carddetail.aspx` → `CardService.openCard` → `/v1/card/open` → INT `CardSpendService.OpenCard` → WasabiCard `openCard`/`openCardWithHolder` (+ `createHolder`)
-- [ ] Balance **debited** (pay-from-balance, server-authoritative fee); order transitions correct
-- [ ] Holder creation/KYC path observed (U3-dependent); `card_transaction:create` finalization lands
-- [ ] Failure path: insufficient balance / provider error → refund + legible UI message (no silent redirect)
+**Slice 2.2 — Buy card (open) end-to-end. — ◐ money path verified LIVE (S5, [#60](https://github.com/egunawan85/kash-cards/pull/60)); FE + success path pending.**
+- [x] **Failure/refund path verified live** on the box (`deploy/scripts/verify/vm-verify-walletpath.ps1`, PASS 9/9): buy → balance **debited** server-authoritatively (`Total = Price + InitialDeposit + fee`) → WasabiCard sandbox **rejects** (no card product, U6) → spend **reversed → net-zero refund**, with a `Card Open` + `Card Open Reversal` ledger pair and the order left `Failed`. The rejection is **definitive**, so the auto-refund path fires (not the ambiguous `PendingProvider` branch).
+- [x] Induced failure: **insufficient balance → refused fail-closed** (no debit, no order row)
+- [ ] FE click-through on `card/carddetail.aspx` (FE→API hops) — **manual FE pass**
+- [ ] *Live only (U6):* success path — holder/KYC + `card_transaction:create` finalization — needs a real card product; **deferred to live per SD-10**
+- **Defects found (logged on [#60](https://github.com/egunawan85/kash-cards/pull/60); not fixed here — card-path logic):** (1) NULL `DepositAmountMaxQuotaForActiveCard` → `Convert.ToDouble(null)=0` rejects *every* buy of that card type; (2) the max-exceeded message reads "Minimum…" (should be "Maximum"); (3) the seeded reference card type ships with NULL deposit quotas (unbuyable until set).
 
-**Slice 2.3 — Top-up end-to-end.**
-- [ ] Top-up on `card/mycarddetail.aspx` → `CardService.depositCard` → `/v1/card/deposit` → INT `CardSpendService.TopUp` → WasabiCard `depositCard`
-- [ ] Balance debited; `card_transaction:deposit` finalization lands; card balance reflects it
-- [ ] Failure path: refund via `WalletService.CreditRefund` + cross-check (`getDepositOperation`); legible UI
+**Slice 2.3 — Top-up end-to-end. — ◐ engine covered (integration suite); not driven live (no smoke-owned card).**
+- [x] Debit→provider-fail→refund is the **same `CardSpendService` engine** as buy, covered in-process by `QryptoCard.Tests.Integration` (`TopUp_InsufficientBalance_FailsClosed_NoDebit`, `ReverseForOrder_ClaimGated_RefundsOnceAndIsIdempotent`)
+- [ ] *Live:* drive top-up on a real card — needs a successfully-opened card (U6); **deferred to live**
+- [ ] FE click-through on `card/mycarddetail.aspx` — **manual FE pass**
 
 **Slice 2.4 — Card detail / balance / sensitive.**
 - [ ] `/card/info` + `/card/balanceInfo` render correctly

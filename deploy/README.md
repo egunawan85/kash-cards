@@ -146,7 +146,24 @@ a fetch (no needless re-restore); `obj/`/`bin/` are cleaned per-project by
 to git via an environment-injected `http.extraheader` — never written to disk, the
 remote URL, or argv. (The **first** `update` after this change re-clones from
 scratch, since the box still holds the old non-git source tree; subsequent ones are
-incremental.) git must be installed on the VM.
+incremental.)
+
+**Prerequisites for the build-on-box fetch (all provisioned by `vm-bootstrap.ps1` /
+seeding — called out because they had never been exercised end-to-end before #65):**
+- **git** is installed on the VM by `vm-bootstrap.ps1` (MinGit, portable, to
+  `C:\Tools\git` — where `vm-fetch-source.ps1`'s `Resolve-Git` looks). No system git
+  needed.
+- **`REPO-TOKEN`** (a GitHub read token for the private repo) must exist in Key Vault.
+  It is an **operator secret**: put `REPO_TOKEN=…` in `deploy/secrets/.vault` and run
+  `deploy/scripts/secrets/seed-kv-secrets.sh` to upload it (seeded as `REPO-TOKEN`).
+  `deploy.sh update` does **not** seed Key Vault — editing `.vault` alone is not enough.
+- On-box scripts resolve **`az` by full path** (`C:\Program Files\Microsoft SDKs\Azure\
+  CLI2\wbin\az.cmd`), not via PATH: under `az vm run-command` the agent's PATH is
+  captured at service start and does not pick up a later install.
+
+Note: `az vm run-command invoke` returns exit 0 even when the inner script fails —
+`deploy.sh` greps the captured output for the `[xx]` fatal marker, so always read the
+deploy log rather than trusting the wrapper's exit code.
 
 ## Scheduled jobs
 
