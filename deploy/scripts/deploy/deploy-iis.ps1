@@ -336,6 +336,10 @@ function Build-And-Publish {
     $packages = Join-Path $projDir 'packages.config'
     if (-not (Test-Path $csproj)) { Stop-Deploy "$Project`: csproj not found at $csproj" }
 
+    # Captured BEFORE the clean+build so the post-publish staleness guard (below) can prove
+    # the deployed DLL was actually (re)compiled in THIS run, not shipped stale.
+    $buildStart = Get-Date
+
     if (Test-Path $packages) {
         Write-Step "$Project`: nuget restore"
         & $NuGet restore $packages -PackagesDirectory (Join-Path $RepoRoot 'packages') -NonInteractive
@@ -344,22 +348,34 @@ function Build-And-Publish {
         Write-Warn "$Project`: no packages.config -- skipping restore"
     }
 
-    # Force a clean compile. vm-fetch-source extracts a fresh source zipball OVER the existing
-    # tree, but the gitignored obj/ and bin/ from a PRIOR build survive the extract. Incremental
-    # MSBuild then sees a stale compiled assembly as "up-to-date" against the (re-fetched) source
-    # and SKIPS recompiling -- silently shipping an OLD binary that no longer matches the source.
-    # Deleting the intermediates guarantees the deployed DLLs reflect the current source. (Without
-    # this, a fixed AuthV1Service once deployed as its pre-fix build, rejecting every valid login OTP.)
+    # Force a clean compile. vm-fetch-source keeps the gitignored obj/ and bin/ from a PRIOR
+    # build (git clean -ffd, no -x), so incremental MSBuild can see a stale assembly as
+    # "up-to-date" against the re-fetched source and SKIP recompiling -- silently shipping an
+    # OLD binary that no longer matches source. (A fixed AuthV1Service once deployed as its
+    # pre-fix build, rejecting every valid login OTP; and an all-tiers deploy once shipped stale
+    # Dashboard/INT DLLs because this delete failed SILENTLY -- a lingering MSBuild/Roslyn worker
+    # from a prior tier held the obj locked.) So the delete is now AUTHORITATIVE: if it can't
+    # clear the intermediates, kill the stray build servers and retry; if it still can't, ABORT.
     foreach ($stale in @((Join-Path $projDir 'obj'), (Join-Path $projDir 'bin'))) {
+        if (-not (Test-Path $stale)) { continue }
+        Write-Step "$Project`: clean $stale"
+        Remove-Item $stale -Recurse -Force -ErrorAction SilentlyContinue
         if (Test-Path $stale) {
-            Write-Step "$Project`: clean $stale"
+            Write-Warn "$Project`: clean of $stale blocked (locked) -- killing stray build servers and retrying"
+            Get-Process -Name 'VBCSCompiler', 'MSBuild' -ErrorAction SilentlyContinue | Stop-Process -Force -ErrorAction SilentlyContinue
+            Start-Sleep -Milliseconds 500
             Remove-Item $stale -Recurse -Force -ErrorAction SilentlyContinue
         }
+        if (Test-Path $stale) { Stop-Deploy "$Project`: could not remove stale $stale (locked) -- aborting rather than ship a binary that may not match source" }
     }
 
     Write-Step "$Project`: msbuild publish -> $DestDir"
     # WebPublishMethod=FileSystem publishes the web app (transformed, content +
     # bin) to publishUrl. DeployOnBuild wires the publish target into the build.
+    # UseSharedCompilation=false + nodeReuse:false: do NOT leave persistent MSBuild /
+    # Roslyn (VBCSCompiler) worker processes alive between tiers. A reused worker can hold
+    # the NEXT tier's obj/ locked (defeating the clean above) -- the root cause of the
+    # all-tiers stale-DLL bug; single-tier builds didn't accumulate the lingering workers.
     & $MSBuild $csproj `
         /p:Configuration=Release `
         /p:DeployOnBuild=true `
@@ -369,7 +385,8 @@ function Build-And-Publish {
         /p:ExcludeApp_Data=true `
         /p:publishUrl="$DestDir" `
         /p:DeleteExistingFiles=false `
-        /nologo /verbosity:minimal /m
+        /p:UseSharedCompilation=false `
+        /nologo /verbosity:minimal /m /nodeReuse:false
     if ($LASTEXITCODE -ne 0) { Stop-Deploy "$Project`: msbuild publish failed (exit $LASTEXITCODE)" }
 
     # .NET Framework web projects with the MSDeploy package targets write the
@@ -395,6 +412,20 @@ function Build-And-Publish {
         }
         Copy-Item "$pkgTmp\*" $DestDir -Recurse -Force
         Write-Ok "$Project`: published (PackageTmp -> $DestDir)"
+
+        # Fail-loud staleness guard. Copy-Item preserves the source DLL's timestamp, so a
+        # deployed <project>.dll older than this run's $buildStart means MSBuild SKIPPED the
+        # recompile and we just shipped OLD code. Refuse to pass -- this turns the previously
+        # SILENT stale-ship (the all-tiers bug) into a hard, obvious failure, for every tier
+        # that produces its own code assembly. (Content-only tiers with no such DLL are skipped.)
+        $mainDll = Join-Path $DestDir "bin\$Project.dll"
+        if (Test-Path $mainDll) {
+            $dllTime = (Get-Item $mainDll).LastWriteTime
+            if ($dllTime -lt $buildStart) {
+                Stop-Deploy "$Project`: deployed $Project.dll is STALE ($($dllTime.ToString('s')) < build start $($buildStart.ToString('s'))) -- recompile was skipped; aborting to avoid shipping code that does not match source"
+            }
+            Write-Ok "$Project`: fresh-build verified ($Project.dll @ $($dllTime.ToString('s')))"
+        }
     } elseif (Test-Path (Join-Path $DestDir 'Web.config')) {
         Write-Ok "$Project`: published to $DestDir"
     } else {
