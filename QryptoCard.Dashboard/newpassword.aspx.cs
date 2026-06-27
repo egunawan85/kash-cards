@@ -72,7 +72,7 @@ namespace QryptoCard.Dashboard
                 return;
             }
             string pwMsg;
-            if (!PasswordPolicy.Validate(txtPassword.Value, out pwMsg))
+            if (!PasswordPolicy.Validate((txtPassword.Value ?? "").Trim(), out pwMsg))
             {
                 divfailed.Visible = true;
                 lblFailed.Text = pwMsg;

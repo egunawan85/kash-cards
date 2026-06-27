@@ -173,7 +173,7 @@ namespace QryptoCard.Dashboard
                     return;
                 }
                 string pwMsg;
-                if (!PasswordPolicy.Validate(pw, out pwMsg))
+                if (!PasswordPolicy.Validate(pw.Trim(), out pwMsg))
                 {
                     showMsg(false, pwMsg);
                     return;
