@@ -218,6 +218,35 @@ done
 # -Service param fragment for the run-command parameter list (empty when no svc).
 svc_param() { [[ -n "$SVC" ]] && printf 'Service=%s' "$SVC"; }
 
+# Build targets, one per line: the single SVC if given, else every tier alias from
+# sites.json (the 'kash-'-stripped appPool name).
+build_targets() {
+  if [[ -n "$SVC" ]]; then
+    printf '%s\n' "$SVC"
+  else
+    grep -oE '"appPool"[[:space:]]*:[[:space:]]*"kash-[^"]+"' "$SITES_JSON" \
+      | sed -E 's/.*"kash-([^"]+)"/\1/'
+  fi
+}
+
+# Build+publish each target via its OWN run-command. The all-tiers update/build does
+# NOT build all 12 in a single deploy-iis call: a per-tier run-command is an isolated
+# process, so no MSBuild/Roslyn worker carries an obj lock into the next tier (that was
+# the silent stale-DLL bug), and each build fits the run-command time budget (one all-12
+# call ran long enough to be cut off mid-loop once builds actually recompiled).
+# deploy-iis.ps1's per-tier staleness guard then fails the deploy loudly if any tier
+# still ships a stale binary.
+run_deploy_iis() {
+  local tier n=0
+  while IFS= read -r tier; do
+    [[ -z "$tier" ]] && continue
+    run_on_vm "$DEPLOY_SCRIPTS/deploy-iis.ps1" "Service=$tier"
+    n=$((n + 1))
+  done < <(build_targets)
+  # Never let a malformed/empty target list pass as a "successful" no-op deploy.
+  [[ "$n" -gt 0 ]] || die "no build targets resolved (check $SITES_JSON) -- refusing a no-op deploy"
+}
+
 case "$CMD" in
 
   update)
@@ -230,7 +259,7 @@ case "$CMD" in
     if [[ "$WITH_SCHEMA" -eq 1 ]]; then
       run_on_vm "$DEPLOY_SCRIPTS/vm-migrate.ps1" "Env=$ENV"
     fi
-    run_on_vm "$DEPLOY_SCRIPTS/deploy-iis.ps1"     "$(svc_param)"
+    run_deploy_iis
     run_on_vm "$DEPLOY_SCRIPTS/inject-secrets.ps1" "$(svc_param)"
     run_on_vm "$DEPLOY_SCRIPTS/vm-iis-ops.ps1"     "Action=start $(svc_param)"
     log "update complete${SVC:+ (tier: $SVC)}"
@@ -238,7 +267,7 @@ case "$CMD" in
 
   build)
     # Build + publish from the source already on the box. No fetch, no secrets.
-    run_on_vm "$DEPLOY_SCRIPTS/deploy-iis.ps1" "$(svc_param)"
+    run_deploy_iis
     ;;
 
   sync)
