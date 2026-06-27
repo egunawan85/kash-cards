@@ -57,10 +57,23 @@ $owner = $Matches[1]; $repo = $Matches[2]
 $cloneUrl = "https://github.com/$owner/$repo.git"
 
 # -- Token (private repo): prefer Key Vault via the VM managed identity. --------
-if (-not $Token -and $KvName -and (Get-Command az -ErrorAction SilentlyContinue)) {
-    & az login --identity --output none 2>$null
+# Resolve az by full path, NOT via PATH alone: this script runs under
+# `az vm run-command` (guest-agent/SYSTEM context) whose PATH is captured when the
+# agent starts and does NOT pick up an az install that landed afterward -- so a bare
+# `Get-Command az` finds nothing, the token read silently no-ops, and the private
+# clone runs unauthenticated and fails. Same stale-PATH reason this script resolves
+# git by full path (Resolve-Git) and inject-secrets.ps1 resolves az the same way.
+$az = (Get-Command az -ErrorAction SilentlyContinue).Source
+if (-not $az) {
+    foreach ($cand in @(
+        'C:\Program Files\Microsoft SDKs\Azure\CLI2\wbin\az.cmd',
+        'C:\Program Files (x86)\Microsoft SDKs\Azure\CLI2\wbin\az.cmd'
+    )) { if (Test-Path $cand) { $az = $cand; break } }
+}
+if (-not $Token -and $KvName -and $az) {
+    & $az login --identity --output none 2>$null
     if ($LASTEXITCODE -eq 0) {
-        $kvTok = (& az keyvault secret show --vault-name $KvName --name 'REPO-TOKEN' --query value -o tsv 2>$null)
+        $kvTok = (& $az keyvault secret show --vault-name $KvName --name 'REPO-TOKEN' --query value -o tsv 2>$null)
         if (-not [string]::IsNullOrWhiteSpace($kvTok)) { $Token = $kvTok; Step 'using git token from Key Vault (REPO-TOKEN)' }
     }
 }
@@ -83,14 +96,27 @@ function Clear-GitAuthEnv {
     Remove-Item Env:GIT_CONFIG_COUNT, Env:GIT_CONFIG_KEY_0, Env:GIT_CONFIG_VALUE_0 -ErrorAction SilentlyContinue
 }
 
-# -- git helper: run, swallow git's stderr progress/warnings (which would spawn a
-# NativeCommandError under $ErrorActionPreference=Stop even on success), and gate
-# strictly on $LASTEXITCODE. Custom Die messages never echo the args, and auth
-# rides in the environment (not argv), so the token can't leak through an error
-# path. (NativeCommandError-suppression pattern from runegate.) ----------------
+# -- git helper: run git and gate strictly on $LASTEXITCODE. Custom Die messages
+# never echo the args, and auth rides in the environment (not argv), so the token
+# can't leak through an error path.
+#
+# The parameter is $GitArgs, NOT $Args: `$Args` is a PowerShell AUTOMATIC variable,
+# and declaring a param with that name does NOT bind the passed array to it -- it
+# stays empty, so `& $git @Args` runs git with NO arguments. git then prints its
+# usage and exits non-zero, and the gate Dies with a misleading "git clone failed
+# (token valid?)". This is the real reason the build-on-box fetch never worked:
+# every git op ran argument-less. (Verified on-box: a param named $Args binds
+# Count=0; renamed to $GitArgs it binds Count=1 and git runs.)
+#
+# Also run git under 'Continue', not the script-level 'Stop': git streams progress
+# to stderr, and a 2>&1 under 'Stop' would turn the first stderr record into a
+# terminating error mid-run. Capture the merged stream and read the real exit code
+# (the runegate-infra pattern).
 function Git-Do {
-    param([string[]]$Args, [string]$ErrMsg)
-    try { & $git @Args 2>&1 | Out-Null } catch { }
+    param([string[]]$GitArgs, [string]$ErrMsg)
+    $prev = $ErrorActionPreference
+    $ErrorActionPreference = 'Continue'
+    try { $null = & $git @GitArgs 2>&1 } finally { $ErrorActionPreference = $prev }
     if ($LASTEXITCODE -ne 0) { Die $ErrMsg }
 }
 

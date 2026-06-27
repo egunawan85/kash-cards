@@ -87,6 +87,9 @@ $AZ_CLI_SHA256        = ''                                                      
 $GO_SQLCMD_VERSION    = '1.8.0'
 $GO_SQLCMD_URL        = "https://github.com/microsoft/go-sqlcmd/releases/download/v$GO_SQLCMD_VERSION/sqlcmd-windows-amd64.zip"
 $GO_SQLCMD_SHA256     = 'fcfc2960426637e049d961722ad5eed6f4a824c9724163ef7f681fc568420b41'
+$MINGIT_VERSION       = '2.54.0'                                                 # portable git for build-on-box source fetch
+$MINGIT_URL           = "https://github.com/git-for-windows/git/releases/download/v$MINGIT_VERSION.windows.1/MinGit-$MINGIT_VERSION-64-bit.zip"
+$MINGIT_SHA256        = '04f937e1f0918b17b9be6f2294cb2bb66e96e1d9832d1c298e2de088a1d0e668'
 $VS_BUILDTOOLS_URL    = 'https://aka.ms/vs/17/release/vs_BuildTools.exe'
 $VS_BUILDTOOLS_SHA256 = ''                                                       # unpinned: aka.ms redirector
 $SQL_SSEI_URL         = 'https://go.microsoft.com/fwlink/?linkid=2216019'        # SQL Server Express SSEI bootstrapper
@@ -332,6 +335,33 @@ if (Test-Path $nugetPath) {
     Invoke-WebRequest -Uri 'https://dist.nuget.org/win-x86-commandline/latest/nuget.exe' -OutFile $nugetPath -UseBasicParsing
     if (-not (Test-Path $nugetPath)) { Stop-Bootstrap "nuget download did not produce $nugetPath" }
     Write-Ok "nuget installed: $nugetPath"
+}
+
+# ===========================================================================
+# Step 3c. git (MinGit) -- portable, self-contained git for build-on-box source
+# fetch. deploy/scripts/deploy/vm-fetch-source.ps1 pulls the source via an
+# incremental `git clone/fetch` and resolves the binary at one of its well-known
+# locations (C:\Tools\git\cmd\git.exe is in that list), so install MinGit there.
+# Portable zip (no top-level folder): extracts cmd/, mingw64/, usr/ at the root,
+# so $dest\cmd\git.exe lands directly. No MSI, no installer service, no reboot.
+# ===========================================================================
+$gitExe = 'C:\Tools\git\cmd\git.exe'
+if (Test-Path $gitExe) {
+    Write-Ok "git (MinGit) already installed: $gitExe"
+} else {
+    $zipPath = Join-Path $CACHE_DIR 'mingit.zip'
+    Get-VerifiedDownload -Url $MINGIT_URL -OutFile $zipPath -ExpectedSha256 $MINGIT_SHA256 -Label "MinGit $MINGIT_VERSION"
+    Write-Step "extracting MinGit to C:\Tools\git"
+    New-Item -ItemType Directory -Path 'C:\Tools\git' -Force | Out-Null
+    Expand-Archive -Path $zipPath -DestinationPath 'C:\Tools\git' -Force
+    if (-not (Test-Path $gitExe)) {
+        Stop-Bootstrap "MinGit extraction did not produce $gitExe"
+    }
+    $sysPath = [Environment]::GetEnvironmentVariable('PATH', 'Machine')
+    if ($sysPath -notlike '*C:\Tools\git\cmd*') {
+        [Environment]::SetEnvironmentVariable('PATH', "$sysPath;C:\Tools\git\cmd", 'Machine')
+    }
+    Write-Ok "git installed: $gitExe ($(& $gitExe --version))"
 }
 
 # ===========================================================================
@@ -718,6 +748,7 @@ Write-Host '  Installed:'
 Write-Host '    IIS + ASP.NET 4.x + WCF HTTP/Non-HTTP Activation   hosts the 12 kash-cards sites'
 Write-Host '    IIS URL Rewrite Module 2.1                         per-app web.config <rewrite> sections'
 Write-Host '    go-sqlcmd                                          C:\Tools\sqlcmd.exe'
+Write-Host '    git (MinGit, portable)                             C:\Tools\git\cmd\git.exe (build-on-box source fetch)'
 Write-Host '    VS 2022 Build Tools                                WebBuildTools + .NET FX 4.6.2 AND 4.7.2 targeting packs (build on-box)'
 Write-Host "    SQL Server Express ($SqlInstance)                     127.0.0.1:1433 loopback-only, mixed-mode auth"
 Write-Host "    SQL login $DbAppLogin                              db_owner on [$DbName] ONLY (least privilege)"
