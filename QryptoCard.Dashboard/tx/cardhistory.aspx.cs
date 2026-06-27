@@ -209,7 +209,7 @@ namespace QryptoCard.Dashboard.tx
             var sb = new System.Text.StringBuilder();
             sb.Append("<label class=\"tx-cardselect\">Card <select id=\"tx-card-select\"><option value=\"all\">All cards</option>");
             foreach (var c in cards)
-                sb.Append("<option value=\"" + Server.HtmlEncode(c) + "\">•••• " + Server.HtmlEncode(c) + "</option>");
+                sb.Append("<option value=\"" + Server.HtmlEncode(c) + "\">" + MaskCard(c) + "</option>");
             sb.Append("</select></label>");
             return sb.ToString();
         }
@@ -224,11 +224,16 @@ namespace QryptoCard.Dashboard.tx
         protected string FeedWhen(object o) { var r = o as FeedRow; return r != null ? r.When.ToString("dd MMM, HH:mm", CultureInfo.InvariantCulture) : ""; }
         protected string FeedAmtClass(object o) { var r = o as FeedRow; return "amt " + (r != null && r.IsCredit ? "in" : "out"); }
         protected string FeedAmt(object o) { var r = o as FeedRow; return Server.HtmlEncode(r != null ? r.AmountText : ""); }
+        // Masked card label: full card-number shape, only the last 4 shown — "•••• •••• •••• 1234".
+        static string MaskCard(string last4)
+        {
+            return "•••• •••• •••• " + System.Web.HttpUtility.HtmlEncode(last4 ?? "");
+        }
         protected string FeedCardChip(object o)
         {
             var r = o as FeedRow;
             if (r == null || string.IsNullOrEmpty(r.CardLast4)) return "";
-            return "<span class=\"cardchip\">•••• " + Server.HtmlEncode(r.CardLast4) + "</span>";
+            return "<span class=\"cardchip\">" + MaskCard(r.CardLast4) + "</span>";
         }
         // Muted sub-line under the merchant: humanized type · date · masked-card chip.
         protected string FeedSubline(object o)
@@ -238,7 +243,7 @@ namespace QryptoCard.Dashboard.tx
             var parts = new List<string>();
             if (!string.IsNullOrEmpty(r.TypeLabel)) parts.Add(Server.HtmlEncode(r.TypeLabel));
             parts.Add(Server.HtmlEncode(r.When.ToString("dd MMM, HH:mm", CultureInfo.InvariantCulture)));
-            if (!string.IsNullOrEmpty(r.CardLast4)) parts.Add("<span class=\"cardchip\">•••• " + Server.HtmlEncode(r.CardLast4) + "</span>");
+            if (!string.IsNullOrEmpty(r.CardLast4)) parts.Add("<span class=\"cardchip\">" + MaskCard(r.CardLast4) + "</span>");
             return string.Join(" · ", parts);
         }
         protected string FeedTag(object o)
