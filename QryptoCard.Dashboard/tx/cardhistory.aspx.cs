@@ -1,9 +1,10 @@
-﻿using Newtonsoft.Json;
+using Newtonsoft.Json;
 using QryptoCard.Dashboard.Models;
 using QryptoCard.Dashboard.Models.Service;
 using QryptoCard.Dashboard.Services;
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using System.Web;
 using System.Web.UI;
@@ -19,36 +20,231 @@ namespace QryptoCard.Dashboard.tx
         {
             if (Common.checkID())
             {
-
-                if (!IsPostBack)
-                {
-                    getData();
-
-                }
-                else
-                {
-                    //bindData("00000000000000000001");
-                }
+                if (!IsPostBack) { getFeed(); getData(); }
             }
             else
             {
                 if (Master.checkCookies())
                 {
-                    if (!IsPostBack)
-                    {
-                        getData();
-                    }
-                    else
-                    {
-                        //bindData("00000000000000000001");
-                    }
+                    if (!IsPostBack) { getFeed(); getData(); }
                 }
                 else
                     Master.forceLogin();
             }
-            //getData();
         }
 
+        // =====================================================================
+        // Unified money-activity feed (S-F): card spends + top-ups, account-wide.
+        // Each figure is server-returned (trxCardList / depositCardList per card);
+        // nothing is computed/fabricated. Only the masked last-4 is shown, never PAN/CVV.
+        // =====================================================================
+        public class FeedRow
+        {
+            public DateTime When;
+            public string Merchant;
+            public string CardLast4;
+            public string Category;   // spend | topup | refund | fee | other
+            public bool IsCredit;
+            public bool IsDeclined;
+            public string Tag;        // "", Declined, Refund, Pending
+            public string AmountText;
+            public string GroupLabel;
+            public string SearchKey;
+        }
+        public class FeedGroup { public string Label { get; set; } public List<FeedRow> Rows { get; set; } }
+
+        void getFeed()
+        {
+            var rows = new List<FeedRow>();
+            try
+            {
+                var op = cs.getCardListAll(new CardModel());
+                if (op.Status == "success" && op.Data != null)
+                {
+                    var cards = JsonConvert.DeserializeObject<List<CardModel>>(op.Data.ToString()) ?? new List<CardModel>();
+                    foreach (var card in cards)
+                    {
+                        if (string.IsNullOrEmpty(card.CardNo)) continue;
+                        string last4 = Last4(string.IsNullOrEmpty(card.CardNumber) ? card.CardNo : card.CardNumber);
+
+                        try
+                        {
+                            var sop = cs.trxCardList(new CardModel { CardNo = card.CardNo });
+                            if (sop.Status == "success" && sop.Data != null)
+                            {
+                                var txns = JsonConvert.DeserializeObject<List<CardTransactionModel>>(sop.Data.ToString()) ?? new List<CardTransactionModel>();
+                                foreach (var t in txns) rows.Add(SpendRow(t, last4));
+                            }
+                        }
+                        catch { /* one card's spends failing must not blank the whole feed */ }
+
+                        try
+                        {
+                            var dop = cs.depositCardList(new CardDepositModel { CardNo = card.CardNo });
+                            if (dop.Status == "success" && dop.Data != null)
+                            {
+                                var deps = JsonConvert.DeserializeObject<List<CardDepositModel>>(dop.Data.ToString()) ?? new List<CardDepositModel>();
+                                foreach (var d in deps) rows.Add(DepositRow(d, last4));
+                            }
+                        }
+                        catch { /* one card's deposits failing must not blank the whole feed */ }
+                    }
+                }
+            }
+            catch { /* leave the empty-state */ }
+
+            var ordered = rows.Where(r => r != null && r.When > DateTime.MinValue)
+                              .OrderByDescending(r => r.When).Take(150).ToList();
+            foreach (var r in ordered) r.GroupLabel = GroupOf(r.When);
+
+            if (ordered.Count > 0)
+            {
+                var groups = ordered.GroupBy(r => r.GroupLabel)
+                                    .Select(grp => new FeedGroup { Label = grp.Key, Rows = grp.ToList() })
+                                    .ToList();
+                rptGroups.Visible = true;
+                rptGroups.DataSource = groups;
+                rptGroups.DataBind();
+                divNoFeed.Visible = false;
+                divCardFilter.InnerHtml = BuildCardChips(ordered);
+            }
+            else
+            {
+                rptGroups.Visible = false;
+                divNoFeed.Visible = true;
+                divCardFilter.Visible = false;
+            }
+        }
+
+        FeedRow SpendRow(CardTransactionModel t, string last4)
+        {
+            string type = (t.Type ?? "").ToLowerInvariant();
+            bool declined = IsDeclinedStatus(t.Status);
+            string cat = (type == "refund") ? "refund"
+                        : (type == "maintain_fee" || type == "card_patch_fee") ? "fee"
+                        : (type == "verification" || type == "void") ? "other"
+                        : "spend";
+            bool credit = (cat == "refund");
+            string tag = declined ? "Declined" : (cat == "refund" ? "Refund" : "");
+            decimal amt = (decimal)(t.Amount ?? 0);
+            decimal auth = (decimal)(t.AuthorizedAmount ?? 0);
+            string cur = string.IsNullOrEmpty(t.Currency) ? "USD" : t.Currency;
+            return new FeedRow
+            {
+                When = t.TransactionTime ?? t.SettleDate ?? DateTime.MinValue,
+                Merchant = string.IsNullOrEmpty(t.MerchantName) ? "Card transaction" : t.MerchantName,
+                CardLast4 = last4,
+                Category = cat,
+                IsCredit = credit,
+                IsDeclined = declined,
+                Tag = tag,
+                AmountText = MoneyText(credit, amt, cur, auth),
+                SearchKey = (t.MerchantName ?? "").ToLowerInvariant()
+            };
+        }
+
+        FeedRow DepositRow(CardDepositModel d, string last4)
+        {
+            string sym = string.IsNullOrEmpty(d.Symbol) ? "USDT" : d.Symbol;
+            bool ok = string.Equals(d.Status, "success", StringComparison.OrdinalIgnoreCase);
+            decimal amt = (decimal)(d.Amount ?? 0);
+            string cur = string.IsNullOrEmpty(d.Currency) ? "USD" : d.Currency;
+            return new FeedRow
+            {
+                When = d.DateTransaction ?? DateTime.MinValue,
+                Merchant = "Top up · " + sym,
+                CardLast4 = last4,
+                Category = "topup",
+                IsCredit = true,
+                IsDeclined = false,
+                Tag = ok ? "" : "Pending",
+                AmountText = MoneyText(true, amt, cur, amt),
+                SearchKey = "top up " + sym.ToLowerInvariant()
+            };
+        }
+
+        static string Last4(string s)
+        {
+            if (string.IsNullOrEmpty(s)) return "";
+            var digits = new string(s.Where(char.IsDigit).ToArray());
+            return digits.Length >= 4 ? digits.Substring(digits.Length - 4) : digits;
+        }
+
+        static string MoneyText(bool credit, decimal amt, string cur, decimal authUsd)
+        {
+            string sign = credit ? "+" : "-";
+            decimal a = Math.Abs(amt);
+            if (string.Equals(cur, "USD", StringComparison.OrdinalIgnoreCase))
+                return sign + "$" + a.ToString("0.00", CultureInfo.InvariantCulture);
+            string main = sign + cur + " " + a.ToString("#,##0.##", CultureInfo.InvariantCulture);
+            if (authUsd > 0) main += " (≈ $" + Math.Abs(authUsd).ToString("0.00", CultureInfo.InvariantCulture) + ")";
+            return main;
+        }
+
+        static bool IsDeclinedStatus(string s)
+        {
+            s = (s ?? "").ToLowerInvariant();
+            return s == "failed" || s == "fail" || s == "declined" || s == "reject" || s == "rejected";
+        }
+
+        static string GroupOf(DateTime when)
+        {
+            var today = DateTime.UtcNow.Date;
+            var d = when.Date;
+            if (d == today) return "Today";
+            if (d == today.AddDays(-1)) return "Yesterday";
+            if (d > today.AddDays(-7)) return "This week";
+            return "Earlier";
+        }
+
+        string BuildCardChips(List<FeedRow> rows)
+        {
+            var cards = rows.Select(r => r.CardLast4).Where(c => !string.IsNullOrEmpty(c)).Distinct().ToList();
+            if (cards.Count < 2) { divCardFilter.Visible = false; return ""; }
+            var sb = new System.Text.StringBuilder();
+            sb.Append("<button type=\"button\" class=\"tx-chip is-active\" data-card=\"all\">All cards</button>");
+            foreach (var c in cards)
+                sb.Append("<button type=\"button\" class=\"tx-chip\" data-card=\"" + Server.HtmlEncode(c) + "\">•••• " + Server.HtmlEncode(c) + "</button>");
+            return sb.ToString();
+        }
+
+        // ---- Repeater binding helpers (inner row data item = FeedRow) ----
+        protected string FeedRowClass(object o) { var r = o as FeedRow; return "txn" + (r != null && r.IsDeclined ? " declined" : ""); }
+        protected string FeedIcClass(object o) { var r = o as FeedRow; return "ic" + (r != null && r.IsCredit ? " tx-ic-in" : ""); }
+        protected string FeedCat(object o) { var r = o as FeedRow; return r != null ? r.Category : ""; }
+        protected string FeedCardKey(object o) { var r = o as FeedRow; return r != null ? r.CardLast4 : ""; }
+        protected string FeedSearchKey(object o) { var r = o as FeedRow; return Server.HtmlEncode(r != null ? r.SearchKey : ""); }
+        protected string FeedMerchant(object o) { var r = o as FeedRow; return Server.HtmlEncode(r != null ? r.Merchant : ""); }
+        protected string FeedWhen(object o) { var r = o as FeedRow; return r != null ? r.When.ToString("dd MMM, HH:mm", CultureInfo.InvariantCulture) : ""; }
+        protected string FeedAmtClass(object o) { var r = o as FeedRow; return "amt " + (r != null && r.IsCredit ? "in" : "out"); }
+        protected string FeedAmt(object o) { var r = o as FeedRow; return Server.HtmlEncode(r != null ? r.AmountText : ""); }
+        protected string FeedCardChip(object o)
+        {
+            var r = o as FeedRow;
+            if (r == null || string.IsNullOrEmpty(r.CardLast4)) return "";
+            return "<span class=\"cardchip\">•••• " + Server.HtmlEncode(r.CardLast4) + "</span>";
+        }
+        protected string FeedTag(object o)
+        {
+            var r = o as FeedRow;
+            if (r == null || string.IsNullOrEmpty(r.Tag)) return "";
+            string cls = r.Tag == "Declined" ? "tx-tag-declined" : r.Tag == "Refund" ? "tx-tag-refund" : "tx-tag-pending";
+            return " <span class=\"tx-tag " + cls + "\">" + Server.HtmlEncode(r.Tag) + "</span>";
+        }
+        protected string FeedIcon(object o)
+        {
+            var r = o as FeedRow;
+            bool credit = r != null && r.IsCredit;
+            if (credit)
+                return "<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.7\"><path d=\"M12 5v14M5 12l7 7 7-7\"/></svg>";
+            return "<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.7\"><rect x=\"2\" y=\"5\" width=\"20\" height=\"14\" rx=\"3\"/><path d=\"M2 10h20\"/></svg>";
+        }
+
+        // =====================================================================
+        // Card orders (purchase orders + pay-link / cancel). TRANSITIONAL: this
+        // list relocates to the My Cards page in the follow-up change; kept here
+        // for now so order management is never lost between changes.
+        // =====================================================================
         void getData()
         {
             List<CardModel> dt;
@@ -64,28 +260,11 @@ namespace QryptoCard.Dashboard.tx
                     {
                         dt[i].FirstName = dt[i].FirstName + " " + dt[i].LastName;
                         dt[i].DetailURL = KeyModel.TXCARD_URL + dt[i].ID;
-                        //if (dt[i].Status == "expired")
-                        //{
-                        //    int asa = Convert.ToInt32((DateTime.Today - dt[i].DateExpired.Value).TotalDays);
-
-                        //    if (asa == 0)
-                        //        dt[i].Param5 = "Past due";
-                        //    else if (asa == 1)
-                        //        dt[i].Param5 = "Past due 1 day";
-                        //    else
-                        //        dt[i].Param5 = "Past due " + asa.ToString() + " days";
-
-
-                        //    //dt[i].Param5 = "Past due " + Convert.ToInt32((DateTime.Today - dt[i].DateExpired.Value).TotalDays).ToString() + " days";
-                        //}
                     }
                     gvListItem.Visible = true;
                     gvListItem.DataSource = null;
                     gvListItem.DataSource = dt;
                     gvListItem.DataBind();
-
-                    //gvListItem.Columns[5].ItemStyle.Width = 1200;
-                    //gvListItem.Columns[8].ItemStyle.Width = 500;
                     divnorow.Visible = false;
                 }
                 else
@@ -105,61 +284,13 @@ namespace QryptoCard.Dashboard.tx
             }
         }
 
-        protected Boolean IsStatusCreated(string i)
-        {
-            if (i == "created")
-                return true;
-            else
-                return false;
-        }
-
-        protected Boolean IsStatusInProgress(string i)
-        {
-            if (i == "in progress")
-                return true;
-            else
-                return false;
-        }
-
-        protected Boolean IsStatusPaid(string i)
-        {
-            if (i == "paid")
-                return true;
-            else
-                return false;
-        }
-
-        protected Boolean IsStatusCreatedBadge(string i)
-        {
-            if (i == "created")
-                return true;
-            else
-                return false;
-        }
-
-        protected Boolean IsStatusCompleted(string i)
-        {
-            if (i == "completed" || i == "success")
-                return true;
-            else
-                return false;
-        }
-
-        protected Boolean IsStatusCancelled(string i)
-        {
-            if (i == "cancelled")
-                return true;
-            else
-                return false;
-        }
-
-        protected Boolean IsStatusExpired(string i)
-        {
-            if (i == "expired")
-                return true;
-            else
-                return false;
-        }
+        protected Boolean IsStatusCreated(string i) { return i == "created"; }
+        protected Boolean IsStatusInProgress(string i) { return i == "in progress"; }
+        protected Boolean IsStatusPaid(string i) { return i == "paid"; }
+        protected Boolean IsStatusCreatedBadge(string i) { return i == "created"; }
+        protected Boolean IsStatusCompleted(string i) { return i == "completed" || i == "success"; }
+        protected Boolean IsStatusCancelled(string i) { return i == "cancelled"; }
+        protected Boolean IsStatusExpired(string i) { return i == "expired"; }
 
         protected void gvListItem_PageIndexChanging(object sender, GridViewPageEventArgs e)
         {
@@ -169,25 +300,10 @@ namespace QryptoCard.Dashboard.tx
 
         protected void gvListItem_RowCreated(object sender, GridViewRowEventArgs e)
         {
-            //if ((e.Row.RowType == DataControlRowType.Header))
-            //{
-            //    // For first column set to 200 px
-            //    TableCell cell = e.Row.Cells[0];
-            //    cell.Width = new Unit("50px");
-            //    // For others set to 50 px
-            //    // You can set all the width individually
-            //    for (int i = 1; (i <= (e.Row.Cells.Count - 1)); i++)
-            //    {
-            //        // Mind that i used i=1 not 0 because the width of cells(0) has already been set
-            //        TableCell cell2 = e.Row.Cells[i];
-            //        cell2.Width = new Unit("1000px");
-            //    }
-            //}
         }
 
         // A row's Cancel button posts back here; surface a SERVER-rendered confirm overlay
-        // (Visible toggled in code) rather than a JS-shown modal — the NewDesign shell loads no
-        // Bootstrap/jQuery, so the old `$('#myModalCancel').modal('show')` silently did nothing.
+        // (Visible toggled in code) rather than a JS-shown modal — the shell loads no Bootstrap.
         protected void btnCancel_ServerClick(object sender, EventArgs e)
         {
             HtmlButton btn = (HtmlButton)sender;
@@ -220,8 +336,6 @@ namespace QryptoCard.Dashboard.tx
             }
         }
 
-        // Server-rendered inline result banner (replaces the success/error Bootstrap modals that
-        // silently no-op'd in the NewDesign shell). Mirrors carddetail's ShowBuyAlertInline.
         void ShowBanner(string html, bool ok)
         {
             pnlMsg.Visible = true;

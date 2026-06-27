@@ -24,6 +24,21 @@ namespace QryptoCard.Dashboard.tx
         protected global::System.Web.UI.WebControls.HiddenField hfID;
 
         /// <summary>
+        /// divCardFilter control.
+        /// </summary>
+        protected global::System.Web.UI.HtmlControls.HtmlGenericControl divCardFilter;
+
+        /// <summary>
+        /// rptGroups control.
+        /// </summary>
+        protected global::System.Web.UI.WebControls.Repeater rptGroups;
+
+        /// <summary>
+        /// divNoFeed control.
+        /// </summary>
+        protected global::System.Web.UI.HtmlControls.HtmlGenericControl divNoFeed;
+
+        /// <summary>
         /// gvListItem control.
         /// </summary>
         /// <remarks>
