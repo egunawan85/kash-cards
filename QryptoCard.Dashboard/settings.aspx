@@ -68,6 +68,8 @@
                     <div class="set-actions">
                         <asp:Button runat="server" ID="btnConfirmEmail" CssClass="btn btn-cyan" Text="Confirm new email" OnClick="btnConfirmEmail_Click" UseSubmitBehavior="false" />
                     </div>
+                    <%-- Resend reuses the send handler; styled as a subdued link, not a primary action --%>
+                    <div class="otp-resend">Didn't get a code? <asp:LinkButton runat="server" ID="lnkResendEmailOtp" Text="Resend" OnClick="btnSendEmailOtp_Click" CausesValidation="false" /></div>
                 </asp:Panel>
             </div>
         </section>
@@ -79,7 +81,7 @@
                 <h4 class="set-subh">Change password</h4>
                 <div class="set-field">
                     <label for="<%= txtCurrentPw.ClientID %>">Current password</label>
-                    <asp:TextBox runat="server" ID="txtCurrentPw" TextMode="Password" placeholder="••••••••••" autocomplete="current-password" />
+                    <asp:TextBox runat="server" ID="txtCurrentPw" TextMode="Password" placeholder="Enter your current password" autocomplete="current-password" />
                 </div>
                 <div class="set-row-2">
                     <div class="set-field">
