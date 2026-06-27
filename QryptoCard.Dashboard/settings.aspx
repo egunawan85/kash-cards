@@ -86,7 +86,7 @@
                 <div class="set-row-2">
                     <div class="set-field">
                         <label for="<%= txtNewPw.ClientID %>">New password</label>
-                        <asp:TextBox runat="server" ID="txtNewPw" TextMode="Password" placeholder="At least 8 characters" autocomplete="new-password" />
+                        <asp:TextBox runat="server" ID="txtNewPw" TextMode="Password" placeholder="At least 12 chars, mixed types" autocomplete="new-password" />
                     </div>
                     <div class="set-field">
                         <label for="<%= txtConfirmPw.ClientID %>">Confirm new password</label>

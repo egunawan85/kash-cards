@@ -144,8 +144,8 @@ namespace QryptoCard.Dashboard.card
                 // modal instead of leaving the page showing "0 USD" with no feedback.
                 lblalert.InnerHtml = string.IsNullOrEmpty(op.Message)
                     ? "Unable to load card details. Please try again."
-                    : op.Message;
-                ScriptManager.RegisterClientScriptBlock(this, GetType(), "Pop", "var isModalAlert = true", true);
+                    : Server.HtmlEncode(op.Message);
+                ShowBuyAlertInline();
             }
 
         }
@@ -153,6 +153,22 @@ namespace QryptoCard.Dashboard.card
         void enableButton()
         {
             btnBuyX.Enabled = true;
+        }
+
+        // Show the purchase/validation result in an inline banner next to the Buy button. The
+        // content is already set on lblalert (kept for the #alertModal path); mirror it into the
+        // always-visible inline panel and scroll it into view. The Bootstrap modal's show() is a
+        // no-op when the NewDesign shell hasn't loaded Bootstrap JS, which is why results used to
+        // fall to the page bottom and users re-clicked Buy (the observed double-submit). The
+        // isModalAlert flag is still set for shells where the modal does fire.
+        void ShowBuyAlertInline()
+        {
+            pnlBuyMsg.Visible = true;
+            lblBuyMsg.InnerHtml = lblalert.InnerHtml;
+            string js = "var isModalAlert = true; (function(){var m=document.getElementById('"
+                + pnlBuyMsg.ClientID
+                + "'); if(m){m.scrollIntoView({behavior:'smooth',block:'center'});}})();";
+            ScriptManager.RegisterClientScriptBlock(this, GetType(), "Pop", js, true);
         }
 
         void checkHolder(string id)
@@ -199,21 +215,21 @@ namespace QryptoCard.Dashboard.card
                 {
                     enableButton();
                     lblalert.InnerHtml = "First name cannot be empty";
-                    ScriptManager.RegisterClientScriptBlock(this, GetType(), "Pop", "var isModalAlert = true", true);
+                    ShowBuyAlertInline();
                     return;
                 }
                 if (txtLastName.Value == "")
                 {
                     enableButton();
                     lblalert.InnerHtml = "Last name cannot be empty";
-                    ScriptManager.RegisterClientScriptBlock(this, GetType(), "Pop", "var isModalAlert = true", true);
+                    ShowBuyAlertInline();
                     return;
                 }
                 if (txtEmail.Value == "")
                 {
                     enableButton();
                     lblalert.InnerHtml = "Email name cannot be empty";
-                    ScriptManager.RegisterClientScriptBlock(this, GetType(), "Pop", "var isModalAlert = true", true);
+                    ShowBuyAlertInline();
                     return;
                 }
 
@@ -241,7 +257,7 @@ namespace QryptoCard.Dashboard.card
             {
                 enableButton();
                 lblalert.InnerHtml = "Deposit amount cannot be empty";
-                ScriptManager.RegisterClientScriptBlock(this, GetType(), "Pop", "var isModalAlert = true", true);
+                ShowBuyAlertInline();
                 return;
             }
 
@@ -252,14 +268,14 @@ namespace QryptoCard.Dashboard.card
             {
                 enableButton();
                 lblalert.InnerHtml = "Minimum initial deposit amount is " + hfMinDeposit.Value + " USD";
-                ScriptManager.RegisterClientScriptBlock(this, GetType(), "Pop", "var isModalAlert = true", true);
+                ShowBuyAlertInline();
                 return;
             }
             if (amt > max)
             {
                 enableButton();
                 lblalert.InnerHtml = "Maximum initial deposit amount is " + hfMaxDeposit.Value + " USD";
-                ScriptManager.RegisterClientScriptBlock(this, GetType(), "Pop", "var isModalAlert = true", true);
+                ShowBuyAlertInline();
                 return;
             }
 
@@ -280,7 +296,7 @@ namespace QryptoCard.Dashboard.card
             {
                 enableButton();
                 lblalert.InnerHtml = BuildSpendError(op.Message);
-                ScriptManager.RegisterClientScriptBlock(this, GetType(), "Pop", "var isModalAlert = true", true);
+                ShowBuyAlertInline();
                 return;
             }
         }

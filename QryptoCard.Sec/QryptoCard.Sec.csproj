@@ -58,6 +58,7 @@
     <Compile Include="RateLimiter.cs" />
     <Compile Include="ClientIpResolver.cs" />
     <Compile Include="LockoutPolicy.cs" />
+    <Compile Include="PasswordPolicy.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

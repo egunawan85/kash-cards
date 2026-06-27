@@ -162,7 +162,17 @@
                 </div>
             </div>
 
-            <asp:Button runat="server" ID="btnBuyX" OnClick="btnBuy_ServerClick" CssClass="btn btn-cyan btn-lg cd-buy" Text="Buy" OnClientClick="this.disabled=true;" UseSubmitBehavior="false" />
+            <asp:Button runat="server" ID="btnBuyX" OnClick="btnBuy_ServerClick" CssClass="btn btn-cyan btn-lg cd-buy" Text="Buy" OnClientClick="this.disabled=true; this.value='Processing...';" UseSubmitBehavior="false" />
+
+            <%-- In-context purchase result. The error path also writes into the #alertModal
+                 Bootstrap modal, but that modal's .modal('show') silently no-ops when the
+                 NewDesign shell hasn't loaded the Bootstrap JS — so the message fell to the
+                 bottom of the page and users re-clicked Buy (the observed double-submit). This
+                 inline banner always renders next to the action, independent of modal JS. --%>
+            <asp:Panel runat="server" ID="pnlBuyMsg" Visible="false"
+                       style="margin-top:14px;padding:12px 14px;border:1px solid #d9534f;border-radius:10px;background:rgba(217,83,79,.08);color:#d9534f;">
+                <span runat="server" id="lblBuyMsg"></span>
+            </asp:Panel>
         </section>
         <!--end::Buy form-->
 

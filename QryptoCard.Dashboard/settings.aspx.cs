@@ -172,9 +172,10 @@ namespace QryptoCard.Dashboard
                     showMsg(false, "The new passwords do not match.");
                     return;
                 }
-                if (pw.Length < 8)
+                string pwMsg;
+                if (!PasswordPolicy.Validate(pw.Trim(), out pwMsg))
                 {
-                    showMsg(false, "Your new password must be at least 8 characters.");
+                    showMsg(false, pwMsg);
                     return;
                 }
 
@@ -183,7 +184,7 @@ namespace QryptoCard.Dashboard
                 var op = us.updatePassword(new PasswordChangeModel
                 {
                     CurrentPassword = Secure.EncryptAPP(cur),
-                    Password = Secure.EncryptAPP(pw)
+                    Password = Secure.EncryptAPP(pw.Trim())
                 });
 
                 if (op.Status == "success")

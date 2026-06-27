@@ -91,11 +91,12 @@ namespace QryptoCard.Dashboard
                 lblFailed.Text = "Repeat password cannot be empty";
                 return;
             }
-            if (txtPassword.Value.Length < 8)
+            string pwMsg;
+            if (!PasswordPolicy.Validate((txtPassword.Value ?? "").Trim(), out pwMsg))
             {
                 divfailed.Visible = true;
                 enableButton();
-                lblFailed.Text = "Your password should be 8 characters in minimum";
+                lblFailed.Text = pwMsg;
                 return;
             }
             if (txtPassword.Value.Trim() != txtPasswordRepeat.Value.Trim())
@@ -128,7 +129,7 @@ namespace QryptoCard.Dashboard
                 // longer cached in session — registration completes via the OTP
                 // verify step; the user authenticates with Bearer tokens after a
                 // subsequent login/mint.
-                adm.Password = Secure.EncryptAPP(txtPassword.Value);
+                adm.Password = Secure.EncryptAPP((txtPassword.Value ?? "").Trim());
                 var admin = ad.register(adm);
                 if (admin.Status == "success")
                 {
