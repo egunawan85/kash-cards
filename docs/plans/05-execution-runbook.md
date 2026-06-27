@@ -103,8 +103,9 @@ Scope as authored:
   Express, server bootstrap).
 - `deploy-iis.ps1` (create the IIS sites/app-pools, build-on-box, rewrite connection
   strings from environment) and `inject-secrets.ps1` (Key Vault → per-app-pool env).
-- Dev schema + seed SQL (per the pending schema-source decision) and the token tables
-  (`deploy/sql/create-token-tables.sql`).
+- Dev schema via the migration runner (`vm-migrate.ps1`: a frozen dacpac baseline plus
+  ordered run-once `deploy/sql/migrations/NNNN-*.sql`, e.g. the token tables in
+  `0001-token-tables.sql`) and the committed seed SQL (`deploy/sql/seeds/`).
 - Dev `deploy/.env` + `deploy/.vault` with dev/sandbox values and the real dev Postmark
   token.
 - Build `QryptoCard.sln`; run the test suites; report pass/fail/skip.

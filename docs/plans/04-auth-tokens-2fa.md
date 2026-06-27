@@ -23,9 +23,9 @@ Verified against merged code. The opaque-token + email-OTP system is fully built
 - [ ] **A5 — TOTP** not built (only email-OTP shipped; the TOTP path is a stub `Param2 <> 'totp'` guard)
 - [ ] **Purge worker** — the hourly expired-token purge job (24h grace) from the Revision is not implemented anywhere
 
-**On-box / DB-gated (⏳):**
-- [ ] ⏳ **A7 / T1.3 / D-4** lockout — coded but per-session; per-account enforcement needs the `FailureCount`/`Attempts` column (`deploy/sql/create-otp-lockout-columns.sql`, not yet applied)
-- [ ] ⏳ **A2 / T2.1** token tables (`create-token-tables.sql`) applied to the live DB · **T5.3** bcrypt forced-reset sequencing · email delivery confirmed (T1.2)
+**On-box / DB-gated:**
+- [x] **A7 / T1.3 / D-4** lockout — `FailureCount`/`LockoutEnd` columns applied to the live dev DB via `deploy/sql/migrations/0005-otp-lockout-columns.sql` + `0006-login-lockout-columns.sql` (run-once, recorded in the `dbo.SchemaMigrations` ledger)
+- [x] **A2 / T2.1** token tables applied to the live dev DB via `deploy/sql/migrations/0001-token-tables.sql` (run-once, ledgered) · ⏳ **T5.3** bcrypt forced-reset sequencing · email delivery confirmed (T1.2)
 
 ## Objective
 
