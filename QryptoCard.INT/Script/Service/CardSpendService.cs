@@ -71,7 +71,7 @@ namespace QryptoCard.INT.Script.Service
                     ctx.SaveChanges();
                 }
             }
-            catch (Exception dupEx) when (!string.IsNullOrEmpty(x.UserReferenceID) && WalletService.IsDuplicateKey(dupEx))
+            catch (Exception dupEx) when (!string.IsNullOrWhiteSpace(x.UserReferenceID) && WalletService.IsDuplicateKey(dupEx))
             {
                 // The winning submit already created (and owns the money path for) this order.
                 // Return ITS outcome, pointing the caller's x.ID at the original order. No debit here.
@@ -87,7 +87,9 @@ namespace QryptoCard.INT.Script.Service
                         x.Status = existing.Status;
                         return new SpendResult
                         {
-                            Success = existing.Status != StatusModel.Failed,
+                            // A still-Created original hasn't run its debit yet — don't report success to
+                            // a racing replay before the winner's money path resolves; Failed is terminal.
+                            Success = existing.Status != StatusModel.Failed && existing.Status != StatusModel.Created,
                             Status = existing.Status,
                             Message = "Request already submitted"
                         };

@@ -152,6 +152,9 @@ Check 'T4 no debit on refusal'            ($balAfter2 -eq 5) "bal=$balAfter2 (ex
 # CardSpendService.OpenCard). The provider rejects (no card product, U6) so the one
 # order debits then refunds -> net-zero; the key invariant is that the SECOND submit
 # neither inserts a second order nor debits again.
+# Note: the two posts fire SEQUENTIALLY, so this exercises the duplicate-key REPLAY path
+# (second post after the first committed), not the true concurrent-INSERT race -- that race
+# is enforced by the unique index itself (one INSERT wins, the other raises 2627).
 CreditDeposit 200
 $balB5 = Bal
 $ref5 = [Guid]::NewGuid().ToString('N')

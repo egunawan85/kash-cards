@@ -32,7 +32,12 @@ IF EXISTS (SELECT 1 FROM sys.columns
              AND name = 'UserReferenceID'
              AND (max_length = -1 OR max_length > 200))
 BEGIN
-    ALTER TABLE tblT_Card ALTER COLUMN UserReferenceID nvarchar(100) NULL;
+    -- Pre-flight: a legacy ref longer than the new width would be silently truncated (cryptic 8152).
+    -- Fail actionably instead. Harmless on re-run: once narrowed to nvarchar(100) no row can exceed it.
+    IF EXISTS (SELECT 1 FROM dbo.tblT_Card WHERE LEN(UserReferenceID) > 100)
+        RAISERROR('Cannot narrow UserReferenceID: rows >100 chars exist. Probe: SELECT ID, UserReferenceID FROM dbo.tblT_Card WHERE LEN(UserReferenceID) > 100;', 16, 1);
+    ELSE
+        ALTER TABLE tblT_Card ALTER COLUMN UserReferenceID nvarchar(100) NULL;
 END
 GO
 

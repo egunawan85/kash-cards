@@ -304,9 +304,13 @@ namespace QryptoCard.Dashboard.card
             else
             {
                 enableButton();
-                // A confirmed spend failure ends this attempt — mint a fresh key so a retry is a new
-                // order, not an idempotent replay of the failed one.
-                hfBuyRef.Value = Guid.NewGuid().ToString("N");
+                // Re-mint the idempotency key ONLY on a CONFIRMED decline ("failed") so a retry is a
+                // genuinely new order. On "error" the response was lost/ambiguous (CardService maps a
+                // timeout / transport failure to "error") and the INT tier may have ALREADY committed
+                // the order + debit — so RETAIN the key, letting a retry idempotently REPLAY the
+                // original (dup-key -> the original order if it committed, a fresh insert if it did not).
+                if (op.Status == "failed")
+                    hfBuyRef.Value = Guid.NewGuid().ToString("N");
                 lblalert.InnerHtml = BuildSpendError(op.Message);
                 ShowBuyAlertInline();
                 return;

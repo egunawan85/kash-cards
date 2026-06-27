@@ -265,7 +265,7 @@ namespace QryptoCard.INT.Script.Service.API.v1
                     return op;
                 }
 
-                if (x.UserReferenceID == null || x.UserReferenceID == "")
+                if (string.IsNullOrWhiteSpace(x.UserReferenceID))
                 {
                     op.Status = "failed";
                     op.Message = "UserReferenceID parameter cannot be null";
