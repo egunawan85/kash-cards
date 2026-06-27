@@ -60,6 +60,51 @@ namespace QryptoCard.Dashboard.card
         protected global::System.Web.UI.WebControls.Repeater rptCard;
 
         /// <summary>
+        /// hfID control.
+        /// </summary>
+        protected global::System.Web.UI.WebControls.HiddenField hfID;
+
+        /// <summary>
+        /// pnlMsg control.
+        /// </summary>
+        protected global::System.Web.UI.WebControls.Panel pnlMsg;
+
+        /// <summary>
+        /// lblMsg control.
+        /// </summary>
+        protected global::System.Web.UI.HtmlControls.HtmlGenericControl lblMsg;
+
+        /// <summary>
+        /// gvListItem control.
+        /// </summary>
+        protected global::System.Web.UI.WebControls.GridView gvListItem;
+
+        /// <summary>
+        /// divnorow control.
+        /// </summary>
+        protected global::System.Web.UI.HtmlControls.HtmlGenericControl divnorow;
+
+        /// <summary>
+        /// lblNoRow control.
+        /// </summary>
+        protected global::System.Web.UI.WebControls.Label lblNoRow;
+
+        /// <summary>
+        /// pnlCancelConfirm control.
+        /// </summary>
+        protected global::System.Web.UI.WebControls.Panel pnlCancelConfirm;
+
+        /// <summary>
+        /// btnCloseConfirm control.
+        /// </summary>
+        protected global::System.Web.UI.WebControls.Button btnCloseConfirm;
+
+        /// <summary>
+        /// btnCancelExec control.
+        /// </summary>
+        protected global::System.Web.UI.WebControls.Button btnCancelExec;
+
+        /// <summary>
         /// Master property.
         /// </summary>
         /// <remarks>
