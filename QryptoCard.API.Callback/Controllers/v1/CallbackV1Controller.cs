@@ -75,11 +75,14 @@ namespace QryptoCard.API.Callback.Controllers.v1
             return response;
         }
 
-        // Runegate/PGCrypto signs "t=<unix>,v1=hex(HMAC-SHA256(secret,'<ts>.<rawBody>'))" in
+        // Runegate signs "t=<unix>,v1=hex(HMAC-SHA256(secret,'<ts>.<rawBody>'))" in
         // X-Runegate-Signature. Verify over the raw bytes BEFORE parsing or crediting.
-        [Route("pgcrypto")]
+        // Public path is /v1/payment/runegate (the provider name); the internal model,
+        // WCF forward (sr.PGCrypto), secret name, and dedup Type stay "PGCrypto" — legacy
+        // internal naming that does not affect this URL.
+        [Route("runegate")]
         [HttpPost]
-        public async Task<HttpResponseMessage> pgcrypto()
+        public async Task<HttpResponseMessage> runegate()
         {
             byte[] rawBody = await Request.Content.ReadAsByteArrayAsync() ?? new byte[0];
             if (rawBody.Length == 0) return Request.CreateResponse(HttpStatusCode.Unauthorized);
