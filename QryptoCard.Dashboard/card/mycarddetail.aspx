@@ -49,6 +49,9 @@
         .cd-otp-inputs input:focus, .cd-otp-inputs input.filled { border-color: var(--cyan); }
         .cd-presets { display: flex; gap: 8px; flex-wrap: wrap; margin: 10px 0; }
         .cd-presets > div { display: inline-block; }
+        .topup-from { display: flex; justify-content: space-between; align-items: center; padding: .7em 1em; border: 1px solid var(--line-2); border-radius: 12px; background: rgba(255, 255, 255, .03); }
+        .topup-from-name { color: var(--ink-2); font-size: .9rem; }
+        .topup-from-bal { font-family: var(--font-mono); font-weight: 600; color: var(--cyan-bright); }
     </style>
 
     <div class="dash-top">
@@ -221,11 +224,16 @@
                 <button type="button" class="btn btn-line btn-sm" runat="server" id="rc200" onserverclick="rc200_ServerClick">$200</button>
             </div>
 
-            <div runat="server" id="viewnetwork" class="mb-10">
-                <div class="form-label" style="margin-bottom: 6px;">Pay with</div>
-                <asp:DropDownList runat="server" ID="ddlPayment" CssClass="form-control">
-                    <asp:ListItem Value="TRC20" Text="USDT (TRC20)" />
-                </asp:DropDownList>
+            <div class="mb-10">
+                <div class="form-label" style="margin-bottom: 6px;">Paid from</div>
+                <div class="topup-from">
+                    <span class="topup-from-name">Wallet balance</span>
+                    <asp:Label runat="server" ID="lblWalletBalance" CssClass="topup-from-bal" Text="&mdash; USDT" />
+                </div>
+                <div class="hist-banner err" runat="server" id="divOverBalance" visible="false" style="margin-top: 10px;">
+                    Amount exceeds your wallet balance &mdash; top up your wallet first.
+                </div>
+                <asp:HiddenField runat="server" ID="hfWalletBalance" />
             </div>
 
             <div style="margin-top: 14px; border-top: 1px solid var(--line-2); padding-top: 12px;">
