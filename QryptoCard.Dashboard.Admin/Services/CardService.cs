@@ -74,6 +74,36 @@ namespace QryptoCard.Dashboard.Admin.Services
             }
         }
 
+        public OutputModel getCardPricing()
+        {
+            try
+            {
+                string path = "/v1/card/type/pricing";
+                return op = AuthClient.ExecuteJsonGet(path);
+            }
+            catch (Exception ex)
+            {
+                op.Message = ex.ToString();
+                op.Status = "error";
+                return op;
+            }
+        }
+
+        public OutputModel updateCardPricing(CardTypeModel adm)
+        {
+            try
+            {
+                string path = "/v1/card/type/pricing";
+                return op = AuthClient.ExecuteJsonPut(path, adm);
+            }
+            catch (Exception ex)
+            {
+                op.Message = ex.ToString();
+                op.Status = "error";
+                return op;
+            }
+        }
+
         public OutputModel getActiveCards()
         {
             try

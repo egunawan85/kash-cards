@@ -29,5 +29,11 @@ namespace QryptoCard.INT.Script.Service.Admin.v1
         OutputModel updateCardPrice(string em, tblM_Card_Type x);
         [OperationContract]
         OutputModel updateCardDepositFee(string em, tblM_Card_Type x);
+
+        // Global card pricing (tblM_Setting: CardPrice + CardDepositFeeRate).
+        [OperationContract]
+        OutputModel getCardPricing(string em);
+        [OperationContract]
+        OutputModel updateCardPricing(string em, tblM_Card_Type x);
     }
 }

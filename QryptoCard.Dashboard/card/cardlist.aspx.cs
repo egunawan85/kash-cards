@@ -89,6 +89,19 @@ namespace QryptoCard.Dashboard.card
 
         }
 
+        // Local brand mark for the 3D card, by card-type Organization. No external assets:
+        // Visa/Discover are styled wordmarks, Mastercard the two interlocking discs (CSS).
+        // Mirrors mycardlist's CardBrandMark so both card views share one rendering.
+        protected string CardBrandMark(string org)
+        {
+            org = (org ?? "").Trim();
+            if (string.Equals(org, "MasterCard", StringComparison.OrdinalIgnoreCase))
+                return "<span class=\"qcard-net mc\" title=\"Mastercard\"><i></i><i></i></span>";
+            if (string.Equals(org, "Discover", StringComparison.OrdinalIgnoreCase))
+                return "<span class=\"qcard-net disc\" title=\"Discover\">DISC<b>O</b>VER</span>";
+            return "<span class=\"qcard-net visa\" title=\"Visa\">VISA</span>";
+        }
+
         // Per-card-type artwork (DD-7). Prefer an upstream-supplied ArtURL when the
         // card-type service provides one (a server-sourced value from our own API, not
         // client input); otherwise pick a vendored image by card scheme, with the

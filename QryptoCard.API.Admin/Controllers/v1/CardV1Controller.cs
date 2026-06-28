@@ -181,5 +181,44 @@ namespace QryptoCard.API.Admin.Controllers.v1
 
             return op;
         }
+
+        // Global card pricing (CardPrice + CardDepositFeeRate settings).
+        [Route("type/pricing")]
+        [HttpGet]
+        public OutputModel getCardPricing()
+        {
+            try
+            {
+                op = sr.getCardPricing(getEmail());
+                if (op.Status == "success")
+                    op.Data = JsonConvert.DeserializeObject<CardTypeModel>(op.Data.ToString());
+            }
+            catch (Exception ex)
+            {
+                op.Status = "error";
+                op.Message = ex.Message;
+                op.Data = null;
+            }
+
+            return op;
+        }
+
+        [Route("type/pricing")]
+        [HttpPut]
+        public OutputModel updateCardPricing(tblM_Card_Type x)
+        {
+            try
+            {
+                op = sr.updateCardPricing(getEmail(), x);
+            }
+            catch (Exception ex)
+            {
+                op.Status = "error";
+                op.Message = ex.Message;
+                op.Data = null;
+            }
+
+            return op;
+        }
     }
 }

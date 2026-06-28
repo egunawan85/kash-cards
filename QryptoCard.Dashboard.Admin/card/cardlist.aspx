@@ -66,6 +66,36 @@
             </div>
             <!--end::Alert-->
 
+            <!--begin::Card pricing (global settings: CardPrice + CardDepositFeeRate)-->
+            <div class="card mb-5 mb-xl-8">
+                <div class="card-header border-0 pt-5">
+                    <h3 class="card-title align-items-start flex-column">
+                        <span class="card-label fw-bold fs-3 mb-1">Card Pricing</span>
+                        <span class="text-muted mt-1 fw-semibold fs-7">Global price &amp; deposit fee applied to every card</span>
+                    </h3>
+                </div>
+                <div class="card-body py-3">
+                    <div class="row">
+                        <div class="col-md-4">
+                            <label class="form-label">Card Price (USD)</label>
+                            <div class="input-group">
+                                <asp:TextBox runat="server" ID="txtGlobalCardPrice" CssClass="form-control" TextMode="Number" />
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">Deposit Fee (%)</label>
+                            <div class="input-group">
+                                <asp:TextBox runat="server" ID="txtGlobalDepositFee" CssClass="form-control" TextMode="Number" />
+                            </div>
+                        </div>
+                        <div class="col-md-4 d-flex align-items-end">
+                            <asp:Button CssClass="btn btn-success" runat="server" ID="btnUpdatePricing" Text="Update Pricing" OnClick="btnUpdatePricing_Click" />
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <!--end::Card pricing-->
+
             <!--begin::Tables Widget 13-->
             <div class="card mb-5 mb-xl-8">
                 <!--begin::Header-->

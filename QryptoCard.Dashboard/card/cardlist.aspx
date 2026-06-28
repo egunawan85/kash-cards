@@ -44,20 +44,21 @@
         <div class="cards-grid">
             <asp:Repeater ID="rptCard" runat="server">
                 <ItemTemplate>
-                    <div class="card-tile" style='background-image: linear-gradient(135deg, rgba(8, 14, 22, .80), rgba(7, 28, 36, .62)), url(<%# Eval("ArtURL") %>);' onclick="window.location.href='<%# Eval("DetailURL") %>';">
-                        <div class="card-tile-top">
-                            <span class="card-tile-price"><%# Eval("CardPrice") %></span>
-                        </div>
-                        <div class="card-tile-bin"><%# Eval("BankCardBin") %></div>
-                        <div class="card-tile-meta">
-                            <div>
-                                <div>Deposit Fee <%# Eval("RechargeFeeRate") %></div>
-                                <div>First time: <%# Eval("NeedDeposit") %></div>
-                            </div>
-                            <div class="card-tile-logos">
-                                <%# Eval("TypeStr") %>
-                                <%# Eval("Status") %>
-                                <img src='<%# Eval("LogoURL") %>' alt="scheme" />
+                    <div class="card3d-wrap" onclick="window.location.href='<%# Eval("DetailURL") %>';" style="cursor: pointer;">
+                        <div class="card-3d">
+                            <div class="qcard">
+                                <div class="qcard-inner">
+                                    <div class="qcard-top">
+                                        <div class="qcard-brand">K<b>ash</b></div>
+                                        <%# CardBrandMark((string)Eval("Organization")) %>
+                                    </div>
+                                    <div><div class="qcard-chip"></div></div>
+                                    <div class="qcard-num"><%# Eval("BankCardBin") %></div>
+                                    <div class="qcard-bottom">
+                                        <div><div class="lab">Price</div><div class="val"><%# Eval("CardPrice") %></div></div>
+                                        <div><div class="lab">Deposit Fee</div><div class="val"><%# Eval("RechargeFeeRate") %></div></div>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -71,4 +72,29 @@
 <asp:Content ID="Content3" ContentPlaceHolderID="ModalContent" runat="server">
 </asp:Content>
 <asp:Content ID="Content4" ContentPlaceHolderID="ScriptContent" runat="server">
+    <script type="text/javascript">
+        // 3D tilt + idle float for the buy-a-card tiles (.card-3d in .card3d-wrap). Reduced-motion safe.
+        (function () {
+            if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+            [].slice.call(document.querySelectorAll('.card-3d')).forEach(function (card) {
+                var wrap = card.parentElement, face = card.querySelector('.qcard');
+                var raf = null, tx = 0, ty = 0, cx = 0, cy = 0;
+                function apply() {
+                    cx += (tx - cx) * 0.14; cy += (ty - cy) * 0.14;
+                    card.style.transform = 'rotateY(' + cx + 'deg) rotateX(' + (-cy) + 'deg)';
+                    if (face) { face.style.setProperty('--mx', (cx * 2.2) + '%'); face.style.setProperty('--my', (cy * 2.2) + '%'); }
+                    if (Math.abs(tx - cx) > 0.05 || Math.abs(ty - cy) > 0.05) raf = requestAnimationFrame(apply); else raf = null;
+                }
+                function queue() { if (!raf) raf = requestAnimationFrame(apply); }
+                wrap.addEventListener('mousemove', function (e) {
+                    var r = wrap.getBoundingClientRect();
+                    tx = ((e.clientX - r.left) / r.width - 0.5) * 22;
+                    ty = ((e.clientY - r.top) / r.height - 0.5) * 22;
+                    card.classList.remove('qcard-float'); queue();
+                });
+                wrap.addEventListener('mouseleave', function () { tx = 0; ty = 0; queue(); setTimeout(function () { card.classList.add('qcard-float'); }, 400); });
+                card.classList.add('qcard-float');
+            });
+        })();
+    </script>
 </asp:Content>

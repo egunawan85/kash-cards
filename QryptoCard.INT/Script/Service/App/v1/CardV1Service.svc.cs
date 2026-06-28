@@ -34,7 +34,10 @@ namespace QryptoCard.INT.Script.Service.App.v1
         {
             try
             {
-                var data = db.tblM_Card_Type.Where(p => p.isActive == 1).ToList();
+                // Catalog is sourced LIVE from WasabiCard (status=online only) with our global
+                // pricing overlay applied, not the local tblM_Card_Type table — so the display
+                // path and the money path (openCard/depositCard) read the identical source.
+                var data = CardCatalogService.GetCatalog();
 
                 if (data == null)
                 {
@@ -62,7 +65,8 @@ namespace QryptoCard.INT.Script.Service.App.v1
         {
             try
             {
-                var data = db.tblM_Card_Type.Where(p => p.CardTypeId == x.CardTypeId && p.isActive == 1).FirstOrDefault();
+                // Live, overlay-applied card type (online-only) — same single source as the catalog.
+                var data = CardCatalogService.GetById(x.CardTypeId.Value);
 
                 if (data == null)
                 {
@@ -244,7 +248,11 @@ namespace QryptoCard.INT.Script.Service.App.v1
             {
                 var uid = getUserId(em);
 
-                var data = db.tblM_Card_Type.Where(p => p.CardTypeId == x.CardTypeId && p.isActive == 1).FirstOrDefault();
+                // Money path reads the SAME live, overlay-applied catalog as the display path:
+                // our CardPrice/RechargeFeeRate overlay plus WasabiCard's authoritative deposit
+                // min/max and needCardHolder flag. A card type that is no longer status=online
+                // (or WasabiCard unreachable) returns null -> "Card is not available".
+                var data = CardCatalogService.GetById(x.CardTypeId.Value);
 
                 if (data == null)
                 {
@@ -270,81 +278,106 @@ namespace QryptoCard.INT.Script.Service.App.v1
                     {
                         x.isNeedCardholder = 1;
 
+                        // Reuse an existing cardholder for this buyer + card type when one exists, so
+                        // a repeat purchase of the same KYC card type does NOT register a duplicate
+                        // holder at WasabiCard (the Buy page no longer pre-resolves the holder client-side).
                         if (x.HolderID == null)
                         {
-                            if (x.Param1 == "" && x.Param2 == "" && x.Param3 == "")
+                            var existingHolder = db.tblM_Cardholder.FirstOrDefault(
+                                p => p.UserID == uid && p.CardTypeId == data.CardTypeId && p.isActive == 1);
+                            if (existingHolder != null)
+                                x.HolderID = existingHolder.HolderID;
+                        }
+
+                        if (x.HolderID == null)
+                        {
+                            // Frictionless cardholder: NO form input is required. We auto-fill the
+                            // holder server-side — name/email from the authenticated buyer's own
+                            // account where available, address/phone synthesized on the fly (the old
+                            // tblM_Address_Generator pool is unseeded, so we no longer depend on it).
+
+                            // Name: use the buyer's real first/last only when BOTH are present;
+                            // otherwise generate a realistic random name (WasabiCard rejects blanks).
+                            var buyer = db.tblM_User.FirstOrDefault(p => p.Email == em);
+                            string firstName, lastName;
+                            if (buyer != null
+                                && !string.IsNullOrWhiteSpace(buyer.FirstName)
+                                && !string.IsNullOrWhiteSpace(buyer.LastName))
                             {
-                                op.Status = "failed";
-                                op.Message = "Card holder data cannot be empty";
-                                return op;
+                                firstName = buyer.FirstName.Trim();
+                                lastName = buyer.LastName.Trim();
                             }
                             else
                             {
-                                var addr = db.tblM_Address_Generator.Where(p => p.isActive == 1 && p.isUsed == 0 && p.CityCode != null).FirstOrDefault();
-                                if (addr == null)
-                                {
-                                    op.Status = "failed";
-                                    op.Message = "No address available for card holder";
-                                    return op;
-                                }
-                                WCCreateHolderRequestModel chx = new WCCreateHolderRequestModel();
-                                chx.cardTypeId = data.CardTypeId.Value;
-                                chx.areaCode = "+1";
-                                chx.mobile = addr.PhoneNumber;
-                                chx.email = x.Param3;
-                                chx.firstName = x.Param1;
-                                chx.lastName = x.Param2;
-                                chx.birthday = generateBirthdate();
-                                chx.country = "US";
-                                chx.address = addr.Street;
-                                chx.town = addr.CityCode;
-                                chx.postCode = addr.PostalCode;
+                                var rn = AddressGeneratorService.RandomName();
+                                firstName = rn.First;
+                                lastName = rn.Last;
+                            }
 
-                                var chdr = WasabiCardService.createHolder(chx);
-                                if (chdr != null && chdr.code == -1)
-                                {
-                                    op.Status = "failed";
-                                    op.Message = chdr.msg;
-                                    return op;
-                                }
+                            // Email: the buyer's account email (fall back to the authenticated em).
+                            string holderEmail = (buyer != null && !string.IsNullOrWhiteSpace(buyer.Email))
+                                ? buyer.Email.Trim() : em;
 
-                                if (chdr.data.status == "pass_audit")
-                                {
-                                    tblM_Cardholder chu = new tblM_Cardholder();
-                                    chu.ID = Guid.NewGuid().ToString();
-                                    chu.UserID = x.UserID;
-                                    chu.HolderID = chdr.data.holderId;
-                                    chu.Address = chx.address;
-                                    chu.Mobile = chx.mobile;
-                                    chu.Email = chx.email;
-                                    chu.FirstName = chx.firstName;
-                                    chu.LastName = chx.lastName;
-                                    chu.Birthday = chx.birthday;
-                                    chu.Country = chx.country;
-                                    chu.CardTypeId = chx.cardTypeId;
-                                    chu.AreaCode = chx.areaCode;
-                                    chu.Town = chx.town;
-                                    chu.PostCode = chx.postCode;
-                                    chu.DateCreated = DateTime.Now;
-                                    chu.isActive = 1;
-                                    db.tblM_Cardholder.Add(chu);
+                            // Address/town/postCode/mobile: synthesized US address (no pool table).
+                            var addr = AddressGeneratorService.NextUsAddress();
 
-                                    addr.isUsed = 1;
-                                    addr.DateUsed = DateTime.Now;
-                                    db.SaveChanges();
+                            WCCreateHolderRequestModel chx = new WCCreateHolderRequestModel();
+                            chx.cardTypeId = data.CardTypeId.Value;
+                            chx.areaCode = "+1";
+                            chx.mobile = addr.Phone;
+                            chx.email = holderEmail;
+                            chx.firstName = firstName;
+                            chx.lastName = lastName;
+                            chx.birthday = generateBirthdate();
+                            chx.country = "US";
+                            chx.address = addr.Street;
+                            chx.town = addr.City;
+                            chx.postCode = addr.PostCode;
 
-                                    x.HolderID = chu.HolderID;
-                                }
-                                else
-                                {
-                                    op.Status = "failed";
-                                    op.Message = "Holder name is not pass for checking. Please use another name";
-                                    return op;
-                                }
+                            var chdr = WasabiCardService.createHolder(chx);
+                            if (chdr != null && chdr.code == -1)
+                            {
+                                op.Status = "failed";
+                                op.Message = chdr.msg;
+                                return op;
+                            }
 
+                            // Any non-pass / error outcome fails the buy (never silently proceed
+                            // without a registered holder — the WasabiCard open would reject it).
+                            if (chdr != null && chdr.data != null && chdr.data.status == "pass_audit")
+                            {
+                                tblM_Cardholder chu = new tblM_Cardholder();
+                                chu.ID = Guid.NewGuid().ToString();
+                                chu.UserID = x.UserID;
+                                chu.HolderID = chdr.data.holderId;
+                                chu.Address = chx.address;
+                                chu.Mobile = chx.mobile;
+                                chu.Email = chx.email;
+                                chu.FirstName = chx.firstName;
+                                chu.LastName = chx.lastName;
+                                chu.Birthday = chx.birthday;
+                                chu.Country = chx.country;
+                                chu.CardTypeId = chx.cardTypeId;
+                                chu.AreaCode = chx.areaCode;
+                                chu.Town = chx.town;
+                                chu.PostCode = chx.postCode;
+                                chu.DateCreated = DateTime.Now;
+                                chu.isActive = 1;
+                                db.tblM_Cardholder.Add(chu);
+                                db.SaveChanges();
+
+                                x.HolderID = chu.HolderID;
+                            }
+                            else
+                            {
+                                op.Status = "failed";
+                                op.Message = (chdr != null && !string.IsNullOrEmpty(chdr.msg))
+                                    ? chdr.msg
+                                    : "Card holder registration could not be completed. Please try again.";
+                                return op;
                             }
                         }
-                        
+
 
                         //createCardHolder(uid, x.CardTypeId.Value, x.Param1, x.Param2, x.Param3);
 
@@ -731,8 +764,12 @@ namespace QryptoCard.INT.Script.Service.App.v1
 
                     x.UserID = uid;
 
-                    var ct = db.tblM_Card_Type.Where(p => p.CardTypeId == card.CardTypeId).FirstOrDefault();
-                    x.FeeInPercentage = Convert.ToDouble(ct.RechargeFeeRate);
+                    // Top-up fee is our global deposit-fee % (an admin setting), read directly and
+                    // INDEPENDENT of the live catalog: a user must be able to top up a card they
+                    // ALREADY own even if that card type is momentarily offline or WasabiCard is
+                    // briefly unreachable. (The buy path still gates on the live catalog; an owned
+                    // card does not.)
+                    x.FeeInPercentage = CardCatalogService.GetDepositFeeRate();
 
                     x.Currency = "USD";
                     x.Fee = (Convert.ToDouble(x.FeeInPercentage) / 100) * x.Amount.Value;

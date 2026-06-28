@@ -2,6 +2,7 @@
 using QryptoCard.INT.Model.Service;
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using System.Runtime.Serialization;
 using System.ServiceModel;
@@ -362,6 +363,109 @@ namespace QryptoCard.INT.Script.Service.Admin.v1
                 op.Status = "error";
             }
             return op;
+        }
+
+        // ---- Global card pricing (tblM_Setting: CardPrice + CardDepositFeeRate) -------------
+        // The customer-facing price/fee are now GLOBAL settings (overlaid onto the live catalog
+        // by CardCatalogService), not per-card-type columns. These two endpoints read/update
+        // those settings; the admin card page's pricing panel drives them.
+
+        public OutputModel getCardPricing(string em)
+        {
+            try
+            {
+                if (isDeniedAdminRead(em))
+                {
+                    op.Status = "failed";
+                    op.Message = "You are not authorized to perform this action";
+                    return op;
+                }
+
+                double price = ReadSetting(CardCatalogService.SettingCardPrice, CardCatalogService.DefaultCardPrice);
+                double fee = ReadSetting(CardCatalogService.SettingDepositFeeRate, CardCatalogService.DefaultDepositFeeRate);
+
+                // Reuse tblM_Card_Type as the transport shape (already a shared data contract):
+                // CardPrice = global card price, RechargeFeeRate = global deposit fee %.
+                var dto = new tblM_Card_Type
+                {
+                    CardPrice = price.ToString(CultureInfo.InvariantCulture),
+                    CardPriceCurrency = "USD",
+                    RechargeFeeRate = fee.ToString(CultureInfo.InvariantCulture),
+                };
+
+                op.Status = "success";
+                op.Message = "Success get card pricing";
+                op.Data = JsonConvert.SerializeObject(dto, Formatting.None);
+            }
+            catch (Exception ex)
+            {
+                op.Message = ex.Message;
+                op.Status = "error";
+            }
+            return op;
+        }
+
+        public OutputModel updateCardPricing(string em, tblM_Card_Type x)
+        {
+            try
+            {
+                if (isDeniedFinanceMutation(em))
+                {
+                    op.Status = "failed";
+                    op.Message = "You are not authorized to perform this action";
+                    return op;
+                }
+
+                // Parse defensively (InvariantCulture) and reject negatives — these drive the
+                // money path (every buy/top-up reads them), so a bad value must not be persisted.
+                double price, fee;
+                if (!double.TryParse(x.CardPrice, NumberStyles.Any, CultureInfo.InvariantCulture, out price) || price < 0)
+                {
+                    op.Status = "failed";
+                    op.Message = "Card price must be a number greater than or equal to 0";
+                    return op;
+                }
+                if (!double.TryParse(x.RechargeFeeRate, NumberStyles.Any, CultureInfo.InvariantCulture, out fee) || fee < 0)
+                {
+                    op.Status = "failed";
+                    op.Message = "Deposit fee must be a number greater than or equal to 0";
+                    return op;
+                }
+
+                UpsertSetting(CardCatalogService.SettingCardPrice, price);
+                UpsertSetting(CardCatalogService.SettingDepositFeeRate, fee);
+                db.SaveChanges();
+
+                op.Status = "success";
+                op.Message = "Success update card pricing";
+                op.Data = JsonConvert.SerializeObject(x, Formatting.None);
+            }
+            catch (Exception ex)
+            {
+                op.Message = ex.Message;
+                op.Status = "error";
+            }
+            return op;
+        }
+
+        double ReadSetting(string name, double fallback)
+        {
+            var s = db.tblM_Setting.FirstOrDefault(p => p.Name == name);
+            return (s != null && s.Value.HasValue) ? s.Value.Value : fallback;
+        }
+
+        void UpsertSetting(string name, double value)
+        {
+            var s = db.tblM_Setting.FirstOrDefault(p => p.Name == name);
+            if (s == null)
+            {
+                s = new tblM_Setting { Name = name, Value = value, DateCreated = DateTime.Now };
+                db.tblM_Setting.Add(s);
+            }
+            else
+            {
+                s.Value = value;
+            }
         }
     }
 }
