@@ -240,6 +240,12 @@
 .hist-modal-card h3{margin:0 0 10px;color:var(--ink)}
 .hist-modal-text{color:var(--ink-3);font-size:.92rem;line-height:1.5;margin:0}
 .hist-modal-actions{display:flex;gap:10px;justify-content:flex-end;margin-top:22px}
+/* Form controls inside an overlay (top-up amount, payment select, labels) — the NewDesign shell
+   doesn't load the old Bootstrap .form-control styles, so style them here for the re-skinned modals. */
+.hist-modal .form-control{width:100%;font-family:var(--font-display);font-size:.95rem;color:var(--ink);background:rgba(255,255,255,.03);border:1px solid var(--line-2);border-radius:10px;padding:.62em .9em;outline:none;transition:border-color .15s var(--ease)}
+.hist-modal .form-control:focus{border-color:var(--cyan)}
+.hist-modal select.form-control{cursor:pointer;-webkit-appearance:none;appearance:none}
+.hist-modal .form-label{display:block;font-family:var(--font-mono);font-size:.66rem;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-3);margin-bottom:6px}
 
 /* ===================== 3D virtual card (ported from the auth-page .qcard) =====================
    Drop-shadowed, perspective-tilting card used on My Cards + the dashboard card panel. The
