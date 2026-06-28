@@ -52,13 +52,9 @@ namespace QryptoCard.Dashboard
 
         void bindData()
         {
-            //lblName.InnerHtml = SessionLib.Current.FirstName;
-            getReferral();
             getDashboardData();
-            getReferralList();
             bindWallet();
             getCard();
-
         }
 
         // Live wallet panel (S-F). Every figure shown here is server-returned; nothing is
@@ -265,85 +261,21 @@ namespace QryptoCard.Dashboard
             return sign + amt.ToString("0.00") + " USDT";
         }
 
+        // Total Cards stat. The two referral stats (commission rate + total commission) moved to
+        // the Referrals tab (~/referrals).
         void getDashboardData()
         {
-            DashboardModal dt;
-
-            var req = new UserReferralModel();
-            OutputModel op = new OutputModel();
-            op = us.getDashboardData();
-            if (op.Status == "success")
+            OutputModel op = us.getDashboardData();
+            if (op.Status == "success" && op.Data != null)
             {
-                dt = JsonConvert.DeserializeObject<DashboardModal>(op.Data.ToString());
-
-                if (dt.CommissionRate == -1)
-                    lblCommissionRate.InnerHtml = "not found";
-                else
-                    lblCommissionRate.InnerHtml = dt.CommissionRate.ToString() + "%";
-
-                lblTotalCards.InnerHtml = dt.TotalCards.ToString();
-                lblTotalCommission.InnerHtml = dt.TotalCommission.ToString() + " USDT";
-
-            }
-            else
-            {
-
-                //rptCard.DataSource = null;
-                //rptCard.DataBind();
+                var dt = JsonConvert.DeserializeObject<DashboardModal>(op.Data.ToString());
+                if (dt != null)
+                    lblTotalCards.InnerHtml = dt.TotalCards.ToString();
             }
         }
 
-        void getReferralList()
-        {
-            OutputModel op = new OutputModel();
-            op = us.getReferralJoined();
-            if (op.Status == "success")
-            {
-                var dt = JsonConvert.DeserializeObject<List<UserModel>>(op.Data.ToString());
-                if (dt.Count > 0)
-                {
-                    divnoreferral.Visible = false;
-                    gvReferralList.DataSource = dt;
-                    gvReferralList.DataBind();
-                }
-                else
-                {
-                    divnoreferral.Visible = true;
-                    gvReferralList.DataSource = null;
-                    gvReferralList.DataBind();
-                }
-            }
-            else
-            {
-                divnoreferral.Visible = true;
-                gvReferralList.DataSource = null;
-                gvReferralList.DataBind();
-            }
-        }
-
-        void getReferral()
-        {
-            UserReferralModel dt;
-
-            var req = new UserReferralModel();
-            OutputModel op = new OutputModel();
-            op = us.getReferralCode(req);
-            if (op.Status == "success")
-            {
-                dt = JsonConvert.DeserializeObject<UserReferralModel>(op.Data.ToString());
-                hfReferralCode.Value = dt.Code;
-                hfReferralLink.Value = KeyModel.REFERRAL_URL + dt.Code;
-
-                txtReferralCode.Text = dt.Code;
-                txtReferralLink.Text = hfReferralLink.Value;
-            }
-            else
-            {
-
-                //rptCard.DataSource = null;
-                //rptCard.DataBind();
-            }
-        }
+        // Referral code/link, history, and commission stats now live on the Referrals tab
+        // (referrals.aspx) — getReferral()/getReferralList() moved there.
 
 
     }
