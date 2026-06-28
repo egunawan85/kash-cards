@@ -9,7 +9,7 @@
 #
 # Usage (dot-source so the vars persist in your session):
 #   . .\deploy\scripts\load-env.ps1               # dev (default)
-#   . .\deploy\scripts\load-env.ps1 -Env prod     # prod set
+#   . .\deploy\scripts\load-env.ps1 -Env prd      # prod set
 param(
     [string]$Env = 'dev',
     [string]$SecretsDir = (Join-Path $PSScriptRoot '..\secrets')

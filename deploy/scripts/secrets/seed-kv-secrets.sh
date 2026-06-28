@@ -27,8 +27,8 @@
 # secret set (the runegate-infra convention; dev and prod never share values):
 #   secrets/.env.<env>    non-secret config (DB host/name/user, URLs, env gate)
 #   secrets/.vault.<env>  secrets (DB password, provider keys)
-# There is NO fallback to an unsuffixed file, so a missing .env.prod can never
-# quietly seed dev values into the prod Key Vault.
+# There is NO fallback to an unsuffixed file, so a missing .env.prd can never
+# quietly seed dev values into the prd Key Vault.
 # Both are flat KEY=VALUE; comments (#...) and blank lines are skipped, and any
 # KEY whose value is blank is skipped (operator hasn't filled it in yet).
 #
@@ -42,8 +42,8 @@
 #      Skip with SKIP_SEED_KV=true.
 #   2. Standalone for rotation:
 #        ./seed-kv-secrets.sh                 (defaults to ENV=dev)
-#        ENV=dev  ./seed-kv-secrets.sh
-#        ENV=prod ./seed-kv-secrets.sh        (seeds the prod KV from .env.prod/.vault.prod)
+#        ENV=dev ./seed-kv-secrets.sh
+#        ENV=prd ./seed-kv-secrets.sh         (seeds the prd KV from .env.prd/.vault.prd)
 
 set -euo pipefail
 
@@ -84,7 +84,7 @@ ENV_SECRETS="$SECRETS_DIR/.env.${ENV}"
 VAULT_SECRETS="$SECRETS_DIR/.vault.${ENV}"
 
 # Fail loudly if THIS environment has no secret files at all. Without this a typo'd
-# or unset ENV (e.g. seeding "prod" before .env.prod/.vault.prod exist) would upload
+# or unset ENV (e.g. seeding "prd" before .env.prd/.vault.prd exist) would upload
 # nothing and exit 0 -- a silent empty Key Vault that only surfaces as app startup
 # faults after deploy. Require at least one of the pair to exist.
 if [[ ! -f "$ENV_SECRETS" && ! -f "$VAULT_SECRETS" ]]; then
