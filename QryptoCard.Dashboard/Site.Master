@@ -41,6 +41,9 @@
                     <a class='<%= NavClass("cardhistory.aspx", "txcard.aspx", "txdeposit.aspx") %>' href='<%= ResolveUrl("~/tx/cardhistory") %>'>
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M4 5h16v14H4z" /><path d="M4 9h16M8 14h5" /></svg> Transactions
                     </a>
+                    <a class='<%= NavClass("referrals.aspx") %>' href='<%= ResolveUrl("~/referrals") %>'>
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M16 21v-2a4 4 0 00-4-4H6a4 4 0 00-4 4v2" /><circle cx="9" cy="7" r="4" /><path d="M22 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75" /></svg> Referrals
+                    </a>
                     <span class="lbl">Account</span>
                     <a class='<%= NavClass("settings.aspx") %>' href='<%= ResolveUrl("~/settings") %>'>
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><circle cx="12" cy="12" r="3" /><path d="M19.4 15a1.7 1.7 0 00.3 1.9l.1.1a2 2 0 11-2.8 2.8l-.1-.1a1.7 1.7 0 00-2.9 1.2V21a2 2 0 11-4 0v-.1A1.7 1.7 0 005 19.4l-.1.1a2 2 0 11-2.8-2.8l.1-.1A1.7 1.7 0 003.4 13H3a2 2 0 110-4h.1A1.7 1.7 0 004.6 6.1l-.1-.1a2 2 0 112.8-2.8l.1.1A1.7 1.7 0 0011 3.4V3a2 2 0 114 0v.1a1.7 1.7 0 002.9 1.2l.1-.1a2 2 0 112.8 2.8l-.1.1A1.7 1.7 0 0021 11h.1a2 2 0 110 4H21a1.7 1.7 0 00-1.6 1z" /></svg> Settings

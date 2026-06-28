@@ -97,6 +97,7 @@ W "DELETE FROM dbo.tblT_Card_Balance     WHERE CardNo IN (SELECT CardNo FROM dbo
 W "DELETE FROM dbo.tblT_Card_Deposit        WHERE UserID LIKE '5eed%';"
 W "DELETE FROM dbo.tblT_Card                WHERE UserID LIKE '5eed%';"
 W "DELETE FROM dbo.tblH_User_Balance        WHERE UserID LIKE '5eed%';"
+W "DELETE FROM dbo.tblT_Commission          WHERE UserID LIKE '5eed%';"
 W "DELETE FROM dbo.tblM_User_Balance        WHERE UserID LIKE '5eed%';"
 W "DELETE FROM dbo.tblM_User_Commission     WHERE UserID LIKE '5eed%';"
 W "DELETE FROM dbo.tblM_User_Referral       WHERE UserID LIKE '5eed%';"
@@ -107,6 +108,12 @@ W ''
 $totUsers = 0; $totCards = 0; $totTxns = 0; $globalCardSeq = 0
 $CardTypeId = 111028   # the 'Virtual Card' type from seed-reference.sql
 $NetworkId  = 'F580A411-0E37-4287-B975-408172A2B4BF'  # TRC20/USDT, from seed-reference.sql
+
+# Demo referrals: user #1 (the loginable demo) referred users #2-#5 (InvitedBy). #2-#4 then bought a
+# card, so the demo earns a commission on each (tblT_Commission rows keyed on the referee's card id,
+# emitted after the loop); #5 is invited but never converted (no card -> no commission).
+$demoUid      = Sid 'aaaa' 1
+$DemoReferees = @(2, 3, 4, 5)
 
 for ($i = 1; $i -le $UserCount; $i++) {
     $isDemo = ($i -eq 1)
@@ -125,8 +132,9 @@ for ($i = 1; $i -le $UserCount; $i++) {
     $joinAgo = 5 + ($i * 11) % 360
     $totUsers++
 
+    $invitedBySql = if ($DemoReferees -contains $i) { "N'$demoUid'" } else { 'NULL' }
     W "-- ---- user #$i ($fn $ln)$(if($isDemo){' [LOGINABLE DEMO]'}) ----"
-    W ("INSERT INTO dbo.tblM_User (UserID, Email, FirstName, LastName, Password, RoleID, Phone, isActive, isVerified, isBanned, DateJoin) VALUES ({0}, {1}, N'{2}', N'{3}', {4}, 'role-owner', '{5}', 1, 1, 0, DATEADD(DAY, -{6}, GETUTCDATE()));" -f "N'$uid'", $emailSql, $fn, $ln, $pwdSql, $phone, $joinAgo)
+    W ("INSERT INTO dbo.tblM_User (UserID, Email, FirstName, LastName, Password, RoleID, Phone, isActive, isVerified, isBanned, InvitedBy, DateJoin) VALUES ({0}, {1}, N'{2}', N'{3}', {4}, 'role-owner', '{5}', 1, 1, 0, {6}, DATEADD(DAY, -{7}, GETUTCDATE()));" -f "N'$uid'", $emailSql, $fn, $ln, $pwdSql, $phone, $invitedBySql, $joinAgo)
     W ("INSERT INTO dbo.tblM_User_Commission     (CommissionID, UserID, Commission, DateCreated) VALUES (N'{0}', N'{1}', 0.1, DATEADD(DAY, -{2}, GETUTCDATE()));" -f (Sid 'c011' $i), $uid, $joinAgo)
     W ("INSERT INTO dbo.tblM_User_Referral       (UserID, Code, DateCreated) VALUES (N'{0}', '{1}', DATEADD(DAY, -{2}, GETUTCDATE()));" -f $uid, ('DEV{0:D5}' -f $i), $joinAgo)
     $addr = 'T' + ('DEVSEED' + ('{0:D27}' -f $i))   # 34-char TRC20-shaped (fake) address
@@ -244,6 +252,21 @@ for ($i = 1; $i -le $UserCount; $i++) {
     W ''
 }
 
+W ''
+W '-- Demo referral commissions (referrer = user #1; TransactionID = the referee''s card order, so'
+W '-- the same rows also attribute per-referee for the breakdown view). Referee #5 never converted.'
+$DemoCommissions = @(
+    @{ Referee = 2; Amt = 1.00 },
+    @{ Referee = 3; Amt = 1.50 },
+    @{ Referee = 4; Amt = 2.00 }
+)
+$rc = 0
+foreach ($r in $DemoCommissions) {
+    $rc++
+    $refCardId = '5eedca01-0000-0000-0000-{0:D12}' -f [int]$r.Referee
+    W ("INSERT INTO dbo.tblT_Commission (CommisionID, UserID, TransactionID, Commission, DateCreated) VALUES (N'{0}', N'{1}', N'{2}', {3}, DATEADD(DAY, -{4}, GETUTCDATE()));" -f (Sid 'c0aa' $rc), $demoUid, $refCardId, (M ([double]$r.Amt)), (3 + $rc * 3))
+}
+W ''
 W "COMMIT TRANSACTION;"
 W ("PRINT 'seed-dev-synthetic: applied {0} users, {1} cards, {2} card transactions (synthetic, dev-only).';" -f $totUsers, $totCards, $totTxns)
 

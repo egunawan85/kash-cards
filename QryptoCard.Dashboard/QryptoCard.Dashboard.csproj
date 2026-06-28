@@ -2402,6 +2402,7 @@
     <Content Include="Content\media\landing\lifestyle-pay.png" />
     <Content Include="Content\media\landing\security.png" />
     <Content Include="dashboard.aspx" />
+    <Content Include="referrals.aspx" />
     <Content Include="settings.aspx" />
     <Content Include="Default.aspx" />
     <Content Include="favicon.ico" />
@@ -2558,6 +2559,13 @@
     </Compile>
     <Compile Include="dashboard.aspx.designer.cs">
       <DependentUpon>dashboard.aspx</DependentUpon>
+    </Compile>
+    <Compile Include="referrals.aspx.cs">
+      <DependentUpon>referrals.aspx</DependentUpon>
+      <SubType>ASPXCodeBehind</SubType>
+    </Compile>
+    <Compile Include="referrals.aspx.designer.cs">
+      <DependentUpon>referrals.aspx</DependentUpon>
     </Compile>
     <Compile Include="settings.aspx.cs">
       <DependentUpon>settings.aspx</DependentUpon>
