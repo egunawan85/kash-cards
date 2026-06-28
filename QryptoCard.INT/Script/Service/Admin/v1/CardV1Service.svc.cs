@@ -419,16 +419,21 @@ namespace QryptoCard.INT.Script.Service.Admin.v1
                 // Parse defensively (InvariantCulture) and reject negatives — these drive the
                 // money path (every buy/top-up reads them), so a bad value must not be persisted.
                 double price, fee;
-                if (!double.TryParse(x.CardPrice, NumberStyles.Any, CultureInfo.InvariantCulture, out price) || price < 0)
+                // Bound both values: they drive every buy/top-up, so a typo (e.g. "300" for a 3% fee,
+                // or NaN/Infinity which TryParse accepts and which slip a bare `< 0` check) must be
+                // rejected here rather than silently overcharging customers.
+                if (!double.TryParse(x.CardPrice, NumberStyles.Any, CultureInfo.InvariantCulture, out price)
+                    || double.IsNaN(price) || double.IsInfinity(price) || price < 0 || price > 10000)
                 {
                     op.Status = "failed";
-                    op.Message = "Card price must be a number greater than or equal to 0";
+                    op.Message = "Card price must be a number between 0 and 10000";
                     return op;
                 }
-                if (!double.TryParse(x.RechargeFeeRate, NumberStyles.Any, CultureInfo.InvariantCulture, out fee) || fee < 0)
+                if (!double.TryParse(x.RechargeFeeRate, NumberStyles.Any, CultureInfo.InvariantCulture, out fee)
+                    || double.IsNaN(fee) || double.IsInfinity(fee) || fee < 0 || fee > 100)
                 {
                     op.Status = "failed";
-                    op.Message = "Deposit fee must be a number greater than or equal to 0";
+                    op.Message = "Deposit fee (%) must be a number between 0 and 100";
                     return op;
                 }
 

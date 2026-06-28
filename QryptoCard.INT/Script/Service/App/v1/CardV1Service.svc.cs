@@ -284,7 +284,8 @@ namespace QryptoCard.INT.Script.Service.App.v1
                         if (x.HolderID == null)
                         {
                             var existingHolder = db.tblM_Cardholder.FirstOrDefault(
-                                p => p.UserID == uid && p.CardTypeId == data.CardTypeId && p.isActive == 1);
+                                p => p.UserID == uid && p.CardTypeId == data.CardTypeId
+                                  && p.isActive == 1 && p.Status == "pass_audit");
                             if (existingHolder != null)
                                 x.HolderID = existingHolder.HolderID;
                         }
@@ -362,6 +363,9 @@ namespace QryptoCard.INT.Script.Service.App.v1
                                 chu.Town = chx.town;
                                 chu.PostCode = chx.postCode;
                                 chu.DateCreated = DateTime.Now;
+                                // Persist the verified status so the reuse lookup (which gates on
+                                // Status=="pass_audit") finds this holder on the next purchase.
+                                chu.Status = chdr.data.status;
                                 chu.isActive = 1;
                                 db.tblM_Cardholder.Add(chu);
                                 db.SaveChanges();
@@ -420,10 +424,14 @@ namespace QryptoCard.INT.Script.Service.App.v1
                         return op;
                     }
 
-                    x.Price = Convert.ToDouble(data.CardPrice);
-                    //x.InitialDeposit = Convert.ToDouble(data.DepositAmountMinQuotaForActiveCard);
+                    // Read the overlay numerically from settings, NOT via Convert.ToDouble on the
+                    // serialized strings: those are written InvariantCulture but Convert.ToDouble
+                    // parses with the thread's CURRENT culture, so a fractional value like "3.5"
+                    // would read as 35 on a comma-decimal host -> a 10x overcharge. GetCardPrice/
+                    // GetDepositFeeRate return the double straight from the setting.
+                    x.Price = CardCatalogService.GetCardPrice();
 
-                    x.FeeInPercentage = Convert.ToDouble(data.RechargeFeeRate);
+                    x.FeeInPercentage = CardCatalogService.GetDepositFeeRate();
 
                     //var comm = db.tblM_User_Fee.Where(p => p.UserID == x.UserID).FirstOrDefault();
                     //if (comm != null)
@@ -443,8 +451,10 @@ namespace QryptoCard.INT.Script.Service.App.v1
 
                     x.Currency = "USD";
                     x.ReceivedCurrency = "USD";
-                    x.Fee = (Convert.ToDouble(x.FeeInPercentage) / 100) * x.InitialDeposit.Value;
-                    x.Total = x.Price + x.InitialDeposit + x.Fee;
+                    // Round to cents — parity with depositCard (which rounds) so the wallet is never
+                    // debited a binary-float artefact like 100.30000000000001.
+                    x.Fee = Math.Round((Convert.ToDouble(x.FeeInPercentage) / 100) * x.InitialDeposit.Value, 2);
+                    x.Total = Math.Round(Convert.ToDouble(x.Price) + x.InitialDeposit.Value + Convert.ToDouble(x.Fee), 2);
                     x.ReceivedAmount = x.InitialDeposit;
                     x.DateExpired = DateTime.Now.AddHours(1);
 

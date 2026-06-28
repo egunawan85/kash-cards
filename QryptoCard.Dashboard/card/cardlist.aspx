@@ -53,7 +53,7 @@
                                         <%# CardBrandMark((string)Eval("Organization")) %>
                                     </div>
                                     <div><div class="qcard-chip"></div></div>
-                                    <div class="qcard-num"><%# Eval("BankCardBin") %></div>
+                                    <div class="qcard-num"><%#: Eval("BankCardBin") %></div>
                                     <div class="qcard-bottom">
                                         <div><div class="lab">Price</div><div class="val"><%# Eval("CardPrice") %></div></div>
                                         <div><div class="lab">Deposit Fee</div><div class="val"><%# Eval("RechargeFeeRate") %></div></div>

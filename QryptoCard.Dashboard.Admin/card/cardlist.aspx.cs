@@ -152,16 +152,20 @@ namespace QryptoCard.Dashboard.Admin.card
                 return;
             }
 
+            // Bound both values client-side (the INT re-validates authoritatively): reject NaN/
+            // Infinity and out-of-range typos so a "300" fee can't sail through to overcharge.
             double price, fee;
-            if (!double.TryParse(txtGlobalCardPrice.Text, out price) || price < 0)
+            if (!double.TryParse(txtGlobalCardPrice.Text, out price)
+                || double.IsNaN(price) || double.IsInfinity(price) || price < 0 || price > 10000)
             {
-                lblError.Text = "Card price must be a number greater than or equal to 0";
+                lblError.Text = "Card price must be a number between 0 and 10000";
                 divfailed.Visible = true;
                 return;
             }
-            if (!double.TryParse(txtGlobalDepositFee.Text, out fee) || fee < 0)
+            if (!double.TryParse(txtGlobalDepositFee.Text, out fee)
+                || double.IsNaN(fee) || double.IsInfinity(fee) || fee < 0 || fee > 100)
             {
-                lblError.Text = "Deposit fee must be a number greater than or equal to 0";
+                lblError.Text = "Deposit fee (%) must be a number between 0 and 100";
                 divfailed.Visible = true;
                 return;
             }
