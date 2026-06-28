@@ -51,6 +51,21 @@ namespace QryptoCard.Dashboard.card
         protected global::System.Web.UI.WebControls.Label lblAlert;
 
         /// <summary>
+        /// litTotalCards control.
+        /// </summary>
+        protected global::System.Web.UI.WebControls.Literal litTotalCards;
+
+        /// <summary>
+        /// litActiveCards control.
+        /// </summary>
+        protected global::System.Web.UI.WebControls.Literal litActiveCards;
+
+        /// <summary>
+        /// litAvailBal control.
+        /// </summary>
+        protected global::System.Web.UI.WebControls.Literal litAvailBal;
+
+        /// <summary>
         /// rptCard control.
         /// </summary>
         /// <remarks>

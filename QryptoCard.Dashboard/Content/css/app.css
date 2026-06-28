@@ -267,3 +267,22 @@
 .qcard-float{animation:qcardfloat 7s var(--ease) infinite}
 @keyframes qcardfloat{0%,100%{transform:translateY(0)}50%{transform:translateY(-10px)}}
 @media (prefers-reduced-motion: reduce){.qcard-float{animation:none}.card-3d{transition:none}}
+/* Network brand mark on the 3D card — local, no external assets (Visa/Discover wordmarks; Mastercard discs). */
+.qcard-net{display:inline-flex;align-items:center;height:22px}
+.qcard-net.visa{font-family:var(--font-display);font-weight:800;font-style:italic;font-size:1.15rem;letter-spacing:.02em;color:#fff}
+.qcard-net.disc{font-family:var(--font-display);font-weight:800;font-style:normal;font-size:.66rem;letter-spacing:.06em;text-transform:uppercase;color:#eaf6f8}
+.qcard-net.disc b{color:#f79e1b}
+.qcard-net.mc i{width:17px;height:17px;border-radius:50%;display:block}
+.qcard-net.mc i:first-child{background:#eb001b}
+.qcard-net.mc i:last-child{background:#f79e1b;margin-left:-7px;mix-blend-mode:screen}
+/* My Cards summary bar + "Add a new card" tile. */
+.cards-sum{display:flex;align-items:center;gap:6px;margin-top:18px;padding:16px 8px;border-radius:14px;background:rgba(255,255,255,.02);border:1px solid var(--line-2)}
+.cards-sum-it{display:flex;flex-direction:column;gap:3px;padding:0 20px}
+.cards-sum-it .n{font-family:var(--font-display);font-weight:700;font-size:1.4rem;letter-spacing:-.02em;color:var(--ink)}
+.cards-sum-it .l{font-size:.7rem;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-3)}
+.cards-sum-sep{width:1px;align-self:stretch;background:var(--line-2)}
+.card-add{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;text-align:center;aspect-ratio:1.586/1;border-radius:20px;border:1.5px dashed var(--line-2);color:var(--ink-2);text-decoration:none;transition:border-color .2s var(--ease),color .2s var(--ease),background .2s var(--ease)}
+.card-add:hover{border-color:var(--cyan);color:var(--ink);background:rgba(37,240,255,.04)}
+.card-add-plus{width:46px;height:46px;border-radius:50%;display:flex;align-items:center;justify-content:center;border:1.5px solid currentColor}
+.card-add b{font-family:var(--font-display);font-weight:600;font-size:1rem}
+.card-add span{font-size:.8rem;color:var(--ink-3);max-width:210px}
