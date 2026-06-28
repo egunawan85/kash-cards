@@ -80,25 +80,24 @@ namespace QryptoCard.Dashboard
         // Referral history (users who joined via this user's link) + the total-referrals count.
         void getReferralList()
         {
-            int count = 0;
-            List<ReferralBreakdownModel> dt = null;
+            ReferralTabModel data = null;
             try
             {
                 OutputModel op = us.getReferralJoined();
                 if (op.Status == "success" && op.Data != null)
-                {
-                    dt = JsonConvert.DeserializeObject<List<ReferralBreakdownModel>>(op.Data.ToString());
-                    count = dt != null ? dt.Count : 0;
-                }
+                    data = JsonConvert.DeserializeObject<ReferralTabModel>(op.Data.ToString());
             }
-            catch { /* count stays 0 */ }
+            catch { /* leave both lists empty */ }
 
-            lblTotalReferrals.Text = count.ToString();
+            var referrals = (data != null && data.Referrals != null) ? data.Referrals : new List<ReferralBreakdownModel>();
+            var commissions = (data != null && data.Commissions != null) ? data.Commissions : new List<CommissionHistoryModel>();
 
-            if (count > 0)
+            lblTotalReferrals.Text = referrals.Count.ToString();
+
+            if (referrals.Count > 0)
             {
                 divnoreferral.Visible = false;
-                gvReferralList.DataSource = dt;
+                gvReferralList.DataSource = referrals;
                 gvReferralList.DataBind();
             }
             else
@@ -106,6 +105,19 @@ namespace QryptoCard.Dashboard
                 divnoreferral.Visible = true;
                 gvReferralList.DataSource = null;
                 gvReferralList.DataBind();
+            }
+
+            if (commissions.Count > 0)
+            {
+                divnocommission.Visible = false;
+                gvCommissionList.DataSource = commissions;
+                gvCommissionList.DataBind();
+            }
+            else
+            {
+                divnocommission.Visible = true;
+                gvCommissionList.DataSource = null;
+                gvCommissionList.DataBind();
             }
         }
 
@@ -146,6 +158,34 @@ namespace QryptoCard.Dashboard
             return active
                 ? "<span class=\"badge badge-light-success\">Active</span>"
                 : "<span class=\"badge badge-light-info\">Invited</span>";
+        }
+
+        protected void gvCommissionList_PageIndexChanging(object sender, GridViewPageEventArgs e)
+        {
+            gvCommissionList.PageIndex = e.NewPageIndex;
+            getReferralList();
+        }
+
+        // ---- Commission history cell formatters ----
+        protected string CommWhen(object item)
+        {
+            var m = item as CommissionHistoryModel;
+            if (m != null && m.DateCreated.HasValue) return m.DateCreated.Value.ToString("dd MMM yyyy");
+            return "";
+        }
+
+        protected string CommReferral(object item)
+        {
+            var m = item as CommissionHistoryModel;
+            if (m == null) return "";
+            return Server.HtmlEncode((m.RefereeName ?? "").Trim());
+        }
+
+        protected string CommAmount(object item)
+        {
+            var m = item as CommissionHistoryModel;
+            double a = (m != null && m.Commission.HasValue) ? m.Commission.Value : 0;
+            return "+" + a.ToString("0.00") + " USDT";
         }
     }
 }

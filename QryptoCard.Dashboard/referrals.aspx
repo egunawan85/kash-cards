@@ -87,6 +87,29 @@
             </asp:GridView>
         </section>
         <!--end::Referral history-->
+
+        <!--begin::Commission history (live)-->
+        <section class="panel" style="grid-column: 1 / -1;">
+            <div class="panel-h"><h3>Commission history</h3></div>
+            <div runat="server" id="divnocommission" style="color: var(--ink-3); font-size: .95rem; padding: 14px 0;">
+                <asp:Label runat="server" ID="lblNoCommission" Text="No commission yet." />
+            </div>
+            <asp:GridView CssClass="data-table" ID="gvCommissionList" runat="server" ShowHeader="true" AutoGenerateColumns="false" AllowPaging="True" PageSize="50" GridLines="None" OnPageIndexChanging="gvCommissionList_PageIndexChanging">
+                <PagerStyle HorizontalAlign="Center" />
+                <Columns>
+                    <asp:TemplateField HeaderText="Date">
+                        <ItemTemplate><%# CommWhen(Container.DataItem) %></ItemTemplate>
+                    </asp:TemplateField>
+                    <asp:TemplateField HeaderText="From referral" ItemStyle-HorizontalAlign="Left" HeaderStyle-HorizontalAlign="Left">
+                        <ItemTemplate><%# CommReferral(Container.DataItem) %></ItemTemplate>
+                    </asp:TemplateField>
+                    <asp:TemplateField HeaderText="Commission">
+                        <ItemTemplate><%# CommAmount(Container.DataItem) %></ItemTemplate>
+                    </asp:TemplateField>
+                </Columns>
+            </asp:GridView>
+        </section>
+        <!--end::Commission history-->
     </div>
 </asp:Content>
 <asp:Content ID="Content2" ContentPlaceHolderID="DrawerContent" runat="server">

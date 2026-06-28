@@ -1222,9 +1222,25 @@ namespace QryptoCard.INT.Script.Service.App.v1
                     Converted = convertedSet.Contains(r.UserID)
                 }).ToList();
 
+                // Commission history: each commission event for this caller, resolved to the referee
+                // whose order generated it (commission.TransactionID -> order -> referee name), newest
+                // first. Same explicit-join shape as the earnings rollup.
+                var commHistory = (from t in db.tblT_Commission
+                                   where t.UserID == uid
+                                   join c in db.tblT_Card on t.TransactionID equals c.ID
+                                   join refu in db.tblM_User on c.UserID equals refu.UserID
+                                   select new { t.DateCreated, RefereeName = refu.FirstName + " " + refu.LastName, t.Commission })
+                                  .Concat(from t in db.tblT_Commission
+                                          where t.UserID == uid
+                                          join d in db.tblT_Card_Deposit on t.TransactionID equals d.ID
+                                          join refu in db.tblM_User on d.UserID equals refu.UserID
+                                          select new { t.DateCreated, RefereeName = refu.FirstName + " " + refu.LastName, t.Commission })
+                                  .OrderByDescending(x => x.DateCreated)
+                                  .ToList();
+
                 op.Status = "success";
-                op.Message = "Success get referral breakdown";
-                op.Data = JsonConvert.SerializeObject(rows, Formatting.None);
+                op.Message = "Success get referral tab data";
+                op.Data = JsonConvert.SerializeObject(new { Referrals = rows, Commissions = commHistory }, Formatting.None);
             }
             catch (Exception ex)
             {

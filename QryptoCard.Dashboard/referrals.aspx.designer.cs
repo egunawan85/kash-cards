@@ -75,6 +75,21 @@ namespace QryptoCard.Dashboard
         protected global::System.Web.UI.WebControls.GridView gvReferralList;
 
         /// <summary>
+        /// divnocommission control.
+        /// </summary>
+        protected global::System.Web.UI.HtmlControls.HtmlGenericControl divnocommission;
+
+        /// <summary>
+        /// lblNoCommission control.
+        /// </summary>
+        protected global::System.Web.UI.WebControls.Label lblNoCommission;
+
+        /// <summary>
+        /// gvCommissionList control.
+        /// </summary>
+        protected global::System.Web.UI.WebControls.GridView gvCommissionList;
+
+        /// <summary>
         /// Master property.
         /// </summary>
         public new QryptoCard.Dashboard.SiteMaster Master
