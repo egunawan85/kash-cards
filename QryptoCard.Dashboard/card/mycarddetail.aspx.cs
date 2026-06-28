@@ -167,10 +167,13 @@ namespace QryptoCard.Dashboard.card
                 ? String.Format("{0:0000 0000 0000 0000}", cardNumberVal)
                 : (hfCardNumber.Value ?? "");
             lblCardNumber.InnerHtml = Server.HtmlEncode(cardNumberDisp);
-            string cvvPlain = Common.decrypt(hfCVV.Value);
+            // Defensive seatbelt: a malformed/unencrypted stored value must never crash the page
+            // (e.g. a dev card seeded before encryption). On a decrypt failure, fall back to the raw
+            // stored value rather than throwing. Real (provider-encrypted) cards decrypt normally.
+            string cvvPlain; try { cvvPlain = Common.decrypt(hfCVV.Value); } catch { cvvPlain = hfCVV.Value ?? ""; }
             hfCVVDecr.Value = cvvPlain;
             lblCVV.InnerHtml = Server.HtmlEncode(cvvPlain);
-            string expPlain = Common.decrypt(hfExpDate.Value);
+            string expPlain; try { expPlain = Common.decrypt(hfExpDate.Value); } catch { expPlain = hfExpDate.Value ?? ""; }
             hfExpDateDecr.Value = expPlain;
             lblExpDate.InnerHtml = Server.HtmlEncode(expPlain);
 

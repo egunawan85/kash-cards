@@ -46,6 +46,11 @@ function Get-Secret([string]$name) {
 }
 $DBKEY  = Get-Secret 'DBKEY'
 $APPKEY = Get-Secret 'APPKEY'
+# Wasabi RSA keypair (XML), used to encrypt the demo cards' CVV/expiry below so the dev card-detail
+# reveal decrypts them exactly like prod. Soft-fetch: if it's absent/unset we fall back to plaintext
+# (the reveal page tolerates that via a decrypt try/catch), so seeding never breaks on a missing key.
+$WASABIKEYXML = (& $AZ keyvault secret show --vault-name $KvName --name 'WASABICARD-PRIVATE-KEY-XML' --query value -o tsv 2>$null)
+if ($WASABIKEYXML) { $WASABIKEYXML = $WASABIKEYXML.Trim() }
 
 # AES exactly as QryptoCard.Sec/Secure.cs: AES-128-CBC-PKCS7, Key = IV = first 16
 # bytes of UTF8(key) (zero-padded). EncryptDB uses DBKEY (stored form); EncryptAPP
@@ -64,6 +69,20 @@ function Enc([string]$plain, [string]$key) {
     $ct  = $enc.TransformFinalBlock($pt, 0, $pt.Length)
     $enc.Dispose(); $aes.Dispose()
     return [Convert]::ToBase64String($ct)
+}
+
+# RSA-encrypt a short value with the Wasabi keypair (from the XML) using PKCS1 v1.5 — the exact
+# inverse of QryptoCard.Dashboard Common.decrypt, so the card-detail reveal can decrypt it. If the
+# key is unavailable/malformed, return the plaintext unchanged (the reveal page tolerates it).
+function RsaEncWasabi([string]$plain, [string]$xmlKey) {
+    if ([string]::IsNullOrWhiteSpace($xmlKey)) { return $plain }
+    try {
+        $rsa = New-Object System.Security.Cryptography.RSACryptoServiceProvider
+        $rsa.FromXmlString($xmlKey)
+        $ct = $rsa.Encrypt([Text.Encoding]::UTF8.GetBytes($plain), $false)  # $false = PKCS1 v1.5
+        $rsa.Dispose()
+        return [Convert]::ToBase64String($ct)
+    } catch { Write-Host "[..] CVV/expiry encryption skipped (Wasabi key issue): $($_.Exception.Message)"; return $plain }
 }
 
 # Credentials: overridable via env, else deterministic dev defaults.
@@ -133,7 +152,13 @@ if ($Env -eq 'dev') {
     Step "seed-dev-synthetic.sql (synthetic users/cards/txns; demo login $demoEmail)"
     $synthFile = Join-Path $seedsDir 'seed-dev-synthetic.sql'
     if (-not (Test-Path $synthFile)) { Die "seed file not found: $synthFile (run vm-fetch-source first)" }
-    & $sqlcmd @base -i $synthFile -v DEMO_EMAIL="$demoEmail" -v DEMO_USER_PWD_DB="$demoPwdDb"
+    # Encrypt the demo (loginable) user's 3 card CVV/expiry with the Wasabi key so the card-detail
+    # reveal decrypts them like prod. The other display-only synthetic users are never revealed.
+    $cvv1 = RsaEncWasabi '107' $WASABIKEYXML; $exp1 = RsaEncWasabi '02/29' $WASABIKEYXML
+    $cvv2 = RsaEncWasabi '114' $WASABIKEYXML; $exp2 = RsaEncWasabi '03/30' $WASABIKEYXML
+    $cvv3 = RsaEncWasabi '121' $WASABIKEYXML; $exp3 = RsaEncWasabi '04/31' $WASABIKEYXML
+    & $sqlcmd @base -i $synthFile -v DEMO_EMAIL="$demoEmail" -v DEMO_USER_PWD_DB="$demoPwdDb" `
+        -v DEMO_CVV1="$cvv1" -v DEMO_EXP1="$exp1" -v DEMO_CVV2="$cvv2" -v DEMO_EXP2="$exp2" -v DEMO_CVV3="$cvv3" -v DEMO_EXP3="$exp3"
     if ($LASTEXITCODE -ne 0) { Die "seed-dev-synthetic failed (exit $LASTEXITCODE)" }
 
     # .smoke.env -- wire forms only (gitignored). Not echoed to stdout (run-command output
