@@ -171,10 +171,11 @@ namespace QryptoCard.API.Controllers.v1
         {
             try
             {
-                var x = new DashboardModel();
+                // op.Data carries the per-referral breakdown JSON (see INT getReferralJoined);
+                // deserialize loosely so the controller stays agnostic to the row shape.
                 op = sr.getReferralJoined(getEmail());
                 if (op.Status == "success")
-                    op.Data = JsonConvert.DeserializeObject<List<tblM_User>>(op.Data.ToString());
+                    op.Data = JsonConvert.DeserializeObject(op.Data.ToString());
             }
             catch (Exception ex)
             {

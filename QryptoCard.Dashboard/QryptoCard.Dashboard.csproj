@@ -2625,6 +2625,7 @@
     <Compile Include="Models\Service\UserModel.cs" />
     <Compile Include="Models\Service\UserOTPModel.cs" />
     <Compile Include="Models\Service\UserReferralModel.cs" />
+    <Compile Include="Models\Service\ReferralBreakdownModel.cs" />
     <Compile Include="Models\SessionLib.cs" />
     <Compile Include="newpassword.aspx.cs">
       <DependentUpon>newpassword.aspx</DependentUpon>

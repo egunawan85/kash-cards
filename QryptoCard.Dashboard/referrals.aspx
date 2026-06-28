@@ -68,16 +68,20 @@
             <div runat="server" id="divnoreferral" style="color: var(--ink-3); font-size: .95rem; padding: 14px 0;">
                 <asp:Label runat="server" ID="lblNoReferral" Text="No one has joined with your link yet." />
             </div>
-            <asp:GridView CssClass="dash-table" ID="gvReferralList" runat="server" ShowHeader="false" AutoGenerateColumns="false" DataKeyNames="UserID" AllowPaging="True" PageSize="50" GridLines="None" OnPageIndexChanging="gvReferralList_PageIndexChanging">
+            <asp:GridView CssClass="data-table" ID="gvReferralList" runat="server" ShowHeader="true" AutoGenerateColumns="false" DataKeyNames="UserID" AllowPaging="True" PageSize="50" GridLines="None" OnPageIndexChanging="gvReferralList_PageIndexChanging">
                 <PagerStyle HorizontalAlign="Center" />
                 <Columns>
-                    <asp:TemplateField ItemStyle-VerticalAlign="Top" ItemStyle-HorizontalAlign="Left">
-                        <ItemTemplate>
-                            <div class="ref-row">
-                                <span class="ref-name"><%# Eval("FirstName") %> <%# Eval("LastName") %></span>
-                                <span class="ref-when"><%# Eval("DateJoin") %></span>
-                            </div>
-                        </ItemTemplate>
+                    <asp:TemplateField HeaderText="Referral" ItemStyle-HorizontalAlign="Left" HeaderStyle-HorizontalAlign="Left">
+                        <ItemTemplate><%# RefName(Container.DataItem) %></ItemTemplate>
+                    </asp:TemplateField>
+                    <asp:TemplateField HeaderText="Joined">
+                        <ItemTemplate><%# RefJoined(Container.DataItem) %></ItemTemplate>
+                    </asp:TemplateField>
+                    <asp:TemplateField HeaderText="Earned">
+                        <ItemTemplate><%# RefEarned(Container.DataItem) %></ItemTemplate>
+                    </asp:TemplateField>
+                    <asp:TemplateField HeaderText="Status">
+                        <ItemTemplate><%# RefStatus(Container.DataItem) %></ItemTemplate>
                     </asp:TemplateField>
                 </Columns>
             </asp:GridView>
