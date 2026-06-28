@@ -429,6 +429,16 @@ namespace QryptoCard.Dashboard.card
         protected global::System.Web.UI.HtmlControls.HtmlGenericControl lblalert;
 
         /// <summary>
+        /// pnlAlert control.
+        /// </summary>
+        protected global::System.Web.UI.WebControls.Panel pnlAlert;
+
+        /// <summary>
+        /// btnAlertClose control.
+        /// </summary>
+        protected global::System.Web.UI.WebControls.Button btnAlertClose;
+
+        /// <summary>
         /// Master property.
         /// </summary>
         /// <remarks>

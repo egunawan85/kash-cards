@@ -163,21 +163,16 @@ namespace QryptoCard.Dashboard.card
             btnBuyX.Enabled = true;
         }
 
-        // Show the purchase/validation result in an inline banner next to the Buy button. The
-        // content is already set on lblalert (kept for the #alertModal path); mirror it into the
-        // always-visible inline panel and scroll it into view. The Bootstrap modal's show() is a
-        // no-op when the NewDesign shell hasn't loaded Bootstrap JS, which is why results used to
-        // fall to the page bottom and users re-clicked Buy (the observed double-submit). The
-        // isModalAlert flag is still set for shells where the modal does fire.
+        // Show the purchase/validation result in one centered, server-rendered overlay. lblalert is
+        // already set by the caller; the NewDesign shell loads no Bootstrap/jQuery, so the overlay is
+        // simply Visible-toggled (this replaces the old #alertModal AND the duplicate inline banner
+        // that together produced the doubled message at the page bottom).
         void ShowBuyAlertInline()
         {
-            pnlBuyMsg.Visible = true;
-            lblBuyMsg.InnerHtml = lblalert.InnerHtml;
-            string js = "var isModalAlert = true; (function(){var m=document.getElementById('"
-                + pnlBuyMsg.ClientID
-                + "'); if(m){m.scrollIntoView({behavior:'smooth',block:'center'});}})();";
-            ScriptManager.RegisterClientScriptBlock(this, GetType(), "Pop", js, true);
+            pnlAlert.Visible = true;
         }
+
+        protected void btnAlertClose_Click(object sender, EventArgs e) { pnlAlert.Visible = false; }
 
         void checkHolder(string id)
         {
