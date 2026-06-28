@@ -132,6 +132,8 @@ namespace QryptoCard.Dashboard.card
 
                 lblCardBalance.InnerHtml = Server.HtmlEncode(dt.Param5 + " " + dt.Currency);
 
+                SetWalletBalance();
+
                 hfCardNumber.Value = dt.CardNumber;
                 hfCVV.Value = dt.CVV;
                 hfExpDate.Value = dt.ValidPeriod;
@@ -466,13 +468,42 @@ namespace QryptoCard.Dashboard.card
                 lblDepositAmount.InnerHtml = em.ToString() + " USD";
                 lblFee.InnerHtml = ((fr / 100) * em).ToString() + " USD";
                 lblTotal.InnerHtml = (((fr / 100) * em) + em).ToString() + " USD";
+
+                // Pre-flight flag when the requested amount is more than the wallet can cover. The
+                // deposit itself still re-checks server-side and returns an "Add funds" CTA, so this
+                // is purely an early hint.
+                double bal;
+                bool haveBal = double.TryParse(hfWalletBalance.Value, System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out bal);
+                divOverBalance.Visible = haveBal && em > bal;
             }
             else
             {
                 lblTotal.InnerHtml = "0 USD";
                 lblDepositAmount.InnerHtml = lblTotal.InnerHtml;
                 lblFee.InnerHtml = lblTotal.InnerHtml;
+                divOverBalance.Visible = false;
             }
+        }
+
+        // Wallet USDT balance shown in the top-up overlay as the funding source — same source/format
+        // as the dashboard + My Cards summary (getBalance -> tblM_User_Balance). Display only; the
+        // deposit itself is server-authoritative and re-checks the balance.
+        void SetWalletBalance()
+        {
+            try
+            {
+                OutputModel op = us.getBalance(new UserBalanceModel());
+                if (op.Status == "success" && op.Data != null)
+                {
+                    var b = Newtonsoft.Json.JsonConvert.DeserializeObject<UserBalanceModel>(op.Data.ToString());
+                    if (b != null && b.Balance.HasValue)
+                    {
+                        lblWalletBalance.Text = b.Balance.Value.ToString("0.00") + " USDT";
+                        hfWalletBalance.Value = b.Balance.Value.ToString(System.Globalization.CultureInfo.InvariantCulture);
+                    }
+                }
+            }
+            catch { /* leave the markup default */ }
         }
 
         bool checkMinimumDeposit()

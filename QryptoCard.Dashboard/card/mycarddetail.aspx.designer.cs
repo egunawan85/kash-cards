@@ -699,22 +699,19 @@ namespace QryptoCard.Dashboard.card
         protected global::System.Web.UI.HtmlControls.HtmlButton rc200;
 
         /// <summary>
-        /// viewnetwork control.
+        /// lblWalletBalance control.
         /// </summary>
-        /// <remarks>
-        /// Auto-generated field.
-        /// To modify move field declaration from designer file to code-behind file.
-        /// </remarks>
-        protected global::System.Web.UI.HtmlControls.HtmlGenericControl viewnetwork;
+        protected global::System.Web.UI.WebControls.Label lblWalletBalance;
 
         /// <summary>
-        /// ddlPayment control.
+        /// divOverBalance control.
         /// </summary>
-        /// <remarks>
-        /// Auto-generated field.
-        /// To modify move field declaration from designer file to code-behind file.
-        /// </remarks>
-        protected global::System.Web.UI.WebControls.DropDownList ddlPayment;
+        protected global::System.Web.UI.HtmlControls.HtmlGenericControl divOverBalance;
+
+        /// <summary>
+        /// hfWalletBalance control.
+        /// </summary>
+        protected global::System.Web.UI.WebControls.HiddenField hfWalletBalance;
 
         /// <summary>
         /// lblTotal control.
