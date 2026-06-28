@@ -23,9 +23,12 @@
 # round-trip.) This script EMITS the NAME -> KV-secret mapping for each upload
 # so the reverse mapping is auditable from the log.
 #
-# Reads (relative to deploy/):
-#   secrets/.env    non-secret config (DB host/name/user, URLs, env gate)
-#   secrets/.vault  secrets (DB password, provider keys)
+# Reads (relative to deploy/), selected by ENV -- each environment has its OWN
+# secret set (the runegate-infra convention; dev and prod never share values):
+#   secrets/.env.<env>    non-secret config (DB host/name/user, URLs, env gate)
+#   secrets/.vault.<env>  secrets (DB password, provider keys)
+# There is NO fallback to an unsuffixed file, so a missing .env.prod can never
+# quietly seed dev values into the prod Key Vault.
 # Both are flat KEY=VALUE; comments (#...) and blank lines are skipped, and any
 # KEY whose value is blank is skipped (operator hasn't filled it in yet).
 #
@@ -39,7 +42,8 @@
 #      Skip with SKIP_SEED_KV=true.
 #   2. Standalone for rotation:
 #        ./seed-kv-secrets.sh                 (defaults to ENV=dev)
-#        ENV=dev ./seed-kv-secrets.sh
+#        ENV=dev  ./seed-kv-secrets.sh
+#        ENV=prod ./seed-kv-secrets.sh        (seeds the prod KV from .env.prod/.vault.prod)
 
 set -euo pipefail
 
@@ -75,8 +79,17 @@ command -v openssl >/dev/null 2>&1 || die "openssl not on PATH (used for content
 KV_NAME="$KEYVAULT_NAME"
 log "Key Vault: $KV_NAME"
 
-ENV_SECRETS="$SECRETS_DIR/.env"
-VAULT_SECRETS="$SECRETS_DIR/.vault"
+# Per-env secret sets (no unsuffixed fallback -- see header).
+ENV_SECRETS="$SECRETS_DIR/.env.${ENV}"
+VAULT_SECRETS="$SECRETS_DIR/.vault.${ENV}"
+
+# Fail loudly if THIS environment has no secret files at all. Without this a typo'd
+# or unset ENV (e.g. seeding "prod" before .env.prod/.vault.prod exist) would upload
+# nothing and exit 0 -- a silent empty Key Vault that only surfaces as app startup
+# faults after deploy. Require at least one of the pair to exist.
+if [[ ! -f "$ENV_SECRETS" && ! -f "$VAULT_SECRETS" ]]; then
+    die "no secret files for ENV=$ENV ($ENV_SECRETS / $VAULT_SECRETS) -- copy secrets/.env.example + .vault.example to the .$ENV names and fill them"
+fi
 
 # Hash stdin -> hex sha256. Portable across macOS / Linux.
 sha256() { openssl dgst -sha256 | awk '{print $NF}'; }
@@ -183,8 +196,8 @@ seed_file() {
 # non-secret runtime config (env gate, provider URLs, sender) that inject-secrets.ps1
 # injects as pool env on the server -- the app reads it via SecretsConfig, and
 # load-env.ps1 is local-only. Key Vault is the on-box config source either way.
-seed_file "$ENV_SECRETS"   ".env"
-seed_file "$VAULT_SECRETS" ".vault"
+seed_file "$ENV_SECRETS"   ".env.${ENV}"
+seed_file "$VAULT_SECRETS" ".vault.${ENV}"
 
 echo
 ok "seed-kv-secrets done: $uploaded uploaded, $unchanged unchanged, $skipped_blank skipped (blank)"

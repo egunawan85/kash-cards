@@ -377,6 +377,12 @@ deploy/secrets/.env
 deploy/secrets/.vault
 deploy/secrets/*.env
 deploy/secrets/*.vault
+# per-env filled secrets (.env.dev/.env.prod/.vault.dev/.vault.prod). The *.env /
+# *.vault globs above only catch names ENDING in .env/.vault, NOT these .<env>
+# suffixes -- so match them explicitly. The !*.example re-include below keeps the
+# committed templates (.env.example, .vault.example) tracked.
+deploy/secrets/.env.*
+deploy/secrets/.vault.*
 !deploy/secrets/*.example
 
 # ---- kash-cards: filled infra config (subscription id + IPs); templates committed ----
