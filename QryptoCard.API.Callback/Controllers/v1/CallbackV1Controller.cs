@@ -1,4 +1,5 @@
 using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 using QryptoCard.API.Callback.CallbackV1Service;
 using QryptoCard.API.Callback.Models;
 using QryptoCard.Sec;
@@ -92,9 +93,22 @@ namespace QryptoCard.API.Callback.Controllers.v1
                 return Request.CreateResponse(HttpStatusCode.Unauthorized);
 
             PGCryptoModel model;
+            string json = Encoding.UTF8.GetString(rawBody);
             try
             {
-                model = JsonConvert.DeserializeObject<PGCryptoModel>(Encoding.UTF8.GetString(rawBody));
+                model = JsonConvert.DeserializeObject<PGCryptoModel>(json);
+                if (model != null)
+                {
+                    // Runegate's webhook spells the gateway-fee fields "Commission" /
+                    // "CommissionInPercentage" (double-'s'); our model -- like kash's DB columns
+                    // and the referral ledger -- uses the single-'s' "Commision", so Newtonsoft
+                    // won't bind them by name. Map them explicitly at this adapter boundary so the
+                    // fee reaches the ledger. The CREDITED amount is Total (net), which binds
+                    // directly and is unaffected; this only restores the informational fee detail.
+                    JObject jo = JObject.Parse(json);
+                    model.Commision = (decimal?)jo["Commission"];
+                    model.CommisionInPercentage = (double?)jo["CommissionInPercentage"];
+                }
             }
             catch (JsonException)
             {
