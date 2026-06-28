@@ -51,6 +51,21 @@ namespace QryptoCard.Dashboard.Admin.card
         protected global::System.Web.UI.WebControls.HiddenField hfStatus;
 
         /// <summary>
+        /// txtGlobalCardPrice control.
+        /// </summary>
+        protected global::System.Web.UI.WebControls.TextBox txtGlobalCardPrice;
+
+        /// <summary>
+        /// txtGlobalDepositFee control.
+        /// </summary>
+        protected global::System.Web.UI.WebControls.TextBox txtGlobalDepositFee;
+
+        /// <summary>
+        /// btnUpdatePricing control.
+        /// </summary>
+        protected global::System.Web.UI.WebControls.Button btnUpdatePricing;
+
+        /// <summary>
         /// divfailed control.
         /// </summary>
         /// <remarks>

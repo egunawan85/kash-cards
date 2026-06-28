@@ -259,6 +259,8 @@
       <DependentUpon>UserV1Service.svc</DependentUpon>
     </Compile>
     <Compile Include="Script\Service\Common.cs" />
+    <Compile Include="Script\Service\CardCatalogService.cs" />
+    <Compile Include="Script\Service\AddressGeneratorService.cs" />
     <Compile Include="Script\Service\WalletService.cs" />
     <Compile Include="Script\Service\UserProvisioningService.cs" />
     <Compile Include="Script\Service\CardSpendService.cs" />

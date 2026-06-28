@@ -136,8 +136,9 @@ namespace QryptoCard.Dashboard.card
                     icapay.Visible = true;
                     icgpay.Visible = true;
                     viewrc20.Visible = false;
-                    viewCardholder.Visible = true;
-                    checkHolder(dt.CardTypeId.ToString());
+                    // Frictionless: the cardholder is auto-filled server-side on buy, so the
+                    // cardholder form is never shown and we collect no first/last/email here.
+                    // viewCardholder stays hidden (Visible=false by default).
                 }
                 else
                 {
@@ -212,37 +213,9 @@ namespace QryptoCard.Dashboard.card
         {
             CardModel req = new CardModel();
 
-            if (hfIsHolderNeeded.Value == "1")
-            {
-                if (txtFirstName.Value == "")
-                {
-                    enableButton();
-                    lblalert.InnerHtml = "First name cannot be empty";
-                    ShowBuyAlertInline();
-                    return;
-                }
-                if (txtLastName.Value == "")
-                {
-                    enableButton();
-                    lblalert.InnerHtml = "Last name cannot be empty";
-                    ShowBuyAlertInline();
-                    return;
-                }
-                if (txtEmail.Value == "")
-                {
-                    enableButton();
-                    lblalert.InnerHtml = "Email name cannot be empty";
-                    ShowBuyAlertInline();
-                    return;
-                }
-
-                if (hfHolderID.Value != "")
-                    req.HolderID = Convert.ToInt64(hfHolderID.Value);
-
-                req.Param1 = txtFirstName.Value;
-                req.Param2 = txtLastName.Value;
-                req.Param3 = txtEmail.Value;
-            }
+            // Cardholder is auto-filled server-side (name/email from the buyer's account, address
+            // synthesized) for KYC cards, so no first/last/email is collected or sent here. The buy
+            // posts identically for KYC and non-KYC cards; the INT tier creates the holder when needed.
 
             //TransactionModel uw = new TransactionModel();
             //uw.MerchantID = ddlMerchantAdd.SelectedValue.Trim();

@@ -31,6 +31,7 @@ namespace QryptoCard.Dashboard.Admin.card
                     {
                         //btnGenerate.Visible = true;
                         bindGV();
+                        loadPricing();
                     }
                 }
             }
@@ -121,6 +122,71 @@ namespace QryptoCard.Dashboard.Admin.card
         protected void gvListItem_PageIndexChanging(object sender, GridViewPageEventArgs e)
         {
 
+        }
+
+        // ---- Global card pricing panel (CardPrice + CardDepositFeeRate settings) -------------
+
+        void loadPricing()
+        {
+            OutputModel op = us.getCardPricing();
+            if (op.Status == "success")
+            {
+                var dt = JsonConvert.DeserializeObject<CardTypeModel>(op.Data.ToString());
+                txtGlobalCardPrice.Text = dt.CardPrice;
+                txtGlobalDepositFee.Text = dt.RechargeFeeRate;
+            }
+            else
+            {
+                lblError.Text = op.Message;
+                divfailed.Visible = true;
+            }
+        }
+
+        protected void btnUpdatePricing_Click(object sender, EventArgs e)
+        {
+            // Role gate mirrors the per-card finance-mutation gate (INT also enforces it).
+            if (SessionLib.Current.Role == RoleModel.Approver || SessionLib.Current.Role == RoleModel.Viewer || SessionLib.Current.Role == RoleModel.Signer)
+            {
+                lblError.Text = "You have no authorize to do this request";
+                divfailed.Visible = true;
+                return;
+            }
+
+            // Bound both values client-side (the INT re-validates authoritatively): reject NaN/
+            // Infinity and out-of-range typos so a "300" fee can't sail through to overcharge.
+            double price, fee;
+            if (!double.TryParse(txtGlobalCardPrice.Text, out price)
+                || double.IsNaN(price) || double.IsInfinity(price) || price < 0 || price > 10000)
+            {
+                lblError.Text = "Card price must be a number between 0 and 10000";
+                divfailed.Visible = true;
+                return;
+            }
+            if (!double.TryParse(txtGlobalDepositFee.Text, out fee)
+                || double.IsNaN(fee) || double.IsInfinity(fee) || fee < 0 || fee > 100)
+            {
+                lblError.Text = "Deposit fee (%) must be a number between 0 and 100";
+                divfailed.Visible = true;
+                return;
+            }
+
+            CardTypeModel uw = new CardTypeModel();
+            uw.CardPrice = txtGlobalCardPrice.Text.Trim();
+            uw.RechargeFeeRate = txtGlobalDepositFee.Text.Trim();
+
+            OutputModel op = us.updateCardPricing(uw);
+            if (op.Status == "success")
+            {
+                lblSuccess.Text = op.Message;
+                divsuccess.Visible = true;
+                loadPricing();
+                bindGV();
+            }
+            else
+            {
+                lblError.Text = op.Message;
+                divfailed.Visible = true;
+            }
         }
 
 
