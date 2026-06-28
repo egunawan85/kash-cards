@@ -62,11 +62,6 @@
         .cd-info-text { color: var(--ink-3); font-size: .9rem; line-height: 1.5; display: block; }
         .cd-info-list { color: var(--ink-3); font-size: .9rem; line-height: 1.55; padding-left: 18px; margin: 0; }
         .cd-info-list li { margin-bottom: 6px; }
-
-        /* Error modal — markup/JS unchanged; brought onto the NewDesign palette. */
-        #alertModal .modal-content { background: var(--panel); border: 1px solid var(--line); border-radius: 16px; color: var(--ink); }
-        #alertModal .modal-header, #alertModal .modal-footer { border-color: var(--line); }
-        #alertModal .modal-title { font-family: var(--font-display); }
     </style>
 
     <!--begin::Page header-->
@@ -164,16 +159,6 @@
             </div>
 
             <asp:Button runat="server" ID="btnBuyX" OnClick="btnBuy_ServerClick" CssClass="btn btn-cyan btn-lg cd-buy" Text="Buy" OnClientClick="this.disabled=true; this.value='Processing...';" UseSubmitBehavior="false" />
-
-            <%-- In-context purchase result. The error path also writes into the #alertModal
-                 Bootstrap modal, but that modal's .modal('show') silently no-ops when the
-                 NewDesign shell hasn't loaded the Bootstrap JS — so the message fell to the
-                 bottom of the page and users re-clicked Buy (the observed double-submit). This
-                 inline banner always renders next to the action, independent of modal JS. --%>
-            <asp:Panel runat="server" ID="pnlBuyMsg" Visible="false"
-                       style="margin-top:14px;padding:12px 14px;border:1px solid #d9534f;border-radius:10px;background:rgba(217,83,79,.08);color:#d9534f;">
-                <span runat="server" id="lblBuyMsg"></span>
-            </asp:Panel>
         </section>
         <!--end::Buy form-->
 
@@ -215,107 +200,18 @@
 <asp:Content ID="Content2" ContentPlaceHolderID="DrawerContent" runat="server">
 </asp:Content>
 <asp:Content ID="Content3" ContentPlaceHolderID="ModalContent" runat="server">
-    <div class="modal fade" tabindex="-1" id="alertModal" aria-hidden="true">
-        <div class="modal-dialog">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h3 class="modal-title">Error</h3>
-
-                    <!--begin::Close-->
-                    <div class="btn btn-icon btn-sm btn-active-light-primary ms-2" data-bs-dismiss="modal" aria-label="Close">
-                        <i class="ki-duotone ki-cross fs-1"><span class="path1"></span><span class="path2"></span></i>
-                    </div>
-                    <!--end::Close-->
-                </div>
-
-                <div class="modal-body">
-                    <label class="form-label" runat="server" id="lblalert"></label>
-                </div>
-
-                <div class="modal-footer">
-                    <button class="btn btn-danger" type="button" data-bs-dismiss="modal">Close</button>
-                </div>
+    <%-- Purchase/validation result — one centered, server-rendered overlay (Visible toggled in
+         code-behind). Replaces the old Bootstrap #alertModal (which the NewDesign shell can't show,
+         so it fell to the page bottom) AND the inline banner that duplicated it. --%>
+    <asp:Panel runat="server" ID="pnlAlert" Visible="false" CssClass="hist-modal">
+        <div class="hist-modal-card">
+            <h3>Notice</h3>
+            <p class="hist-modal-text"><label runat="server" id="lblalert"></label></p>
+            <div class="hist-modal-actions">
+                <asp:Button CssClass="btn btn-line" runat="server" ID="btnAlertClose" Text="Close" OnClick="btnAlertClose_Click" CausesValidation="false" />
             </div>
         </div>
-    </div>
+    </asp:Panel>
 </asp:Content>
 <asp:Content ID="Content4" ContentPlaceHolderID="ScriptContent" runat="server">
-    <script type="text/javascript">
-        $(window).load(function () {
-
-            $("input[id*='txtduedate]").datepicker({
-                format: "yyyy/mm/dd"
-
-            });
-            //$("input[id*='txtStartDate]").datepicker({
-            //    format: "yyyy/mm/dd"
-
-            //});
-        });
-
-        $(window).load(function () {
-            $('#myModalAdd').modal({ backdrop: 'static', keyboard: false });
-            if (window.isModalAdd) {
-                $('#myModalAdd').modal('show');
-            }
-            else {
-                $('#myModalAdd').modal('hide');
-            }
-            console.log(window.isModalAdd);
-            console.log('this is another debugging message');
-        });
-
-        $(window).load(function () {
-            //$('#alertModal').modal({ backdrop: 'static', keyboard: false });
-            if (window.isModalAlert) {
-                $('#alertModal').modal('show');
-            }
-            else {
-                $('#alertModal').modal('hide');
-            }
-            console.log(window.isModalAlert);
-            console.log('this is another debugging message');
-        });
-
-
-
-        $(window).load(function () {
-            if (window.isModalPopup) {
-                $('#popupModal').modal('show');
-                var myModal = $('#popupModal');
-                clearTimeout(myModal.data('hideInterval'));
-                myModal.data('hideInterval', setTimeout(function () {
-                    myModal.modal('hide');
-                }, 1000));
-            }
-            else {
-                $('#popupModal').modal('hide');
-            }
-            console.log(window.isModalPopup);
-            console.log('this is another debugging for popup');
-        });
-
-        <%--function copyReferralCode() {
-            var copyText = document.getElementById("<%= hfReferralCode.ClientID %>");
-            //copyText.select();
-            //document.execCommand("copy");
-            navigator.clipboard.writeText(copyText.value).then(() => { }).catch((error) => { })
-            console.log("copytext =>" + copyText.value);
-            alert("Copied to clipboard: " + copyText.value);
-        }--%>
-
-        function copyReferralLink() {
-            var copyText = document.getElementById("<%= hfReferralLink.ClientID %>");
-            //copyText.select();
-            //document.execCommand("copy");
-            navigator.clipboard.writeText(copyText.value).then(() => { }).catch((error) => { })
-            console.log("copytext =>" + copyText.value);
-            alert("Copied to clipboard: " + copyText.value);
-        }
-
-
-        function copyAddress(addr) {
-            navigator.clipboard.writeText(addr).then(() => { }).catch((error) => { })
-        }
-    </script>
 </asp:Content>
