@@ -171,7 +171,7 @@ command -v curl >/dev/null 2>&1 || die "curl not on PATH"
 
 log "Key Vault          : $KEYVAULT_NAME"
 log "KV secret          : $KV_SECRET_NAME"
-log "Callback host      : $CALLBACK_HOST (BIC off + interim IP-lock)"
+log "Callback host      : (BIC off + interim IP-lock; resolved from routes below)"
 
 CF_API="https://api.cloudflare.com/client/v4"
 
@@ -238,14 +238,19 @@ fi
 
 # Build the exposure list. Prefer an explicit ROUTES array in .env.cloudflare.<env>
 # (runegate-infra style -- the operator NAMES each public URL and maps it to a loopback
-# service). Each ROUTES entry is "<prefix>:<service-url>"; hostname = "<prefix>.<zone>".
+# service). Each ROUTES entry is "<prefix>:<service-url>"; hostname = "<prefix>.<zone>",
+# or the bare zone APEX when the prefix is "@" (e.g. "@:http://127.0.0.1:8087" -> <zone>).
 # Fall back to sites.json public[] when ROUTES is unset. Services use 127.0.0.1 (IPv4),
 # NOT localhost: Windows resolves localhost to ::1 first but IIS binds 127.0.0.1 only, so
 # an ::1 origin hop returns HTTP.sys 400 "Invalid Hostname". Sites not listed get NO
 # public hostname (deploy-iis still builds every site loopback-only).
 declare -a EXPOSE=()   # entries: "<fqdn>\t<service-url>"
 if declare -p ROUTES >/dev/null 2>&1 && [[ "${#ROUTES[@]}" -gt 0 ]]; then
-    for r in "${ROUTES[@]}"; do EXPOSE+=("${r%%:*}.${CLOUDFLARE_ZONE}"$'\t'"${r#*:}"); done
+    for r in "${ROUTES[@]}"; do
+        _pfx="${r%%:*}"
+        if [[ "$_pfx" == "@" ]]; then _host="${CLOUDFLARE_ZONE}"; else _host="${_pfx}.${CLOUDFLARE_ZONE}"; fi
+        EXPOSE+=("${_host}"$'\t'"${r#*:}")
+    done
     ok "exposure: ${#EXPOSE[@]} route(s) from ROUTES in $(basename "$CF_FILE")"
     # External RT (convergent MEDIUM): ROUTES is an operator override that otherwise bypasses
     # the sites.json expose:false guard -- a stale/copied ROUTES could silently re-expose an
@@ -265,6 +270,17 @@ else
     done < <(jq -r '.public[] | select(.expose != false) | "\(.hostPrefix)\t\(.port)"' "$SITES_JSON" | tr -d '\r')
     ok "exposure: ${#EXPOSE[@]} route(s) from sites.json public[] expose!=false (no ROUTES override)"
 fi
+
+# Re-derive CALLBACK_HOST from the ACTUAL exposed routes (the operator's ROUTES prefix or
+# apex), not site_hostname()'s "<prefix>-<env>.<zone>" form. Otherwise an env whose ROUTES
+# drop the "-<env>" suffix (e.g. prod's "callback.<zone>") would leave the real callback host
+# without its WAF rules, because CALLBACK_HOST would point at the non-existent
+# "callback-<env>.<zone>". Match on the callback PORT so it works for any prefix/apex. Falls
+# back to the site_hostname() default if no exposed route targets the callback port.
+for _e in "${EXPOSE[@]}"; do
+    if [[ "${_e##*:}" == "$CALLBACK_PORT" ]]; then CALLBACK_HOST="${_e%%$'\t'*}"; fi
+done
+log "Callback host (resolved from routes): $CALLBACK_HOST"
 
 # Desired ingress: one rule per exposed route. Catch-all 404 must be last.
 INGRESS_JSON='[]'
