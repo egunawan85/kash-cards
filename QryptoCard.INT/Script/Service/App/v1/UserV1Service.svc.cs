@@ -1169,17 +1169,62 @@ namespace QryptoCard.INT.Script.Service.App.v1
         }
 
 
+        // Per-referral breakdown for the authenticated caller: each user they referred, with the
+        // total commission that referee has earned the caller, and whether they've converted (bought
+        // a card). Read-only; scoped to the caller's own uid (getUserId(em)) — never a client-supplied
+        // id, so a caller only ever sees their own referees. Earnings come from tblT_Commission,
+        // joined back to the referee via the order id (tblT_Card / tblT_Card_Deposit). Kept on the
+        // existing /referral/joined contract (the loosely-typed OutputModel.Data carries the richer
+        // shape) so no WCF service-reference regen is needed; the referrals tab is the only caller.
         public OutputModel getReferralJoined(string em)
         {
             try
             {
                 var uid = getUserId(em);
-                
-                var ck = db.tblM_User.Where(p => p.InvitedBy == uid).ToList();
+
+                // Referees (users this caller invited).
+                var referees = db.tblM_User
+                    .Where(p => p.InvitedBy == uid)
+                    .Select(p => new { p.UserID, p.FirstName, p.LastName, p.DateJoin })
+                    .ToList();
+
+                // Commission this caller earned, attributed to the referee whose order generated it:
+                // tblT_Commission.TransactionID -> the referee's card / deposit order -> that order's
+                // UserID. Explicit joins (EF-translatable) rather than a correlated subquery.
+                var earned = (from t in db.tblT_Commission
+                              where t.UserID == uid
+                              join c in db.tblT_Card on t.TransactionID equals c.ID
+                              select new { RefereeId = c.UserID, t.Commission })
+                             .Concat(from t in db.tblT_Commission
+                                     where t.UserID == uid
+                                     join d in db.tblT_Card_Deposit on t.TransactionID equals d.ID
+                                     select new { RefereeId = d.UserID, t.Commission })
+                             .GroupBy(x => x.RefereeId)
+                             .Select(g => new { RefereeId = g.Key, Total = g.Sum(x => (double?)x.Commission) ?? 0.0 })
+                             .ToList();
+
+                // Referees who have bought at least one card (= converted).
+                var refIds = referees.Select(r => r.UserID).ToList();
+                var converted = db.tblT_Card
+                    .Where(c => refIds.Contains(c.UserID))
+                    .Select(c => c.UserID).Distinct().ToList();
+
+                var earnedMap = earned.ToDictionary(e => e.RefereeId, e => e.Total);
+                var convertedSet = new System.Collections.Generic.HashSet<string>(converted);
+
+                var rows = referees.Select(r => new
+                {
+                    r.UserID,
+                    r.FirstName,
+                    r.LastName,
+                    r.DateJoin,
+                    Earned = earnedMap.ContainsKey(r.UserID) ? earnedMap[r.UserID] : 0.0,
+                    Converted = convertedSet.Contains(r.UserID)
+                }).ToList();
 
                 op.Status = "success";
-                op.Message = "Success get referral";
-                op.Data = JsonConvert.SerializeObject(ck, Formatting.None);
+                op.Message = "Success get referral breakdown";
+                op.Data = JsonConvert.SerializeObject(rows, Formatting.None);
             }
             catch (Exception ex)
             {

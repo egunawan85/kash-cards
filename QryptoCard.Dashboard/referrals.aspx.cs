@@ -81,13 +81,13 @@ namespace QryptoCard.Dashboard
         void getReferralList()
         {
             int count = 0;
-            List<UserModel> dt = null;
+            List<ReferralBreakdownModel> dt = null;
             try
             {
                 OutputModel op = us.getReferralJoined();
                 if (op.Status == "success" && op.Data != null)
                 {
-                    dt = JsonConvert.DeserializeObject<List<UserModel>>(op.Data.ToString());
+                    dt = JsonConvert.DeserializeObject<List<ReferralBreakdownModel>>(op.Data.ToString());
                     count = dt != null ? dt.Count : 0;
                 }
             }
@@ -113,6 +113,39 @@ namespace QryptoCard.Dashboard
         {
             gvReferralList.PageIndex = e.NewPageIndex;
             getReferralList();
+        }
+
+        // ---- Referral history cell formatters (bound in referrals.aspx) ----
+        protected string RefName(object item)
+        {
+            var m = item as ReferralBreakdownModel;
+            if (m == null) return "";
+            return Server.HtmlEncode(((m.FirstName ?? "") + " " + (m.LastName ?? "")).Trim());
+        }
+
+        protected string RefJoined(object item)
+        {
+            var m = item as ReferralBreakdownModel;
+            if (m != null && m.DateJoin.HasValue) return m.DateJoin.Value.ToString("dd MMM yyyy");
+            return "";
+        }
+
+        protected string RefEarned(object item)
+        {
+            var m = item as ReferralBreakdownModel;
+            double e = m != null ? m.Earned : 0;
+            return e.ToString("0.00") + " USDT";
+        }
+
+        // "Active" once a referee has converted (bought a card) or earned the caller commission;
+        // "Invited" while they've joined but done neither yet.
+        protected string RefStatus(object item)
+        {
+            var m = item as ReferralBreakdownModel;
+            bool active = m != null && (m.Converted || m.Earned > 0);
+            return active
+                ? "<span class=\"badge badge-light-success\">Active</span>"
+                : "<span class=\"badge badge-light-info\">Invited</span>";
         }
     }
 }
