@@ -80,9 +80,9 @@ CFG_B64=$(base64 -w0 "$CFG")
 run_on_vm "$SCRIPT_DIR/scripts/deploy/vm-write-config.ps1" "ConfigB64=$CFG_B64 Env=$ENV"
 run_on_vm "$SCRIPT_DIR/scripts/deploy/vm-install-sqlpackage.ps1"
 run_on_vm "$SCRIPT_DIR/scripts/deploy/vm-migrate.ps1" "Env=$ENV" # baseline (38 tables) + migrations -> SQL Express
-run_on_vm "$SCRIPT_DIR/scripts/deploy/deploy-iis.ps1"             # 12 IIS sites + WCF/connstr rewrites
-run_on_vm "$SCRIPT_DIR/scripts/deploy/inject-secrets.ps1"         # KV -> per-pool env
-run_on_vm "$SCRIPT_DIR/scripts/deploy/vm-seed.ps1" "KvName=$KEYVAULT_NAME DbName=$DB_NAME"
+run_on_vm "$SCRIPT_DIR/scripts/deploy/deploy-iis.ps1"   "Env=$ENV" # 12 IIS sites + WCF/connstr rewrites
+run_on_vm "$SCRIPT_DIR/scripts/deploy/inject-secrets.ps1" "Env=$ENV" # KV -> per-pool env
+run_on_vm "$SCRIPT_DIR/scripts/deploy/vm-seed.ps1" "KvName=$KEYVAULT_NAME DbName=$DB_NAME Env=$ENV"
 # Cloudflare perimeter: create the tunnel + store its connector token in Key Vault FIRST
 # (runs locally; talks to the Cloudflare API), THEN install the connector on the VM, which
 # pulls that token from KV. Installing the connector before the tunnel exists hangs waiting
@@ -98,9 +98,9 @@ run_on_vm "$SCRIPT_DIR/scripts/perimeter/vm-install-cloudflared.ps1" "KvName=$KE
 # the end of a full run). This phase explicitly starts every pool and VERIFIES it
 # reaches Started, failing the orchestrator ([xx]) if any does not -- so the
 # pipeline can never finish with a money tier down.
-run_on_vm "$SCRIPT_DIR/scripts/deploy/vm-iis-ops.ps1" "Action=start"
+run_on_vm "$SCRIPT_DIR/scripts/deploy/vm-iis-ops.ps1" "Action=start Env=$ENV"
 
 # ── Phase 7: verify ──────────────────────────────────────────────────────────
-run_on_vm "$SCRIPT_DIR/scripts/verify/vm-verify.ps1"
+run_on_vm "$SCRIPT_DIR/scripts/verify/vm-verify.ps1" "Env=$ENV"
 
 log "DONE (full dev shakeout). Load deploy/secrets/.smoke.env and run: dotnet test QryptoCard.Tests.Smoke"
