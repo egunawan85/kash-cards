@@ -44,8 +44,20 @@ function Get-Secret([string]$name) {
     if ([string]::IsNullOrWhiteSpace($v)) { Die "$name not found in Key Vault $KvName -- seed it (seed-kv-secrets.sh) and re-run" }
     return $v.Trim()
 }
+# Soft variant: returns $null instead of dying when the secret is absent. Used for the
+# OPTIONAL bootstrap-admin overrides (SEED-ADMIN-*), which dev leaves unset (falls back to
+# the fixed dev defaults) but a non-dev environment MUST provide (enforced below).
+function Get-SecretSoft([string]$name) {
+    $v = (& $AZ keyvault secret show --vault-name $KvName --name $name --query value -o tsv 2>$null)
+    if ([string]::IsNullOrWhiteSpace($v)) { return $null }
+    return $v.Trim()
+}
 $DBKEY  = Get-Secret 'DBKEY'
 $APPKEY = Get-Secret 'APPKEY'
+# Bootstrap-admin credentials from Key Vault (seeded from secrets/.env.<env> +
+# .vault.<env>). Resolution precedence below: explicit env var > Key Vault > dev default.
+$kvAdminEmail = Get-SecretSoft 'SEED-ADMIN-EMAIL'
+$kvAdminPwd   = Get-SecretSoft 'SEED-ADMIN-PASSWORD'
 # Wasabi RSA keypair (XML), used to encrypt the demo cards' CVV/expiry below so the dev card-detail
 # reveal decrypts them exactly like prod. Soft-fetch: if it's absent/unset we fall back to plaintext
 # (the reveal page tolerates that via a decrypt try/catch), so seeding never breaks on a missing key.
@@ -85,9 +97,20 @@ function RsaEncWasabi([string]$plain, [string]$xmlKey) {
     } catch { Write-Host "[..] CVV/expiry encryption skipped (Wasabi key issue): $($_.Exception.Message)"; return $plain }
 }
 
-# Credentials: overridable via env, else deterministic dev defaults.
-$adminEmail = if ($env:SEED_ADMIN_EMAIL)    { $env:SEED_ADMIN_EMAIL }    else { 'edward@s16.ventures' }
-$adminPwd   = if ($env:SEED_ADMIN_PASSWORD) { $env:SEED_ADMIN_PASSWORD } else { 'KashAdmin!dev1' }
+# Credentials: explicit env var wins, else Key Vault (SEED-ADMIN-*), else dev default.
+$adminEmail = if ($env:SEED_ADMIN_EMAIL)    { $env:SEED_ADMIN_EMAIL }    elseif ($kvAdminEmail) { $kvAdminEmail } else { 'edward@s16.ventures' }
+$adminPwd   = if ($env:SEED_ADMIN_PASSWORD) { $env:SEED_ADMIN_PASSWORD } elseif ($kvAdminPwd)   { $kvAdminPwd }   else { 'KashAdmin!dev1' }
+# Fail closed off dev: a non-dev environment must supply BOTH the admin email and password
+# (via Key Vault SEED-ADMIN-EMAIL / SEED-ADMIN-PASSWORD, or an explicit env override). Never
+# seed the well-known dev default admin into stg/prd. seed-admin.sql is INSERT-ONLY, so a
+# weak first password could not be corrected by a later re-seed -- block it before it lands.
+if ($Env -ne 'dev') {
+    $haveEmail = $env:SEED_ADMIN_EMAIL -or $kvAdminEmail
+    $havePwd   = $env:SEED_ADMIN_PASSWORD -or $kvAdminPwd
+    if (-not ($haveEmail -and $havePwd)) {
+        Die "Env=$Env requires SEED-ADMIN-EMAIL and SEED-ADMIN-PASSWORD in Key Vault $KvName (refusing to seed the dev-default admin in a non-dev environment). Set them in secrets/.env.$Env + secrets/.vault.$Env and run seed-kv-secrets.sh, then re-run."
+    }
+}
 $userPwd    = if ($env:SEED_USER_PASSWORD)  { $env:SEED_USER_PASSWORD }  else { 'KashUser!dev1' }
 # Demo cardholder for the synthetic dataset (seed-dev-synthetic.sql): the ONE loginable
 # synthetic user. Its email must be a REAL inbox so the interactive web login's emailed OTP
