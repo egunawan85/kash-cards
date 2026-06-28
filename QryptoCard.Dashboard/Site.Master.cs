@@ -16,6 +16,24 @@ namespace QryptoCard.Dashboard
             }
         }
 
+        // Cache-busting URL for a static asset: appends ?v=<file last-write ticks> so a NEW url is
+        // emitted whenever the file actually changes on deploy — busting browser AND CDN caches
+        // automatically, with no hand-bumped version number to forget. Falls back to the plain url
+        // if the file can't be stat'd.
+        protected string Asset(string virtualPath)
+        {
+            string url = ResolveUrl(virtualPath);
+            try
+            {
+                long ticks = System.IO.File.GetLastWriteTimeUtc(Server.MapPath(virtualPath)).Ticks;
+                return url + "?v=" + ticks;
+            }
+            catch
+            {
+                return url;
+            }
+        }
+
         // Single-letter avatar glyph for the sidebar user block. Derived from the
         // signed-in email (we don't capture a display name); falls back to the brand
         // initial when no email is available.

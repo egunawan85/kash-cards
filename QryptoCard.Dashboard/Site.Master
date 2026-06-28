@@ -13,8 +13,8 @@
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700;800&family=Hanken+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet" />
-    <link rel="stylesheet" href="/Content/css/premium.css?v=2" />
-    <link rel="stylesheet" href="/Content/css/app.css?v=2" />
+    <link rel="stylesheet" href='<%= Asset("~/Content/css/premium.css") %>' />
+    <link rel="stylesheet" href='<%= Asset("~/Content/css/app.css") %>' />
 </head>
 <body>
     <div class="bg-fx"></div>
@@ -99,7 +99,7 @@
         </asp:ContentPlaceHolder>
         <!--end::Page scripts-->
 
-        <script src='<%= ResolveUrl("~/Content/js/dashboard.js") %>'></script>
+        <script src='<%= Asset("~/Content/js/dashboard.js") %>'></script>
 
     </form>
 </body>
