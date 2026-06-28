@@ -65,6 +65,46 @@ namespace QryptoCard.Dashboard.card
             }
         }
 
+        // Local brand mark for the 3D card, by card-type Organization (no external assets) — mirrors
+        // My Cards. The org value only selects one of three fixed marks; it is never interpolated.
+        string CardBrandMark(string org)
+        {
+            org = (org ?? "").Trim();
+            if (string.Equals(org, "MasterCard", StringComparison.OrdinalIgnoreCase))
+                return "<span class=\"qcard-net mc\" title=\"Mastercard\"><i></i><i></i></span>";
+            if (string.Equals(org, "Discover", StringComparison.OrdinalIgnoreCase))
+                return "<span class=\"qcard-net disc\" title=\"Discover\">DISC<b>O</b>VER</span>";
+            return "<span class=\"qcard-net visa\" title=\"Visa\">VISA</span>";
+        }
+
+        // "This month" stat helpers — sum this calendar month's successful spends / deposits.
+        static decimal MonthlySpendTotal(List<CardTransactionModel> rows)
+        {
+            decimal sum = 0m; var now = DateTime.UtcNow;
+            if (rows == null) return sum;
+            foreach (var t in rows)
+            {
+                var when = t.TransactionTime ?? DateTime.MinValue;
+                string st = (t.Status ?? "").ToLowerInvariant();
+                bool ok = st != "failed" && st != "fail" && st != "declined";
+                if (ok && (t.Type ?? "").ToLowerInvariant() == "auth" && when.Year == now.Year && when.Month == now.Month)
+                    sum += (decimal)(t.AuthorizedAmount ?? 0);
+            }
+            return sum;
+        }
+        static decimal MonthlyDepositTotal(List<CardDepositModel> rows)
+        {
+            decimal sum = 0m; var now = DateTime.UtcNow;
+            if (rows == null) return sum;
+            foreach (var d in rows)
+            {
+                var when = d.DateTransaction ?? DateTime.MinValue;
+                if (string.Equals(d.Status, "success", StringComparison.OrdinalIgnoreCase) && when.Year == now.Year && when.Month == now.Month)
+                    sum += (decimal)(d.Total ?? 0);
+            }
+            return sum;
+        }
+
         void bindData(string id)
         {
             CardModel dt;
@@ -78,24 +118,19 @@ namespace QryptoCard.Dashboard.card
                 dt = JsonConvert.DeserializeObject<CardModel>(op.Data.ToString());
                 hfCardID.Value = dt.ID;
                 hfCardNo.Value = dt.CardNo;
-                // Masked PAN (e.g. "4024 00** **** 0001") can't be parsed — show as-is.
-                long cardNoVal;
-                lblCardNo.InnerHtml = Int64.TryParse(dt.CardNumber, out cardNoVal)
-                    ? String.Format("{0:0000 0000 0000 0000}", cardNoVal)
-                    : (dt.CardNumber ?? "");
-                if (dt.Organization == "Visa")
-                    imgOrg.Src = "https://www.svgrepo.com/show/362035/visa-3.svg";
-                else if (dt.Organization == "MasterCard")
-                    imgOrg.Src = "https://www.svgrepo.com/show/508703/mastercard.svg";
-                else
-                    imgOrg.Src = "https://www.svgrepo.com/show/328132/discover.svg";
+                // Masked card-number shape on the 3D card — only the last 4 are real (the provider
+                // never returns a full PAN). Strip to digits and show the last 4 behind a bullet mask.
+                string cardDigits = new string((dt.CardNumber ?? "").Where(char.IsDigit).ToArray());
+                string cardLast4 = cardDigits.Length >= 4 ? cardDigits.Substring(cardDigits.Length - 4) : cardDigits;
+                lblCardNo.InnerHtml = "&#8226;&#8226;&#8226;&#8226; &#8226;&#8226;&#8226;&#8226; &#8226;&#8226;&#8226;&#8226; " + Server.HtmlEncode(cardLast4);
+                lblCardBrand.InnerHtml = CardBrandMark(dt.Organization);
 
                 if (dt.HolderID != null)
-                    lblCardname.InnerHtml = dt.FirstName + " " + dt.LastName;
+                    lblCardname.InnerHtml = Server.HtmlEncode(dt.FirstName + " " + dt.LastName);
 
                 hfDepositFeeRate.Value = dt.RechargeFeeRate;
 
-                lblCardBalance.InnerHtml = dt.Param5 + " " + dt.Currency;
+                lblCardBalance.InnerHtml = Server.HtmlEncode(dt.Param5 + " " + dt.Currency);
 
                 hfCardNumber.Value = dt.CardNumber;
                 hfCVV.Value = dt.CVV;
@@ -128,13 +163,16 @@ namespace QryptoCard.Dashboard.card
         {
             viewdetails.Visible = true;
             long cardNumberVal;
-            lblCardNumber.InnerHtml = Int64.TryParse(hfCardNumber.Value, out cardNumberVal)
+            string cardNumberDisp = Int64.TryParse(hfCardNumber.Value, out cardNumberVal)
                 ? String.Format("{0:0000 0000 0000 0000}", cardNumberVal)
                 : (hfCardNumber.Value ?? "");
-            lblCVV.InnerHtml = Common.decrypt(hfCVV.Value);
-            hfCVVDecr.Value = lblCVV.InnerHtml;
-            lblExpDate.InnerHtml = Common.decrypt(hfExpDate.Value);
-            hfExpDateDecr.Value = lblExpDate.InnerHtml;
+            lblCardNumber.InnerHtml = Server.HtmlEncode(cardNumberDisp);
+            string cvvPlain = Common.decrypt(hfCVV.Value);
+            hfCVVDecr.Value = cvvPlain;
+            lblCVV.InnerHtml = Server.HtmlEncode(cvvPlain);
+            string expPlain = Common.decrypt(hfExpDate.Value);
+            hfExpDateDecr.Value = expPlain;
+            lblExpDate.InnerHtml = Server.HtmlEncode(expPlain);
 
             if (hfHolderID.Value != "")
             {
@@ -149,29 +187,31 @@ namespace QryptoCard.Dashboard.card
                     if (op.Status == "success")
                     {
                         dt = JsonConvert.DeserializeObject<CardholderModel>(op.Data.ToString());
-                        lblCardholder.InnerHtml = dt.FirstName + " " + dt.LastName;
-                        hfCardholder.Value = lblCardholder.InnerHtml;
+                        string holderName = dt.FirstName + " " + dt.LastName;
+                        hfCardholder.Value = holderName;
+                        lblCardholder.InnerHtml = Server.HtmlEncode(holderName);
 
-                        lblPhone.InnerHtml = dt.AreaCode + dt.Mobile;
-                        hfPhone.Value = lblPhone.InnerHtml;
+                        string holderPhone = dt.AreaCode + dt.Mobile;
+                        hfPhone.Value = holderPhone;
+                        lblPhone.InnerHtml = Server.HtmlEncode(holderPhone);
 
-                        lblEmail.InnerHtml = dt.Email;
-                        hfEmail.Value = lblEmail.InnerHtml;
+                        hfEmail.Value = dt.Email;
+                        lblEmail.InnerHtml = Server.HtmlEncode(dt.Email);
 
-                        lblAddress.InnerHtml = dt.Address;
-                        hfAddress.Value = lblAddress.InnerHtml;
+                        hfAddress.Value = dt.Address;
+                        lblAddress.InnerHtml = Server.HtmlEncode(dt.Address);
 
-                        lblCity.InnerHtml = dt.TownStr;
-                        hfCity.Value = lblCity.InnerHtml;
+                        hfCity.Value = dt.TownStr;
+                        lblCity.InnerHtml = Server.HtmlEncode(dt.TownStr);
 
-                        lblState.InnerHtml = dt.StateStr;
-                        hfState.Value = lblState.InnerHtml;
+                        hfState.Value = dt.StateStr;
+                        lblState.InnerHtml = Server.HtmlEncode(dt.StateStr);
 
-                        lblCountry.InnerHtml = dt.CountryStr;
-                        hfCountry.Value = lblCountry.InnerHtml;
+                        hfCountry.Value = dt.CountryStr;
+                        lblCountry.InnerHtml = Server.HtmlEncode(dt.CountryStr);
 
-                        lblZipCode.InnerHtml = dt.PostCode;
-                        hfZipCode.Value = lblZipCode.InnerHtml;
+                        hfZipCode.Value = dt.PostCode;
+                        lblZipCode.InnerHtml = Server.HtmlEncode(dt.PostCode);
 
                         viewholder.Visible = true;
                     }
@@ -191,11 +231,11 @@ namespace QryptoCard.Dashboard.card
             if (op.Status == "success")
             {
                 dt = JsonConvert.DeserializeObject<CardTypeModel>(op.Data.ToString());
-                lblUsage.InnerHtml = (dt.CardDesc ?? "").Replace(",", ", ");
-                lblDepositFee.InnerHtml = "Deposit Fee : " + dt.RechargeFeeRate + "%";
+                lblUsage.InnerHtml = Server.HtmlEncode((dt.CardDesc ?? "").Replace(",", ", "));
+                lblDepositFee.InnerHtml = Server.HtmlEncode("Deposit Fee : " + dt.RechargeFeeRate + "%");
 
-                lblMinDeposit.InnerHtml = "Minimum Deposit : " + dt.DepositAmountMinQuotaForActiveCard + " " + dt.FiatCurrency;
-                lblMaxDeposit.InnerHtml = "Maximum Deposit : " + dt.DepositAmountMaxQuotaForActiveCard + " " + dt.FiatCurrency;
+                lblMinDeposit.InnerHtml = Server.HtmlEncode("Minimum Deposit : " + dt.DepositAmountMinQuotaForActiveCard + " " + dt.FiatCurrency);
+                lblMaxDeposit.InnerHtml = Server.HtmlEncode("Maximum Deposit : " + dt.DepositAmountMaxQuotaForActiveCard + " " + dt.FiatCurrency);
 
 
                 hfCardTypeID.Value = dt.CardTypeId.ToString();
@@ -220,22 +260,23 @@ namespace QryptoCard.Dashboard.card
             if (op.Status == "success")
             {
                 var dt = JsonConvert.DeserializeObject<List<CardDepositModel>>(op.Data.ToString());
+                litTopped.Text = "$" + MonthlyDepositTotal(dt).ToString("0.00");
                 if (dt.Count > 0)
                 {
-                    divnotrx.Visible = false;
+                    divnodepo.Visible = false;
                     gvDepositList.DataSource = dt;
                     gvDepositList.DataBind();
                 }
                 else
                 {
-                    divnotrx.Visible = true;
+                    divnodepo.Visible = true;
                     gvDepositList.DataSource = null;
                     gvDepositList.DataBind();
                 }
             }
             else
             {
-                divnotrx.Visible = true;
+                divnodepo.Visible = true;
                 gvDepositList.DataSource = null;
                 gvDepositList.DataBind();
             }
@@ -280,6 +321,7 @@ namespace QryptoCard.Dashboard.card
             if (op.Status == "success")
             {
                 var dt = JsonConvert.DeserializeObject<List<CardTransactionModel>>(op.Data.ToString());
+                litSpent.Text = "$" + MonthlySpendTotal(dt).ToString("0.00");
 
                 if (dt.Count > 0)
                 {
@@ -366,21 +408,21 @@ namespace QryptoCard.Dashboard.card
 
         protected void btnRecharge_ServerClick(object sender, EventArgs e)
         {
-            ScriptManager.RegisterClientScriptBlock(this, GetType(), "Pop", "var isModalRecharge = true", true);
+            pnlRecharge.Visible = true;
         }
 
         protected void rc20_ServerClick(object sender, EventArgs e)
         {
             txtDepositAmount.Text = "20";
             calculateDeposit();
-            ScriptManager.RegisterClientScriptBlock(this, GetType(), "Pop", "var isModalRecharge = true", true);
+            pnlRecharge.Visible = true;
         }
 
         protected void rc30_ServerClick(object sender, EventArgs e)
         {
             txtDepositAmount.Text = "30";
             calculateDeposit();
-            ScriptManager.RegisterClientScriptBlock(this, GetType(), "Pop", "var isModalRecharge = true", true);
+            pnlRecharge.Visible = true;
 
         }
 
@@ -388,27 +430,27 @@ namespace QryptoCard.Dashboard.card
         {
             txtDepositAmount.Text = "50";
             calculateDeposit();
-            ScriptManager.RegisterClientScriptBlock(this, GetType(), "Pop", "var isModalRecharge = true", true);
+            pnlRecharge.Visible = true;
         }
 
         protected void rc100_ServerClick(object sender, EventArgs e)
         {
             txtDepositAmount.Text = "100";
             calculateDeposit();
-            ScriptManager.RegisterClientScriptBlock(this, GetType(), "Pop", "var isModalRecharge = true", true);
+            pnlRecharge.Visible = true;
         }
 
         protected void rc200_ServerClick(object sender, EventArgs e)
         {
             txtDepositAmount.Text = "200";
             calculateDeposit();
-            ScriptManager.RegisterClientScriptBlock(this, GetType(), "Pop", "var isModalRecharge = true", true);
+            pnlRecharge.Visible = true;
         }
 
         protected void txtDepositAmount_TextChanged(object sender, EventArgs e)
         {
             calculateDeposit();
-            ScriptManager.RegisterClientScriptBlock(this, GetType(), "Pop", "var isModalRecharge = true", true);
+            pnlRecharge.Visible = true;
         }
 
         void calculateDeposit()
@@ -459,7 +501,7 @@ namespace QryptoCard.Dashboard.card
                 btnDepositConfirm.Enabled = true;
                 lblfaileddeposit.InnerText = "Deposit amount cannot be empty";
                 divfaileddeposit.Visible = true;
-                ScriptManager.RegisterClientScriptBlock(this, GetType(), "Pop", "var isModalRecharge = true", true);
+                pnlRecharge.Visible = true;
                 return;
             }
             if (!checkMinimumDeposit())
@@ -467,7 +509,7 @@ namespace QryptoCard.Dashboard.card
                 btnDepositConfirm.Enabled = true;
                 lblfaileddeposit.InnerText = "Minimum deposit amount is " + hfMinDeposit.Value + " USD";
                 divfaileddeposit.Visible = true;
-                ScriptManager.RegisterClientScriptBlock(this, GetType(), "Pop", "var isModalRecharge = true", true);
+                pnlRecharge.Visible = true;
                 return;
             }
             if (!checkMaximumDeposit())
@@ -475,7 +517,7 @@ namespace QryptoCard.Dashboard.card
                 btnDepositConfirm.Enabled = true;
                 lblfaileddeposit.InnerText = "Maximum deposit amount is " + hfMaxDeposit.Value + " USD";
                 divfaileddeposit.Visible = true;
-                ScriptManager.RegisterClientScriptBlock(this, GetType(), "Pop", "var isModalRecharge = true", true);
+                pnlRecharge.Visible = true;
                 return;
             }
 
@@ -488,15 +530,16 @@ namespace QryptoCard.Dashboard.card
             {
                 btnDepositConfirm.Enabled = true;
                 // Top-up is paid from the wallet balance immediately, so there is no per-card
-                // deposit address to show. Land on the card's transaction history instead.
-                Response.Redirect("~/txcard?id=" + hfCardID.Value);
+                // deposit address to show. Return to this card's (re-skinned) detail page, which
+                // now reflects the updated balance + the new deposit row.
+                Response.Redirect("~/card/mycarddetail?id=" + HttpUtility.UrlEncode(hfCardID.Value));
             }
             else
             {
                 btnDepositConfirm.Enabled = true;
                 lblfaileddeposit.InnerHtml = BuildSpendError(res.Message);
                 divfaileddeposit.Visible = true;
-                ScriptManager.RegisterClientScriptBlock(this, GetType(), "Pop", "var isModalRecharge = true", true);
+                pnlRecharge.Visible = true;
                 return;
             }
         }
@@ -518,7 +561,7 @@ namespace QryptoCard.Dashboard.card
         protected void btndfaileddeposit_ServerClick(object sender, EventArgs e)
         {
             divfaileddeposit.Visible = false;
-            ScriptManager.RegisterClientScriptBlock(this, GetType(), "Pop", "var isModalRecharge = true", true);
+            pnlRecharge.Visible = true;
         }
 
         protected void btnDetail_ServerClick(object sender, EventArgs e)
@@ -527,7 +570,7 @@ namespace QryptoCard.Dashboard.card
             if (x.Status == "success")
             {
                 hfOTPID.Value = x.Data.ToString();
-                ScriptManager.RegisterClientScriptBlock(this, GetType(), "Pop", "var isModalDetail = true", true);
+                pnlDetailOTP.Visible = true;
             }
             //else
             //{
@@ -539,7 +582,7 @@ namespace QryptoCard.Dashboard.card
         protected void btnfaileddetail_ServerClick(object sender, EventArgs e)
         {
             divfaileddetail.Visible = false;
-            ScriptManager.RegisterClientScriptBlock(this, GetType(), "Pop", "var isModalDetail = true", true);
+            pnlDetailOTP.Visible = true;
         }
 
         void nableButtonConfirm()
@@ -554,7 +597,7 @@ namespace QryptoCard.Dashboard.card
                 nableButtonConfirm();
                 lblErrorDetail.Text = "All textbox should be filled";
                 divfaileddetail.Visible = true;
-                ScriptManager.RegisterClientScriptBlock(this, GetType(), "Pop", "var isModalDetail = true", true);
+                pnlDetailOTP.Visible = true;
                 return;
             }
             if (icode2.Value == "")
@@ -562,7 +605,7 @@ namespace QryptoCard.Dashboard.card
                 nableButtonConfirm();
                 lblErrorDetail.Text = "All textbox should be filled";
                 divfaileddetail.Visible = true;
-                ScriptManager.RegisterClientScriptBlock(this, GetType(), "Pop", "var isModalDetail = true", true);
+                pnlDetailOTP.Visible = true;
                 return;
             }
             if (icode3.Value == "")
@@ -570,7 +613,7 @@ namespace QryptoCard.Dashboard.card
                 nableButtonConfirm();
                 lblErrorDetail.Text = "All textbox should be filled";
                 divfaileddetail.Visible = true;
-                ScriptManager.RegisterClientScriptBlock(this, GetType(), "Pop", "var isModalDetail = true", true);
+                pnlDetailOTP.Visible = true;
                 return;
             }
             if (icode4.Value == "")
@@ -578,7 +621,7 @@ namespace QryptoCard.Dashboard.card
                 nableButtonConfirm();
                 lblErrorDetail.Text = "All textbox should be filled";
                 divfaileddetail.Visible = true;
-                ScriptManager.RegisterClientScriptBlock(this, GetType(), "Pop", "var isModalDetail = true", true);
+                pnlDetailOTP.Visible = true;
                 return;
             }
             if (icode5.Value == "")
@@ -586,7 +629,7 @@ namespace QryptoCard.Dashboard.card
                 nableButtonConfirm();
                 lblErrorDetail.Text = "All textbox should be filled";
                 divfaileddetail.Visible = true;
-                ScriptManager.RegisterClientScriptBlock(this, GetType(), "Pop", "var isModalDetail = true", true);
+                pnlDetailOTP.Visible = true;
                 return;
             }
             if (icode6.Value == "")
@@ -594,7 +637,7 @@ namespace QryptoCard.Dashboard.card
                 nableButtonConfirm();
                 lblErrorDetail.Text = "All textboc should be filled";
                 divfaileddetail.Visible = true;
-                ScriptManager.RegisterClientScriptBlock(this, GetType(), "Pop", "var isModalDetail = true", true);
+                pnlDetailOTP.Visible = true;
                 return;
             }
             UserOTPModel z = new UserOTPModel();
@@ -613,17 +656,21 @@ namespace QryptoCard.Dashboard.card
                 icode6.Value = "";
                 getCardDetails();
 
-                //ScriptManager.RegisterClientScriptBlock(this, GetType(), "Pop", "var isModalKeyGenerate = false", true);
-                ScriptManager.RegisterClientScriptBlock(this, GetType(), "Pop", "var isModalDetail = false", true);
+                // Reveal succeeded — the OTP overlay stays closed (Visible defaults false).
             }
             else
             {
                 nableButtonConfirm();
                 lblErrorDetail.Text = x.Message;
                 divfaileddetail.Visible = true;
-                ScriptManager.RegisterClientScriptBlock(this, GetType(), "Pop", "var isModalDetail = true", true);
+                pnlDetailOTP.Visible = true;
             }
         }
+
+        // Overlay close buttons — hide the server-rendered overlay (no Bootstrap/jQuery on the shell).
+        protected void btnRechargeClose_Click(object sender, EventArgs e) { pnlRecharge.Visible = false; }
+        protected void btnDetailClose_Click(object sender, EventArgs e) { pnlDetailOTP.Visible = false; }
+        protected void btnAlertClose_Click(object sender, EventArgs e) { pnlAlert.Visible = false; }
 
         protected void OnRowDataBound(object sender, System.Web.UI.WebControls.GridViewRowEventArgs e)
         {
