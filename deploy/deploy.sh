@@ -247,7 +247,7 @@ case "$CMD" in
       run_on_vm "$DEPLOY_SCRIPTS/vm-migrate.ps1" "Env=$ENV"
     fi
     run_on_vm "$DEPLOY_SCRIPTS/deploy-iis.ps1"     "Env=$ENV $(svc_param)"        "DEPLOY_RESULT: PASS"
-    run_on_vm "$DEPLOY_SCRIPTS/inject-secrets.ps1" "$(svc_param)"                  "INJECT_RESULT: PASS"
+    run_on_vm "$DEPLOY_SCRIPTS/inject-secrets.ps1" "Env=$ENV $(svc_param)"        "INJECT_RESULT: PASS"
     run_on_vm "$DEPLOY_SCRIPTS/vm-iis-ops.ps1"     "Action=start $(svc_param)"    "IISOPS_RESULT: PASS"
     log "update complete${SVC:+ (tier: $SVC)}"
     ;;
