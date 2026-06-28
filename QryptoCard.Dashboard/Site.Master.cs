@@ -9,6 +9,12 @@ namespace QryptoCard.Dashboard
     {
         protected void Page_Load(object sender, EventArgs e)
         {
+            // Inject the app stylesheets into the <head> from code-behind. They can't be emitted with
+            // an inline <%= Asset(...) %> in the .master markup: the <head runat="server"> renders a
+            // code block inside a <link> attribute literally, which blanked the page styling.
+            AddStylesheet("~/Content/css/premium.css");
+            AddStylesheet("~/Content/css/app.css");
+
             if (SessionLib.Current.UserID != null)
             {
                 lblFullname.Text = "Hi there!";
@@ -32,6 +38,17 @@ namespace QryptoCard.Dashboard
             {
                 return url;
             }
+        }
+
+        // Inject a cache-busted stylesheet <link> into the page <head> from code-behind — the head is
+        // runat="server", where an inline <%= %> in a <link> attribute does not evaluate.
+        void AddStylesheet(string virtualPath)
+        {
+            if (Page == null || Page.Header == null) return;
+            var link = new System.Web.UI.HtmlControls.HtmlLink();
+            link.Attributes["rel"] = "stylesheet";
+            link.Href = Asset(virtualPath);
+            Page.Header.Controls.Add(link);
         }
 
         // Single-letter avatar glyph for the sidebar user block. Derived from the

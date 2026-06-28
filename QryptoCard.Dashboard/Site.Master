@@ -13,8 +13,8 @@
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700;800&family=Hanken+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet" />
-    <link rel="stylesheet" href='<%= Asset("~/Content/css/premium.css") %>' />
-    <link rel="stylesheet" href='<%= Asset("~/Content/css/app.css") %>' />
+    <%-- premium.css + app.css are injected (cache-busted) from code-behind in Page_Load; an inline
+         expression inside a runat="server" head link does not render. --%>
 </head>
 <body>
     <div class="bg-fx"></div>
