@@ -379,27 +379,39 @@ namespace QryptoCard.Dashboard.card
         void calculateDeposit()
         {
             var dt = JsonConvert.DeserializeObject<CardTypeModel>(hfCardData.Value);
-            if (txtDepositAmount.Text != "")
-            {
-                lblCardFeeX.InnerHtml = dt.CardPrice + " " + dt.CardPriceCurrency;
-                lblMinDepositX.InnerHtml = txtDepositAmount.Text + " " + dt.FiatCurrency;
-                lblDepositFeeRateX.InnerHtml = dt.RechargeFeeRate + "%";
-                lblDepositFeeX.InnerHtml = ((Convert.ToDouble(dt.RechargeFeeRate) / 100) * Convert.ToDouble(txtDepositAmount.Text)).ToString() + " " + dt.FiatCurrency;
-                lblTotalX.InnerHtml = (((Convert.ToDouble(dt.RechargeFeeRate) / 100) * Convert.ToDouble(txtDepositAmount.Text)) + Convert.ToDouble(dt.CardPrice) + Convert.ToDouble(txtDepositAmount.Text)).ToString() + " " + dt.FiatCurrency;
 
-                btnBuyX.Text = "Buy Card (" + lblTotalX.InnerHtml + ")";
-            }
-            else
-            {
-                txtDepositAmount.Text = dt.DepositAmountMinQuotaForActiveCard;
-                lblCardFeeX.InnerHtml = dt.CardPrice + " " + dt.CardPriceCurrency;
-                lblMinDepositX.InnerHtml = txtDepositAmount.Text + " " + dt.FiatCurrency;
-                lblDepositFeeRateX.InnerHtml = dt.RechargeFeeRate + "%";
-                lblDepositFeeX.InnerHtml = ((Convert.ToDouble(dt.RechargeFeeRate) / 100) * Convert.ToDouble(txtDepositAmount.Text)).ToString() + " " + dt.FiatCurrency;
-                lblTotalX.InnerHtml = (((Convert.ToDouble(dt.RechargeFeeRate) / 100) * Convert.ToDouble(txtDepositAmount.Text)) + Convert.ToDouble(dt.CardPrice) + Convert.ToDouble(txtDepositAmount.Text)).ToString() + " " + dt.FiatCurrency;
+            // When no amount is entered, pre-fill the card type's minimum deposit. That field
+            // (like the other card-type numerics) can be null/blank for an incompletely
+            // configured card type; fall back to "0" so the box and the parse below stay valid.
+            if (txtDepositAmount.Text == "")
+                txtDepositAmount.Text = string.IsNullOrWhiteSpace(dt.DepositAmountMinQuotaForActiveCard)
+                    ? "0" : dt.DepositAmountMinQuotaForActiveCard;
 
-                btnBuyX.Text = "Buy Card (" + lblTotalX.InnerHtml + ")";
-            }
+            // Parse defensively: a null/blank/non-numeric card-type value previously reached
+            // Convert.ToDouble("") and threw FormatException, 500-ing the whole page. Treat any
+            // unparseable value as 0 so the deposit calculator always renders.
+            double feeRate = ToNum(dt.RechargeFeeRate);
+            double deposit = ToNum(txtDepositAmount.Text);
+            double cardPrice = ToNum(dt.CardPrice);
+            double depositFee = (feeRate / 100) * deposit;
+            double total = depositFee + cardPrice + deposit;
+
+            // HtmlEncode the data-driven parts: dt is deserialized from hfCardData, which round-trips
+            // through a client hidden field and is attacker-controllable on postback (see the artwork
+            // note below). The computed fee/total are doubles (safe); the raw card-type strings are not.
+            lblCardFeeX.InnerHtml = Server.HtmlEncode(dt.CardPrice) + " " + Server.HtmlEncode(dt.CardPriceCurrency);
+            lblMinDepositX.InnerHtml = Server.HtmlEncode(txtDepositAmount.Text) + " " + Server.HtmlEncode(dt.FiatCurrency);
+            lblDepositFeeRateX.InnerHtml = Server.HtmlEncode(dt.RechargeFeeRate) + "%";
+            lblDepositFeeX.InnerHtml = depositFee.ToString() + " " + Server.HtmlEncode(dt.FiatCurrency);
+            lblTotalX.InnerHtml = total.ToString() + " " + Server.HtmlEncode(dt.FiatCurrency);
+            btnBuyX.Text = "Buy Card (" + lblTotalX.InnerHtml + ")";
+        }
+
+        // Tolerant numeric parse for card-type/display values: returns 0 instead of throwing on a
+        // null/blank/malformed string (current-culture, matching the prior Convert.ToDouble path).
+        private static double ToNum(string s)
+        {
+            return double.TryParse(s, out double v) ? v : 0d;
         }
 
         // Card background artwork (DD-7). Derived from the persisted card data so it
