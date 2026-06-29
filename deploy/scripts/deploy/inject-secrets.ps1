@@ -349,8 +349,11 @@ try {
             $existing = $envColl | Where-Object { $_.GetAttributeValue('name') -eq $name } | Select-Object -First 1
             if ($existing) { [void]$envColl.Remove($existing) }
             $e = $envColl.CreateElement('add')
-            $e['name']  = $name
-            $e['value'] = $secretValues[$name]
+            $e['name']  = [string]$name
+            # Coerce to [string]: the Microsoft.Web.Administration element setter is COM-backed and
+            # throws DISP_E_TYPEMISMATCH if handed anything but a string (hit in prod when the merged
+            # optional-config values reached this assignment as a non-[string]).
+            $e['value'] = [string]$secretValues[$name]
             [void]$envColl.Add($e)
             Write-Ok "  $pool <- $name (value hidden)"
         }

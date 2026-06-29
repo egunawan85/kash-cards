@@ -137,10 +137,21 @@ run_on_vm() {
   local params="${1:-}"
   local expect="${2:-}"   # optional success marker that MUST appear in the output
   log "VM: $(basename "$script") ${params}"
-  local out
-  out=$(az vm run-command invoke -g "$COMPUTE_RG" -n "$VM_NAME" \
-     --command-id RunPowerShellScript --scripts "@$(winpath "$script")" ${params:+--parameters $params} \
-     --query "value[0].message" -o tsv)
+  local out attempt=0
+  # az vm run-command serializes per VM; a prior step's extension can still be "in progress"
+  # when the next invoke fires, returning a transient "(Conflict) ... execution is in progress".
+  # Capture stderr and retry with a delay so a busy slot doesn't abort the deploy. The `|| true`
+  # is required: az exits non-zero on that conflict and `set -e` would abort before we inspect $out.
+  while :; do
+    out=$(az vm run-command invoke -g "$COMPUTE_RG" -n "$VM_NAME" \
+       --command-id RunPowerShellScript --scripts "@$(winpath "$script")" ${params:+--parameters $params} \
+       --query "value[0].message" -o tsv 2>&1) || true
+    printf '%s' "$out" | grep -qiE '\(Conflict\)|execution is in progress' || break
+    attempt=$((attempt+1))
+    if [[ $attempt -ge 8 ]]; then printf '%s\n' "$out"; die "run-command kept conflicting after $attempt tries: $(basename "$script")"; fi
+    log "run-command slot busy (try $attempt/8) -- waiting 20s then retrying $(basename "$script")"
+    sleep 20
+  done
   printf '%s\n' "$out"
   if printf '%s' "$out" | grep -q '\[xx\]'; then
     die "VM phase failed: $(basename "$script") -- see [xx] above"
