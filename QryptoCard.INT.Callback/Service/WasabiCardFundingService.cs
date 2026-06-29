@@ -255,22 +255,36 @@ namespace QryptoCard.INT.Callback.Service
             string matchedCoinKey;
             switch (WasabiCardAddressGuard.Evaluate(WasabiCardService.addressList(), address, out matchedCoinKey))
             {
+                case AddressVerifyResult.Listed:
+                    break; // confirmed on our merchant account — fall through to the transfer
                 case AddressVerifyResult.NotListed:
-                    ThrottledAlert(SetAddrAlertState, "not_listed",
+                    // Both failure verdicts share ONE throttle state ("problem") so that a flap between
+                    // them (address off-list AND the API intermittently failing) does not re-alert every
+                    // tick; the specific cause is in the subject/body, and staleness still re-fires.
+                    ThrottledAlert(SetAddrAlertState, "problem",
                         "WasabiCard auto-fund: deposit address NOT on active list",
                         "Skipped a " + type + " transfer of $" + netUsd + " — the configured WasabiCardDepositAddress (" +
                         address + ") is NOT among the deposit addresses on our WasabiCard merchant account. " +
                         "It may have been rotated/retired. Do NOT fund until the address is corrected — sending now would lose the funds on-chain.");
                     return new { partnerRef, skipped = "address_not_listed", netUsd };
                 case AddressVerifyResult.Unverifiable:
-                    ThrottledAlert(SetAddrAlertState, "verify_fail",
+                    ThrottledAlert(SetAddrAlertState, "problem",
                         "WasabiCard auto-fund: could not verify deposit address",
                         "Skipped a " + type + " transfer of $" + netUsd + " — could not read the WasabiCard wallet address list " +
                         "(addressList returned no usable response). Failing closed; auto-funding is paused for this address until the read recovers.");
                     return new { partnerRef, skipped = "address_verify_failed", netUsd };
+                default:
+                    // Defense-in-depth: an unrecognized verdict (e.g. a future enum value added without
+                    // updating this switch) must NEVER fall through to a send. Fail closed.
+                    Alert("WasabiCard auto-fund: unrecognized address verdict",
+                        "Skipped a " + type + " transfer of $" + netUsd + " — the deposit-address pre-flight returned an unrecognized result. Failing closed.");
+                    return new { partnerRef, skipped = "guard_error", netUsd };
             }
             // Listed: edge-trigger the throttle so a later failure alerts promptly (not only on staleness).
-            WriteAlertState(SetAddrAlertState, "ok");
+            // A bookkeeping write must never block a confirmed-good transfer, so a failure here is traced,
+            // not fatal — it would otherwise make alert state a dependency of funding availability.
+            try { WriteAlertState(SetAddrAlertState, "ok"); }
+            catch (Exception ex) { System.Diagnostics.Trace.TraceError("WasabiCard addr alert-state reset failed: " + ex); }
 
             double wcFeePct = Cfg(EnvWcFeeRatePct, SetWcFeeRatePct, DefWcFee);
             decimal sendUsdt = WasabiCardFundingMath.GrossUpSend(netUsd, wcFeePct);
