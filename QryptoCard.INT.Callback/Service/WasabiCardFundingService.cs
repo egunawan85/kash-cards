@@ -50,6 +50,7 @@ namespace QryptoCard.INT.Callback.Service
         public const string SetTronCoinId = "WasabiCardTronCoinId";         // Param1 override (else resolved live)
         public const string SetUsdtTokenId = "WasabiCardUsdtTokenId";       // Param1 override (else resolved live)
         public const string SetAlertState = "WasabiCardAlertState";         // Param1=last state, Param2=last alert ISO
+        public const string SetAddrAlertState = "WasabiCardAddrAlertState"; // pre-flight address alert throttle (Param1=last state, Param2=last alert ISO)
         public const string SetAlertEmail = "WasabiCardAlertEmail";         // Param1 = ops alert recipient (optional)
 
         // The platform deposit fee % is the SAME global setting the card-pricing overlay uses, so the
@@ -245,6 +246,32 @@ namespace QryptoCard.INT.Callback.Service
                 return new { partnerRef, skipped = "bad_address", netUsd };
             }
 
+            // Active-address pre-flight: confirm the configured destination is STILL on our WasabiCard
+            // merchant account's live address list before sending. A format-valid TRON address can have
+            // been rotated/retired on WasabiCard's side; sending there would land USDT on-chain at an
+            // address WasabiCard no longer credits to us (lost funds). Fail CLOSED on any uncertainty:
+            // a definitive "not on the list" AND an unverifiable read (API down/garbled) both BLOCK.
+            // Done before Reserve() so a bad/unverifiable address consumes no ledger row or cap slot.
+            string matchedCoinKey;
+            switch (WasabiCardAddressGuard.Evaluate(WasabiCardService.addressList(), address, out matchedCoinKey))
+            {
+                case AddressVerifyResult.NotListed:
+                    ThrottledAlert(SetAddrAlertState, "not_listed",
+                        "WasabiCard auto-fund: deposit address NOT on active list",
+                        "Skipped a " + type + " transfer of $" + netUsd + " — the configured WasabiCardDepositAddress (" +
+                        address + ") is NOT among the deposit addresses on our WasabiCard merchant account. " +
+                        "It may have been rotated/retired. Do NOT fund until the address is corrected — sending now would lose the funds on-chain.");
+                    return new { partnerRef, skipped = "address_not_listed", netUsd };
+                case AddressVerifyResult.Unverifiable:
+                    ThrottledAlert(SetAddrAlertState, "verify_fail",
+                        "WasabiCard auto-fund: could not verify deposit address",
+                        "Skipped a " + type + " transfer of $" + netUsd + " — could not read the WasabiCard wallet address list " +
+                        "(addressList returned no usable response). Failing closed; auto-funding is paused for this address until the read recovers.");
+                    return new { partnerRef, skipped = "address_verify_failed", netUsd };
+            }
+            // Listed: edge-trigger the throttle so a later failure alerts promptly (not only on staleness).
+            WriteAlertState(SetAddrAlertState, "ok");
+
             double wcFeePct = Cfg(EnvWcFeeRatePct, SetWcFeeRatePct, DefWcFee);
             decimal sendUsdt = WasabiCardFundingMath.GrossUpSend(netUsd, wcFeePct);
             double dailyCap = Cfg(EnvDailyCapUsd, SetDailyCapUsd, DefDailyCap);
@@ -280,7 +307,7 @@ namespace QryptoCard.INT.Callback.Service
             if (outcome.Submitted)
             {
                 UpdateStatus(partnerRef, StSubmitted, ProviderRef(outcome), "submitted");
-                return new { partnerRef, status = StSubmitted, netUsd, sendUsdt };
+                return new { partnerRef, status = StSubmitted, netUsd, sendUsdt, coinKey = matchedCoinKey };
             }
             if (outcome.DefinitiveReject)
             {
@@ -503,18 +530,18 @@ namespace QryptoCard.INT.Callback.Service
             }
 
             summary["alertState"] = state;
-            if (state == "ok") { WriteAlertState("ok"); return; }
+            if (state == "ok") { WriteAlertState(SetAlertState, "ok"); return; }
 
             // Throttle: alert on transition into a non-ok state, or re-alert every N hours while it persists.
             string prevState; DateTime? lastAt;
-            ReadAlertState(out prevState, out lastAt);
+            ReadAlertState(SetAlertState, out prevState, out lastAt);
             double reAlertHours = Cfg(EnvReAlertHours, SetReAlertHours, DefReAlertHours);
             bool transitioned = !string.Equals(prevState, state, StringComparison.Ordinal);
             bool stale = !lastAt.HasValue || (DateTime.Now - lastAt.Value).TotalHours >= reAlertHours;
             if (transitioned || stale)
             {
                 Alert(subject, body);
-                WriteAlertState(state);
+                WriteAlertState(SetAlertState, state);
                 summary["alertSent"] = true;
             }
             else
@@ -523,12 +550,32 @@ namespace QryptoCard.INT.Callback.Service
             }
         }
 
-        private static void ReadAlertState(out string state, out DateTime? lastAt)
+        /// <summary>
+        /// Fire an ops alert with the same transition/staleness throttle EvaluateAlert uses, but keyed
+        /// to an arbitrary state-setting row so independent alert streams (e.g. the address pre-flight)
+        /// don't spam every tick: alert on a state transition or every reAlertHours while it persists.
+        /// The happy path writes "ok" back to the same row, so a recovery edge-triggers the next alert.
+        /// </summary>
+        private static void ThrottledAlert(string settingName, string state, string subject, string body)
+        {
+            string prevState; DateTime? lastAt;
+            ReadAlertState(settingName, out prevState, out lastAt);
+            double reAlertHours = Cfg(EnvReAlertHours, SetReAlertHours, DefReAlertHours);
+            bool transitioned = !string.Equals(prevState, state, StringComparison.Ordinal);
+            bool stale = !lastAt.HasValue || (DateTime.Now - lastAt.Value).TotalHours >= reAlertHours;
+            if (transitioned || stale)
+            {
+                Alert(subject, body);
+                WriteAlertState(settingName, state);
+            }
+        }
+
+        private static void ReadAlertState(string settingName, out string state, out DateTime? lastAt)
         {
             state = null; lastAt = null;
             using (var db = new DBEntities())
             {
-                var s = db.tblM_Setting.FirstOrDefault(p => p.Name == SetAlertState);
+                var s = db.tblM_Setting.FirstOrDefault(p => p.Name == settingName);
                 if (s == null) return;
                 state = s.Param1;
                 DateTime t;
@@ -537,18 +584,18 @@ namespace QryptoCard.INT.Callback.Service
                     lastAt = t;
             }
         }
-        private static void WriteAlertState(string state)
+        private static void WriteAlertState(string settingName, string state)
         {
             using (var db = new DBEntities())
             {
                 string nowIso = DateTime.Now.ToString("o", CultureInfo.InvariantCulture);
                 int rows = db.Database.ExecuteSqlCommand(
                     "UPDATE dbo.tblM_Setting SET Param1 = @st, Param2 = @now WHERE Name = @name",
-                    P("@st", state), P("@now", nowIso), P("@name", SetAlertState));
+                    P("@st", state), P("@now", nowIso), P("@name", settingName));
                 if (rows == 0)
                     db.Database.ExecuteSqlCommand(
                         "INSERT INTO dbo.tblM_Setting (Name, Value, DateCreated, Param1, Param2) VALUES (@name, NULL, @dc, @st, @now)",
-                        P("@name", SetAlertState), P("@dc", DateTime.Now), P("@st", state), P("@now", nowIso));
+                        P("@name", settingName), P("@dc", DateTime.Now), P("@st", state), P("@now", nowIso));
             }
         }
 
