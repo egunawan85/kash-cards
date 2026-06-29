@@ -50,6 +50,47 @@ namespace QryptoCard.INT.Callback.Service
             }
         }
 
+        /// <summary>
+        /// Operational alert email (WasabiCard float low/blind, auto-fund cap hit, ambiguous transfer,
+        /// etc.). Plain text, no template-file dependency so it works off the scheduler tick. Best-effort:
+        /// a send failure must never abort the monitor/funding tick. Recipient = OPS_ALERT_EMAIL (falls
+        /// back to EMAIL_FROM if unset).
+        /// </summary>
+        public static void sendOpsAlert(string subject, string body, string recipient = null)
+        {
+            try
+            {
+                string from = QryptoCard.Sec.SecretsConfig.GetOptional("EMAIL_FROM", "no-reply@kash.cards");
+                // Recipient precedence: explicit (DB-tunable WasabiCardAlertEmail) -> OPS_ALERT_EMAIL
+                // env -> EMAIL_FROM. Keeps the inbox configurable without a redeploy or KV change.
+                string to = !string.IsNullOrWhiteSpace(recipient)
+                    ? recipient
+                    : QryptoCard.Sec.SecretsConfig.GetOptional("OPS_ALERT_EMAIL", from);
+                string gateway = QryptoCard.Sec.SecretsConfig.GetOptional("EMAIL_SMTP_GATEWAY", "smtp.postmarkapp.com");
+                int port = Convert.ToInt32(QryptoCard.Sec.SecretsConfig.GetOptional("EMAIL_SMTP_PORT", "587"));
+                string token = QryptoCard.Sec.SecretsConfig.Require("POSTMARK_SERVER_TOKEN");
+
+                using (MailMessage message = new MailMessage(from, to))
+                {
+                    message.Subject = "[kash ops] " + subject;
+                    message.Body = body;
+                    message.BodyEncoding = Encoding.UTF8;
+                    message.IsBodyHtml = false;
+                    using (SmtpClient client = new SmtpClient(gateway, port))
+                    {
+                        client.EnableSsl = true;
+                        client.UseDefaultCredentials = false;
+                        client.Credentials = new System.Net.NetworkCredential(token, token);
+                        client.Send(message);
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Trace.TraceError("Ops alert email send failed: " + ex);
+            }
+        }
+
         private static string sendEmailFailed(string card, string merchant, string amount, string message)
         {
             string body = string.Empty;

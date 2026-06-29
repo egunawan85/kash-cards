@@ -64,9 +64,12 @@ param(
 $ErrorActionPreference = 'Stop'
 
 $Path           = '/v1/payment/reconcile/pending'
+$MonitorPath    = '/v1/payment/monitor/balance'
 $EventSource    = 'KashCardsScheduler'
 $SuccessEventId = 1000
 $FailureEventId = 1001
+$MonitorOkId    = 1002
+$MonitorErrId   = 1003
 
 function Write-KashEvent {
     param(
@@ -123,6 +126,32 @@ HttpStatus: $([int]$resp.StatusCode) $($resp.StatusDescription)
 Body:       $($resp.Content)
 "@
     Write-KashEvent -Message $msg -EntryType 'Information' -EventId $SuccessEventId
+
+    # WasabiCard balance monitor + auto-fund tick. Same loopback host + shared secret. Best-effort
+    # in its OWN try/catch so a monitor hiccup never masks the reconcile result or fails the task.
+    try {
+        $monUrl = "$BaseUrl$MonitorPath"
+        $msw = [System.Diagnostics.Stopwatch]::StartNew()
+        $monResp = Invoke-WebRequest -Method Post -Uri $monUrl -Headers $apiHeaders `
+            -UseBasicParsing -TimeoutSec 120
+        $msw.Stop()
+        $monMsg = @"
+WasabiCard monitor tick succeeded.
+URL:        $monUrl
+DurationMs: $($msw.ElapsedMilliseconds)
+HttpStatus: $([int]$monResp.StatusCode) $($monResp.StatusDescription)
+Body:       $($monResp.Content)
+"@
+        Write-KashEvent -Message $monMsg -EntryType 'Information' -EventId $MonitorOkId
+    }
+    catch {
+        $monErr = @"
+WasabiCard monitor tick FAILED (non-fatal; reconcile already succeeded).
+URL:        $BaseUrl$MonitorPath
+Error:      $($_.Exception.GetType().FullName): $($_.Exception.Message)
+"@
+        Write-KashEvent -Message $monErr -EntryType 'Warning' -EventId $MonitorErrId
+    }
 }
 catch {
     $msg = @"

@@ -28,5 +28,11 @@ namespace QryptoCard.INT.Callback.Service.v1
         // endpoint). Returns the number of stranded orders handled this pass.
         [OperationContract]
         int ReconcilePendingProvider();
+
+        // WasabiCard balance monitor + auto-fund tick (invoked by the scheduled trigger over the
+        // loopback endpoint). Reads the float, performs a floor refill if enabled+needed, evaluates
+        // the low-balance/coverage alert. Returns a compact JSON summary.
+        [OperationContract]
+        string RunWasabiCardMonitor();
     }
 }

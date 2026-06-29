@@ -53,6 +53,26 @@ namespace QryptoCard.API.Callback.Controllers.v1
             return response;
         }
 
+        // Scheduled WasabiCard balance monitor + auto-fund tick. Defended exactly like
+        // reconcile/pending: rejects anything proxied through Cloudflare (only the on-box scheduler
+        // hitting 127.0.0.1 has no CF-* headers), then a constant-time shared-secret check — both
+        // before any work. Returns the monitor's JSON summary.
+        [Route("monitor/balance")]
+        [HttpPost]
+        public HttpResponseMessage monitorBalance()
+        {
+            if (!string.IsNullOrEmpty(Header("CF-Connecting-IP")) || !string.IsNullOrEmpty(Header("CF-Ray")))
+                return Request.CreateResponse(HttpStatusCode.NotFound);
+
+            if (!SharedSecretAuth.IsAuthorized(Header("X-Scheduler-Auth"), "SCHEDULER_SHARED_SECRET"))
+                return Request.CreateResponse(HttpStatusCode.Unauthorized);
+
+            string summary = sr.RunWasabiCardMonitor();
+            HttpResponseMessage response = Request.CreateResponse(HttpStatusCode.OK);
+            response.Content = new StringContent(summary ?? "{}", Encoding.UTF8, "application/json");
+            return response;
+        }
+
         // WasabiCard signs the exact raw request body (SHA256withRSA), base64 in X-WSB-SIGNATURE,
         // verified with the platform public key. Verify BEFORE any parse or forward to the INT tier.
         [Route("wasabicard")]
