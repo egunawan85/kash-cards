@@ -31,7 +31,6 @@ namespace QryptoCard.Dashboard.Models
         public static string TXCARD_URL = "/txcard?id=";
 
         // --- Secrets / key material (env-only via SecretsConfig; never committed) ---
-        public static string APPKEY => SecretsConfig.Require("APPKEY");
         public static string WASABICARD_PRIVATE_KEY_XML => SecretsConfig.Require("WASABICARD_PRIVATE_KEY_XML");
     }
 }

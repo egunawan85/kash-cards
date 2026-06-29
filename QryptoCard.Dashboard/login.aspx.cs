@@ -62,10 +62,11 @@ namespace QryptoCard.Dashboard
                 UserService ad = new UserService();
                 UserModel adm = new UserModel();
                 adm.Email = txtEmail.Value;
-                // Login endpoint still expects the encrypted password; the OTP
-                // step then mints tokens. No longer cache it in session — the
-                // dashboard authenticates with Bearer tokens after mint.
-                adm.Password = Secure.EncryptAPP((txtPassword.Value ?? "").Trim());
+                // Send the plaintext password over the internal channel; the INT tier
+                // verifies it against the stored bcrypt hash and the OTP step then mints
+                // tokens. Not cached in session — the dashboard authenticates with Bearer
+                // tokens after mint.
+                adm.Password = (txtPassword.Value ?? "").Trim();
                 var admin = ad.login(adm);
                 if (admin.Status == "success")
                 {

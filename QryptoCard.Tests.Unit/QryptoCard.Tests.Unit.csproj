@@ -24,6 +24,9 @@
     <Reference Include="QryptoCard.Sec">
       <HintPath>..\QryptoCard.Sec\bin\Debug\QryptoCard.Sec.dll</HintPath>
     </Reference>
+    <Reference Include="QryptoCard.INT">
+      <HintPath>..\QryptoCard.INT\bin\QryptoCard.INT.dll</HintPath>
+    </Reference>
     <Reference Include="QryptoCard.INT.Callback">
       <HintPath>..\QryptoCard.INT.Callback\bin\QryptoCard.INT.Callback.dll</HintPath>
     </Reference>

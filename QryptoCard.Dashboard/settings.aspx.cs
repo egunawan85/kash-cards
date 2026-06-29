@@ -179,12 +179,12 @@ namespace QryptoCard.Dashboard
                     return;
                 }
 
-                // Encrypt to the APP form before sending, exactly like the login flow — the INT
-                // tier compares against the stored credential in this form.
+                // Send plaintext over the internal channel — the INT tier verifies the
+                // current password against, and stores the new one as, a bcrypt hash.
                 var op = us.updatePassword(new PasswordChangeModel
                 {
-                    CurrentPassword = Secure.EncryptAPP(cur),
-                    Password = Secure.EncryptAPP(pw.Trim())
+                    CurrentPassword = cur,
+                    Password = pw.Trim()
                 });
 
                 if (op.Status == "success")

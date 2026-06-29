@@ -253,7 +253,6 @@ namespace QryptoCard.INT.Script.Service.Admin.v1
         {
             try
             {
-                var pwd = Secure.APPtoDB(x.Password);
                 var data = db.tblM_Admin.Where(p => p.Email == x.Email).FirstOrDefault();
 
                 if (data == null)
@@ -273,7 +272,7 @@ namespace QryptoCard.INT.Script.Service.Admin.v1
                         return op;
                     }
 
-                    if (data.Password != pwd)
+                    if (!QryptoCard.INT.Security.PasswordHasher.Verify(x.Password, data.Password))
                     {
                         QryptoCard.INT.Security.PasswordLockout.RecordFailure(db.Database, "tblM_Admin", "AdminID", data.AdminID, now);
                         op.Status = "failed";
@@ -535,7 +534,7 @@ namespace QryptoCard.INT.Script.Service.Admin.v1
                     }
 
                     var b = db.tblM_Admin.Where(p => p.AdminID == data.AdminID).FirstOrDefault();
-                    b.Password = Secure.APPtoDB(x.Param1);
+                    b.Password = QryptoCard.INT.Security.PasswordHasher.Hash(x.Param1);
                     data.isVerified = 1;
 
                     db.SaveChanges();
@@ -747,7 +746,7 @@ namespace QryptoCard.INT.Script.Service.Admin.v1
                         return op;
                     }
 
-                    data.Password = Secure.APPtoDB(x.Password);
+                    data.Password = QryptoCard.INT.Security.PasswordHasher.Hash(x.Password);
                     data.Phone = x.Phone;
                     data.isActive = 1;
                     data.isVerified = 1;
@@ -914,7 +913,7 @@ namespace QryptoCard.INT.Script.Service.Admin.v1
                 }
                 else
                 {
-                    if (Secure.DBtoAPP(data.Password) != x.CurrentPassword)
+                    if (!QryptoCard.INT.Security.PasswordHasher.Verify(x.CurrentPassword, data.Password))
                     {
                         op.Status = "failed";
                         op.Message = "Your current password is wrong";
@@ -934,7 +933,7 @@ namespace QryptoCard.INT.Script.Service.Admin.v1
                         return op;
                     }
 
-                    data.Password = Secure.APPtoDB(x.Password);
+                    data.Password = QryptoCard.INT.Security.PasswordHasher.Hash(x.Password);
                     db.SaveChanges();
 
                     op.Status = "success";

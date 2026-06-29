@@ -63,10 +63,10 @@ namespace QryptoCard.Dashboard.Admin
                 AdminService ad = new AdminService();
                 AdminModel adm = new AdminModel();
                 adm.Email = txtEmail.Value;
-                // /v1/auth/login still expects the app-encrypted password; it
-                // verifies the credential and issues the OTP. No longer cached in
-                // Session — the token pair from mint-after-otp replaces it.
-                adm.Password = Secure.EncryptAPP(txtPassword.Value);
+                // /v1/auth/login receives the plaintext password over the internal
+                // channel; it verifies against the stored bcrypt hash and issues the OTP.
+                // Not cached in Session — the token pair from mint-after-otp replaces it.
+                adm.Password = txtPassword.Value;
                 var admin = ad.login(adm);
                 if (admin.Status == "success")
                 {

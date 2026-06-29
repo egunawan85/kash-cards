@@ -2,8 +2,8 @@
 # applied with sqlcmd. Replaces the QryptoCard.DevSeed C# console project: no build,
 # no QryptoCard.Sec reference, no bare-`az` PATH dependency (the bug that made the old
 # seeder die silently under run-command). Mirrors the sister db/seeds + sqlcmd -v pattern;
-# the kash twist is the reversible AES (Secure.cs), reproduced here in PowerShell so the
-# password/secret ciphertext is computed at deploy time and passed via -v -- never committed.
+# passwords/API secrets are one-way bcrypt hashes, computed here at deploy time (via the
+# app's BCrypt.Net library) and passed via -v -- never committed.
 #
 # Invocation (on the VM, after vm-migrate):
 #   az vm run-command invoke -g rg-kash-dev -n vm-kash-dev --command-id RunPowerShellScript `
@@ -52,8 +52,17 @@ function Get-SecretSoft([string]$name) {
     if ([string]::IsNullOrWhiteSpace($v)) { return $null }
     return $v.Trim()
 }
-$DBKEY  = Get-Secret 'DBKEY'
-$APPKEY = Get-Secret 'APPKEY'
+# Passwords + API secrets are now one-way bcrypt hashes (no more reversible AES under
+# the retired DBKEY/APPKEY). Load the bcrypt library shipped with the built app — restored
+# by nuget during the build that precedes seeding — so the exact same algorithm and work
+# factor (12) as QryptoCard.INT.Security.PasswordHasher is used.
+$bcryptDll = Join-Path $SourceDir 'packages\BCrypt.Net-Next.4.0.3\lib\net462\BCrypt.Net-Next.dll'
+if (-not (Test-Path $bcryptDll)) {
+    $bcryptDll = Get-ChildItem -Path $SourceDir -Recurse -Filter 'BCrypt.Net-Next.dll' -ErrorAction SilentlyContinue |
+                 Select-Object -First 1 -ExpandProperty FullName
+}
+if (-not $bcryptDll -or -not (Test-Path $bcryptDll)) { Die "BCrypt.Net-Next.dll not found under $SourceDir -- build (nuget restore) before seeding" }
+Add-Type -Path $bcryptDll
 # Bootstrap-admin credentials from Key Vault (seeded from secrets/.env.<env> +
 # .vault.<env>). Resolution precedence below: explicit env var > Key Vault > dev default.
 $kvAdminEmail = Get-SecretSoft 'SEED-ADMIN-EMAIL'
@@ -64,23 +73,10 @@ $kvAdminPwd   = Get-SecretSoft 'SEED-ADMIN-PASSWORD'
 $WASABIKEYXML = (& $AZ keyvault secret show --vault-name $KvName --name 'WASABICARD-PRIVATE-KEY-XML' --query value -o tsv 2>$null)
 if ($WASABIKEYXML) { $WASABIKEYXML = $WASABIKEYXML.Trim() }
 
-# AES exactly as QryptoCard.Sec/Secure.cs: AES-128-CBC-PKCS7, Key = IV = first 16
-# bytes of UTF8(key) (zero-padded). EncryptDB uses DBKEY (stored form); EncryptAPP
-# uses APPKEY (wire form the client sends).
-function Enc([string]$plain, [string]$key) {
-    $kb  = New-Object byte[] 16
-    $src = [Text.Encoding]::UTF8.GetBytes($key)
-    [Array]::Copy($src, $kb, [Math]::Min($src.Length, 16))
-    $aes = [Security.Cryptography.Aes]::Create()
-    $aes.Mode = [Security.Cryptography.CipherMode]::CBC
-    $aes.Padding = [Security.Cryptography.PaddingMode]::PKCS7
-    $aes.KeySize = 128; $aes.BlockSize = 128
-    $aes.Key = $kb; $aes.IV = $kb
-    $enc = $aes.CreateEncryptor()
-    $pt  = [Text.Encoding]::UTF8.GetBytes($plain)
-    $ct  = $enc.TransformFinalBlock($pt, 0, $pt.Length)
-    $enc.Dispose(); $aes.Dispose()
-    return [Convert]::ToBase64String($ct)
+# One-way bcrypt hash (work factor 12), identical to QryptoCard.INT.Security.PasswordHasher.
+# Used for stored passwords and API secrets; verification happens in the INT tier.
+function Bcrypt([string]$plain) {
+    return [BCrypt.Net.BCrypt]::HashPassword($plain, 12)
 }
 
 # RSA-encrypt a short value with the Wasabi keypair (from the XML) using PKCS1 v1.5 — the exact
@@ -134,12 +130,15 @@ if ($demoEmail -notmatch '^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$') {
     Die "SEED_DEMO_EMAIL '$demoEmail' has an unexpected shape -- refusing to splice into seed SQL"
 }
 
-$adminPwdDb    = Enc $adminPwd  $DBKEY
-$userPwdDb     = Enc $userPwd   $DBKEY
-$apiSecretDb   = Enc $apiSecret $DBKEY
-$apiSecretWire = Enc $apiSecret $APPKEY
-$adminPwdWire  = Enc $adminPwd  $APPKEY
-$demoPwdDb     = Enc $demoPwd   $DBKEY
+# Stored forms are one-way bcrypt hashes. The "wire" forms are now PLAINTEXT: dashboard/API
+# clients send the raw password/secret over the internal channel and the INT tier verifies it
+# against the stored hash (the old EncryptAPP wire encryption has been removed).
+$adminPwdDb    = Bcrypt $adminPwd
+$userPwdDb     = Bcrypt $userPwd
+$apiSecretDb   = Bcrypt $apiSecret
+$apiSecretWire = $apiSecret
+$adminPwdWire  = $adminPwd
+$demoPwdDb     = Bcrypt $demoPwd
 
 $seedsDir = Join-Path $SourceDir 'deploy\sql\seeds'
 foreach ($f in 'seed-reference.sql','seed-admin.sql','seed-smoke-user.sql') {
@@ -170,7 +169,7 @@ if ($Env -eq 'dev') {
     # the cardholder UI + admin lists look realistic. Committed, idempotent (re-applies cleanly --
     # it deletes its own '5eed%' namespace first), and entirely fabricated (fake test-BIN cards,
     # TRC20-shaped addresses, no prod data). The ONE loginable demo cardholder ($demoEmail) gets a
-    # real AES password spliced here (the same EncryptDB scheme as the smoke user); the rest are
+    # real bcrypt-hashed password spliced here (same as the smoke user); the rest are
     # display-only with a non-login sentinel password.
     Step "seed-dev-synthetic.sql (synthetic users/cards/txns; demo login $demoEmail)"
     $synthFile = Join-Path $seedsDir 'seed-dev-synthetic.sql'
@@ -195,15 +194,15 @@ if ($Env -eq 'dev') {
       '# SMOKE_BASE_URL: the deployed programmatic API base (QryptoCard.API.Public).'
       'SMOKE_BASE_URL=https://api-dev.s16.xyz'
       "SMOKE_API_KEY=$apiKey"
-      '# SMOKE_API_SECRET is the wire form (EncryptAPP), used as the Basic-auth password.'
+      '# SMOKE_API_SECRET is the plaintext secret, used as the Basic-auth password.'
       "SMOKE_API_SECRET=$apiSecretWire"
       "SMOKE_ADMIN_EMAIL=$adminEmail"
-      '# SMOKE_ADMIN_PASSWORD is the wire form (EncryptAPP) the admin client sends (this run).'
+      '# SMOKE_ADMIN_PASSWORD is the plaintext password the admin client sends (this run).'
       "SMOKE_ADMIN_PASSWORD=$adminPwdWire"
       ''
       '# Demo cardholder for INTERACTIVE web login at app-dev.s16.xyz (synthetic dev dataset).'
       '# DEMO_EMAIL is a real inbox -- the login OTP is emailed there. DEMO_PASSWORD is the'
-      '# PLAINTEXT to type into the web login form (the browser encrypts it; this is NOT a wire form).'
+      '# PLAINTEXT to type into the web login form (sent as-is over the internal channel).'
       "DEMO_EMAIL=$demoEmail"
       "DEMO_PASSWORD=$demoPwd"
     ) | Set-Content -Path $SmokeOut -Encoding UTF8

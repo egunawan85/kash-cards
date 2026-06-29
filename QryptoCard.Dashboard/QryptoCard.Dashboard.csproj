@@ -2658,7 +2658,6 @@
     </Compile>
     <Compile Include="Services\AuthClient.cs" />
     <Compile Include="Services\CardService.cs" />
-    <Compile Include="Services\Security.cs" />
     <Compile Include="Services\SecurityService.cs" />
     <Compile Include="Services\UserService.cs" />
     <Compile Include="Site.Master.cs">

@@ -125,11 +125,11 @@ namespace QryptoCard.Dashboard
                 //adm.LastName = txtLastName.Value;
                 adm.Email = txtEmail.Value;
                 adm.InvitedBy = txtReferralCode.Value;
-                // Register endpoint still expects the encrypted password. No
-                // longer cached in session — registration completes via the OTP
-                // verify step; the user authenticates with Bearer tokens after a
-                // subsequent login/mint.
-                adm.Password = Secure.EncryptAPP((txtPassword.Value ?? "").Trim());
+                // Send the plaintext password over the internal channel; the INT tier
+                // bcrypt-hashes it for storage. Not cached in session — registration
+                // completes via the OTP verify step; the user authenticates with Bearer
+                // tokens after a subsequent login/mint.
+                adm.Password = (txtPassword.Value ?? "").Trim();
                 var admin = ad.register(adm);
                 if (admin.Status == "success")
                 {

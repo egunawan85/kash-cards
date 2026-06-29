@@ -38,7 +38,7 @@ namespace QryptoCard.Tests.Integration
         {
             _db = db;
 
-            // The fixture sets APPKEY/DBKEY/QRYPTO_ENVIRONMENT; mirror the AuthV1Service
+            // The fixture sets KASH_DATA_KEY/QRYPTO_ENVIRONMENT; mirror the AuthV1Service
             // suite and give revokeAllForSubject a known service token (unused here but
             // keeps SecretsConfig consistent if any path reads it).
             Environment.SetEnvironmentVariable(

@@ -34,8 +34,8 @@ namespace QryptoCard.Tests.Fixtures.LocalDb
             public const string UserA = "user-A";
             public const string EmailA = "user-a@alpha.example";
 
-            // Plaintext login password. The legacy Login path compares against Secure.APPtoDB(pwd);
-            // tests that exercise Login's success branch should seed the stored password the same way.
+            // Plaintext login password. Login bcrypt-verifies the plaintext against the stored
+            // hash; tests exercising Login's success branch seed the stored password as a bcrypt hash.
             public const string PasswordPlain = "TestPassword_DoNotUse";
         }
 
@@ -102,13 +102,13 @@ namespace QryptoCard.Tests.Fixtures.LocalDb
             // process, so set it before any service method reads it.
             Environment.SetEnvironmentVariable("QRYPTO_ENVIRONMENT", "dev");
 
-            // Secure.APPtoDB / EncryptDB / DecryptAPP read these symmetric keys via
-            // SecretsConfig.Require, which throws if unset. The Login path and the seeded
-            // password below both go through Secure, so seed fixed test-only key material here
-            // (set before the first read so SecretsConfig caches these values). Not production
-            // keys — they only ever encrypt the throwaway TestQryptoCard fixtures.
-            Environment.SetEnvironmentVariable("APPKEY", "test-appkey-do-not-use");
-            Environment.SetEnvironmentVariable("DBKEY", "test-dbkey-do-not-use");
+            // AesUtility reads KASH_DATA_KEY (32-byte hex) via SecretsConfig, which throws if
+            // unset. 2FA-seed encrypt/decrypt goes through AesUtility, so seed fixed test-only
+            // key material here (set before the first read so SecretsConfig caches it). Not a
+            // production key — it only ever encrypts throwaway TestQryptoCard fixtures. Passwords
+            // are one-way bcrypt and need no key.
+            Environment.SetEnvironmentVariable("KASH_DATA_KEY",
+                "00112233445566778899aabbccddeeff00112233445566778899aabbccddeeff");
 
             CreateDatabase();
             ApplySchema();
@@ -347,11 +347,10 @@ namespace QryptoCard.Tests.Fixtures.LocalDb
                     Email = Ids.EmailA,
                     FirstName = "Alpha",
                     LastName = "User",
-                    // Login computes Secure.APPtoDB(x.Password) == EncryptDB(DecryptAPP(x.Password))
-                    // and compares it to the stored Password. Store EncryptDB(plaintext) so that a
-                    // Login call passing EncryptAPP(plaintext) round-trips to a match. Tests that
-                    // only need RegisterVerify don't depend on this value.
-                    Password = QryptoCard.Sec.Secure.EncryptDB(Ids.PasswordPlain),
+                    // Login bcrypt-verifies the plaintext it receives against the stored hash.
+                    // Store PasswordHasher.Hash(plaintext) so a Login call passing the plaintext
+                    // matches. Tests that only need RegisterVerify don't depend on this value.
+                    Password = QryptoCard.INT.Security.PasswordHasher.Hash(Ids.PasswordPlain),
                     isActive = 1,
                     isVerified = 1,
                     isBanned = 0,

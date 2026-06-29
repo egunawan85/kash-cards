@@ -96,7 +96,7 @@ namespace QryptoCard.Dashboard.Admin
 
             AdminModel x = new AdminModel();
             x.AdminID = hfID.Value;
-            x.Password = Secure.EncryptAPP(txtPassword.Value.Trim());
+            x.Password = txtPassword.Value.Trim();
             x.Phone = txtPhone.Value;
             var ck = us.onboardingAdmin(x);
             if (ck.Status == "success")
