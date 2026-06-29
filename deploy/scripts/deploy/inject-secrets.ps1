@@ -10,7 +10,7 @@
 # applicationHost.config, where IIS injects it into the w3wp process env.
 #
 # Secrets handled (names only; values come from Key Vault, never source):
-#   DBKEY, APPKEY, WASABICARD_API_KEY, WASABICARD_PUBLIC_KEY,
+#   KASH_DATA_KEY, WASABICARD_API_KEY, WASABICARD_PUBLIC_KEY,
 #   WASABICARD_PRIVATE_KEY, WASABICARD_PRIVATE_KEY_XML, WASABICARD_WSBPUBLIC_KEY,
 #   PGCRYPTO_API_KEY, PGCRYPTO_SECRET_KEY, PGCRYPTO_WEBHOOK_SECRET,
 #   POSTMARK_SERVER_TOKEN, EMAIL_PASSWORD, INT_CALLBACK_SHARED_SECRET,
@@ -158,8 +158,7 @@ Write-Ok "logged in as VM managed identity"
 # DB_PASSWORD -> DB-PASSWORD). Get-Secrets reverses that for the KV lookup and
 # writes the env var back under the original underscored name listed here.
 $AllSecretNames = @(
-    'DBKEY',
-    'APPKEY',
+    'KASH_DATA_KEY',
     'WASABICARD_API_KEY',
     'WASABICARD_PUBLIC_KEY',
     'WASABICARD_PRIVATE_KEY',
@@ -276,7 +275,7 @@ function Get-SecretsForPool {
     #   switch -Wildcard ($PoolName) {
     #       '*callback*' { return @('INT_CALLBACK_SHARED_SECRET','PGCRYPTO_WEBHOOK_SECRET','WASABICARD_WSBPUBLIC_KEY', ...) }
     #       '*scheduler*'{ return @('PGCRYPTO_API_KEY','PGCRYPTO_SECRET_KEY', ...) }
-    #       default      { return @('DBKEY','APPKEY', ...) }
+    #       default      { return @('KASH_DATA_KEY', ...) }
     #   }
 }
 

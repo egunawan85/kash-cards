@@ -17,9 +17,12 @@ namespace QryptoCard.INT.Script.Service
         {
             try
             {
-                passw = Secure.APPtoDB(passw);
-                var data = db.tblM_User.Where(p => p.Email == email && p.Password == passw && p.isActive == 1 && p.isVerified == 1 && p.isBanned == 0).FirstOrDefault();
-                return data != null;
+                // Query by email alone — the password is never in the WHERE clause, so
+                // there is no SQL-equality oracle, and bcrypt verification replaces the
+                // old ciphertext-equality compare. VerifyWithUniformTiming runs a dummy
+                // bcrypt on an account miss so latency doesn't reveal account existence.
+                var data = db.tblM_User.Where(p => p.Email == email && p.isActive == 1 && p.isVerified == 1 && p.isBanned == 0).FirstOrDefault();
+                return QryptoCard.INT.Security.PasswordHasher.VerifyWithUniformTiming(passw, data?.Password);
             }
             catch (Exception) { return false; }
         }
@@ -28,9 +31,10 @@ namespace QryptoCard.INT.Script.Service
         {
             try
             {
-                sec = Secure.APPtoDB(sec);
-                var data = db.tblM_User_API.Where(p => p.APIKey == api && p.SecretKey == sec).FirstOrDefault();
-                return data != null;
+                // APIKey is the lookup handle; the secret is stored as a bcrypt hash, so
+                // look up by key then verify the secret (it can't be matched by equality).
+                var data = db.tblM_User_API.Where(p => p.APIKey == api).FirstOrDefault();
+                return QryptoCard.INT.Security.PasswordHasher.VerifyWithUniformTiming(sec, data?.SecretKey);
             }
             catch (Exception) { return false; }
         }
@@ -39,9 +43,8 @@ namespace QryptoCard.INT.Script.Service
         {
             try
             {
-                passw = Secure.APPtoDB(passw);
-                var data = db.tblM_Admin.Where(p => p.Email == email && p.Password == passw && p.isActive == 1 && p.isVerified == 1 && p.isBanned == 0).FirstOrDefault();
-                return data != null;
+                var data = db.tblM_Admin.Where(p => p.Email == email && p.isActive == 1 && p.isVerified == 1 && p.isBanned == 0).FirstOrDefault();
+                return QryptoCard.INT.Security.PasswordHasher.VerifyWithUniformTiming(passw, data?.Password);
             }
             catch (Exception) { return false; }
         }

@@ -377,7 +377,7 @@ case "$CMD" in
   seed)
     # Re-apply the committed seed SQL on the box. DATA-ONLY: no build, no IIS touch,
     # no secret inject -- just fetch the newest source (so the latest committed seed
-    # files are present) then run vm-seed, which pulls DBKEY/APPKEY from Key Vault and
+    # files are present) then run vm-seed, which bcrypt-hashes the seed credentials and
     # applies the seeds via sqlcmd. The dev-only smoke user + synthetic display dataset
     # are gated INSIDE vm-seed on Env=dev, so `ENV=stg ./deploy/deploy.sh seed` applies
     # only the reference + admin rows. Assumes the schema is already published.

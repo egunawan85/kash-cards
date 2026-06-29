@@ -87,7 +87,7 @@ namespace QryptoCard.Dashboard.Admin
 
             AdminForgotPasswordModel x = new AdminForgotPasswordModel();
             x.Hash = hfID.Value;
-            x.Param1 = Secure.EncryptAPP(txtPassword.Value.Trim());
+            x.Param1 = txtPassword.Value.Trim();
             var ck = us.changeForgotPassword(x);
             if (ck.Status == "success")
             {

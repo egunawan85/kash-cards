@@ -1,7 +1,8 @@
 -- =============================================================================
 -- seed-admin.sql -- the bootstrap staff admin (tblM_Admin). The email and the
--- DB-encrypted password arrive via sqlcmd -v from vm-seed.ps1 (which computes
--- Secure.EncryptDB(password) with the Key Vault DBKEY). NO secret in this file.
+-- bcrypt-hashed password arrive via sqlcmd -v from vm-seed.ps1 (which computes
+-- PasswordHasher.Hash(password) via the app's BCrypt library). NO secret in this file.
+-- ADMIN_PWD_DB is a one-way bcrypt hash (60 chars, '$2a$...'); the column is nvarchar(MAX).
 --
 -- Idempotent: INSERT-ONLY, guarded by NOT EXISTS on Email. There is intentionally
 -- NO UPDATE branch -- a redeploy must never flip isActive/isBanned back on for a

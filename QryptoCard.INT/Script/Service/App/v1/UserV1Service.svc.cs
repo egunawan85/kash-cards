@@ -109,7 +109,7 @@ namespace QryptoCard.INT.Script.Service.App.v1
                     //db.tblM_Company.Add(c);
 
                     tblM_User u = new tblM_User();
-                    u.Password = Secure.APPtoDB(x.Password);
+                    u.Password = QryptoCard.INT.Security.PasswordHasher.Hash(x.Password);
                     u.UserID = Guid.NewGuid().ToString();
                     //u.CompanyID = c.CompanyID;
                     //u.FirstName = x.FirstName;
@@ -291,7 +291,6 @@ namespace QryptoCard.INT.Script.Service.App.v1
         {
             try
             {
-                var pwd = Secure.APPtoDB(x.Password);
                 var data = db.tblM_User.Where(p => p.Email == x.Email && p.isActive == 1 && p.isVerified == 1 && p.isBanned == 0).FirstOrDefault();
 
                 if (data == null)
@@ -311,7 +310,7 @@ namespace QryptoCard.INT.Script.Service.App.v1
                         return op;
                     }
 
-                    if (data.Password != pwd)
+                    if (!QryptoCard.INT.Security.PasswordHasher.Verify(x.Password, data.Password))
                     {
                         QryptoCard.INT.Security.PasswordLockout.RecordFailure(db.Database, "tblM_User", "UserID", data.UserID, now);
                         op.Status = "failed";
@@ -577,7 +576,7 @@ namespace QryptoCard.INT.Script.Service.App.v1
                     }
 
                     var b = db.tblM_User.Where(p => p.UserID == data.UserID).FirstOrDefault();
-                    b.Password = Secure.APPtoDB(x.Param1);
+                    b.Password = QryptoCard.INT.Security.PasswordHasher.Hash(x.Param1);
                     data.isVerified = 1;
 
                     db.SaveChanges();
@@ -691,7 +690,7 @@ namespace QryptoCard.INT.Script.Service.App.v1
                 }
                 else
                 {
-                    if (Secure.DBtoAPP(data.Password) != x.CurrentPassword)
+                    if (!QryptoCard.INT.Security.PasswordHasher.Verify(x.CurrentPassword, data.Password))
                     {
                         op.Status = "failed";
                         op.Message = "Your current password is wrong";
@@ -711,7 +710,7 @@ namespace QryptoCard.INT.Script.Service.App.v1
                         return op;
                     }
 
-                    data.Password = Secure.APPtoDB(x.Password);
+                    data.Password = QryptoCard.INT.Security.PasswordHasher.Hash(x.Password);
                     db.SaveChanges();
 
                     op.Status = "success";
@@ -894,8 +893,8 @@ namespace QryptoCard.INT.Script.Service.App.v1
                     db.SaveChanges();
 
                     x.UserID = uid;
-                    x.AccountKey = Secure.APPtoDB(x.AccountKey);
-                    x.ManualEntryKey = Secure.APPtoDB(x.ManualEntryKey);
+                    x.AccountKey = QryptoCard.INT.Security.AesUtility.Encrypt(x.AccountKey);
+                    x.ManualEntryKey = QryptoCard.INT.Security.AesUtility.Encrypt(x.ManualEntryKey);
                     x.DateCreated = user.Date2FA;
                     x.isActive = 1;
                     db.tblM_User_2FA.Add(x);
@@ -928,8 +927,8 @@ namespace QryptoCard.INT.Script.Service.App.v1
                 }
                 else
                 {
-                    data.AccountKey = Secure.DBtoAPP(data.AccountKey);
-                    data.ManualEntryKey = Secure.DBtoAPP(data.ManualEntryKey);
+                    data.AccountKey = QryptoCard.INT.Security.AesUtility.Decrypt(data.AccountKey);
+                    data.ManualEntryKey = QryptoCard.INT.Security.AesUtility.Decrypt(data.ManualEntryKey);
                     op.Data = JsonConvert.SerializeObject(data, Formatting.None);
                     op.Status = "success";
                     op.Message = "Success retrieve data";
