@@ -16,7 +16,10 @@ namespace QryptoCard.INT.Callback.Model.WasabiCard
 
         public class Datum
         {
-            public int accountId { get; set; }
+            // String, not int: the live merchant accountId is a 19-digit value that overflows Int32
+            // (and it's an identifier we never compute on) — typing it int makes the whole
+            // account/info response fail to deserialize, so the float read returns null (read_fail).
+            public string accountId { get; set; }
             public string currency { get; set; }
             public string totalBalance { get; set; }
             public string availableBalance { get; set; }

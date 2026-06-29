@@ -14,7 +14,9 @@ namespace QryptoCard.INT.Model.WasabiCard
         
         public class Datum
         {
-            public int accountId { get; set; }
+            // String, not int: the live merchant accountId is a 19-digit value that overflows Int32
+            // (an identifier we never compute on) — int makes account/info fail to deserialize.
+            public string accountId { get; set; }
             public string currency { get; set; }
             public string totalBalance { get; set; }
             public string availableBalance { get; set; }
