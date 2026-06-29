@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Data;
 using System.Data.SqlClient;
 using System.Globalization;
 using System.Linq;
@@ -172,21 +173,17 @@ namespace QryptoCard.INT.Callback.Service
         /// </summary>
         private static object AttemptTransfer(string type, string partnerRef, string depositTxId, decimal netUsd)
         {
+            // Defense-in-depth: both callers already gate on Enabled(); re-check here so the
+            // kill-switch holds for any future caller too.
+            if (!Enabled()) return new { partnerRef, skipped = "disabled" };
+
             netUsd = Math.Round(netUsd, 4);
             double minTransfer = ReadNum(SetMinTransferUsd, DefMinTransfer);
             if (netUsd < (decimal)minTransfer)
                 return new { partnerRef, skipped = "below_min_transfer", netUsd };
 
-            // Daily circuit breaker.
-            double dailyCap = ReadNum(SetDailyCapUsd, DefDailyCap);
-            decimal spent24h = SpentLast24hUsd();
-            if (spent24h + netUsd > (decimal)dailyCap)
-            {
-                Alert("WasabiCard auto-fund daily cap reached",
-                    "A " + type + " transfer of $" + netUsd + " was REFUSED: 24h transferred $" + spent24h +
-                    " + $" + netUsd + " would exceed the cap $" + dailyCap + ". Auto-funding is paused until the window rolls off; review for anomalies.");
-                return new { partnerRef, skipped = "daily_cap", netUsd, spent24h };
-            }
+            // (Daily cap is enforced ATOMICALLY in Reserve() below, together with the floor
+            // single-in-flight rule and idempotency — a check here would be a TOCTOU race.)
 
             // Resolve TRON CoinID + USDT-TRC20 TokenID (settings override, else live master-data).
             string coinId, tokenId;
@@ -207,11 +204,24 @@ namespace QryptoCard.INT.Callback.Service
 
             double wcFeePct = ReadNum(SetWcFeeRatePct, DefWcFee);
             decimal sendUsdt = WasabiCardFundingMath.GrossUpSend(netUsd, wcFeePct);
+            double dailyCap = ReadNum(SetDailyCapUsd, DefDailyCap);
 
-            // Idempotency gate: insert the intent FIRST. A duplicate PartnerReferenceID means this
-            // exact transfer was already attempted -> no-op (never double-send).
-            if (!InsertInitiated(partnerRef, type, depositTxId, netUsd, sendUsdt))
-                return new { partnerRef, skipped = "duplicate" };
+            // Atomically reserve the slot BEFORE sending: one SERIALIZABLE transaction enforces
+            // idempotency (unique PartnerReferenceID), the 24h cap, and the single-in-flight-floor
+            // rule together — closing the check-then-act races (external red-team F1/F2). Only a
+            // 'Reserved' result proceeds to an actual transfer.
+            switch (Reserve(partnerRef, type, depositTxId, netUsd, sendUsdt, (decimal)dailyCap))
+            {
+                case ReserveResult.Duplicate:
+                    return new { partnerRef, skipped = "duplicate" };
+                case ReserveResult.FloorInFlight:
+                    return new { partnerRef, skipped = "floor_in_flight" };
+                case ReserveResult.CapExceeded:
+                    Alert("WasabiCard auto-fund daily cap reached",
+                        "A " + type + " transfer of net $" + netUsd + " was REFUSED: it would exceed the 24h cap $" +
+                        dailyCap + ". Auto-funding is paused until the window rolls off; review for anomalies.");
+                    return new { partnerRef, skipped = "daily_cap", netUsd };
+            }
 
             TransferOutcome outcome = PGCryptoService.createTransfer(new TransferRequestModel
             {
@@ -258,8 +268,9 @@ namespace QryptoCard.INT.Callback.Service
         {
             WCAccountInfoResponseModel info = WasabiCardService.getAccountInfo();
             if (info == null || !info.success || info.code != 200 || info.data == null) return null;
-            var usd = info.data.FirstOrDefault(d => string.Equals(d.currency, "USD", StringComparison.OrdinalIgnoreCase))
-                      ?? info.data.FirstOrDefault();
+            // Fail CLOSED if there is no USD entry — never treat another currency's balance as the
+            // USD float (that would size a refill / alert off a number we don't actually understand).
+            var usd = info.data.FirstOrDefault(d => string.Equals(d.currency, "USD", StringComparison.OrdinalIgnoreCase));
             if (usd == null) return null;
             decimal bal;
             if (!decimal.TryParse(usd.availableBalance, NumberStyles.Any, CultureInfo.InvariantCulture, out bal))
@@ -316,36 +327,54 @@ namespace QryptoCard.INT.Callback.Service
                 return rows.Count > 0 && rows[0] > 0;
             }
         }
-        private static decimal SpentLast24hUsd()
-        {
-            using (var db = new DBEntities())
-            {
-                var rows = db.Database.SqlQuery<decimal?>(
-                    "SELECT SUM(ISNULL(NetUsd,0)) FROM dbo.tblH_WasabiCard_Refill " +
-                    "WHERE Status <> '" + StFailed + "' AND CreatedDate > @cutoff",
-                    P("@cutoff", DateTime.Now.AddHours(-24))).ToList();
-                return rows.Count > 0 && rows[0].HasValue ? rows[0].Value : 0m;
-            }
-        }
+        private enum ReserveResult { Reserved, Duplicate, CapExceeded, FloorInFlight }
 
-        /// <summary>Insert the Initiated intent. Returns false if the PartnerReferenceID already exists.</summary>
-        private static bool InsertInitiated(string partnerRef, string type, string depositTxId, decimal netUsd, decimal sendUsdt)
+        /// <summary>
+        /// Atomically reserve a transfer slot. A single conditional INSERT, run in a SERIALIZABLE
+        /// transaction so the cap-SUM and floor-in-flight reads range-lock the rows they read, inserts
+        /// the Initiated row ONLY IF (a) it would not breach the 24h cap and (b) for a floor refill, no
+        /// floor transfer is already in flight. This makes the cap + floor guards atomic with the
+        /// insert — closing the check-then-act races (external red-team F1/F2) — while the unique index
+        /// on PartnerReferenceID remains the idempotency gate (a duplicate key => no-op). Returns which
+        /// gate (if any) blocked, so the caller can alert appropriately.
+        /// </summary>
+        private static ReserveResult Reserve(string partnerRef, string type, string depositTxId,
+            decimal netUsd, decimal sendUsdt, decimal dailyCap)
         {
-            using (var db = new DBEntities())
+            string sql =
+                "INSERT INTO dbo.tblH_WasabiCard_Refill " +
+                "(RefillType, PartnerReferenceID, DepositTxId, NetUsd, SentUsdt, Status, CreatedDate, UpdatedDate) " +
+                "SELECT @type, @ref, @dep, @net, @send, '" + StInitiated + "', @now, @now " +
+                "WHERE (SELECT ISNULL(SUM(NetUsd),0) FROM dbo.tblH_WasabiCard_Refill " +
+                "       WHERE Status <> '" + StFailed + "' AND CreatedDate > @cutoff) + @net <= @cap " +
+                "  AND (@type <> '" + StFloorType + "' OR NOT EXISTS (SELECT 1 FROM dbo.tblH_WasabiCard_Refill " +
+                "       WHERE RefillType = '" + StFloorType + "' AND " + InFlightWhere() + "))";
+
+            using (var ctx = new DBEntities())
+            using (var tx = ctx.Database.BeginTransaction(IsolationLevel.Serializable))
             {
                 try
                 {
-                    db.Database.ExecuteSqlCommand(
-                        "INSERT INTO dbo.tblH_WasabiCard_Refill " +
-                        "(RefillType, PartnerReferenceID, DepositTxId, NetUsd, SentUsdt, Status, CreatedDate, UpdatedDate) " +
-                        "VALUES (@type, @ref, @dep, @net, @send, '" + StInitiated + "', @now, @now)",
+                    int rows = ctx.Database.ExecuteSqlCommand(sql,
                         P("@type", type), P("@ref", partnerRef), P("@dep", depositTxId),
-                        P("@net", netUsd), P("@send", sendUsdt), P("@now", DateTime.Now));
-                    return true;
+                        P("@net", netUsd), P("@send", sendUsdt), P("@now", DateTime.Now),
+                        P("@cutoff", DateTime.Now.AddHours(-24)), P("@cap", dailyCap), StaleParam());
+                    tx.Commit();
+                    if (rows == 1) return ReserveResult.Reserved;
+                    // 0 rows: the cap WHERE or (for floor) the in-flight WHERE blocked it. Disambiguate
+                    // for the alert with a cheap read (post-commit).
+                    if (type == StFloorType && HasInFlightFloor()) return ReserveResult.FloorInFlight;
+                    return ReserveResult.CapExceeded;
                 }
                 catch (Exception ex) when (IsDuplicateKey(ex))
                 {
-                    return false;
+                    tx.Rollback();
+                    return ReserveResult.Duplicate;
+                }
+                catch
+                {
+                    tx.Rollback();
+                    throw;
                 }
             }
         }

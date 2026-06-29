@@ -60,7 +60,7 @@ namespace QryptoCard.INT.Callback.Service.Gateway.WasabiCard
             {
                 HttpClient clients = new HttpClient();
                 clients.BaseAddress = new Uri(KeyModel.WASABICARD_API_URL);
-                clients.Timeout.Add(new TimeSpan(0, 0, 5));
+                clients.Timeout = TimeSpan.FromSeconds(5); // NOT Timeout.Add(...) — that returns a discarded value (the ~100s-default no-op the sibling ops were fixed for)
                 clients.DefaultRequestHeaders.Accept.Clear();
 
                 clients.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
