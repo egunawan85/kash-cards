@@ -116,6 +116,65 @@ namespace QryptoCard.INT.Callback.Service.Gateway.WasabiCard
             }
         }
 
+        /// <summary>
+        /// List the crypto deposit addresses created under our merchant account
+        /// (POST /merchant/core/mcb/wallet/v2/addressList). Read-only — no money moves. The auto-fund
+        /// pre-flight calls this to confirm the configured WasabiCard deposit address is still active
+        /// on our account BEFORE any outbound transfer. Returns null on any failure (HTTP error,
+        /// timeout, exception) so the caller fails CLOSED — it never sends to an address we could not
+        /// verify. Mirrors getAccountInfo's signing/timeout/logging exactly.
+        /// </summary>
+        public static WCAddressListResponseModel addressList()
+        {
+            DBEntities db = new DBEntities();
+            tblH_API_Log api = new tblH_API_Log();
+            try
+            {
+                HttpClient clients = new HttpClient();
+                clients.BaseAddress = new Uri(KeyModel.WASABICARD_API_URL);
+                clients.Timeout = TimeSpan.FromSeconds(5); // NOT Timeout.Add(...) — see getAccountInfo
+                clients.DefaultRequestHeaders.Accept.Clear();
+                clients.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
+
+                ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls12;
+
+                string path = "/merchant/core/mcb/wallet/v2/addressList";
+                clients.DefaultRequestHeaders.Add("X-WSB-API-KEY", KeyModel.WASABICARD_API_KEY);
+                clients.DefaultRequestHeaders.Add("X-WSB-SIGNATURE", signData("{}", loadRsaPrivateKeyPem()));
+                var httpContent = new StringContent("{}", Encoding.UTF8, "application/json");
+                HttpResponseMessage responses = clients.PostAsync(path, httpContent).Result;
+
+                api.Type = "Wasabi Card - Wallet Address List";
+                api.RequestDate = DateTime.Now;
+
+                string resultJSON = responses.Content.ReadAsStringAsync().Result;
+                if (responses.IsSuccessStatusCode && responses.StatusCode == HttpStatusCode.OK)
+                {
+                    api.Response = resultJSON;
+                    api.ResponseDate = DateTime.Now;
+                    db.tblH_API_Log.Add(api);
+                    db.SaveChanges();
+                    // A 200 with a body we cannot parse into the expected shape deserializes with
+                    // success=false / null data; the guard maps that to "unverifiable" -> fail closed.
+                    return JsonConvert.DeserializeObject<WCAddressListResponseModel>(resultJSON);
+                }
+
+                api.Response = responses.StatusCode.ToString() + " - " + resultJSON;
+                api.ResponseDate = DateTime.Now;
+                db.tblH_API_Log.Add(api);
+                db.SaveChanges();
+                return null;
+            }
+            catch (Exception ex)
+            {
+                api.Response = ex.Message;
+                api.ResponseDate = DateTime.Now;
+                db.tblH_API_Log.Add(api);
+                db.SaveChanges();
+                return null;
+            }
+        }
+
         public static WCOpenCardResponseModel openCard(WCOpenCardRequestModel req)
         {
             DBEntities db = new DBEntities();
