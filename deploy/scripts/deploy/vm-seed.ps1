@@ -48,7 +48,14 @@ function Get-Secret([string]$name) {
 # OPTIONAL bootstrap-admin overrides (SEED-ADMIN-*), which dev leaves unset (falls back to
 # the fixed dev defaults) but a non-dev environment MUST provide (enforced below).
 function Get-SecretSoft([string]$name) {
-    $v = (& $AZ keyvault secret show --vault-name $KvName --name $name --query value -o tsv 2>$null)
+    # az exits non-zero on a missing secret; under PS7's $PSNativeCommandUseErrorActionPreference
+    # + ErrorActionPreference=Stop that surfaces as a TERMINATING error despite 2>$null, defeating
+    # the "soft" intent. try/catch keeps it soft so an absent SEED-ADMIN-* falls back to the default.
+    try {
+        $v = (& $AZ keyvault secret show --vault-name $KvName --name $name --query value -o tsv 2>$null)
+    } catch {
+        return $null
+    }
     if ([string]::IsNullOrWhiteSpace($v)) { return $null }
     return $v.Trim()
 }
