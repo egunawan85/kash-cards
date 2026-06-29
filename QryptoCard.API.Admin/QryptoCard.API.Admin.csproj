@@ -221,6 +221,7 @@
     <Compile Include="Models\Service\CardTypeModel.cs" />
     <Compile Include="Models\Service\DepositModel.cs" />
     <Compile Include="Models\Service\DevCreditModel.cs" />
+    <Compile Include="Models\Service\RefundCardModel.cs" />
     <Compile Include="Models\Service\UserModel.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>

@@ -39,6 +39,8 @@ namespace QryptoCard.INT.Script.Service
         public const string TypeCardTopupReversal = "Card Topup Reversal";
         public const string TypeDepositRefund = "Deposit Refund";
         public const string TypeReferralCommission = "Referral Commission";
+        public const string TypeCardRefund = "Card Refund";
+        public const string TypeReferralCommissionReversal = "Referral Commission Reversal";
 
         /// <summary>Outcome of an atomic balance mutation.</summary>
         public class BalanceMutationResult
@@ -241,6 +243,69 @@ namespace QryptoCard.INT.Script.Service
                 status: null,
                 noRowReason: "wallet_missing",
                 dedupType: "ReferralCommission",
+                dedupKey: refereeOrderId,
+                dedupRequest: dedupRequest);
+        }
+
+        /// <summary>
+        /// Credit a card refund back to the buyer's wallet, atomically transitioning the card's open
+        /// order 'refund pending' -> 'refunded' (the caller-supplied claim) AND deduped per card so a
+        /// re-trigger can never double-refund. Claim + dedup + credit commit or roll back together: a
+        /// retry whose claim finds 0 rows ("claim_lost"), or whose dedup row already exists
+        /// ("duplicate_event"), credits nothing. <paramref name="dedupKey"/> is the card number so the
+        /// guarantee is per physical card (one cancel == one refund), independent of which order id the
+        /// admin refunded from.
+        /// </summary>
+        public static BalanceMutationResult CreditCardRefund(
+            string buyerUserId, decimal amount, string orderId, string dedupKey,
+            string claimSql, SqlParameter[] claimParams, string dedupRequest)
+        {
+            if (amount <= 0m) return BalanceMutationResult.Fail("non_positive_refund");
+            return Mutate(
+                userId: buyerUserId,
+                balanceDelta: amount,
+                requireMinBalance: false,
+                minBalance: 0m,
+                ledgerAmount: amount,
+                ledgerCommission: 0m,
+                ledgerCommissionPct: 0d,
+                type: TypeCardRefund,
+                transactionId: orderId,
+                status: null,
+                noRowReason: "wallet_missing",
+                dedupType: "CardRefund",
+                dedupKey: dedupKey,
+                dedupRequest: dedupRequest,
+                claimSql: claimSql,
+                claimParams: claimParams);
+        }
+
+        /// <summary>
+        /// Claw back a referral commission previously paid on a now-refunded order: DEBIT the referrer's
+        /// wallet by the commission amount, deduped per referee order (Type='ReferralCommissionReversal',
+        /// TXID=&lt;referee order id&gt; — distinct from the original 'ReferralCommission' row so the two
+        /// never collide) so it reverses at most once. Fails closed ("insufficient_balance") when the
+        /// referrer has already spent the commission; the caller records that shortfall and proceeds —
+        /// the buyer's refund must never hinge on the clawback succeeding, and the wallet is never driven
+        /// negative.
+        /// </summary>
+        public static BalanceMutationResult ReverseReferralCommission(
+            string referrerUserId, decimal amount, string refereeOrderId, string dedupRequest)
+        {
+            if (amount <= 0m) return BalanceMutationResult.Fail("non_positive_commission");
+            return Mutate(
+                userId: referrerUserId,
+                balanceDelta: -amount,
+                requireMinBalance: true,
+                minBalance: amount,
+                ledgerAmount: -amount,
+                ledgerCommission: 0m,
+                ledgerCommissionPct: 0d,
+                type: TypeReferralCommissionReversal,
+                transactionId: refereeOrderId,
+                status: null,
+                noRowReason: "insufficient_balance",
+                dedupType: "ReferralCommissionReversal",
                 dedupKey: refereeOrderId,
                 dedupRequest: dedupRequest);
         }

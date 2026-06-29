@@ -103,6 +103,28 @@ namespace QryptoCard.API.Admin.Controllers.v1
             return op;
         }
 
+        // Admin card refund (POST v1/admin/card/refund). The acting admin identity comes from the
+        // bearer token (getEmail()), never the body. Root-admin-only + audit-logging are enforced in
+        // the INT-tier service (the authoritative money boundary a direct WCF caller cannot bypass).
+        // Cancels the whole WasabiCard and returns its unused balance to the buyer, reversing commission.
+        [Route("card/refund")]
+        [HttpPost]
+        public OutputModel refundCard(RefundCardModel x)
+        {
+            try
+            {
+                op = sr.refundCard(getEmail(), x == null ? null : x.OrderId);
+            }
+            catch (Exception ex)
+            {
+                op.Status = "error";
+                op.Message = ex.Message;
+                op.Data = null;
+            }
+
+            return op;
+        }
+
         [Route("ban")]
         [HttpDelete]
         public OutputModel banAdmin(tblM_Admin x)

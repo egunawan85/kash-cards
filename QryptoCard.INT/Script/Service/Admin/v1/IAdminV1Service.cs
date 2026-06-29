@@ -47,6 +47,12 @@ namespace QryptoCard.INT.Script.Service.Admin.v1
         [OperationContract]
         OutputModel devCreditWallet(string em, string userId, decimal amount, string reference);
 
+        // Admin-only card refund: cancels the whole WasabiCard and returns its unused balance to the
+        // buyer's wallet, clawing back any referral commission. Root-admin-only + audit-logged (no env
+        // gate — refunds must work in prod). Primitive param (the order id) keeps the proxy edit minimal.
+        [OperationContract]
+        OutputModel refundCard(string em, string orderId);
+
 
 
 

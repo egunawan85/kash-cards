@@ -116,6 +116,7 @@ namespace QryptoCard.Tests.Fixtures.LocalDb
             ApplyWalletIndexes();
             ApplyWebhookDedupIndex();
             ApplyReferralCommissionDedupIndex();
+            ApplyCardRefundDedupIndexes();
             SeedData();
         }
 
@@ -256,6 +257,12 @@ namespace QryptoCard.Tests.Fixtures.LocalDb
         // relies on (filtered to Type='ReferralCommission', sibling to the PGCrypto index).
         void ApplyReferralCommissionDedupIndex()
             => RunScriptFile(ResolveRepoFilePath("deploy", "sql", "migrations", "0004-referral-commission-dedup-index.sql"));
+
+        // The card-refund + commission-clawback dedup unique indexes — the replay defence the admin
+        // refund relies on (filtered to Type='CardRefund' / 'ReferralCommissionReversal'). Applied like
+        // the sibling indexes so the refund dedup tests exercise the real constraints.
+        void ApplyCardRefundDedupIndexes()
+            => RunScriptFile(ResolveRepoFilePath("deploy", "sql", "migrations", "0010-card-refund-dedup-indexes.sql"));
 
         void RunScriptFile(string path)
         {

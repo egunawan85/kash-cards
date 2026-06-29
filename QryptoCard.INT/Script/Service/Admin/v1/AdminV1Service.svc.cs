@@ -214,6 +214,109 @@ namespace QryptoCard.INT.Script.Service.Admin.v1
             return op;
         }
 
+        // ---------- refundCard (admin card refund) ----------
+
+        // Audit EventType written to tblH_Auth_Log for every refund attempt (incl. refusals),
+        // so probes/denials leave a trail exactly like the test-credit tool.
+        const string CardRefundEventType = "admin_card_refund";
+
+        /// <summary>
+        /// Admin-only card refund. Cancels the whole WasabiCard at the provider and returns the card's
+        /// unused balance to the buyer's wallet, clawing back any referral commission paid on the card's
+        /// orders (<see cref="CardRefundService.RefundByOrder"/>). Walled two ways (defense in depth):
+        ///   1. Root-admin (Owner) only — the highest-privilege role; deny-by-default.
+        ///   2. Audit-logged — every attempt (refunded or refused) appends a tblH_Auth_Log row capturing
+        ///      who/when/order/outcome.
+        /// Unlike the dev-credit tool there is NO environment gate: a refund returns the user's own money
+        /// and must work in production. The money path itself (cancel -> credit) is atomic, deduped per
+        /// card, and finalizes synchronously from the cancel response.
+        /// </summary>
+        public OutputModel refundCard(string em, string orderId)
+        {
+            try
+            {
+                string adminId = tryGetAdminId(em);
+                string actingRole = (getRole(em) ?? "").Trim();
+
+                // WALL — root-admin (Owner) only. Deny-by-default: anything not exactly Owner is refused.
+                if (!actingRole.Equals(RoleModel.Owner, StringComparison.OrdinalIgnoreCase))
+                {
+                    auditCardRefund(adminId, orderId, "not_owner", null);
+                    op.Status = "failed";
+                    op.Message = "You are not authorized to run this endpoint.";
+                    return op;
+                }
+
+                if (string.IsNullOrWhiteSpace(orderId))
+                {
+                    op.Status = "failed";
+                    op.Message = "An order id is required.";
+                    return op;
+                }
+
+                var result = CardRefundService.RefundByOrder(orderId.Trim(), em);
+
+                auditCardRefund(adminId, orderId, result.Outcome, result);
+
+                if (!result.Success)
+                {
+                    op.Status = "failed";
+                    op.Message = result.Message ?? ("Refund failed: " + result.Outcome);
+                    return op;
+                }
+
+                op.Status = "success";
+                op.Message = result.Message;
+                op.Data = JsonConvert.SerializeObject(new
+                {
+                    cardNo = result.CardNo,
+                    refundedAmount = result.RefundedAmount,
+                    buyerBalanceNew = result.BuyerBalanceNew,
+                    commissionsReversed = result.CommissionsReversed
+                }, Formatting.None);
+            }
+            catch (Exception ex)
+            {
+                op.Message = ex.Message;
+                op.Status = "error";
+            }
+            return op;
+        }
+
+        // Appends one audit row to the shared security ledger (tblH_Auth_Log) for a card-refund attempt.
+        // Best-effort: the money mutation (when it happened) is already durably recorded in the balance
+        // ledger, so an audit-write failure must surface but never mask or undo the primary outcome.
+        void auditCardRefund(string adminId, string orderId, string outcome, CardRefundService.RefundResult result)
+        {
+            try
+            {
+                authDb.tblH_Auth_Log.Add(new tblH_Auth_Log
+                {
+                    LogID = Guid.NewGuid().ToString(),
+                    EventType = CardRefundEventType,
+                    Subject = adminId,
+                    SubjectType = "admin",
+                    RefreshTokenID = null,
+                    RotationChainRoot = null,
+                    SourceIP = WcfSourceIp.TryGet(),
+                    Details = JsonConvert.SerializeObject(new
+                    {
+                        orderId = orderId,
+                        outcome = outcome,
+                        cardNo = result?.CardNo,
+                        refundedAmount = result?.RefundedAmount,
+                        commissionsReversed = result?.CommissionsReversed
+                    }, Formatting.None),
+                    DateLogged = DateTime.UtcNow
+                });
+                authDb.SaveChanges();
+            }
+            catch
+            {
+                // Swallow: auditing is secondary to the (already-committed) money mutation.
+            }
+        }
+
         // Appends one audit row to the shared security ledger (tblH_Auth_Log) for a
         // test-credit attempt. Best-effort: the credit (when it happened) is already
         // durably recorded in the tblH_User_Balance ledger, so an audit-write failure

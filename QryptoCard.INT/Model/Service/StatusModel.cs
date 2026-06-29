@@ -24,6 +24,16 @@ namespace QryptoCard.INT.Model.Service
         public const string Archived = "archived";
         public const string Failed = "failed";
         public const string Gone = "gone";
+        // Confirmed-success terminal status a finalized card order carries (set by the Callback-tier
+        // PGStatusModel.Success = "success"); mirrored here so the INT-tier refund path can gate on it.
+        public const string Success = "success";
+        // Admin refund lifecycle: the card's open order is claimed Success -> RefundPending while the
+        // WasabiCard cancel is in flight, then -> Refunded once the buyer credit commits (or reverted
+        // to Success on a definitive cancel rejection). A cancel that returns an ambiguous result
+        // leaves the order at RefundPending for operator review — the buyer is never credited on an
+        // unconfirmed cancel.
+        public const string RefundPending = "refund pending";
+        public const string Refunded = "refunded";
 
         public const string PartiallyPaid = "partially paid";
         public const string OverPaid = "over paid";
