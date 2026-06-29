@@ -658,7 +658,7 @@ namespace QryptoCard.INT.Script.Service.Admin.v1
                 var b = db.vw_Admin.Where(p => p.AdminID == id && p.isActive == 1).FirstOrDefault();
 
                 var hash = Secure.Base64Encode(x.AdminID);
-                var url = "https://admin-dev.qrypto.trade:88/InvitedAccount?id=" + hash;
+                var url = KeyModel.QRYPTO_URL_ADMIN_INVITE + hash;
                 NotificationMailkitService.sendEmailAdminInvitation(b.Email, b.InvitedByFirstName + " " + b.InvitedByLastName, x.FirstName + " " + x.LastName, url);
 
                 op.Status = "success";
