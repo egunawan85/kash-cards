@@ -2244,6 +2244,12 @@ namespace QryptoCard.API.Admin.AdminV1Service {
         [System.ServiceModel.OperationContractAttribute(Action="http://tempuri.org/IAdminV1Service/devCreditWallet", ReplyAction="http://tempuri.org/IAdminV1Service/devCreditWalletResponse")]
         System.Threading.Tasks.Task<QryptoCard.API.Admin.AdminV1Service.OutputModel> devCreditWalletAsync(string em, string userId, decimal amount, string reference);
 
+        [System.ServiceModel.OperationContractAttribute(Action="http://tempuri.org/IAdminV1Service/refundCard", ReplyAction="http://tempuri.org/IAdminV1Service/refundCardResponse")]
+        QryptoCard.API.Admin.AdminV1Service.OutputModel refundCard(string em, string orderId);
+
+        [System.ServiceModel.OperationContractAttribute(Action="http://tempuri.org/IAdminV1Service/refundCard", ReplyAction="http://tempuri.org/IAdminV1Service/refundCardResponse")]
+        System.Threading.Tasks.Task<QryptoCard.API.Admin.AdminV1Service.OutputModel> refundCardAsync(string em, string orderId);
+
         [System.ServiceModel.OperationContractAttribute(Action="http://tempuri.org/IAdminV1Service/testEmail", ReplyAction="http://tempuri.org/IAdminV1Service/testEmailResponse")]
         void testEmail();
         
@@ -2418,6 +2424,14 @@ namespace QryptoCard.API.Admin.AdminV1Service {
 
         public System.Threading.Tasks.Task<QryptoCard.API.Admin.AdminV1Service.OutputModel> devCreditWalletAsync(string em, string userId, decimal amount, string reference) {
             return base.Channel.devCreditWalletAsync(em, userId, amount, reference);
+        }
+
+        public QryptoCard.API.Admin.AdminV1Service.OutputModel refundCard(string em, string orderId) {
+            return base.Channel.refundCard(em, orderId);
+        }
+
+        public System.Threading.Tasks.Task<QryptoCard.API.Admin.AdminV1Service.OutputModel> refundCardAsync(string em, string orderId) {
+            return base.Channel.refundCardAsync(em, orderId);
         }
 
         public void testEmail() {
