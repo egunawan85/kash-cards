@@ -33,7 +33,9 @@ namespace QryptoCard.INT.Script.Service
             {
                 // APIKey is the lookup handle; the secret is stored as a bcrypt hash, so
                 // look up by key then verify the secret (it can't be matched by equality).
-                var data = db.tblM_User_API.Where(p => p.APIKey == api).FirstOrDefault();
+                // isActive gates revocation: deactivating a key (e.g. the crypto-at-rest scrub)
+                // revokes it even though the bcrypt secret can't be matched by equality.
+                var data = db.tblM_User_API.Where(p => p.APIKey == api && p.isActive == 1).FirstOrDefault();
                 return QryptoCard.INT.Security.PasswordHasher.VerifyWithUniformTiming(sec, data?.SecretKey);
             }
             catch (Exception) { return false; }

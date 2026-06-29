@@ -92,6 +92,23 @@ namespace QryptoCard.Tests.Unit
             Assert.True(PasswordHasher.VerifyWithUniformTiming("pw", hash));
             Assert.False(PasswordHasher.VerifyWithUniformTiming("nope", hash));
         }
+
+        [Theory]
+        [InlineData("!RESET-REQUIRED-CRYPTO-MIGRATION!")]  // forced-reset sentinel
+        [InlineData("bm90LWJjcnlwdA==")]                   // legacy/base64 ciphertext shape
+        [InlineData("plain-garbage")]
+        public void VerifyWithUniformTiming_NonBcryptStoredValue_ReturnsFalseAndRunsBcrypt(string stored)
+        {
+            // A non-bcrypt stored value (e.g. a post-scrub reset sentinel) must NOT take the
+            // fast SaltParseException path — it must run the dummy bcrypt so latency matches an
+            // account miss, otherwise it's an enumeration oracle during the reset window.
+            var sw = Stopwatch.StartNew();
+            var result = PasswordHasher.VerifyWithUniformTiming("any-password", stored);
+            sw.Stop();
+            Assert.False(result);
+            Assert.True(sw.ElapsedMilliseconds >= 10,
+                $"expected a real bcrypt run (>=10ms) for non-bcrypt stored value; took {sw.ElapsedMilliseconds}ms");
+        }
     }
 
     public class AesUtilityTests

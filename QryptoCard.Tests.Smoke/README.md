@@ -11,9 +11,9 @@ HTTP Basic credential the seeder produces, so it exercises the full public → I
 ```
 SMOKE_BASE_URL=https://api-dev.s16.xyz         # the deployed programmatic API base (QryptoCard.API.Public)
 SMOKE_API_KEY=smoke-...                          # tblM_User_API.APIKey
-SMOKE_API_SECRET=...                             # the EncryptAPP wire form (Basic password)
+SMOKE_API_SECRET=...                             # the plaintext secret (Basic password)
 SMOKE_ADMIN_EMAIL=edward@s16.ventures
-SMOKE_ADMIN_PASSWORD=...                          # EncryptAPP wire form
+SMOKE_ADMIN_PASSWORD=...                          # plaintext password
 ```
 
 Load those into the environment, then `dotnet test QryptoCard.Tests.Smoke`. When the env is not

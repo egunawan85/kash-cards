@@ -77,7 +77,9 @@ UPDATE dbo.tblM_Admin SET Password = N'<bcrypt-hash>' WHERE Email = N'<admin-ema
 ### 5. Notify users + re-issue API keys
 - Tell users their passwords were reset for security and to use "Forgot password".
 - Re-issue any API credentials that were in use (the old `SecretKey`s are neutralised and the
-  keys deactivated).
+  keys deactivated). **Keep re-issued API secrets to ≤ 72 bytes** — bcrypt silently ignores
+  input past 72 bytes, so a longer secret would cap effective entropy and let two secrets
+  sharing a 72-byte prefix verify as equal. The generated GUID-pair secret (64 bytes) is fine.
 - Affected users re-enrol 2FA (expected near-zero).
 
 ## Verification

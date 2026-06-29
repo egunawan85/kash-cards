@@ -48,12 +48,18 @@ namespace QryptoCard.INT.Security
             }
         }
 
-        // Entry point for auth-path validators. Always runs a bcrypt verify —
-        // against DummyHash when the account lookup missed — so the caller's
-        // latency does not reveal whether the account exists.
+        // Entry point for auth-path validators. Always runs a real bcrypt verify so the
+        // caller's latency does not reveal whether the account exists. The dummy run covers
+        // EVERY non-authenticatable stored value — account miss (null/empty), a forced-reset
+        // sentinel, legacy ciphertext, or a corrupt row — not just null. Without this, a
+        // non-bcrypt stored value would take the fast SaltParseException path (~0 ms) while an
+        // account miss runs the dummy bcrypt (~250 ms), an enumeration oracle during the
+        // post-migration reset window (when many rows hold the sentinel).
         public static bool VerifyWithUniformTiming(string plaintext, string storedHashOrNull)
         {
-            if (string.IsNullOrEmpty(storedHashOrNull))
+            bool isBcrypt = !string.IsNullOrEmpty(storedHashOrNull)
+                            && storedHashOrNull.StartsWith("$2", StringComparison.Ordinal);
+            if (!isBcrypt)
             {
                 Verify(plaintext ?? string.Empty, DummyHash);
                 return false;

@@ -7,8 +7,8 @@ using System.Text;
 namespace QryptoCard.Tests.Smoke
 {
     // Builds HttpClients against the deployed public API. The public tier uses HTTP
-    // Basic auth: base64("<APIKey>:<wire-secret>"), where the wire secret is the
-    // EncryptAPP form the seeder emitted as SMOKE_API_SECRET.
+    // Basic auth: base64("<APIKey>:<secret>"), where the secret is the plaintext the
+    // seeder emitted as SMOKE_API_SECRET (the INT tier bcrypt-verifies it).
     internal static class SmokeHttpClient
     {
         public static HttpClient Authenticated()

@@ -13,9 +13,10 @@
 -- the cutover window, AFTER the bcrypt code is deployed. See the runbook:
 -- docs/runbooks/crypto-at-rest-cutover.md
 --
--- Idempotent: re-running re-applies the same sentinels (harmless). Safe no-op on a
--- freshly-provisioned DB (no user rows; the bootstrap admin is seeded with a real
--- bcrypt hash by vm-seed and is restored by the runbook's admin step, not here).
+-- Idempotent: re-running re-applies the same sentinels (harmless). This is NOT a no-op on
+-- a freshly-provisioned DB -- the unconditional admin UPDATE below would clobber the
+-- bootstrap admin's freshly-seeded bcrypt hash -- so the runbook says SKIP this script on a
+-- fresh provision (there are no legacy leaked-key rows to scrub there anyway).
 --
 -- Invocation:
 --   sqlcmd -S <server> -d <db> -E -b -i crypto-at-rest-scrub.sql
