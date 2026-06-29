@@ -502,6 +502,55 @@ if ($sqlSvc) {
     Write-Ok "SQL Server Express installed"
 }
 
+# ===========================================================================
+# Step 5c. SQL Server LocalDB -- the integration test suite
+# (QryptoCard.Tests.Integration) provisions a throwaway database in
+# (localdb)\MSSQLLocalDB, so a dev box that runs the suite needs the LocalDB
+# runtime (a SEPARATE redistributable from the SQLEXPRESS engine above). Install
+# from the SQLLOCALDB.MSI bundled in the SQL Express media (already downloaded +
+# extracted in Step 5 on a fresh box); if the media isn't on disk (e.g. SQL
+# Express pre-existed so Step 5 skipped the download), pull it via the SSEI.
+# Idempotent: skip if SqlLocalDB.exe is already present.
+# ===========================================================================
+$sqlLocalDbExe = Get-ChildItem 'C:\Program Files\Microsoft SQL Server' -Recurse -Filter 'SqlLocalDB.exe' -ErrorAction SilentlyContinue | Select-Object -First 1
+if ($sqlLocalDbExe) {
+    Write-Ok "SQL LocalDB already installed: $($sqlLocalDbExe.FullName)"
+} else {
+    $sqlMediaDir = Join-Path $CACHE_DIR 'sql-media'
+    $localDbMsi = $null
+    if (Test-Path $sqlMediaDir) {
+        $localDbMsi = Get-ChildItem $sqlMediaDir -Recurse -Filter 'SQLLOCALDB.MSI' -ErrorAction SilentlyContinue | Select-Object -First 1
+    }
+    if (-not $localDbMsi) {
+        # Media not on disk -- fetch + extract it via the SSEI (same pattern as Step 5).
+        $ssei = Join-Path $CACHE_DIR 'SQL-SSEI-Expr.exe'
+        if (-not (Test-Path $ssei)) {
+            Get-VerifiedDownload -Url $SQL_SSEI_URL -OutFile $ssei -ExpectedSha256 $SQL_SSEI_SHA256 -Label 'SQL Server Express SSEI bootstrapper'
+        }
+        New-Item -ItemType Directory -Path $sqlMediaDir -Force | Out-Null
+        $media = Get-ChildItem -Path $sqlMediaDir -Filter 'SQLEXPR_x64_*.exe' -ErrorAction SilentlyContinue | Select-Object -First 1
+        if (-not $media) {
+            Write-Step "downloading SQL Express media for the LocalDB MSI (~250 MB)"
+            $d = Start-Process -FilePath $ssei -ArgumentList '/Action=Download','/Language=en-US',"/MediaPath=$sqlMediaDir",'/MediaType=Core','/Quiet' -Wait -NoNewWindow -PassThru
+            if ($d.ExitCode -ne 0) { Stop-Bootstrap "SQL media download for LocalDB failed (exit $($d.ExitCode))" }
+            $media = Get-ChildItem -Path $sqlMediaDir -Filter 'SQLEXPR_x64_*.exe' | Select-Object -First 1
+        }
+        $extr = Join-Path $sqlMediaDir 'extracted'
+        if (-not (Test-Path (Join-Path $extr 'SETUP.EXE'))) {
+            $x = Start-Process -FilePath $media.FullName -ArgumentList '/Q',"/X:$extr" -Wait -NoNewWindow -PassThru
+            if ($x.ExitCode -ne 0) { Stop-Bootstrap "SQL media extraction for LocalDB failed (exit $($x.ExitCode))" }
+        }
+        $localDbMsi = Get-ChildItem $extr -Recurse -Filter 'SQLLOCALDB.MSI' -ErrorAction SilentlyContinue | Select-Object -First 1
+    }
+    if (-not $localDbMsi) { Stop-Bootstrap "SQLLOCALDB.MSI not found in the SQL Express media -- cannot install LocalDB" }
+    Write-Step "installing SQL Server LocalDB from $($localDbMsi.FullName)"
+    $p = Start-Process msiexec.exe -ArgumentList "/i `"$($localDbMsi.FullName)`" /qn IACCEPTSQLLOCALDBLICENSETERMS=YES /norestart" -Wait -PassThru
+    if ($p.ExitCode -ne 0 -and $p.ExitCode -ne 3010) { Stop-Bootstrap "LocalDB install failed (exit $($p.ExitCode))" }
+    $sqlLocalDbExe = Get-ChildItem 'C:\Program Files\Microsoft SQL Server' -Recurse -Filter 'SqlLocalDB.exe' -ErrorAction SilentlyContinue | Select-Object -First 1
+    if (-not $sqlLocalDbExe) { Stop-Bootstrap "LocalDB install completed but SqlLocalDB.exe not found" }
+    Write-Ok "SQL LocalDB installed: $($sqlLocalDbExe.FullName)"
+}
+
 # Discover the MSSQLnn.<instance> registry hive dynamically -- Microsoft's SSEI
 # fwlink occasionally bumps the major version (15=2019, 16=2022, 17=2025...),
 # each using a different MSSQLnn prefix.
