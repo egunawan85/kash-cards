@@ -44,6 +44,7 @@ namespace QryptoCard.INT.Callback.Service
         public const string SetMinTransferUsd = "WasabiCardMinTransferUsd"; // skip uneconomic tiny transfers (50)
         public const string SetWcFeeRatePct = "WasabiCardWcFeeRatePct";     // WasabiCard deposit fee % for gross-up (1.4)
         public const string SetReAlertHours = "WasabiCardReAlertHours";     // re-alert cadence while still breached (6)
+        public const string SetInFlightStaleMinutes = "WasabiCardInFlightStaleMinutes"; // Submitted counts as in-flight only this long (60)
         public const string SetDepositAddress = "WasabiCardDepositAddress"; // Param1 = USDT-TRC20 deposit address
         public const string SetTronCoinId = "WasabiCardTronCoinId";         // Param1 override (else resolved live)
         public const string SetUsdtTokenId = "WasabiCardUsdtTokenId";       // Param1 override (else resolved live)
@@ -56,7 +57,7 @@ namespace QryptoCard.INT.Callback.Service
 
         // ---- defaults (used when a setting row is absent) ----
         private const double DefFloor = 500, DefTarget = 700, DefEager = 500, DefDailyCap = 30000,
-            DefMinTransfer = 50, DefWcFee = 1.4, DefReAlertHours = 6, DefPlatformFee = 3;
+            DefMinTransfer = 50, DefWcFee = 1.4, DefReAlertHours = 6, DefPlatformFee = 3, DefStaleMinutes = 60;
 
         private const string StInitiated = "Initiated", StSubmitted = "Submitted",
             StConfirmed = "Confirmed", StFailed = "Failed", StUnknown = "Unknown";
@@ -151,7 +152,7 @@ namespace QryptoCard.INT.Callback.Service
                 if (depositAmount <= (decimal)eager) return; // small deposits feed the wallet; floor covers them
 
                 double platformFeePct = ReadNum(SetPlatformFeeRatePct, DefPlatformFee);
-                decimal net = depositAmount * (1m - (decimal)platformFeePct / 100m); // the spendable / card-face portion
+                decimal net = WasabiCardFundingMath.SpendableNet(depositAmount, platformFeePct); // spendable / card-face portion
                 AttemptTransfer(StEagerType, "kash-eager-" + depositTxId, depositTxId, net);
             }
             catch (Exception ex)
@@ -205,7 +206,7 @@ namespace QryptoCard.INT.Callback.Service
             }
 
             double wcFeePct = ReadNum(SetWcFeeRatePct, DefWcFee);
-            decimal sendUsdt = Math.Round(netUsd / (1m - (decimal)wcFeePct / 100m), 6);
+            decimal sendUsdt = WasabiCardFundingMath.GrossUpSend(netUsd, wcFeePct);
 
             // Idempotency gate: insert the intent FIRST. A duplicate PartnerReferenceID means this
             // exact transfer was already attempted -> no-op (never double-send).
@@ -279,13 +280,29 @@ namespace QryptoCard.INT.Callback.Service
         }
 
         // ================= refill ledger queries =================
+        // "In-flight" = money on the way that the float read does NOT yet reflect. A Submitted
+        // transfer lands within minutes, after which the float read includes it — so counting it
+        // as in-flight past the staleness window would double-count it against the float and (for
+        // the floor) block all future refills forever. Submitted therefore counts only while recent;
+        // the uncertain states (Initiated = crashed mid-call, Unknown = ambiguous outcome) count
+        // indefinitely until manually resolved (fail-safe: never auto-bypass a maybe-sent transfer).
+        private static string InFlightWhere()
+        {
+            return "((Status = '" + StSubmitted + "' AND CreatedDate > @stale) " +
+                   "OR Status IN ('" + StInitiated + "','" + StUnknown + "'))";
+        }
+        private static SqlParameter StaleParam()
+        {
+            return P("@stale", DateTime.Now.AddMinutes(-ReadNum(SetInFlightStaleMinutes, DefStaleMinutes)));
+        }
+
         private static decimal InFlightUsd()
         {
             using (var db = new DBEntities())
             {
                 var rows = db.Database.SqlQuery<decimal?>(
-                    "SELECT SUM(ISNULL(NetUsd,0)) FROM dbo.tblH_WasabiCard_Refill WHERE Status IN ('" +
-                    StInitiated + "','" + StSubmitted + "','" + StUnknown + "')").ToList();
+                    "SELECT SUM(ISNULL(NetUsd,0)) FROM dbo.tblH_WasabiCard_Refill WHERE " + InFlightWhere(),
+                    StaleParam()).ToList();
                 return rows.Count > 0 && rows[0].HasValue ? rows[0].Value : 0m;
             }
         }
@@ -294,8 +311,8 @@ namespace QryptoCard.INT.Callback.Service
             using (var db = new DBEntities())
             {
                 var rows = db.Database.SqlQuery<int>(
-                    "SELECT COUNT(*) FROM dbo.tblH_WasabiCard_Refill WHERE RefillType = 'floor' AND Status IN ('" +
-                    StInitiated + "','" + StSubmitted + "','" + StUnknown + "')").ToList();
+                    "SELECT COUNT(*) FROM dbo.tblH_WasabiCard_Refill WHERE RefillType = 'floor' AND " + InFlightWhere(),
+                    StaleParam()).ToList();
                 return rows.Count > 0 && rows[0] > 0;
             }
         }

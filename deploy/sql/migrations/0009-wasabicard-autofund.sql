@@ -84,6 +84,12 @@ IF NOT EXISTS (SELECT 1 FROM dbo.tblM_Setting WHERE Name = 'WasabiCardReAlertHou
     INSERT INTO dbo.tblM_Setting (Name, Value, DateCreated) VALUES ('WasabiCardReAlertHours', 6, GETDATE());
 GO
 
+-- How long a Submitted transfer is counted as "in-flight" (minutes). Should exceed the worst-case
+-- crypto-rail landing latency; after this the float read is assumed to reflect the transfer.
+IF NOT EXISTS (SELECT 1 FROM dbo.tblM_Setting WHERE Name = 'WasabiCardInFlightStaleMinutes')
+    INSERT INTO dbo.tblM_Setting (Name, Value, DateCreated) VALUES ('WasabiCardInFlightStaleMinutes', 60, GETDATE());
+GO
+
 -- Ops alert recipient, in Param1 (optional). NULL by default -> alerts fall back to the
 -- OPS_ALERT_EMAIL env var, then EMAIL_FROM. OPERATOR: set Param1 to a monitored inbox so the
 -- low-balance / cap / ambiguous-transfer alerts are actually seen.
