@@ -176,5 +176,52 @@ namespace QryptoCard.Tests.Integration
             Assert.False(r.Success);
             Assert.Equal("card_not_issued", r.Outcome);
         }
+
+        // ---- resume path (cancel committed + amount persisted, credit had failed) ----
+
+        void SeedRefundIntent(string cardNo, decimal amount, string buyerId, string openOrderId)
+        {
+            using (var ctx = _db.NewContext())
+                ctx.Database.ExecuteSqlCommand(
+                    "INSERT INTO dbo.tblH_Partner_Webhook_ID (Type, TXID, Request, RequestDate) VALUES ('CardRefundIntent', @x, @r, GETDATE())",
+                    new SqlParameter("@x", cardNo),
+                    new SqlParameter("@r", "{\"amount\":" + amount.ToString(System.Globalization.CultureInfo.InvariantCulture) +
+                        ",\"buyerId\":\"" + buyerId + "\",\"openOrderId\":\"" + openOrderId + "\"}"));
+        }
+
+        [Fact]
+        public void RefundByOrder_ResumesFromRefundPending_WithIntent_CreditsBuyerOnce()
+        {
+            var uid = Fresh("buyer"); SeedUser(uid); SeedWallet(uid, 0m);
+            var order = Fresh("ord"); var card = Fresh("card");
+            SeedCardOrder(order, uid, StatusModel.RefundPending, card); // prior cancel left it pending
+            SeedRefundIntent(card, 20m, uid, order);                    // confirmed amount persisted
+
+            var r = CardRefundService.RefundByOrder(order, "admin@t.test");
+            Assert.True(r.Success);
+            Assert.Equal("refunded", r.Outcome);
+            Assert.Equal(20m, r.RefundedAmount);
+            Assert.Equal(20m, BalOf(uid));
+            Assert.Equal(StatusModel.Refunded, StatusOf(order));
+
+            // Re-run after completion: no double credit.
+            var r2 = CardRefundService.RefundByOrder(order, "admin@t.test");
+            Assert.False(r2.Success);
+            Assert.Equal(20m, BalOf(uid));
+        }
+
+        [Fact]
+        public void RefundByOrder_RefundPending_NoIntent_NeedsManualReview_NoCredit()
+        {
+            var uid = Fresh("buyer"); SeedUser(uid); SeedWallet(uid, 0m);
+            var order = Fresh("ord"); var card = Fresh("card");
+            SeedCardOrder(order, uid, StatusModel.RefundPending, card); // pending, but NO persisted intent
+
+            var r = CardRefundService.RefundByOrder(order, "admin@t.test");
+            Assert.False(r.Success);
+            Assert.Equal("refund_pending_unconfirmed", r.Outcome);
+            Assert.Equal(0m, BalOf(uid));
+            Assert.Equal(StatusModel.RefundPending, StatusOf(order));
+        }
     }
 }

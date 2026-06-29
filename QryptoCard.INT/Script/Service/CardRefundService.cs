@@ -101,20 +101,9 @@ namespace QryptoCard.INT.Script.Service
 
             if (string.IsNullOrEmpty(cardNo))
                 return RefundResult.Fail("card_not_issued", "The card has no provider card number — nothing to cancel.");
-            if (!string.Equals(openStatus, StatusModel.Success, StringComparison.OrdinalIgnoreCase))
-                return RefundResult.Fail("not_refundable", "Card is not in a refundable (success) state; current=" + openStatus + ".");
 
-            // 2. Read the card's current available balance (what cancel returns). Refund only the unused
-            // balance — anything the cardholder already spent is unrecoverable.
-            var info = WasabiCardService.getCardInfo(new WCCardInfoRequestModel { cardNo = cardNo, onlySimpleInfo = false });
-            if (info == null || info.data == null || info.data.balanceInfo == null)
-                return RefundResult.Fail("card_lookup_failed", "Could not read the card from the provider.");
-            decimal refundable = ParseAmount(info.data.balanceInfo.amount);
-            if (refundable <= 0m)
-                return RefundResult.Fail("no_balance", "The card has no refundable balance (already spent or empty).");
-
-            // Fail closed if the per-card dedup index is missing — refuse BEFORE the provider cancel so
-            // we never cancel a card whose buyer credit we could not safely dedup (double-refund risk).
+            // Fail closed if the per-card dedup index is missing — refuse BEFORE any provider cancel so we
+            // never cancel a card whose buyer credit we could not safely dedup (double-refund risk).
             using (var db = new DBEntities())
             {
                 if (!DedupIndexPresent(db))
@@ -124,6 +113,32 @@ namespace QryptoCard.INT.Script.Service
                     return RefundResult.Fail("dedup_index_missing", "Refund is unavailable until the dedup index is deployed.");
                 }
             }
+
+            // RESUME path: a prior attempt cancelled the card (order left RefundPending with a persisted
+            // intent) but the buyer credit did not apply. Complete it from the persisted amount — no second
+            // cancel, no getCardInfo (the card is cancelled now); the cardNo dedup still guarantees one
+            // credit. With NO intent, the prior cancel was never confirmed, so we cannot safely resume.
+            if (string.Equals(openStatus, StatusModel.RefundPending, StringComparison.OrdinalIgnoreCase))
+            {
+                decimal? intent = ReadRefundIntent(cardNo);
+                if (intent == null)
+                    return RefundResult.Fail("refund_pending_unconfirmed",
+                        "Refund is pending an unconfirmed provider cancel — needs manual review (this call moved no funds).");
+                return CompleteCredit(openOrderId, cardNo, buyerId, intent.Value, actor);
+            }
+
+            if (!string.Equals(openStatus, StatusModel.Success, StringComparison.OrdinalIgnoreCase))
+                return RefundResult.Fail("not_refundable", "Card is not in a refundable (success) state; current=" + openStatus + ".");
+
+            // 2. Read the card's available balance — a GATE (must be > 0) and an upper BOUND on the credit.
+            // It is NOT the authoritative credit figure: that comes from the cancel response below, so
+            // spend (or a cancel fee) in the getCardInfo->cancel window can never mint money.
+            var info = WasabiCardService.getCardInfo(new WCCardInfoRequestModel { cardNo = cardNo, onlySimpleInfo = false });
+            if (info == null || info.data == null || info.data.balanceInfo == null)
+                return RefundResult.Fail("card_lookup_failed", "Could not read the card from the provider.");
+            decimal availableBefore = ParseAmount(info.data.balanceInfo.amount);
+            if (availableBefore <= 0m)
+                return RefundResult.Fail("no_balance", "The card has no refundable balance (already spent or empty).");
 
             // 3. Concurrency gate: claim the open order Success -> RefundPending (exactly one winner).
             if (ClaimCardStatus(openOrderId, StatusModel.Success, StatusModel.RefundPending) != 1)
@@ -137,7 +152,8 @@ namespace QryptoCard.INT.Script.Service
             }
             catch (Exception ex)
             {
-                // Throw == ambiguous: leave RefundPending, never credit.
+                // Throw == ambiguous: leave RefundPending, never credit. (No intent persisted: the cancel
+                // is unconfirmed, so the RefundPending branch will route to manual review, not auto-credit.)
                 Trace.TraceError("Refund: cancelCard threw for card " + cardNo + " order " + openOrderId + " — left RefundPending: " + ex.Message);
                 return RefundResult.Fail("cancel_ambiguous", "Provider cancel could not be confirmed; left pending for review. No funds moved.");
             }
@@ -154,36 +170,62 @@ namespace QryptoCard.INT.Script.Service
                 return RefundResult.Fail("cancel_rejected", "Provider rejected the cancel: " + (cancel.msg ?? "unknown") + ".");
             }
 
-            // 5. Cancel confirmed — credit the buyer, atomically flipping RefundPending -> Refunded,
-            // deduped per physical card so a re-trigger cannot double-refund.
+            // 5. Cancel confirmed. Credit the amount the provider ACTUALLY returned to the merchant wallet
+            // (authoritative), capped at the pre-cancel available balance — never credit a value the cancel
+            // did not confirm. This closes the getCardInfo->cancel spend / cancel-fee race.
+            decimal returned = CancelReturnedAmount(cancel);
+            decimal credited = Math.Min(availableBefore, returned);
+            if (credited <= 0m)
+            {
+                // Cancel succeeded but reported no funds returned — do NOT credit a stale figure; leave
+                // pending for review (no intent persisted => the resume path routes to manual review).
+                Trace.TraceError("Refund: card " + cardNo + " cancelled but provider returned <= 0 (returned=" + returned +
+                    ", availableBefore=" + availableBefore + ") for order " + openOrderId + " — left RefundPending for review.");
+                return RefundResult.Fail("cancel_zero_return", "Card cancelled but the provider returned no funds; left pending for review.");
+            }
+
+            // Persist the confirmed amount BEFORE the credit, so a credit failure is RESUMABLE: re-running
+            // this refund reads the intent (RefundPending branch above) and completes without re-cancelling.
+            WriteRefundIntent(cardNo, credited, buyerId, openOrderId, actor);
+
+            return CompleteCredit(openOrderId, cardNo, buyerId, credited, actor);
+        }
+
+        // Credit the buyer (claim RefundPending -> Refunded, deduped per card), then mark top-ups refunded
+        // and claw back commissions. Shared by the fresh-cancel and resume paths; idempotent via the cardNo
+        // dedup. The caller has already cancelled the card and persisted the confirmed amount.
+        static RefundResult CompleteCredit(string openOrderId, string cardNo, string buyerId, decimal amount, string actor)
+        {
+            WalletService.EnsureWallet(buyerId); // an absent buyer wallet would otherwise fail closed (wallet_missing)
+
             string claimSql = "UPDATE dbo.tblT_Card SET Status = '" + StatusModel.Refunded +
                               "', DateModified = GETDATE() WHERE ID = @id AND Status = '" + StatusModel.RefundPending + "'";
             var credit = WalletService.CreditCardRefund(
                 buyerUserId: buyerId,
-                amount: refundable,
+                amount: amount,
                 orderId: openOrderId,
                 dedupKey: cardNo,
                 claimSql: claimSql,
                 claimParams: new[] { new SqlParameter("@id", openOrderId) },
-                dedupRequest: JsonConvert.SerializeObject(new { source = "admin_refund", by = actor, cardNo, refundable }, Formatting.None));
+                dedupRequest: JsonConvert.SerializeObject(new { source = "admin_refund", by = actor, cardNo, amount }, Formatting.None));
 
             if (!credit.Success)
             {
-                // The provider cancel already committed but the buyer credit did not apply: leave the
-                // order RefundPending (do NOT revert) and surface loudly — the funds are back in the
-                // merchant wallet and owed to the buyer; a re-run is idempotent (dedup on cardNo).
-                Trace.TraceError("Refund: card " + cardNo + " CANCELLED at provider but buyer credit failed (" +
-                    credit.FailureReason + ") for order " + openOrderId + " — RefundPending, money owed to buyer, re-run to complete.");
+                if (credit.FailureReason == "duplicate_event" || credit.FailureReason == "claim_lost")
+                    // Already refunded (per-card dedup) or the order already left RefundPending — idempotent no-op.
+                    return RefundResult.Fail("already_refunded", "This card has already been refunded.");
+
+                // Provider cancel committed but the buyer credit did not apply (e.g. a transient DB error).
+                // The funds are back in the merchant wallet and the confirmed amount is persisted as an
+                // intent, so re-running this refund RESUMES and completes the credit (idempotent on the card).
+                Trace.TraceError("Refund: card " + cardNo + " cancelled but buyer credit failed (" + credit.FailureReason +
+                    ") for order " + openOrderId + " — RefundPending with persisted intent; re-run to complete.");
                 return RefundResult.Fail("credit_failed_after_cancel",
-                    "Card was cancelled but the wallet credit did not apply (" + credit.FailureReason + "). Left pending; re-run to complete.");
+                    "Card was cancelled but the wallet credit did not apply (" + credit.FailureReason +
+                    "). Funds are safe in the merchant wallet; re-run this refund to complete.");
             }
 
-            // 6. Mark every top-up order for this card refunded too (lifecycle only — the money already
-            // settled via the single whole-card credit above). Best-effort.
             MarkTopUpsRefunded(cardNo);
-
-            // 7. Claw back any referral commission paid on this card's orders (open + top-ups). Best-effort;
-            // an unrecoverable referrer balance is recorded, never fatal to the buyer refund.
             int reversed = ReverseCommissionsForCard(openOrderId, cardNo, actor);
 
             return new RefundResult
@@ -191,11 +233,63 @@ namespace QryptoCard.INT.Script.Service
                 Success = true,
                 Outcome = "refunded",
                 CardNo = cardNo,
-                RefundedAmount = refundable,
+                RefundedAmount = amount,
                 BuyerBalanceNew = credit.BalanceNew,
                 CommissionsReversed = reversed,
-                Message = "Refunded " + refundable.ToString("0.00", CultureInfo.InvariantCulture) + " USDT to the buyer; card cancelled."
+                Message = "Refunded " + amount.ToString("0.00", CultureInfo.InvariantCulture) + " USDT to the buyer; card cancelled."
             };
+        }
+
+        // The amount the cancel actually returned to the merchant wallet: prefer receivedAmount (net of any
+        // provider cancel fee), fall back to amount; 0 when the response carries no data.
+        static decimal CancelReturnedAmount(WCCancelCardResponseModel cancel)
+        {
+            if (cancel == null || cancel.data == null) return 0m;
+            if (cancel.data.receivedAmount > 0) return cancel.data.receivedAmount;
+            if (cancel.data.amount > 0) return cancel.data.amount;
+            return 0m;
+        }
+
+        // Persist the cancel-confirmed refund amount for a card (idempotent: at most one per card). Lets a
+        // credit failure after a successful cancel be resumed without re-cancelling or re-reading the (now
+        // cancelled) card. Stored in the shared partner-webhook journal, keyed by card number.
+        const string IntentType = "CardRefundIntent";
+
+        static void WriteRefundIntent(string cardNo, decimal amount, string buyerId, string openOrderId, string actor)
+        {
+            try
+            {
+                using (var db = new DBEntities())
+                {
+                    var existing = db.Database.SqlQuery<int>(
+                        "SELECT COUNT(*) FROM dbo.tblH_Partner_Webhook_ID WHERE Type = @p0 AND TXID = @p1",
+                        new SqlParameter("@p0", IntentType), new SqlParameter("@p1", cardNo)).FirstOrDefault();
+                    if (existing > 0) return;
+                    db.Database.ExecuteSqlCommand(
+                        "INSERT INTO dbo.tblH_Partner_Webhook_ID (Type, TXID, Request, RequestDate) VALUES (@t, @x, @r, GETDATE())",
+                        new SqlParameter("@t", IntentType), new SqlParameter("@x", cardNo),
+                        new SqlParameter("@r", JsonConvert.SerializeObject(new { amount, buyerId, openOrderId, by = actor }, Formatting.None)));
+                }
+            }
+            catch (Exception ex) { Trace.TraceError("Refund: writing refund intent for card " + cardNo + " failed: " + ex.Message); }
+        }
+
+        // The persisted refund amount for a card, or null if none (the cancel was never confirmed).
+        static decimal? ReadRefundIntent(string cardNo)
+        {
+            try
+            {
+                using (var db = new DBEntities())
+                {
+                    var json = db.Database.SqlQuery<string>(
+                        "SELECT TOP 1 Request FROM dbo.tblH_Partner_Webhook_ID WHERE Type = @p0 AND TXID = @p1 ORDER BY RequestDate DESC",
+                        new SqlParameter("@p0", IntentType), new SqlParameter("@p1", cardNo)).FirstOrDefault();
+                    if (string.IsNullOrEmpty(json)) return null;
+                    var amt = Newtonsoft.Json.Linq.JObject.Parse(json).Value<decimal?>("amount");
+                    return (amt.HasValue && amt.Value > 0m) ? amt : (decimal?)null;
+                }
+            }
+            catch (Exception ex) { Trace.TraceError("Refund: reading refund intent for card " + cardNo + " failed: " + ex.Message); return null; }
         }
 
         // ---- helpers -------------------------------------------------------------
@@ -213,11 +307,13 @@ namespace QryptoCard.INT.Script.Service
         {
             try
             {
+                // Include in-flight top-ups: a deposit that was InProgress when the card was cancelled
+                // would otherwise stay InProgress forever against a now-cancelled card.
                 using (var db = new DBEntities())
                     db.Database.ExecuteSqlCommand(
-                        "UPDATE dbo.tblT_Card_Deposit SET Status = @to WHERE CardNo = @c AND Status = @from",
-                        new SqlParameter("@to", StatusModel.Refunded), new SqlParameter("@c", cardNo),
-                        new SqlParameter("@from", StatusModel.Success));
+                        "UPDATE dbo.tblT_Card_Deposit SET Status = @to WHERE CardNo = @c AND Status IN ('" +
+                        StatusModel.Success + "', '" + StatusModel.InProgress + "', '" + StatusModel.PendingProvider + "')",
+                        new SqlParameter("@to", StatusModel.Refunded), new SqlParameter("@c", cardNo));
             }
             catch (Exception ex) { Trace.TraceError("Refund: marking top-ups refunded failed for card " + cardNo + ": " + ex.Message); }
         }

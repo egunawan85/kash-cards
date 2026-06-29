@@ -233,9 +233,11 @@ namespace QryptoCard.INT.Script.Service.Admin.v1
         /// </summary>
         public OutputModel refundCard(string em, string orderId)
         {
+            // Resolved up front so the outer catch can still attribute the audit row to the acting admin.
+            string adminId = null;
             try
             {
-                string adminId = tryGetAdminId(em);
+                adminId = tryGetAdminId(em);
                 string actingRole = (getRole(em) ?? "").Trim();
 
                 // WALL — root-admin (Owner) only. Deny-by-default: anything not exactly Owner is refused.
@@ -249,6 +251,7 @@ namespace QryptoCard.INT.Script.Service.Admin.v1
 
                 if (string.IsNullOrWhiteSpace(orderId))
                 {
+                    auditCardRefund(adminId, orderId, "missing_order", null);
                     op.Status = "failed";
                     op.Message = "An order id is required.";
                     return op;
@@ -277,6 +280,8 @@ namespace QryptoCard.INT.Script.Service.Admin.v1
             }
             catch (Exception ex)
             {
+                // Audit the error path too (every attempt leaves a trail, matching the doc-comment).
+                auditCardRefund(adminId, orderId, "error:" + ex.Message, null);
                 op.Message = ex.Message;
                 op.Status = "error";
             }
