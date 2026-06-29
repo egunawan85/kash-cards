@@ -3,10 +3,8 @@
 <%@ MasterType VirtualPath="~/Site.Master" %>
 
 <asp:Content ID="Content1" ContentPlaceHolderID="MainContent" runat="server">
-    <asp:HiddenField runat="server" ID="hfIsHolderNeeded" />
     <asp:HiddenField runat="server" ID="hfReferralLink" />
     <asp:HiddenField runat="server" ID="hfCardTypeID" />
-    <asp:HiddenField runat="server" ID="hfHolderID" />
     <asp:HiddenField runat="server" ID="hfCardData" />
     <asp:HiddenField runat="server" ID="hfBuyRef" />
     <asp:HiddenField runat="server" ID="hfMinDeposit" />
@@ -92,19 +90,6 @@
                         <img runat="server" id="icapay" src="https://www.svgrepo.com/show/508402/apple-pay.svg" alt="Chip" width="40" visible="false">
                         <img runat="server" id="imgOrg" alt="Chip" width="40">
                     </div>
-                </div>
-            </div>
-
-            <!-- Cardholder (shown only when the card type requires KYC) -->
-            <div class="cd-block" runat="server" id="viewCardholder" visible="false">
-                <div class="cd-block-h">Cardholder</div>
-                <div class="cd-row2">
-                    <input type="text" runat="server" id="txtFirstName" placeholder="First name" autocomplete="off" class="cd-input" />
-                    <input type="text" runat="server" id="txtLastName" placeholder="Last name" autocomplete="off" class="cd-input" />
-                </div>
-                <input type="text" runat="server" id="txtEmail" placeholder="Email (for verification code)" autocomplete="off" class="cd-input" />
-                <div class="cd-newholder">
-                    <asp:LinkButton runat="server" ID="lbtNewHolder" Text="Use new email" OnClick="lbtNewHolder_Click" />
                 </div>
             </div>
 

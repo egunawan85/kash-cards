@@ -130,15 +130,14 @@ namespace QryptoCard.Dashboard.card
 
                 hfCardTypeID.Value = dt.CardTypeId.ToString();
 
-                hfIsHolderNeeded.Value = dt.NeedCardHolder.ToString();
                 if (dt.NeedCardHolder == 1)
                 {
                     icapay.Visible = true;
                     icgpay.Visible = true;
                     viewrc20.Visible = false;
-                    // Frictionless: the cardholder is auto-filled server-side on buy, so the
-                    // cardholder form is never shown and we collect no first/last/email here.
-                    // viewCardholder stays hidden (Visible=false by default).
+                    // Frictionless: for a KYC card the cardholder is auto-filled server-side at
+                    // buy time (name/email from the account, address synthesized), so this page
+                    // collects no first/last/email and shows no cardholder form.
                 }
                 else
                 {
@@ -174,40 +173,6 @@ namespace QryptoCard.Dashboard.card
         }
 
         protected void btnAlertClose_Click(object sender, EventArgs e) { pnlAlert.Visible = false; }
-
-        void checkHolder(string id)
-        {
-            CardholderModel dt;
-
-            var req = new CardholderModel();
-            req.CardTypeId = Convert.ToInt64(id);
-            OutputModel op = new OutputModel();
-            op = cs.checkHolder(req);
-            if (op.Status == "success")
-            {
-                dt = JsonConvert.DeserializeObject<CardholderModel>(op.Data.ToString());
-
-                lbtNewHolder.Visible = true;
-
-                txtFirstName.Value = dt.FirstName;
-                txtFirstName.Disabled = true;
-
-                txtLastName.Value = dt.LastName;
-                txtLastName.Disabled = true;
-
-                txtEmail.Value = dt.Email;
-                txtEmail.Disabled = true;
-
-                hfHolderID.Value = dt.HolderID.ToString();
-            }
-            else
-            {
-                lbtNewHolder.Visible = false;
-                hfHolderID.Value = "";
-                //rptCard.DataSource = null;
-                //rptCard.DataBind();
-            }
-        }
 
         protected void btnBuy_ServerClick(object sender, EventArgs e)
         {
@@ -297,22 +262,6 @@ namespace QryptoCard.Dashboard.card
             if (insufficient)
                 html += "<br /><a class=\"btn btn-cyan\" style=\"margin-top:10px;\" href=\"" + ResolveUrl("~/txdeposit") + "\">Add funds</a>";
             return html;
-        }
-
-        protected void lbtNewHolder_Click(object sender, EventArgs e)
-        {
-            txtFirstName.Value = "";
-            txtFirstName.Disabled = false;
-
-            txtLastName.Value = "";
-            txtLastName.Disabled = false;
-
-            txtEmail.Value = "";
-            txtEmail.Disabled = false;
-
-            lbtNewHolder.Visible = false;
-
-            hfHolderID.Value = "";
         }
 
         protected void rc20_ServerClick(object sender, EventArgs e)
