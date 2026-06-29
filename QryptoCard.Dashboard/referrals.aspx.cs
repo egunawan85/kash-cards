@@ -132,7 +132,10 @@ namespace QryptoCard.Dashboard
         {
             var m = item as ReferralBreakdownModel;
             if (m == null) return "";
-            return Server.HtmlEncode(((m.FirstName ?? "") + " " + (m.LastName ?? "")).Trim());
+            // Most users register with email only (no name), which left this column blank. Fall back
+            // to the always-present email so every referral row is identifiable.
+            string name = ((m.FirstName ?? "") + " " + (m.LastName ?? "")).Trim();
+            return Server.HtmlEncode(name.Length > 0 ? name : (m.Email ?? "").Trim());
         }
 
         protected string RefJoined(object item)
@@ -178,7 +181,9 @@ namespace QryptoCard.Dashboard
         {
             var m = item as CommissionHistoryModel;
             if (m == null) return "";
-            return Server.HtmlEncode((m.RefereeName ?? "").Trim());
+            // Fall back to the referee's email when they never set a name (see RefName).
+            string name = (m.RefereeName ?? "").Trim();
+            return Server.HtmlEncode(name.Length > 0 ? name : (m.RefereeEmail ?? "").Trim());
         }
 
         protected string CommAmount(object item)

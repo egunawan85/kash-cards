@@ -1185,7 +1185,7 @@ namespace QryptoCard.INT.Script.Service.App.v1
                 // Referees (users this caller invited).
                 var referees = db.tblM_User
                     .Where(p => p.InvitedBy == uid)
-                    .Select(p => new { p.UserID, p.FirstName, p.LastName, p.DateJoin })
+                    .Select(p => new { p.UserID, p.FirstName, p.LastName, p.Email, p.DateJoin })
                     .ToList();
 
                 // Commission this caller earned, attributed to the referee whose order generated it:
@@ -1217,6 +1217,7 @@ namespace QryptoCard.INT.Script.Service.App.v1
                     r.UserID,
                     r.FirstName,
                     r.LastName,
+                    r.Email,
                     r.DateJoin,
                     Earned = earnedMap.ContainsKey(r.UserID) ? earnedMap[r.UserID] : 0.0,
                     Converted = convertedSet.Contains(r.UserID)
@@ -1229,12 +1230,12 @@ namespace QryptoCard.INT.Script.Service.App.v1
                                    where t.UserID == uid
                                    join c in db.tblT_Card on t.TransactionID equals c.ID
                                    join refu in db.tblM_User on c.UserID equals refu.UserID
-                                   select new { t.DateCreated, RefereeName = refu.FirstName + " " + refu.LastName, t.Commission })
+                                   select new { t.DateCreated, RefereeName = refu.FirstName + " " + refu.LastName, RefereeEmail = refu.Email, t.Commission })
                                   .Concat(from t in db.tblT_Commission
                                           where t.UserID == uid
                                           join d in db.tblT_Card_Deposit on t.TransactionID equals d.ID
                                           join refu in db.tblM_User on d.UserID equals refu.UserID
-                                          select new { t.DateCreated, RefereeName = refu.FirstName + " " + refu.LastName, t.Commission })
+                                          select new { t.DateCreated, RefereeName = refu.FirstName + " " + refu.LastName, RefereeEmail = refu.Email, t.Commission })
                                   .OrderByDescending(x => x.DateCreated)
                                   .ToList();
 

@@ -16,6 +16,9 @@ namespace QryptoCard.Dashboard.Models.Service
     {
         public Nullable<DateTime> DateCreated { get; set; }
         public string RefereeName { get; set; }
+        // Falls back here for display when the referee never set a name (most users register with
+        // email only) — email is always present, so it identifies the referral reliably.
+        public string RefereeEmail { get; set; }
         public Nullable<double> Commission { get; set; }
     }
 
@@ -26,6 +29,8 @@ namespace QryptoCard.Dashboard.Models.Service
         public string UserID { get; set; }
         public string FirstName { get; set; }
         public string LastName { get; set; }
+        // Display fallback when FirstName/LastName are blank (email is always captured at registration).
+        public string Email { get; set; }
         public Nullable<DateTime> DateJoin { get; set; }
         public double Earned { get; set; }
         public bool Converted { get; set; }

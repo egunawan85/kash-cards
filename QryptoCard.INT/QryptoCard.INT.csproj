@@ -260,6 +260,7 @@
     </Compile>
     <Compile Include="Script\Service\Common.cs" />
     <Compile Include="Script\Service\CardCatalogService.cs" />
+    <Compile Include="Script\Service\CardholderGeoService.cs" />
     <Compile Include="Script\Service\AddressGeneratorService.cs" />
     <Compile Include="Script\Service\WalletService.cs" />
     <Compile Include="Script\Service\UserProvisioningService.cs" />
