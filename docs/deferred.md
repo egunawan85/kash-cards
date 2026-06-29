@@ -49,6 +49,27 @@ README). The data-bearing production move is not yet scripted:
   outbound webhook signing on the Runegate side. (The verification cross-check
   for this path is tracked as a security-register item.)
 
+## Card catalog & pricing
+
+The Buy-a-Card catalog is sourced live from WasabiCard (online card types only) with
+a global price/fee overlay; the cardholder is auto-generated for KYC cards. Accepted
+follow-ups from the external red-team (low severity, no money impact):
+
+- **Cardholder created before the wallet debit.** `openCard` registers a WasabiCard
+  holder before `CardSpendService` debits, so a doomed buy (insufficient balance, or
+  two concurrent first-time buys of the same KYC card) can leave an orphan/duplicate
+  holder. No double-charge — idempotency is in `CardSpendService` and the
+  `pass_audit`-gated reuse absorbs duplicates on the next attempt. Close it with a
+  unique filtered index on `tblM_Cardholder(UserID, CardTypeId) WHERE isActive=1`
+  plus moving the deposit-validity check ahead of holder creation.
+- **Admin pricing role gate is a deny-list on the dashboard.** The INT
+  `isDeniedFinanceMutation` (allow-list: Owner/Admin) is authoritative; the dashboard
+  `btnUpdatePricing_Click` uses a deny-list matching the rest of that page. Align the
+  dashboard to the allow-list for defence-in-depth.
+- **Synthetic cardholder identity.** Auto-generated name/DOB/address are sent to
+  WasabiCard for KYC cards — consistent with prior behaviour, but revisit if the
+  issuer ever enforces real identity verification.
+
 ## Safe error logging
 
 - **Auth service exception logging.** The auth service logs the full exception,
