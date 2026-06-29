@@ -19,7 +19,6 @@ namespace QryptoCard.INT.Model
         // consumers (address provisioning here, /v1/transfer in the callback tier) keeps the Runegate
         // base URL switchable per environment with no silent split-brain between them.
         public static string PGCRYPTO_API_URL => SecretsConfig.GetOptional("PGCRYPTO_API_URL", "https://api.runegate.co");
-        public static string QRYPTO_PAY_URL = "https://pay-otc.qrypto.trade/pay?id=";
         // The WasabiCard base URL is the ONLY switch between the test (sandbox) and real-money
         // (prod) environment — the same credentials authenticate against both — so it must never
         // carry a silent default that could quietly route real money to the wrong host. It is
@@ -38,6 +37,13 @@ namespace QryptoCard.INT.Model
         // deploy/secrets/.env), so requiring it is safe.
         public static string QRYPTO_URL_FORGOT_PASSWORD =>
             SecretsConfig.Require("PUBLIC_BASE_URL").TrimEnd('/') + "/newpassword?id=";
+        // The admin-invitation link must point at the environment's OWN admin-dashboard host
+        // (admin-<env>.kash.cards), not the dead hardcoded admin-dev.qrypto.trade:88 literal.
+        // ADMIN_BASE_URL is the QryptoCard.Dashboard.Admin host — distinct from the cardholder
+        // PUBLIC_BASE_URL above. Required (no silent default): the invite carries an auth token,
+        // so a wrong-host default is unacceptable, exactly like the reset link.
+        public static string QRYPTO_URL_ADMIN_INVITE =>
+            SecretsConfig.Require("ADMIN_BASE_URL").TrimEnd('/') + "/InvitedAccount?id=";
         public static string QRYPTO_ENVIRONMENT => SecretsConfig.GetOptional("QRYPTO_ENVIRONMENT", "dev");
 
         // Email delivery via Postmark SMTP. The From (EMAIL_ADDRESS) must be a Postmark-verified

@@ -184,6 +184,7 @@ $ConfigNames = @(
     'WASABICARD_API_URL',
     'PGCRYPTO_API_URL',
     'PUBLIC_BASE_URL',
+    'ADMIN_BASE_URL',
     'EMAIL_FROM',
     'EMAIL_SMTP_GATEWAY',
     'EMAIL_SMTP_PORT'
