@@ -3,15 +3,22 @@ using QryptoCard.Sec;
 namespace QryptoCard.INT.Model
 {
     /// <summary>
-    /// Runtime config + secret accessors. Secret/key material is read from the process
-    /// environment via <see cref="SecretsConfig"/> (never hardcoded in source); non-secret
-    /// URLs remain literals. The dev/prod split is controlled by QRYPTO_ENVIRONMENT and the
-    /// injected secret values per environment — not by editing this file.
+    /// Runtime config + secret accessors. Secret/key material — and the provider base URLs that
+    /// select an environment — are read from the process environment via <see cref="SecretsConfig"/>
+    /// (never hardcoded in source); a couple of fixed internal URLs remain literals. The dev/prod
+    /// split is controlled by QRYPTO_ENVIRONMENT and the injected per-environment values — not by
+    /// editing this file.
     /// </summary>
     public class KeyModel
     {
         // --- Non-secret config ---
-        public static string PGCRYPTO_API_URL = "https://api.runegate.co";
+        // Env-derived (GetOptional, prod default) so the per-pool PGCRYPTO_API_URL injection
+        // (inject-secrets.ps1 $ConfigNames, seeded from deploy/secrets/.env) actually takes effect
+        // on this tier — it was previously a hardcoded literal, so the injected value was dead here
+        // while the callback tier already read it from the environment. Matching the two PGCrypto
+        // consumers (address provisioning here, /v1/transfer in the callback tier) keeps the Runegate
+        // base URL switchable per environment with no silent split-brain between them.
+        public static string PGCRYPTO_API_URL => SecretsConfig.GetOptional("PGCRYPTO_API_URL", "https://api.runegate.co");
         public static string QRYPTO_PAY_URL = "https://pay-otc.qrypto.trade/pay?id=";
         // The WasabiCard base URL is the ONLY switch between the test (sandbox) and real-money
         // (prod) environment — the same credentials authenticate against both — so it must never
