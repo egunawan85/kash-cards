@@ -190,11 +190,33 @@ $ConfigNames = @(
     'EMAIL_SMTP_PORT'
 )
 
+# OPTIONAL per-env config: injected when present in this env's Key Vault, SKIPPED when absent
+# (the app falls back to its own safe defaults via SecretsConfig.GetOptional). This is how the
+# WasabiCard auto-funding feature is turned on/configured per environment from the deploy --
+# e.g. set WASABICARD_AUTOFUND_ENABLED=1 in the prd vault, leave it unset in dev (stays OFF).
+# Adding a name here NEVER forces every env to seed it.
+$OptionalConfigNames = @(
+    'WASABICARD_AUTOFUND_ENABLED',
+    'WASABICARD_FLOOR_USD',
+    'WASABICARD_TARGET_USD',
+    'WASABICARD_EAGER_THRESHOLD_USD',
+    'WASABICARD_DAILY_CAP_USD',
+    'WASABICARD_MIN_TRANSFER_USD',
+    'WASABICARD_WC_FEE_PCT',
+    'WASABICARD_INFLIGHT_STALE_MIN',
+    'WASABICARD_REALERT_HOURS',
+    'WASABICARD_DEPOSIT_ADDRESS',
+    'OPS_ALERT_EMAIL'
+)
+
 # -- Pull each secret from KV once (cache in a local map). Never log values. --
 # Pulling once and reusing across pools avoids N*pools KV round-trips and keeps
 # the value lifetime as short and as in-memory as possible.
 function Get-Secrets {
-    param([string[]]$Names)
+    # -Optional: a name absent/empty in KV is SKIPPED (not fatal). Used for optional per-env
+    # config (e.g. the WasabiCard auto-fund knobs) so an environment that doesn't set them still
+    # deploys; the app falls back to its own defaults via SecretsConfig.GetOptional.
+    param([string[]]$Names, [switch]$Optional)
     $map = @{}
     # Windows PowerShell 5.1 defaults to TLS 1.0/1.1 for Invoke-RestMethod; Key Vault requires
     # TLS 1.2, so without this the KV HTTPS handshake hangs (IMDS is plain HTTP and is unaffected).
@@ -222,11 +244,13 @@ function Get-Secrets {
         try {
             $val = (Invoke-RestMethod -Method Get -Uri $uri -Headers $authHeader -TimeoutSec 30).value
         } catch {
+            if ($Optional) { Write-Ok "  '$name' not set in $VaultName (optional) -- skipping"; continue }
             Stop-Inject "failed to read '$kvName' from $VaultName : $($_.Exception.Message)"
         }
         # Do NOT trim interior/edge whitespace beyond a stray trailing newline -- XML keys and
         # base64 values are whitespace-significant; KV returns the value verbatim.
         if ([string]::IsNullOrWhiteSpace($val)) {
+            if ($Optional) { Write-Ok "  '$name' blank in $VaultName (optional) -- skipping"; continue }
             Stop-Inject "secret '$name' is empty in $VaultName -- seed it before injecting"
         }
         $map[$name] = $val
@@ -298,6 +322,12 @@ Write-Ok "target app pools: $($allPools.Count) -- $($allPools -join ', ')"
 # Pull every secret + config value once up front (fail fast if any is missing/empty).
 $secretValues = Get-Secrets -Names ($AllSecretNames + $ConfigNames)
 
+# Pull OPTIONAL config (skips any not set in this env's vault) and merge in. The names actually
+# found drive which optional vars get injected below.
+$optionalValues = Get-Secrets -Names $OptionalConfigNames -Optional
+foreach ($k in $optionalValues.Keys) { $secretValues[$k] = $optionalValues[$k] }
+$presentOptional = @($OptionalConfigNames | Where-Object { $secretValues.ContainsKey($_) })
+
 # Write every pool's env vars in ONE applicationHost.config commit. The WebConfiguration cmdlets
 # auto-commit on EACH Add (rewriting + reloading the whole config), so ~62 of them cost minutes.
 # The ServerManager API stages all edits in memory and CommitChanges() writes once -- same end
@@ -310,7 +340,7 @@ try {
         $poolEl = $poolsColl | Where-Object { $_.GetAttributeValue('name') -eq $pool } | Select-Object -First 1
         if (-not $poolEl) { Stop-Inject "app pool '$pool' not found in applicationHost.config -- run deploy-iis.ps1 first (it creates the pools)" }
         $envColl = $poolEl.GetCollection('environmentVariables')
-        $names = @(Get-SecretsForPool -PoolName $pool) + $ConfigNames
+        $names = @(Get-SecretsForPool -PoolName $pool) + $ConfigNames + $presentOptional
         Write-Host ''
         Write-Host "=== $pool : injecting $($names.Count) var(s) ==="
         foreach ($name in $names) {

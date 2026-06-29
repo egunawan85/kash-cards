@@ -82,7 +82,50 @@ namespace QryptoCard.INT.Callback.Service
                 return s != null ? s.Param1 : null;
             }
         }
-        public static bool Enabled() { return ReadNum(SetEnabled, 0) >= 1; }
+
+        // Config precedence: ENV VAR (deploy-injected, per-environment) -> DB setting (runtime
+        // override) -> hardcoded default. The env var lets each environment be configured purely
+        // from the deploy (e.g. prd on / dev off) without a DB edit; the DB row still works as a
+        // runtime knob when no env var is set. Unset/blank/unparseable env -> fall through.
+        private static double Cfg(string envName, string dbName, double def)
+        {
+            string e = QryptoCard.Sec.SecretsConfig.GetOptional(envName, null);
+            double v;
+            if (!string.IsNullOrWhiteSpace(e) &&
+                double.TryParse(e, NumberStyles.Any, CultureInfo.InvariantCulture, out v))
+                return v;
+            return ReadNum(dbName, def);
+        }
+        private static string CfgStr(string envName, string dbName)
+        {
+            string e = QryptoCard.Sec.SecretsConfig.GetOptional(envName, null);
+            return !string.IsNullOrWhiteSpace(e) ? e : ReadParam1(dbName);
+        }
+
+        // Env name constants (mirror the DB setting keys; injected per-pool from KV at deploy).
+        public const string EnvEnabled = "WASABICARD_AUTOFUND_ENABLED";
+        public const string EnvFloorUsd = "WASABICARD_FLOOR_USD";
+        public const string EnvTargetUsd = "WASABICARD_TARGET_USD";
+        public const string EnvEagerThresholdUsd = "WASABICARD_EAGER_THRESHOLD_USD";
+        public const string EnvDailyCapUsd = "WASABICARD_DAILY_CAP_USD";
+        public const string EnvMinTransferUsd = "WASABICARD_MIN_TRANSFER_USD";
+        public const string EnvWcFeeRatePct = "WASABICARD_WC_FEE_PCT";
+        public const string EnvInFlightStaleMinutes = "WASABICARD_INFLIGHT_STALE_MIN";
+        public const string EnvReAlertHours = "WASABICARD_REALERT_HOURS";
+        public const string EnvDepositAddress = "WASABICARD_DEPOSIT_ADDRESS";
+
+        /// <summary>
+        /// The kill-switch. ENV `WASABICARD_AUTOFUND_ENABLED` wins when set ("1"/"true" = on,
+        /// anything else = off) so the environment is enabled/disabled purely from the deploy
+        /// (prd on, dev off). When the env var is unset it falls back to the DB setting, default OFF.
+        /// </summary>
+        public static bool Enabled()
+        {
+            string e = QryptoCard.Sec.SecretsConfig.GetOptional(EnvEnabled, null);
+            if (!string.IsNullOrWhiteSpace(e))
+                return e.Trim() == "1" || string.Equals(e.Trim(), "true", StringComparison.OrdinalIgnoreCase);
+            return ReadNum(SetEnabled, 0) >= 1;
+        }
 
         // ================= public entrypoints =================
 
@@ -98,8 +141,8 @@ namespace QryptoCard.INT.Callback.Service
             {
                 decimal? floatUsd = ReadFloatUsd();
                 decimal inFlight = InFlightUsd();
-                double floor = ReadNum(SetFloorUsd, DefFloor);
-                double target = ReadNum(SetTargetUsd, DefTarget);
+                double floor = Cfg(EnvFloorUsd, SetFloorUsd, DefFloor);
+                double target = Cfg(EnvTargetUsd, SetTargetUsd, DefTarget);
 
                 summary["floatUsd"] = floatUsd.HasValue ? (object)floatUsd.Value : null;
                 summary["inFlightUsd"] = inFlight;
@@ -149,7 +192,7 @@ namespace QryptoCard.INT.Callback.Service
             {
                 if (!Enabled()) return;
                 if (string.IsNullOrEmpty(depositTxId)) return;
-                double eager = ReadNum(SetEagerThresholdUsd, DefEager);
+                double eager = Cfg(EnvEagerThresholdUsd, SetEagerThresholdUsd, DefEager);
                 if (depositAmount <= (decimal)eager) return; // small deposits feed the wallet; floor covers them
 
                 double platformFeePct = ReadNum(SetPlatformFeeRatePct, DefPlatformFee);
@@ -178,7 +221,7 @@ namespace QryptoCard.INT.Callback.Service
             if (!Enabled()) return new { partnerRef, skipped = "disabled" };
 
             netUsd = Math.Round(netUsd, 4);
-            double minTransfer = ReadNum(SetMinTransferUsd, DefMinTransfer);
+            double minTransfer = Cfg(EnvMinTransferUsd, SetMinTransferUsd, DefMinTransfer);
             if (netUsd < (decimal)minTransfer)
                 return new { partnerRef, skipped = "below_min_transfer", netUsd };
 
@@ -194,7 +237,7 @@ namespace QryptoCard.INT.Callback.Service
                 return new { partnerRef, skipped = "resolve_failed", netUsd };
             }
 
-            string address = (ReadParam1(SetDepositAddress) ?? "").Trim();
+            string address = (CfgStr(EnvDepositAddress, SetDepositAddress) ?? "").Trim();
             if (!LooksLikeTronAddress(address))
             {
                 Alert("WasabiCard auto-fund: deposit address missing/invalid",
@@ -202,9 +245,9 @@ namespace QryptoCard.INT.Callback.Service
                 return new { partnerRef, skipped = "bad_address", netUsd };
             }
 
-            double wcFeePct = ReadNum(SetWcFeeRatePct, DefWcFee);
+            double wcFeePct = Cfg(EnvWcFeeRatePct, SetWcFeeRatePct, DefWcFee);
             decimal sendUsdt = WasabiCardFundingMath.GrossUpSend(netUsd, wcFeePct);
-            double dailyCap = ReadNum(SetDailyCapUsd, DefDailyCap);
+            double dailyCap = Cfg(EnvDailyCapUsd, SetDailyCapUsd, DefDailyCap);
 
             // Atomically reserve the slot BEFORE sending: one SERIALIZABLE transaction enforces
             // idempotency (unique PartnerReferenceID), the 24h cap, and the single-in-flight-floor
@@ -304,7 +347,7 @@ namespace QryptoCard.INT.Callback.Service
         }
         private static SqlParameter StaleParam()
         {
-            return P("@stale", DateTime.Now.AddMinutes(-ReadNum(SetInFlightStaleMinutes, DefStaleMinutes)));
+            return P("@stale", DateTime.Now.AddMinutes(-Cfg(EnvInFlightStaleMinutes, SetInFlightStaleMinutes, DefStaleMinutes)));
         }
 
         private static decimal InFlightUsd()
@@ -465,7 +508,7 @@ namespace QryptoCard.INT.Callback.Service
             // Throttle: alert on transition into a non-ok state, or re-alert every N hours while it persists.
             string prevState; DateTime? lastAt;
             ReadAlertState(out prevState, out lastAt);
-            double reAlertHours = ReadNum(SetReAlertHours, DefReAlertHours);
+            double reAlertHours = Cfg(EnvReAlertHours, SetReAlertHours, DefReAlertHours);
             bool transitioned = !string.Equals(prevState, state, StringComparison.Ordinal);
             bool stale = !lastAt.HasValue || (DateTime.Now - lastAt.Value).TotalHours >= reAlertHours;
             if (transitioned || stale)
