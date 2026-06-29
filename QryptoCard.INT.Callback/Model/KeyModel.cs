@@ -22,5 +22,14 @@ namespace QryptoCard.INT.Callback.Model
         public static string WASABICARD_PRIVATE_KEY => SecretsConfig.Require("WASABICARD_PRIVATE_KEY");
         public static string WASABICARD_PRIVATE_KEY_XML => SecretsConfig.Require("WASABICARD_PRIVATE_KEY_XML");
         public static string WASABICARD_WSBPUBLIC_KEY => SecretsConfig.Require("WASABICARD_WSBPUBLIC_KEY");
+
+        // --- Runegate (PGCrypto) outbound transfer creds, for WasabiCard auto-funding (money-OUT) ---
+        // The callback pool already receives PGCRYPTO_WEBHOOK_SECRET for inbound deposit verification;
+        // the API key/secret (the same merchant creds the INT tier uses for address provisioning) must
+        // also be injected here so this tier can call POST /v1/transfer. URL is env-derived so a
+        // sandbox/prod switch can never silently route a real transfer at the wrong host.
+        public static string PGCRYPTO_API_URL => SecretsConfig.GetOptional("PGCRYPTO_API_URL", "https://api.runegate.co");
+        public static string PGCRYPTO_API_KEY => SecretsConfig.Require("PGCRYPTO_API_KEY");
+        public static string PGCRYPTO_SECRET_KEY => SecretsConfig.Require("PGCRYPTO_SECRET_KEY");
     }
 }

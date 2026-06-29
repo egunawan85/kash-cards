@@ -449,6 +449,12 @@ namespace QryptoCard.API.Callback.CallbackV1Service {
 
         [System.ServiceModel.OperationContractAttribute(Action="http://tempuri.org/ICallbackV1Service/ReconcilePendingProvider", ReplyAction="http://tempuri.org/ICallbackV1Service/ReconcilePendingProviderResponse")]
         System.Threading.Tasks.Task<int> ReconcilePendingProviderAsync();
+
+        [System.ServiceModel.OperationContractAttribute(Action="http://tempuri.org/ICallbackV1Service/RunWasabiCardMonitor", ReplyAction="http://tempuri.org/ICallbackV1Service/RunWasabiCardMonitorResponse")]
+        string RunWasabiCardMonitor();
+
+        [System.ServiceModel.OperationContractAttribute(Action="http://tempuri.org/ICallbackV1Service/RunWasabiCardMonitor", ReplyAction="http://tempuri.org/ICallbackV1Service/RunWasabiCardMonitorResponse")]
+        System.Threading.Tasks.Task<string> RunWasabiCardMonitorAsync();
     }
 
     [System.CodeDom.Compiler.GeneratedCodeAttribute("System.ServiceModel", "4.0.0.0")]
@@ -524,6 +530,14 @@ namespace QryptoCard.API.Callback.CallbackV1Service {
 
         public System.Threading.Tasks.Task<int> ReconcilePendingProviderAsync() {
             return base.Channel.ReconcilePendingProviderAsync();
+        }
+
+        public string RunWasabiCardMonitor() {
+            return base.Channel.RunWasabiCardMonitor();
+        }
+
+        public System.Threading.Tasks.Task<string> RunWasabiCardMonitorAsync() {
+            return base.Channel.RunWasabiCardMonitorAsync();
         }
     }
 }

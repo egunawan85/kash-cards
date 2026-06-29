@@ -124,6 +124,11 @@
     <Compile Include="Model\KeyModel.cs" />
     <Compile Include="Model\PGCrypto\PGCryptoModel.cs" />
     <Compile Include="Model\PGCrypto\PGStatusModel.cs" />
+    <Compile Include="Model\PGCrypto\PGOutputModel.cs" />
+    <Compile Include="Model\PGCrypto\CoinModel.cs" />
+    <Compile Include="Model\PGCrypto\TokenModel.cs" />
+    <Compile Include="Model\PGCrypto\TransferModel.cs" />
+    <Compile Include="Model\WasabiCard\WCAccountInfoResponseModel.cs" />
     <Compile Include="Model\WasabiCard\WCAuthTransactionModel.cs" />
     <Compile Include="Model\WasabiCard\WCAuthTransactionReversalModel.cs" />
     <Compile Include="Model\WasabiCard\WCCardInfoResponseModel.cs" />
@@ -145,6 +150,9 @@
     </Compile>
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Service\Gateway\WasabiCard\WasabiCardService.cs" />
+    <Compile Include="Service\Gateway\PGCrypto\PGCryptoService.cs" />
+    <Compile Include="Service\WasabiCardFundingService.cs" />
+    <Compile Include="Service\WasabiCardFundingMath.cs" />
     <Compile Include="Service\WalletService.cs" />
     <Compile Include="Service\CardFinalizationService.cs" />
     <Compile Include="Service\ReferralCommissionService.cs" />

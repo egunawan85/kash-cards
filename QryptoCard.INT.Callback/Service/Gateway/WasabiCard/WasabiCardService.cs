@@ -45,6 +45,77 @@ namespace QryptoCard.INT.Callback.Service.Gateway.WasabiCard
             }
         }
 
+        /// <summary>
+        /// Read the merchant USD wallet float (availableBalance) that card opens/top-ups draw
+        /// against. Read-only — no money moves. Used by the balance monitor / coverage check and
+        /// (when auto-funding is enabled) the floor-refill trigger. Returns null on any failure so
+        /// callers fail closed (never act on a missing/garbled balance).
+        /// </summary>
+        public static WCAccountInfoResponseModel getAccountInfo()
+        {
+            DBEntities db = new DBEntities();
+            tblH_API_Log api = new tblH_API_Log();
+            WCAccountInfoResponseModel response = new WCAccountInfoResponseModel();
+            try
+            {
+                HttpClient clients = new HttpClient();
+                clients.BaseAddress = new Uri(KeyModel.WASABICARD_API_URL);
+                clients.Timeout = TimeSpan.FromSeconds(5); // NOT Timeout.Add(...) — that returns a discarded value (the ~100s-default no-op the sibling ops were fixed for)
+                clients.DefaultRequestHeaders.Accept.Clear();
+
+                clients.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
+
+                ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls12;
+
+                string path = "/merchant/core/mcb/account/info";
+                clients.DefaultRequestHeaders.Add("X-WSB-API-KEY", KeyModel.WASABICARD_API_KEY);
+                clients.DefaultRequestHeaders.Add("X-WSB-SIGNATURE", signData("{}", loadRsaPrivateKeyPem()));
+                var httpContent = new StringContent("{}", Encoding.UTF8, "application/json");
+                HttpResponseMessage responses = clients.PostAsync(path, httpContent).Result;
+
+                api.Type = "Wasabi Card - Get Account Info";
+                api.RequestDate = DateTime.Now;
+
+                if (responses.IsSuccessStatusCode)
+                {
+                    string resultJSON = responses.Content.ReadAsStringAsync().Result;
+                    if (responses.StatusCode == HttpStatusCode.OK)
+                    {
+                        api.Response = resultJSON;
+                        api.ResponseDate = DateTime.Now;
+                        db.tblH_API_Log.Add(api);
+                        db.SaveChanges();
+                        response = JsonConvert.DeserializeObject<WCAccountInfoResponseModel>(resultJSON);
+                        return response;
+                    }
+                    else
+                    {
+                        api.Response = responses.StatusCode.ToString() + " - " + responses.Content.ReadAsStringAsync().Result;
+                        api.ResponseDate = DateTime.Now;
+                        db.tblH_API_Log.Add(api);
+                        db.SaveChanges();
+                        return response = null;
+                    }
+                }
+                else
+                {
+                    api.Response = responses.StatusCode.ToString() + " - " + responses.Content.ReadAsStringAsync().Result;
+                    api.ResponseDate = DateTime.Now;
+                    db.tblH_API_Log.Add(api);
+                    db.SaveChanges();
+                    return response = null;
+                }
+            }
+            catch (Exception ex)
+            {
+                api.Response = ex.Message;
+                api.ResponseDate = DateTime.Now;
+                db.tblH_API_Log.Add(api);
+                db.SaveChanges();
+                return response = null;
+            }
+        }
+
         public static WCOpenCardResponseModel openCard(WCOpenCardRequestModel req)
         {
             DBEntities db = new DBEntities();

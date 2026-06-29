@@ -24,6 +24,9 @@
     <Reference Include="QryptoCard.Sec">
       <HintPath>..\QryptoCard.Sec\bin\Debug\QryptoCard.Sec.dll</HintPath>
     </Reference>
+    <Reference Include="QryptoCard.INT.Callback">
+      <HintPath>..\QryptoCard.INT.Callback\bin\QryptoCard.INT.Callback.dll</HintPath>
+    </Reference>
     <Reference Include="BouncyCastle.Cryptography">
       <HintPath>..\packages\BouncyCastle.Cryptography.2.5.0\lib\net461\BouncyCastle.Cryptography.dll</HintPath>
     </Reference>

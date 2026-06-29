@@ -424,6 +424,15 @@ namespace QryptoCard.INT.Callback.Service.v1
                     System.Diagnostics.Trace.TraceError(
                         "PGCrypto credit failed (" + credit.FailureReason + ") for tx " + x.TransactionID);
                 }
+                else if (credit.Success)
+                {
+                    // WasabiCard auto-funding — Tier 2 (eager pass-through). Only on a GENUINE new
+                    // credit (never on a duplicate_event replay), so a redelivered webhook can't
+                    // double-forward. The credited net is what the customer's wallet shows, i.e. the
+                    // "deposit" amount the eager rule is sized against; the forward is gated and
+                    // idempotent (keyed on the TransactionID) and a no-op when auto-funding is OFF.
+                    WasabiCardFundingService.OnDepositCredited(net, x.TransactionID);
+                }
                 //invoice
                 //var z = db.tblT_Transaction.Where(p => p.PGCryptoInvoiceID == x.TransactionID && p.Status == StatusModel.WaitingPayment).FirstOrDefault();
                 //if (z != null)
@@ -456,6 +465,19 @@ namespace QryptoCard.INT.Callback.Service.v1
             {
                 System.Diagnostics.Trace.TraceError("ReconcilePendingProvider failed: " + ex.GetType().FullName);
                 return 0;
+            }
+        }
+
+        public string RunWasabiCardMonitor()
+        {
+            try
+            {
+                return WasabiCardFundingService.RunMonitorTick();
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Trace.TraceError("RunWasabiCardMonitor failed: " + ex.GetType().FullName);
+                return "{\"error\":\"monitor_failed\"}";
             }
         }
 
