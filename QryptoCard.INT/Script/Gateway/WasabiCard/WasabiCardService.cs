@@ -170,7 +170,7 @@ namespace QryptoCard.INT.Script.Gateway.WasabiCard
                 //var xxx = JsonConvert.SerializeObject(req);
                 HttpResponseMessage responses = clients.PostAsync(path, httpContent).Result;
 
-                api.Type = "Wasabi Card - Get Account Info";
+                api.Type = "Wasabi Card - Get City List";
                 //api.Request = xxx;
                 api.RequestDate = DateTime.Now;
 

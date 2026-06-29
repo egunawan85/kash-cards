@@ -319,8 +319,20 @@ namespace QryptoCard.INT.Script.Service.App.v1
                             string holderEmail = (buyer != null && !string.IsNullOrWhiteSpace(buyer.Email))
                                 ? buyer.Email.Trim() : em;
 
-                            // Address/town/postCode/mobile: synthesized US address (no pool table).
+                            // Address/postCode/mobile: synthesized US address (no pool table).
                             var addr = AddressGeneratorService.NextUsAddress();
+
+                            // WasabiCard's `town` is a CITY CODE from its getCityList catalog, NOT a
+                            // free-text name — sending a name fails with 40002 "town parameter error".
+                            // Source a valid US city code at runtime; if the catalog is unavailable,
+                            // fail the buy with a retryable message rather than send a rejected value.
+                            string townCode = CardholderGeoService.GetUsCityCode();
+                            if (string.IsNullOrEmpty(townCode))
+                            {
+                                op.Status = "failed";
+                                op.Message = "Card issuance is temporarily unavailable. Please try again shortly.";
+                                return op;
+                            }
 
                             WCCreateHolderRequestModel chx = new WCCreateHolderRequestModel();
                             chx.cardTypeId = data.CardTypeId.Value;
@@ -332,7 +344,7 @@ namespace QryptoCard.INT.Script.Service.App.v1
                             chx.birthday = generateBirthdate();
                             chx.country = "US";
                             chx.address = addr.Street;
-                            chx.town = addr.City;
+                            chx.town = townCode;
                             chx.postCode = addr.PostCode;
 
                             var chdr = WasabiCardService.createHolder(chx);
