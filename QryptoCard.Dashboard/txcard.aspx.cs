@@ -91,9 +91,16 @@ namespace QryptoCard.Dashboard
                 lblTotalPay.InnerHtml = dt.Total.ToString() + " " + dt.Currency;
                 lblTotal.InnerHtml = dt.Total.ToString() + " USDT";
 
-                lbladdress.InnerHtml = dt.Address;
-                hfAddress.Value = dt.Address;
-                generateQRCode(dt.Address);
+                // The deposit address + QR are a crypto-deposit-flow artefact. A card purchase is paid
+                // from the prepaid balance and has no deposit address (Address is null), so only render
+                // this block when there actually is one — generating a QR from a null/empty string throws
+                // (QRCoder), which previously 500'd the whole receipt page on every successful card buy.
+                if (!string.IsNullOrEmpty(dt.Address))
+                {
+                    lbladdress.InnerHtml = dt.Address;
+                    hfAddress.Value = dt.Address;
+                    generateQRCode(dt.Address);
+                }
 
                 hfStatus.Value = dt.Status;
 
