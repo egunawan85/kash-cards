@@ -14,11 +14,16 @@ namespace QryptoCard.Sec
     /// X.509 SubjectPublicKeyInfo). An empty body is signed as the literal "{}".
     ///
     /// Fail-closed: returns false on any malformed/forged input, never throws. Rejects a public key
-    /// whose modulus is under 2048 bits (defends against a substituted weak/forgeable key).
+    /// whose modulus is under 1024 bits (defends against a substituted weak/forgeable key). The floor
+    /// is 1024 because WasabiCard's PLATFORM signing key is a 1024-bit RSA key — a stricter 2048 floor
+    /// rejects their real key and 401s every legitimate webhook. 1024-bit is weaker than ideal but is
+    /// the provider's actual key strength (not ours to choose); the floor still blocks a truly-weak
+    /// (e.g. 512-bit) substituted key, and the downstream finalize/commission dedup + the deposit-refund
+    /// provider cross-check bound the blast radius of any forged delivery.
     /// </summary>
     public static class WasabiSignatureVerifier
     {
-        private const int MinModulusBits = 2048;
+        private const int MinModulusBits = 1024;
 
         public static bool Verify(string signatureBase64, byte[] rawBody, string platformPublicKeyBase64)
         {

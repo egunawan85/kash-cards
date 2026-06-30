@@ -18,6 +18,25 @@ namespace QryptoCard.Tests.Unit
         }
 
         [Fact]
+        public void Wasabi1024BitKey_Passes()
+        {
+            // WasabiCard's platform signing key is 1024-bit; the verifier must accept it (a 2048 floor
+            // rejected their real key and 401'd every webhook).
+            var pair = CryptoFixtures.NewRsaPair(1024);
+            var sig = CryptoFixtures.WasabiSign(pair.PrivateKey, Body);
+            Assert.True(WasabiSignatureVerifier.Verify(sig, Body, pair.PublicKeySpkiBase64));
+        }
+
+        [Fact]
+        public void KeyBelowFloor_Fails()
+        {
+            // A truly-weak (512-bit) substituted key is still rejected by the 1024-bit floor.
+            var pair = CryptoFixtures.NewRsaPair(512);
+            var sig = CryptoFixtures.WasabiSign(pair.PrivateKey, Body);
+            Assert.False(WasabiSignatureVerifier.Verify(sig, Body, pair.PublicKeySpkiBase64));
+        }
+
+        [Fact]
         public void TamperedBody_Fails()
         {
             var pair = CryptoFixtures.NewRsaPair();
