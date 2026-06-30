@@ -14,6 +14,7 @@ namespace QryptoCard.INT.Model.WasabiCard
 
         public class Datum
         {
+            public string cardNo { get; set; }
             public string orderNo { get; set; }
             public string merchantOrderNo { get; set; }
             public string currency { get; set; }

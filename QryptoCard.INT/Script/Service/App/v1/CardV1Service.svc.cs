@@ -586,22 +586,27 @@ namespace QryptoCard.INT.Script.Service.App.v1
                 }
                 else
                 {
-                    WCCardInfoRequestModel req = new WCCardInfoRequestModel();
-                    req.cardNo = data.CardNo;
-                    req.onlySimpleInfo = false;
-                    var res = WasabiCardService.getCardInfo(req);
-                    if (res != null)
+                    // Only enrich from the provider when the card is bound. An order still finalizing
+                    // (CardNo not yet set) returns the base vw_Card row as success rather than calling the
+                    // provider with a null cardNo — which previously surfaced as a receipt-page error.
+                    if (!string.IsNullOrEmpty(data.CardNo))
                     {
-                        if (res.code == 200)
+                        WCCardInfoRequestModel req = new WCCardInfoRequestModel();
+                        req.cardNo = data.CardNo;
+                        req.onlySimpleInfo = false;
+                        var res = WasabiCardService.getCardInfo(req);
+                        if (res != null && res.code == 200)
                         {
-
                             WCCardInfoSensitiveRequestModel reqq = new WCCardInfoSensitiveRequestModel();
                             reqq.cardNo = data.CardNo;
                             var ress = WasabiCardService.getCardInfoSensitive(reqq);
-
-                            data.CVV = ress.data.cvv;
-                            data.ValidPeriod = ress.data.expireDate;
-                            data.Param5 = res.data.balanceInfo.amount;
+                            if (ress != null && ress.data != null)
+                            {
+                                data.CVV = ress.data.cvv;
+                                data.ValidPeriod = ress.data.expireDate;
+                            }
+                            if (res.data != null && res.data.balanceInfo != null)
+                                data.Param5 = res.data.balanceInfo.amount;
                         }
                     }
 

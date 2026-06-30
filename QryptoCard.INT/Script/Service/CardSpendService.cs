@@ -160,6 +160,25 @@ namespace QryptoCard.INT.Script.Service
             if (confirmed)
             {
                 StampOpenSuccess(x.ID, res, resH);
+
+                // Finalize synchronously from the provider's open response (it carries the cardNo): bind
+                // the card, activate, mark Success, record balance, and pay the referral commission NOW,
+                // instead of depending on the inbound WasabiCard webhook (not delivered in this
+                // deployment). Best-effort: the cardNo is already stamped above, so if this can't confirm
+                // yet the order stays InProgress and is recoverable; a later webhook/sweep finalize is an
+                // idempotent no-op (the order is already Success, and commission is deduped per order).
+                try
+                {
+                    var cardNo = res?.data?.FirstOrDefault()?.cardNo ?? resH?.data?.FirstOrDefault()?.cardNo;
+                    if (!string.IsNullOrEmpty(cardNo))
+                        CardBuyFinalizationService.FinalizeOpenSuccess(x.ID, cardNo);
+                }
+                catch (Exception ex)
+                {
+                    System.Diagnostics.Trace.TraceError(
+                        "Synchronous open finalize failed for order " + x.ID +
+                        " (left InProgress for sweep/webhook): " + ex.Message);
+                }
                 return new SpendResult { Success = true, ProviderConfirmed = true, Status = StatusModel.InProgress, Message = "Card opening in progress" };
             }
             if (definitiveFailure)
@@ -310,6 +329,7 @@ namespace QryptoCard.INT.Script.Service
                 if (res != null && res.data != null && res.data.Count > 0)
                 {
                     var d = res.data[0];
+                    row.CardNo = d.cardNo;
                     row.OrderNo = d.orderNo;
                     row.BaseAmount = ToDoubleOrNull(d.amount);
                     row.BaseFee = ToDoubleOrNull(d.fee);
@@ -321,6 +341,7 @@ namespace QryptoCard.INT.Script.Service
                 else if (resH != null && resH.data != null && resH.data.Count > 0)
                 {
                     var d = resH.data[0];
+                    row.CardNo = d.cardNo;
                     row.OrderNo = d.orderNo;
                     row.BaseAmount = ToDoubleOrNull(d.amount);
                     row.BaseFee = ToDoubleOrNull(d.fee);
