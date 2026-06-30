@@ -284,6 +284,22 @@ namespace QryptoCard.INT.Script.Service
             if (confirmed)
             {
                 StampTopUpSuccess(x.ID, res);
+
+                // Finalize the top-up synchronously (mark Success + pay the referral commission NOW)
+                // instead of depending on the inbound WasabiCard webhook, which is not delivered in this
+                // deployment — without this the top-up strands InProgress with no commission. Best-effort:
+                // the deposit row is already stamped, so a finalize hiccup leaves it recoverable, and a
+                // later webhook/sweep finalize is an idempotent no-op (commission is deduped per order).
+                try
+                {
+                    CardBuyFinalizationService.FinalizeTopUpSuccess(x.ID);
+                }
+                catch (Exception ex)
+                {
+                    System.Diagnostics.Trace.TraceError(
+                        "Synchronous top-up finalize failed for order " + x.ID +
+                        " (left InProgress for sweep/webhook): " + ex.Message);
+                }
                 return new SpendResult { Success = true, ProviderConfirmed = true, Status = StatusModel.InProgress, Message = "Top-up in progress" };
             }
             if (definitiveFailure)

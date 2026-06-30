@@ -87,6 +87,33 @@ namespace QryptoCard.INT.Script.Service
             }
         }
 
+        /// <summary>
+        /// Finalize a confirmed TOP-UP synchronously: mark the deposit Success and pay the referrer
+        /// their commission — so a top-up completes at purchase time instead of stranding InProgress
+        /// waiting on the inbound WasabiCard webhook (not delivered in this deployment). The card
+        /// already exists, so (unlike the open finalize) there is no cardNo to bind or cross-check —
+        /// the depositCard 200 is the provider's confirmation. Idempotent (only acts on an
+        /// InProgress/PendingProvider deposit), so a later webhook/sweep finalize is a safe no-op and
+        /// the per-order commission dedup index prevents any double-pay across both paths.
+        /// </summary>
+        public static FinalizeOutcome FinalizeTopUpSuccess(string orderId)
+        {
+            using (var db = new DBEntities())
+            {
+                var cr = db.tblT_Card_Deposit.FirstOrDefault(p => p.ID == orderId &&
+                    (p.Status == StatusModel.InProgress || p.Status == StatusModel.PendingProvider));
+                if (cr == null) return FinalizeOutcome.NotFound;
+
+                cr.Status = StatusModel.Success;
+                db.SaveChanges();
+
+                // Pay the referrer their commission on this confirmed top-up (best-effort, idempotent,
+                // never throws — must not roll back the finalization above).
+                PayForFinalizedSpend(cr.UserID, cr.Fee, cr.ID);
+                return FinalizeOutcome.Confirmed;
+            }
+        }
+
         // ---- referral commission (ported from the callback's ReferralCommissionService) -------------
 
         /// <summary>
