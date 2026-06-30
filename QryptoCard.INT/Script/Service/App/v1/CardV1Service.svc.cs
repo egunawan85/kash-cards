@@ -602,6 +602,16 @@ namespace QryptoCard.INT.Script.Service.App.v1
                             var ress = WasabiCardService.getCardInfoSensitive(reqq);
                             if (ress != null && ress.data != null)
                             {
+                                // The PAN comes back ENCRYPTED and is shown decrypted (the dashboard
+                                // expects a plain number); CVV + expiry stay encrypted here and are
+                                // decrypted at display. Without this line the card number reveals blank.
+                                // Best-effort decrypt so a malformed value can't blank the whole detail.
+                                try
+                                {
+                                    if (!string.IsNullOrEmpty(ress.data.cardNumber))
+                                        data.CardNumber = decrypt(ress.data.cardNumber);
+                                }
+                                catch { }
                                 data.CVV = ress.data.cvv;
                                 data.ValidPeriod = ress.data.expireDate;
                             }
