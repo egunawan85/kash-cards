@@ -436,12 +436,12 @@ namespace QryptoCard.INT.Script.Service.App.v1
                         return op;
                     }
 
-                    // Read the overlay numerically from settings, NOT via Convert.ToDouble on the
-                    // serialized strings: those are written InvariantCulture but Convert.ToDouble
-                    // parses with the thread's CURRENT culture, so a fractional value like "3.5"
-                    // would read as 35 on a comma-decimal host -> a 10x overcharge. GetCardPrice/
-                    // GetDepositFeeRate return the double straight from the setting.
-                    x.Price = CardCatalogService.GetCardPrice();
+                    // Read the overlay numerically (InvariantCulture), NOT via Convert.ToDouble on the
+                    // serialized strings: those are written InvariantCulture but Convert.ToDouble parses
+                    // with the thread's CURRENT culture, so a fractional value like "3.5" would read as
+                    // 35 on a comma-decimal host -> a 10x overcharge. Price is now PER-CARD (wholesale +
+                    // markup) from this card's catalog entry; the deposit fee stays a global setting.
+                    x.Price = CardCatalogService.PriceOf(data);
 
                     x.FeeInPercentage = CardCatalogService.GetDepositFeeRate();
 
