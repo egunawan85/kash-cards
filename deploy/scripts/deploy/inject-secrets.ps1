@@ -206,7 +206,13 @@ $OptionalConfigNames = @(
     'WASABICARD_INFLIGHT_STALE_MIN',
     'WASABICARD_REALERT_HOURS',
     'WASABICARD_DEPOSIT_ADDRESS',
-    'OPS_ALERT_EMAIL'
+    'OPS_ALERT_EMAIL',
+    # Card pricing: customer CardPrice = WasabiCard wholesale + CARD_PRICE_MARKUP% (rounded up),
+    # or a flat CARD_PRICE_GLOBAL for all cards. Unset => 0% markup (sell at wholesale, break-even).
+    # Per-card overrides (CARD_PRICE_MARKUP_<cardTypeId>) are read by the app too; add the specific
+    # name here if you want to seed one from KV for a given card.
+    'CARD_PRICE_MARKUP',
+    'CARD_PRICE_GLOBAL'
 )
 
 # -- Pull each secret from KV once (cache in a local map). Never log values. --

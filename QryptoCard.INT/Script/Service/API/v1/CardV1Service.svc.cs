@@ -414,10 +414,12 @@ namespace QryptoCard.INT.Script.Service.API.v1
                         return op;
                     }
 
-                    x.Price = Convert.ToDouble(data.CardPrice);
+                    // Per-card price (wholesale + markup), parsed InvariantCulture (NOT Convert.ToDouble,
+                    // which uses the current culture and would 10x a fractional value on a comma host).
+                    x.Price = CardCatalogService.PriceOf(data);
                     //x.InitialDeposit = Convert.ToDouble(data.DepositAmountMinQuotaForActiveCard);
 
-                    x.FeeInPercentage = Convert.ToDouble(data.RechargeFeeRate);
+                    x.FeeInPercentage = CardCatalogService.GetDepositFeeRate();
 
                     //var comm = db.tblM_User_Fee.Where(p => p.UserID == x.UserID).FirstOrDefault();
                     //if (comm != null)

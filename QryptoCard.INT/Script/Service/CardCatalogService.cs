@@ -38,6 +38,16 @@ namespace QryptoCard.INT.Script.Service
         public const double DefaultCardPrice = 0d;
         public const double DefaultDepositFeeRate = 3d;
 
+        // Env-driven card-price markup (deploy-controlled, read live each catalog build). The
+        // customer CardPrice = WasabiCard's wholesale OriginalCardPrice marked up by this %, rounded
+        // UP to the next whole dollar, so we are never below WasabiCard's wholesale cost. WasabiCard's
+        // deposit fee is <=0.2% (covered by our 3% deposit fee), so ONLY the issuance price is marked
+        // up here — the deposit fee is unchanged. A flat CARD_PRICE_GLOBAL override, if set, replaces
+        // wholesale+markup for every card.
+        public const string EnvCardPriceMarkup = "CARD_PRICE_MARKUP";   // global %, or per-card CARD_PRICE_MARKUP_<cardTypeId>
+        public const string EnvCardPriceGlobal = "CARD_PRICE_GLOBAL";   // optional flat price for all cards
+        public const double DefaultCardPriceMarkupPct = 0d;             // 0 => sell at wholesale (break-even, never below cost)
+
         const string PriceCurrency = "USD";
 
         /// <summary>
@@ -47,9 +57,10 @@ namespace QryptoCard.INT.Script.Service
         /// </summary>
         public static List<tblM_Card_Type> GetCatalog()
         {
-            double price = GetSetting(SettingCardPrice, DefaultCardPrice);
+            // Card price is now per-card (wholesale + markup, computed in Map); only the deposit fee
+            // remains a single global knob.
             double fee = GetSetting(SettingDepositFeeRate, DefaultDepositFeeRate);
-            return GetOnlineDatums().Select(d => Map(d, price, fee)).ToList();
+            return GetOnlineDatums().Select(d => Map(d, fee)).ToList();
         }
 
         /// <summary>A single online card type by id, pricing overlay applied, or null if not orderable.</summary>
@@ -68,10 +79,58 @@ namespace QryptoCard.INT.Script.Service
             return GetSetting(SettingDepositFeeRate, DefaultDepositFeeRate);
         }
 
-        /// <summary>The current global card price (admin setting).</summary>
-        public static double GetCardPrice()
+        /// <summary>
+        /// The customer-facing card price for an already-fetched catalog entry, parsed numerically
+        /// (InvariantCulture — Map writes it that way, so a comma-decimal host can't misread it), or 0
+        /// if unparseable. The buy paths use this instead of a single global price.
+        /// </summary>
+        public static double PriceOf(tblM_Card_Type c)
         {
-            return GetSetting(SettingCardPrice, DefaultCardPrice);
+            double v;
+            return (c != null && double.TryParse(c.CardPrice, NumberStyles.Any, CultureInfo.InvariantCulture, out v)) ? v : 0d;
+        }
+
+        /// <summary>
+        /// Pure markup math (unit-testable, no I/O): wholesale marked up by <paramref name="markupPct"/>%,
+        /// rounded UP to the next whole dollar. Negative inputs are floored to 0.
+        /// </summary>
+        public static double MarkupPrice(double wholesale, double markupPct)
+        {
+            if (wholesale < 0d) wholesale = 0d;
+            if (markupPct < 0d) markupPct = 0d;
+            return Math.Ceiling(wholesale * (1d + markupPct / 100d));
+        }
+
+        // Customer card price for a card: a flat CARD_PRICE_GLOBAL override if set, else the WasabiCard
+        // wholesale price marked up by the (per-card or global) % and rounded up (MarkupPrice).
+        static double ComputeCardPrice(string wholesaleStr, long cardTypeId)
+        {
+            double flat;
+            var ov = QryptoCard.Sec.SecretsConfig.GetOptional(EnvCardPriceGlobal, null);
+            if (!string.IsNullOrWhiteSpace(ov) &&
+                double.TryParse(ov, NumberStyles.Any, CultureInfo.InvariantCulture, out flat) && flat >= 0d)
+                return Math.Ceiling(flat);
+
+            double wholesale;
+            if (!double.TryParse(wholesaleStr, NumberStyles.Any, CultureInfo.InvariantCulture, out wholesale))
+                wholesale = 0d;
+            return MarkupPrice(wholesale, GetMarkupPct(cardTypeId));
+        }
+
+        // Markup %: a per-card CARD_PRICE_MARKUP_<cardTypeId> override, else the global CARD_PRICE_MARKUP,
+        // else the default. Blank/non-numeric/negative values fall through to the next source.
+        static double GetMarkupPct(long cardTypeId)
+        {
+            double v;
+            var perCard = QryptoCard.Sec.SecretsConfig.GetOptional(EnvCardPriceMarkup + "_" + cardTypeId, null);
+            if (!string.IsNullOrWhiteSpace(perCard) &&
+                double.TryParse(perCard, NumberStyles.Any, CultureInfo.InvariantCulture, out v) && v >= 0d)
+                return v;
+            var global = QryptoCard.Sec.SecretsConfig.GetOptional(EnvCardPriceMarkup, null);
+            if (!string.IsNullOrWhiteSpace(global) &&
+                double.TryParse(global, NumberStyles.Any, CultureInfo.InvariantCulture, out v) && v >= 0d)
+                return v;
+            return DefaultCardPriceMarkupPct;
         }
 
         // ---- internals -------------------------------------------------------
@@ -117,7 +176,7 @@ namespace QryptoCard.INT.Script.Service
         // Map a WasabiCard datum -> the tblM_Card_Type shape every existing consumer
         // already understands, applying the pricing overlay. WasabiCard's wholesale
         // price/fee go to Original*; the customer-facing CardPrice/RechargeFeeRate are ours.
-        static tblM_Card_Type Map(WCCardTypeResponseModel.Datum d, double price, double fee)
+        static tblM_Card_Type Map(WCCardTypeResponseModel.Datum d, double fee)
         {
             // Recharge quota/fee live under extFieldVO.rechargeCurrencyInfos when present.
             var rc = d.extFieldVO?.rechargeCurrencyInfos?.FirstOrDefault();
@@ -132,8 +191,8 @@ namespace QryptoCard.INT.Script.Service
                 CardName = d.cardName,
                 CardDesc = d.cardDesc,
 
-                // --- our pricing overlay (customer-facing) ---
-                CardPrice = price.ToString(CultureInfo.InvariantCulture),
+                // --- our pricing overlay (customer-facing): per-card price = wholesale + markup ---
+                CardPrice = ComputeCardPrice(d.cardPrice, d.cardTypeId).ToString(CultureInfo.InvariantCulture),
                 CardPriceCurrency = PriceCurrency,
                 RechargeFeeRate = fee.ToString(CultureInfo.InvariantCulture),
 
