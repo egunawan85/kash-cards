@@ -144,11 +144,14 @@ namespace QryptoCard.INT.Script.Service
             if (ClaimCardStatus(openOrderId, StatusModel.Success, StatusModel.RefundPending) != 1)
                 return RefundResult.Fail("refund_in_progress", "A refund for this card is already in progress or done.");
 
-            // 4. Cancel the whole card at WasabiCard.
+            // 4. Cancel the whole card at WasabiCard. The cancel needs its OWN merchantOrderNo —
+            // WasabiCard rejects reusing the open order's id with "Duplicate order number" (the card
+            // was created under that id). Deterministic (open id + "-RFD") so a resumed/retried cancel
+            // reuses the same id rather than minting a fresh one each attempt.
             WCCancelCardResponseModel cancel;
             try
             {
-                cancel = WasabiCardService.cancelCard(new WCCancelCardRequestModel { cardNo = cardNo, merchantOrderNo = openOrderId });
+                cancel = WasabiCardService.cancelCard(new WCCancelCardRequestModel { cardNo = cardNo, merchantOrderNo = openOrderId + "-RFD" });
             }
             catch (Exception ex)
             {
