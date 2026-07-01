@@ -495,8 +495,14 @@ namespace QryptoCard.INT.Callback.Service.v1
 
         // Deposit-into-card streaming pump: forwards covered intents to WasabiCard and confirms the
         // float credit (Funding -> Confirming -> Issuing). The INT-tier issuance tick then opens/tops
-        // up the card. Driven by the scheduler like RunWasabiCardMonitor; a no-op while the streaming
-        // switch (CardFundingStreamingEnabled) is OFF.
+        // up the card. A no-op while the streaming switch (CardFundingStreamingEnabled) is OFF.
+        //
+        // NOT YET SCHEDULER-WIRED: this method is on ICallbackV1Service, but the loopback controller
+        // route (mirror monitorBalance), the regenerated WCF client (Reference.cs), and the
+        // scheduler-trigger.ps1 entry still need to be added before it runs — AND the INT-tier
+        // CardFundingIssuanceService.RunTick needs its own trigger (different project; the pump does not
+        // reach it). Both ticks MUST be driven before enabling the feature. See the PR "reachability"
+        // checklist. (RT round 7 correctly flagged that the pipeline is unwired past settlement.)
         public string RunCardFundingPump()
         {
             try

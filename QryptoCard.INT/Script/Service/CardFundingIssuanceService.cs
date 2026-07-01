@@ -91,7 +91,9 @@ namespace QryptoCard.INT.Script.Service
             // with CardNo=null and the app can't show the new card. TryCompleteNewFromOrder does this
             // and is idempotent.
             if (spend != null && spend.ProviderConfirmed) return TryCompleteNewFromOrder(it);
-            if (spend != null && spend.ProviderFailed) return Fail(it, "open_failed");
+            // The card's float was already forwarded (Confirming) before this debit/open; a provider
+            // reject leaves it orphaned, so route through FailReleasingSlot to emit the reconcile trace.
+            if (spend != null && spend.ProviderFailed) return FailReleasingSlot(it, "open_failed", x.ID);
             // Definitive NON-provider failure (insufficient balance / debit fail, or a replay of an
             // order already terminally Failed): Success=false and NOT ProviderPending. Release the
             // intent AND the single-Issuing slot so one bad order can't block the whole pipeline. A
