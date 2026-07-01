@@ -90,6 +90,98 @@ namespace QryptoCard.INT.Script.Service.App.v1
             return op;
         }
 
+        // ---- Deposit-into-card: funding-intent lifecycle -------------------------
+        // Auth mirrors the other app endpoints: em (the authenticated identity) -> uid, strictly
+        // scoped so a user can only create/read/cancel their OWN intent. All gated by
+        // CardFundingStreamingEnabled inside CardFundingIntentService (a no-op while OFF).
+
+        public OutputModel createCardFundingIntent(string em, long cardTypeId, decimal amount)
+        {
+            try
+            {
+                var r = CardFundingIntentService.CreateNewCard(getUserId(em), em, cardTypeId, amount);
+                return mapIntentResult(r);
+            }
+            catch (Exception ex) { op.Message = ex.Message; op.Status = "error"; return op; }
+        }
+
+        public OutputModel createCardFundingTopUp(string em, string cardNo, decimal amount)
+        {
+            try
+            {
+                var r = CardFundingIntentService.CreateTopUp(getUserId(em), cardNo, amount);
+                return mapIntentResult(r);
+            }
+            catch (Exception ex) { op.Message = ex.Message; op.Status = "error"; return op; }
+        }
+
+        public OutputModel getCardFundingIntentStatus(string em, string intentId)
+        {
+            try
+            {
+                var s = CardFundingIntentService.GetStatus(getUserId(em), intentId);
+                if (s == null || !s.Found)
+                {
+                    op.Status = "failed";
+                    op.Message = "Not found";
+                    return op;
+                }
+                op.Status = "success";
+                op.Message = "Success";
+                op.Data = JsonConvert.SerializeObject(new
+                {
+                    s.IntentID,
+                    s.Kind,
+                    s.Status,
+                    s.ExpectedTotal,
+                    s.ReceivedTotal,
+                    s.CardNo,
+                }, Formatting.None);
+            }
+            catch (Exception ex) { op.Message = ex.Message; op.Status = "error"; }
+            return op;
+        }
+
+        public OutputModel cancelCardFundingIntent(string em, string intentId)
+        {
+            try
+            {
+                bool ok = CardFundingIntentService.Cancel(getUserId(em), intentId);
+                op.Status = ok ? "success" : "failed";
+                op.Message = ok ? "Cancelled" : "This intent can no longer be cancelled.";
+            }
+            catch (Exception ex) { op.Message = ex.Message; op.Status = "error"; }
+            return op;
+        }
+
+        // Map a create result to the app OutputModel: on success, Data carries the fixed deposit
+        // address, the exact amount to send, and the fee breakdown for the address-first UI.
+        OutputModel mapIntentResult(CardFundingIntentService.Result r)
+        {
+            if (r == null || !r.Ok)
+            {
+                op.Status = "failed";
+                op.Message = (r != null && !string.IsNullOrEmpty(r.Error)) ? r.Error : "Could not start card funding.";
+                return op;
+            }
+            op.Status = "success";
+            op.Message = "Success";
+            op.Data = JsonConvert.SerializeObject(new
+            {
+                r.IntentID,
+                r.DepositAddress,
+                r.Network,
+                r.Coin,
+                r.Face,
+                r.Price,
+                r.PercentageFee,
+                r.FixedFee,
+                r.ExpectedTotal,
+                r.Status,
+            }, Formatting.None);
+            return op;
+        }
+
         public string getDate()
         {
             return generateBirthdate();
