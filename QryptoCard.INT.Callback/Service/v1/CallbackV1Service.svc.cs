@@ -497,12 +497,11 @@ namespace QryptoCard.INT.Callback.Service.v1
         // float credit (Funding -> Confirming -> Issuing). The INT-tier issuance tick then opens/tops
         // up the card. A no-op while the streaming switch (CardFundingStreamingEnabled) is OFF.
         //
-        // NOT YET SCHEDULER-WIRED: this method is on ICallbackV1Service, but the loopback controller
-        // route (mirror monitorBalance), the regenerated WCF client (Reference.cs), and the
-        // scheduler-trigger.ps1 entry still need to be added before it runs — AND the INT-tier
-        // CardFundingIssuanceService.RunTick needs its own trigger (different project; the pump does not
-        // reach it). Both ticks MUST be driven before enabling the feature. See the PR "reachability"
-        // checklist. (RT round 7 correctly flagged that the pipeline is unwired past settlement.)
+        // SCHEDULER-WIRED (Phase B): driven by the loopback route funding/pump + scheduler-trigger.ps1,
+        // and the INT-tier CardFundingIssuanceService.RunTick has its own trigger (funding/issue). Still
+        // a no-op until CardFundingStreamingEnabled is ON. Before enabling: tighten the tick cadence to
+        // ~1 min and regenerate the WCF client proxies in VS + smoke-test the loopback calls (the
+        // Reference.cs proxies were hand-edited, so the WCF Action dispatch is not compile-verified here).
         public string RunCardFundingPump()
         {
             try

@@ -3467,6 +3467,33 @@ namespace QryptoCard.API.CardV1Service {
         
         [System.ServiceModel.OperationContractAttribute(Action="http://tempuri.org/ICardV1Service/openCard", ReplyAction="http://tempuri.org/ICardV1Service/openCardResponse")]
         System.Threading.Tasks.Task<QryptoCard.API.CardV1Service.OutputModel> openCardAsync(string em, QryptoCard.API.CardV1Service.tblT_Card x);
+
+        // ---- Hand-added: deposit-into-card intent lifecycle + scheduled issuance tick. Regenerate the
+        // service reference in VS to normalize this file when convenient. ----
+        [System.ServiceModel.OperationContractAttribute(Action="http://tempuri.org/ICardV1Service/createCardFundingIntent", ReplyAction="http://tempuri.org/ICardV1Service/createCardFundingIntentResponse")]
+        QryptoCard.API.CardV1Service.OutputModel createCardFundingIntent(string em, long cardTypeId, decimal amount);
+        [System.ServiceModel.OperationContractAttribute(Action="http://tempuri.org/ICardV1Service/createCardFundingIntent", ReplyAction="http://tempuri.org/ICardV1Service/createCardFundingIntentResponse")]
+        System.Threading.Tasks.Task<QryptoCard.API.CardV1Service.OutputModel> createCardFundingIntentAsync(string em, long cardTypeId, decimal amount);
+
+        [System.ServiceModel.OperationContractAttribute(Action="http://tempuri.org/ICardV1Service/createCardFundingTopUp", ReplyAction="http://tempuri.org/ICardV1Service/createCardFundingTopUpResponse")]
+        QryptoCard.API.CardV1Service.OutputModel createCardFundingTopUp(string em, string cardNo, decimal amount);
+        [System.ServiceModel.OperationContractAttribute(Action="http://tempuri.org/ICardV1Service/createCardFundingTopUp", ReplyAction="http://tempuri.org/ICardV1Service/createCardFundingTopUpResponse")]
+        System.Threading.Tasks.Task<QryptoCard.API.CardV1Service.OutputModel> createCardFundingTopUpAsync(string em, string cardNo, decimal amount);
+
+        [System.ServiceModel.OperationContractAttribute(Action="http://tempuri.org/ICardV1Service/getCardFundingIntentStatus", ReplyAction="http://tempuri.org/ICardV1Service/getCardFundingIntentStatusResponse")]
+        QryptoCard.API.CardV1Service.OutputModel getCardFundingIntentStatus(string em, string intentId);
+        [System.ServiceModel.OperationContractAttribute(Action="http://tempuri.org/ICardV1Service/getCardFundingIntentStatus", ReplyAction="http://tempuri.org/ICardV1Service/getCardFundingIntentStatusResponse")]
+        System.Threading.Tasks.Task<QryptoCard.API.CardV1Service.OutputModel> getCardFundingIntentStatusAsync(string em, string intentId);
+
+        [System.ServiceModel.OperationContractAttribute(Action="http://tempuri.org/ICardV1Service/cancelCardFundingIntent", ReplyAction="http://tempuri.org/ICardV1Service/cancelCardFundingIntentResponse")]
+        QryptoCard.API.CardV1Service.OutputModel cancelCardFundingIntent(string em, string intentId);
+        [System.ServiceModel.OperationContractAttribute(Action="http://tempuri.org/ICardV1Service/cancelCardFundingIntent", ReplyAction="http://tempuri.org/ICardV1Service/cancelCardFundingIntentResponse")]
+        System.Threading.Tasks.Task<QryptoCard.API.CardV1Service.OutputModel> cancelCardFundingIntentAsync(string em, string intentId);
+
+        [System.ServiceModel.OperationContractAttribute(Action="http://tempuri.org/ICardV1Service/RunCardFundingIssuance", ReplyAction="http://tempuri.org/ICardV1Service/RunCardFundingIssuanceResponse")]
+        string RunCardFundingIssuance();
+        [System.ServiceModel.OperationContractAttribute(Action="http://tempuri.org/ICardV1Service/RunCardFundingIssuance", ReplyAction="http://tempuri.org/ICardV1Service/RunCardFundingIssuanceResponse")]
+        System.Threading.Tasks.Task<string> RunCardFundingIssuanceAsync();
         
         [System.ServiceModel.OperationContractAttribute(Action="http://tempuri.org/ICardV1Service/getCardList", ReplyAction="http://tempuri.org/ICardV1Service/getCardListResponse")]
         QryptoCard.API.CardV1Service.OutputModel getCardList(string em, QryptoCard.API.CardV1Service.tblT_Card x);
@@ -3616,6 +3643,37 @@ namespace QryptoCard.API.CardV1Service {
         
         public System.Threading.Tasks.Task<QryptoCard.API.CardV1Service.OutputModel> openCardAsync(string em, QryptoCard.API.CardV1Service.tblT_Card x) {
             return base.Channel.openCardAsync(em, x);
+        }
+
+        public QryptoCard.API.CardV1Service.OutputModel createCardFundingIntent(string em, long cardTypeId, decimal amount) {
+            return base.Channel.createCardFundingIntent(em, cardTypeId, amount);
+        }
+        public System.Threading.Tasks.Task<QryptoCard.API.CardV1Service.OutputModel> createCardFundingIntentAsync(string em, long cardTypeId, decimal amount) {
+            return base.Channel.createCardFundingIntentAsync(em, cardTypeId, amount);
+        }
+        public QryptoCard.API.CardV1Service.OutputModel createCardFundingTopUp(string em, string cardNo, decimal amount) {
+            return base.Channel.createCardFundingTopUp(em, cardNo, amount);
+        }
+        public System.Threading.Tasks.Task<QryptoCard.API.CardV1Service.OutputModel> createCardFundingTopUpAsync(string em, string cardNo, decimal amount) {
+            return base.Channel.createCardFundingTopUpAsync(em, cardNo, amount);
+        }
+        public QryptoCard.API.CardV1Service.OutputModel getCardFundingIntentStatus(string em, string intentId) {
+            return base.Channel.getCardFundingIntentStatus(em, intentId);
+        }
+        public System.Threading.Tasks.Task<QryptoCard.API.CardV1Service.OutputModel> getCardFundingIntentStatusAsync(string em, string intentId) {
+            return base.Channel.getCardFundingIntentStatusAsync(em, intentId);
+        }
+        public QryptoCard.API.CardV1Service.OutputModel cancelCardFundingIntent(string em, string intentId) {
+            return base.Channel.cancelCardFundingIntent(em, intentId);
+        }
+        public System.Threading.Tasks.Task<QryptoCard.API.CardV1Service.OutputModel> cancelCardFundingIntentAsync(string em, string intentId) {
+            return base.Channel.cancelCardFundingIntentAsync(em, intentId);
+        }
+        public string RunCardFundingIssuance() {
+            return base.Channel.RunCardFundingIssuance();
+        }
+        public System.Threading.Tasks.Task<string> RunCardFundingIssuanceAsync() {
+            return base.Channel.RunCardFundingIssuanceAsync();
         }
         
         public QryptoCard.API.CardV1Service.OutputModel getCardList(string em, QryptoCard.API.CardV1Service.tblT_Card x) {
