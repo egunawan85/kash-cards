@@ -19,12 +19,16 @@ namespace QryptoCard.INT.Script.Service
     public static class CardFundingIssuanceService
     {
         private const int Batch = 10;
+        // A money-moving intent (Funding/Confirming/Issuing) older than this is flagged for operator
+        // review — a real forward/issue takes minutes, so this only trips on a genuinely stuck pipeline.
+        private const int StuckAlertMinutes = 180;
 
         public static string RunTick()
         {
             if (!CardFundingIntentService.Enabled()) return "{\"skipped\":\"disabled\"}";
 
             int expired = ExpireStalePending();
+            AlertStuckStreamingIntents();
             int issued = 0, failed = 0;
             try
             {
@@ -81,9 +85,15 @@ namespace QryptoCard.INT.Script.Service
 
             if (spend != null && spend.ProviderConfirmed) return CompleteWithCard(it, x.ID, x.CardNo);
             if (spend != null && spend.ProviderFailed) return Fail(it, "open_failed");
+            // Definitive NON-provider failure (insufficient balance / debit fail, or a replay of an
+            // order already terminally Failed): Success=false and NOT ProviderPending. Release the
+            // intent AND the single-Issuing slot so one bad order can't block the whole pipeline. A
+            // ProviderPending/ambiguous replay keeps Success=true and is NOT caught here.
+            if (spend != null && !spend.Success && !spend.ProviderPending)
+                return FailReleasingSlot(it, spend.InsufficientBalance ? "insufficient_balance" : "debit_failed", x.ID);
             // Ambiguous, or a replay of an order a sweep/webhook has since finalized (a replay never
             // re-sets ProviderConfirmed). Reconcile against the order's OWN terminal state so the intent
-            // still completes instead of sticking in Issuing forever.
+            // still completes (Success) or releases (Failed) instead of sticking in Issuing forever.
             return TryCompleteNewFromOrder(it);
         }
 
@@ -114,6 +124,8 @@ namespace QryptoCard.INT.Script.Service
 
             if (spend != null && spend.ProviderConfirmed) return CompleteWithCard(it, x.ID, it.CardNo);
             if (spend != null && spend.ProviderFailed) return Fail(it, "topup_failed");
+            if (spend != null && !spend.Success && !spend.ProviderPending)
+                return FailReleasingSlot(it, spend.InsufficientBalance ? "insufficient_balance" : "debit_failed", x.ID);
             return TryCompleteTopUpFromOrder(it);
         }
 
@@ -129,6 +141,10 @@ namespace QryptoCard.INT.Script.Service
                     var o = db.tblT_Card.FirstOrDefault(c => c.UserID == it.UserID && c.UserReferenceID == it.IntentID);
                     if (o != null && o.Status == "Success" && !string.IsNullOrEmpty(o.CardNo))
                         return CompleteWithCard(it, o.ID, o.CardNo);
+                    // Order reconciled to a terminal failure (e.g. an ambiguous open the sweep resolved as
+                    // failed + refunded the wallet): release the intent and the single-Issuing slot.
+                    if (o != null && o.Status == "Failed")
+                        return FailReleasingSlot(it, "order_failed", o.ID);
                 }
             }
             catch (Exception ex) { Trace.TraceError("TryCompleteNewFromOrder failed for intent " + it.IntentID + ": " + ex.GetType().FullName); }
@@ -144,6 +160,8 @@ namespace QryptoCard.INT.Script.Service
                     var o = db.tblT_Card_Deposit.FirstOrDefault(d => d.UserID == it.UserID && d.UserReferenceID == it.IntentID);
                     if (o != null && o.Status == "Success")
                         return CompleteWithCard(it, o.ID, it.CardNo);
+                    if (o != null && o.Status == "Failed")
+                        return FailReleasingSlot(it, "order_failed", o.ID);
                 }
             }
             catch (Exception ex) { Trace.TraceError("TryCompleteTopUpFromOrder failed for intent " + it.IntentID + ": " + ex.GetType().FullName); }
@@ -172,6 +190,41 @@ namespace QryptoCard.INT.Script.Service
                     P("@note", note), P("@now", DateTime.Now), P("@id", it.IntentID));
             }
             return Outcome.Failed;
+        }
+
+        // Same as Fail, but for the case where the card's float was ALREADY forwarded to WasabiCard
+        // (Confirming) and issuance then failed to draw it — the forward is stranded in the one-way
+        // float with no card. Releasing the intent unblocks the single-Issuing pipeline; the loud trace
+        // flags the orphaned forward for operator reconciliation. (Should be rare: the deposit covered
+        // the full ExpectedTotal, so this needs the balance to have been drained after Funding.)
+        private static Outcome FailReleasingSlot(IntentRow it, string note, string orderId)
+        {
+            Trace.TraceError("CardFundingIssuance: intent " + it.IntentID + " released as Failed (" + note +
+                ") after its float was forwarded — order " + orderId + " did not draw it. Reconcile the " +
+                "orphaned WasabiCard forward.");
+            return Fail(it, note);
+        }
+
+        // Defense-in-depth: an intent stuck in a money-moving state (Funding/Confirming/Issuing) past
+        // StuckAlertMinutes almost certainly needs manual reconciliation (ambiguous forward, or a
+        // provider order that never reached a terminal state). Alert-only — NEVER auto-transition, since
+        // money may be in flight and a wrong transition could double-move or strand it.
+        private static void AlertStuckStreamingIntents()
+        {
+            try
+            {
+                using (var db = new DBEntities())
+                {
+                    var rows = db.Database.SqlQuery<string>(
+                        "SELECT IntentID FROM dbo.tblT_Card_Funding_Intent " +
+                        "WHERE Status IN ('Funding','Confirming','Issuing') AND UpdatedDate IS NOT NULL AND UpdatedDate < @cutoff",
+                        P("@cutoff", DateTime.Now.AddMinutes(-StuckAlertMinutes))).ToList();
+                    if (rows.Count > 0)
+                        Trace.TraceError("CardFundingIssuance: " + rows.Count + " intent(s) stuck in a money-moving state > " +
+                            StuckAlertMinutes + " min — reconcile: " + string.Join(",", rows.Take(20)));
+                }
+            }
+            catch (Exception ex) { Trace.TraceError("AlertStuckStreamingIntents failed: " + ex.GetType().FullName); }
         }
 
         private static int ExpireStalePending()
