@@ -20,14 +20,15 @@
         <!--begin::Balance — live wallet (S-F). Balance comes from the server (getBalance);
             no figures are computed or fabricated client-side. -->
         <section class="panel balance">
-            <div class="lab">Available balance</div>
-            <div class="amt"><span runat="server" id="lblBalance">&mdash;</span><span class="cur">USDT</span></div>
+            <div class="lab" runat="server" id="lblBalanceLab">Available balance</div>
+            <div class="amt"><span runat="server" id="lblBalance">&mdash;</span><span class="cur" runat="server" id="lblBalanceCur">USDT</span></div>
             <div class="balance-actions">
-                <a class="btn btn-cyan" href='<%= ResolveUrl("~/txdeposit") %>'>Top up</a>
+                <a class="btn btn-cyan" runat="server" id="lnkTopUp" href="~/txdeposit">Top up</a>
                 <a class="btn btn-line" href='<%= ResolveUrl("~/tx/cardhistory") %>'>Statements</a>
             </div>
         </section>
         <!--end::Balance-->
+        <asp:Literal runat="server" ID="litFundingBanner" />
 
         <!--begin::Card — live card-at-a-glance (S-F). Card list is server-returned (getCardList);
             only the masked last-4 and expiry are shown here, never the full PAN or CVV. -->

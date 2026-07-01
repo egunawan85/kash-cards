@@ -59,6 +59,11 @@
                 <div class="n"><asp:Literal runat="server" ID="lblTotalReferrals" Text="-" /></div>
                 <div class="l">Total Referrals</div>
             </div>
+            <asp:Panel runat="server" ID="pnlAvailBal" Visible="false" CssClass="stat">
+                <div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><rect x="2" y="5" width="20" height="14" rx="2" /><path d="M2 10h20" /></svg></div>
+                <div class="n"><asp:Literal runat="server" ID="lblAvailBalance" Text="-" /></div>
+                <div class="l">Available balance</div>
+            </asp:Panel>
         </section>
         <!--end::Stats-->
 

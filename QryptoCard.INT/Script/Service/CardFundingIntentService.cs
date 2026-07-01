@@ -89,6 +89,14 @@ namespace QryptoCard.INT.Script.Service
             public decimal ExpectedTotal;
             public decimal ReceivedTotal;
             public string CardNo;     // populated once issued
+            // Snapshot echoed so the app can RE-SHOW the funding screen (address + QR + breakdown)
+            // when the user re-opens an in-progress intent from the card list — the create response is
+            // not persisted client-side. Read-only projection of the intent's own row.
+            public string DepositAddress;
+            public decimal Face;
+            public decimal Price;
+            public decimal PercentageFee;
+            public decimal FixedFee;
         }
 
         // ---- gate ------------------------------------------------------------
@@ -296,7 +304,8 @@ namespace QryptoCard.INT.Script.Service
             using (var db = new DBEntities())
             {
                 var rows = db.Database.SqlQuery<IntentRow>(
-                    "SELECT TOP 1 IntentID, Kind, Status, ExpectedTotal, ReceivedTotal, CardNo " +
+                    "SELECT TOP 1 IntentID, Kind, Status, ExpectedTotal, ReceivedTotal, CardNo, " +
+                    "DepositAddress, Face, Price, PercentageFee, FixedFee " +
                     "FROM dbo.tblT_Card_Funding_Intent WHERE IntentID = @id AND UserID = @u",
                     P("@id", intentId), P("@u", userId)).ToList();
                 if (rows.Count == 0) return new StatusResult { Found = false };
@@ -310,8 +319,49 @@ namespace QryptoCard.INT.Script.Service
                     ExpectedTotal = r.ExpectedTotal,
                     ReceivedTotal = r.ReceivedTotal,
                     CardNo = r.CardNo,
+                    DepositAddress = r.DepositAddress,
+                    Face = r.Face,
+                    Price = r.Price,
+                    PercentageFee = r.PercentageFee,
+                    FixedFee = r.FixedFee,
                 };
             }
+        }
+
+        // ---- list a user's OPEN intents (for the card list "In progress" section) -----------
+        // STRICTLY user-scoped (WHERE UserID = @u). Returns only in-flight intents (Pending/Funding/
+        // Confirming/Issuing) so the app can render one tracker tile each; terminal intents are already
+        // reflected as real cards / available balance and don't belong in an "in progress" list.
+        public static System.Collections.Generic.List<StatusResult> ListOpen(string userId)
+        {
+            var outp = new System.Collections.Generic.List<StatusResult>();
+            using (var db = new DBEntities())
+            {
+                var rows = db.Database.SqlQuery<IntentRow>(
+                    "SELECT TOP 50 IntentID, Kind, Status, ExpectedTotal, ReceivedTotal, CardNo, " +
+                    "DepositAddress, Face, Price, PercentageFee, FixedFee " +
+                    "FROM dbo.tblT_Card_Funding_Intent " +
+                    "WHERE UserID = @u AND Status IN ('Pending','Funding','Confirming','Issuing') " +
+                    "ORDER BY ID DESC",
+                    P("@u", userId)).ToList();
+                foreach (var r in rows)
+                    outp.Add(new StatusResult
+                    {
+                        Found = true,
+                        IntentID = r.IntentID,
+                        Kind = r.Kind,
+                        Status = r.Status,
+                        ExpectedTotal = r.ExpectedTotal,
+                        ReceivedTotal = r.ReceivedTotal,
+                        CardNo = r.CardNo,
+                        DepositAddress = r.DepositAddress,
+                        Face = r.Face,
+                        Price = r.Price,
+                        PercentageFee = r.PercentageFee,
+                        FixedFee = r.FixedFee,
+                    });
+            }
+            return outp;
         }
 
         // ---- cancel (only while still awaiting funds) ------------------------
@@ -338,6 +388,11 @@ namespace QryptoCard.INT.Script.Service
             public decimal ExpectedTotal { get; set; }
             public decimal ReceivedTotal { get; set; }
             public string CardNo { get; set; }
+            public string DepositAddress { get; set; }
+            public decimal Face { get; set; }
+            public decimal Price { get; set; }
+            public decimal PercentageFee { get; set; }
+            public decimal FixedFee { get; set; }
         }
 
         private static SqlParameter P(string n, object v) { return new SqlParameter(n, v ?? DBNull.Value); }

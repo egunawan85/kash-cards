@@ -130,6 +130,18 @@ namespace QryptoCard.Dashboard.card
 
                 hfCardTypeID.Value = dt.CardTypeId.ToString();
 
+                // Deposit-into-card: when the UI is on, buying is done by funding the card with crypto
+                // (the funding flow), not paying from a wallet balance — swap the Buy button for the
+                // "Fund with crypto" CTA. Dark by default -> the wallet Buy button stands unchanged.
+                if (KeyModel.CARD_FUNDING_UI_ENABLED)
+                {
+                    btnBuyX.Visible = false;
+                    string fundUrl = ResolveUrl("~/card/fundcard?type="
+                        + HttpUtility.UrlEncode(dt.CardTypeId.ToString()));
+                    litFundCta.Text = "<a class=\"btn btn-cyan btn-lg cd-buy\" href=\""
+                        + Server.HtmlEncode(fundUrl) + "\">Fund with crypto</a>";
+                }
+
                 if (dt.NeedCardHolder == 1)
                 {
                     icapay.Visible = true;

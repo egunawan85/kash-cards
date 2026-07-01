@@ -44,6 +44,11 @@ namespace QryptoCard.Dashboard.card
             if (op.Status == "success")
             {
                 dt = JsonConvert.DeserializeObject<List<CardModel>>(op.Data.ToString());
+                // "Total card balance" = sum of the card balances just fetched (raw Param5, BEFORE the
+                // currency-suffix mutation below). Gated: dark => the wallet figure from setAvailBalance
+                // stands and nothing here changes.
+                ApplyTotalCardBalance(dt);
+                if (KeyModel.CARD_FUNDING_UI_ENABLED) bindInProgress();
                 litActiveCards.Text = dt.Count.ToString();
                 if (dt.Count > 0)
                 {
@@ -152,6 +157,72 @@ namespace QryptoCard.Dashboard.card
                 }
             }
             catch { /* leave the markup default */ }
+        }
+
+        // "Total card balance" relabel = sum of owned-card balances (Param5). Only when the
+        // deposit-into-card UI is on; otherwise a no-op so the wallet figure stands.
+        void ApplyTotalCardBalance(List<CardModel> cards)
+        {
+            if (!KeyModel.CARD_FUNDING_UI_ENABLED) return;
+            decimal total = QryptoCard.Sec.CardFundingDisplay.SumBalances(
+                (cards ?? new List<CardModel>()).Select(c => c.Param5));
+            litAvailBal.Text = QryptoCard.Sec.CardFundingDisplay.FormatMoney(total) + " USD";
+            litAvailBalLab.Text = "Total card balance";
+        }
+
+        // "In progress" section — one tracker tile per in-flight funding intent. Best-effort: a failed or
+        // empty lookup renders nothing. Each tile links back into the funding screen to re-open the tracker.
+        void bindInProgress()
+        {
+            try
+            {
+                OutputModel op = cs.getFundingOpenIntents();
+                if (op == null || op.Status != "success" || op.Data == null) return;
+                var items = JsonConvert.DeserializeObject<List<FundingIntentModel>>(op.Data.ToString());
+                if (items == null || items.Count == 0) return;
+
+                var b = new System.Text.StringBuilder();
+                b.Append("<div class=\"cards-inprogress\" style=\"margin:8px 0 22px\">");
+                b.Append("<h3 style=\"font-size:1rem;margin-bottom:10px\">In progress</h3>");
+                foreach (var m in items)
+                {
+                    bool topUp = string.Equals(m.Kind, "topup", StringComparison.OrdinalIgnoreCase);
+                    string title = topUp ? ("Top up ending " + Last4(m.CardNo)) : "New card";
+                    string stage = StageLabel(m.Status);
+                    string track = ResolveUrl("~/card/fundcard?intent=" + HttpUtility.UrlEncode(m.IntentID ?? ""));
+                    string progress = "";
+                    if (m.ReceivedTotal.HasValue && m.ExpectedTotal.HasValue && m.ExpectedTotal.Value > 0
+                        && m.ReceivedTotal.Value > 0 && m.ReceivedTotal.Value < m.ExpectedTotal.Value)
+                        progress = " · received " + m.ReceivedTotal.Value.ToString("0.00")
+                            + " of " + m.ExpectedTotal.Value.ToString("0.00");
+                    b.Append("<div style=\"display:flex;align-items:center;justify-content:space-between;gap:12px;"
+                        + "border:1px solid var(--line);border-radius:12px;padding:12px 14px;margin-bottom:10px\">");
+                    b.Append("<div><div style=\"font-weight:600\">" + Server.HtmlEncode(title) + "</div>"
+                        + "<div style=\"color:var(--ink-3);font-size:.85rem\">" + Server.HtmlEncode(stage)
+                        + Server.HtmlEncode(progress) + "</div></div>");
+                    b.Append("<a class=\"btn btn-line\" href=\"" + Server.HtmlEncode(track) + "\">Track</a></div>");
+                }
+                b.Append("</div>");
+                litInProgress.Text = b.ToString();
+            }
+            catch { /* no in-progress section on failure */ }
+        }
+
+        static string StageLabel(string status)
+        {
+            if (QryptoCard.Sec.CardFundingDisplay.IsFailure(status)) return status;
+            switch (QryptoCard.Sec.CardFundingDisplay.StageOf(status))
+            {
+                case QryptoCard.Sec.CardFundingDisplay.StageReady: return QryptoCard.Sec.CardFundingDisplay.LabelReady;
+                case QryptoCard.Sec.CardFundingDisplay.StageFunding: return QryptoCard.Sec.CardFundingDisplay.LabelFunding;
+                default: return QryptoCard.Sec.CardFundingDisplay.LabelWaiting;
+            }
+        }
+
+        static string Last4(string cardNo)
+        {
+            string d = new string((cardNo ?? "").Where(char.IsDigit).ToArray());
+            return d.Length >= 4 ? d.Substring(d.Length - 4) : d;
         }
 
         // Local brand mark for the 3D card, by card-type Organization. No external assets:

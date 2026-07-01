@@ -366,6 +366,16 @@ namespace QryptoCard.API.Controllers.v1
             catch (Exception ex) { op.Status = "error"; op.Message = ex.Message; op.Data = null; }
             return op;
         }
+
+        // The signed-in user's OPEN (in-flight) funding intents — the card list "In progress" section.
+        [Route("funding/list")]
+        [HttpPost]
+        public OutputModel listFundingIntents()
+        {
+            try { op = sr.getCardFundingOpenIntents(getEmail()); }
+            catch (Exception ex) { op.Status = "error"; op.Message = ex.Message; op.Data = null; }
+            return op;
+        }
     }
 
     // Request bodies for the funding-intent routes (single-object binding from the JSON body).

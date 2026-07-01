@@ -112,6 +112,8 @@
     <Content Include="card\carddetail.aspx" />
     <Content Include="card\cardlist.aspx" />
     <Content Include="card\mycarddetail.aspx" />
+    <Content Include="card\fundcard.aspx" />
+    <Content Include="card\fundingstatus.aspx" />
     <Content Include="card\mycardlist.aspx" />
     <Content Include="Contact.aspx" />
     <Content Include="Content\bootstrap-grid.css" />
@@ -2539,6 +2541,20 @@
     <Compile Include="card\mycarddetail.aspx.designer.cs">
       <DependentUpon>mycarddetail.aspx</DependentUpon>
     </Compile>
+    <Compile Include="card\fundcard.aspx.cs">
+      <DependentUpon>fundcard.aspx</DependentUpon>
+      <SubType>ASPXCodeBehind</SubType>
+    </Compile>
+    <Compile Include="card\fundcard.aspx.designer.cs">
+      <DependentUpon>fundcard.aspx</DependentUpon>
+    </Compile>
+    <Compile Include="card\fundingstatus.aspx.cs">
+      <DependentUpon>fundingstatus.aspx</DependentUpon>
+      <SubType>ASPXCodeBehind</SubType>
+    </Compile>
+    <Compile Include="card\fundingstatus.aspx.designer.cs">
+      <DependentUpon>fundingstatus.aspx</DependentUpon>
+    </Compile>
     <Compile Include="card\mycardlist.aspx.cs">
       <DependentUpon>mycardlist.aspx</DependentUpon>
       <SubType>ASPXCodeBehind</SubType>
@@ -2610,6 +2626,7 @@
     <Compile Include="Models\Service\CardDepositModel.cs" />
     <Compile Include="Models\Service\CardholderModel.cs" />
     <Compile Include="Models\Service\CardModel.cs" />
+    <Compile Include="Models\Service\FundingIntentModel.cs" />
     <Compile Include="Models\Service\CardTransactionModel.cs" />
     <Compile Include="Models\Service\AuthMintResponse.cs" />
     <Compile Include="Models\Service\CardTypeModel.cs" />

@@ -3490,6 +3490,11 @@ namespace QryptoCard.API.CardV1Service {
         [System.ServiceModel.OperationContractAttribute(Action="http://tempuri.org/ICardV1Service/cancelCardFundingIntent", ReplyAction="http://tempuri.org/ICardV1Service/cancelCardFundingIntentResponse")]
         System.Threading.Tasks.Task<QryptoCard.API.CardV1Service.OutputModel> cancelCardFundingIntentAsync(string em, string intentId);
 
+        [System.ServiceModel.OperationContractAttribute(Action="http://tempuri.org/ICardV1Service/getCardFundingOpenIntents", ReplyAction="http://tempuri.org/ICardV1Service/getCardFundingOpenIntentsResponse")]
+        QryptoCard.API.CardV1Service.OutputModel getCardFundingOpenIntents(string em);
+        [System.ServiceModel.OperationContractAttribute(Action="http://tempuri.org/ICardV1Service/getCardFundingOpenIntents", ReplyAction="http://tempuri.org/ICardV1Service/getCardFundingOpenIntentsResponse")]
+        System.Threading.Tasks.Task<QryptoCard.API.CardV1Service.OutputModel> getCardFundingOpenIntentsAsync(string em);
+
         [System.ServiceModel.OperationContractAttribute(Action="http://tempuri.org/ICardV1Service/RunCardFundingIssuance", ReplyAction="http://tempuri.org/ICardV1Service/RunCardFundingIssuanceResponse")]
         string RunCardFundingIssuance();
         [System.ServiceModel.OperationContractAttribute(Action="http://tempuri.org/ICardV1Service/RunCardFundingIssuance", ReplyAction="http://tempuri.org/ICardV1Service/RunCardFundingIssuanceResponse")]
@@ -3668,6 +3673,12 @@ namespace QryptoCard.API.CardV1Service {
         }
         public System.Threading.Tasks.Task<QryptoCard.API.CardV1Service.OutputModel> cancelCardFundingIntentAsync(string em, string intentId) {
             return base.Channel.cancelCardFundingIntentAsync(em, intentId);
+        }
+        public QryptoCard.API.CardV1Service.OutputModel getCardFundingOpenIntents(string em) {
+            return base.Channel.getCardFundingOpenIntents(em);
+        }
+        public System.Threading.Tasks.Task<QryptoCard.API.CardV1Service.OutputModel> getCardFundingOpenIntentsAsync(string em) {
+            return base.Channel.getCardFundingOpenIntentsAsync(em);
         }
         public string RunCardFundingIssuance() {
             return base.Channel.RunCardFundingIssuance();
