@@ -59,5 +59,55 @@ namespace QryptoCard.Tests.Unit
             Assert.Equal(2910m, net);
             Assert.True(System.Math.Abs(landed - 2910m) < 0.01m);
         }
+
+        // ---- streaming per-card forward sizing (deposit-into-card) ----
+
+        [Fact]
+        public void CardDrawUsd_NewCardOpen_IsFacePlusOneDollarCreate_ZeroFee()
+        {
+            // Prod (2026-07-01): a new-card OPEN draws EXACTLY face + $1 create at 0% deposit fee.
+            Assert.Equal(21m, WasabiCardFundingMath.CardDrawUsd(true, 20m, 1m, 0));
+        }
+
+        [Fact]
+        public void CardDrawUsd_TopUp_HasNoCreateCost()
+        {
+            Assert.Equal(20m, WasabiCardFundingMath.CardDrawUsd(false, 20m, 1m, 0));
+        }
+
+        [Fact]
+        public void CardDrawUsd_AppliesPerCardFeeWhenSet()
+        {
+            // If WasabiCard ever charges a per-card deposit fee, it's added on top of face + create.
+            Assert.Equal(102.2m, WasabiCardFundingMath.CardDrawUsd(true, 100m, 1m, 1.2));
+        }
+
+        [Fact]
+        public void ForwardUsdtForCard_ZeroFloatFee_EqualsDraw()
+        {
+            // With a 0% float top-up fee, the forward equals the card draw (no gross-up).
+            Assert.Equal(21m, WasabiCardFundingMath.ForwardUsdtForCard(true, 20m, 1m, 0, 0));
+        }
+
+        [Fact]
+        public void ForwardUsdtForCard_GrossesUpFloatFee_LandsTheDraw()
+        {
+            // A $20 open draws $21; grossed up for a 1.4% float top-up fee it lands ~$21.
+            decimal send = WasabiCardFundingMath.ForwardUsdtForCard(true, 20m, 1m, 0, 1.4);
+            Assert.True(send > 21m);
+            decimal landed = send * (1m - 0.014m);
+            Assert.True(System.Math.Abs(landed - 21m) < 0.01m);
+        }
+
+        [Fact]
+        public void FloatDrawdown_ReconcilesTheObservedProd42DollarDrop()
+        {
+            // The observed prod float move (788.63 -> 746.63 = -$42.00) = sum of new-card draws for
+            // faces $20,$10,$3,$5, each face + $1 create at 0% fee = 21+11+4+6 = 42.
+            decimal total = 0m;
+            foreach (decimal face in new[] { 20m, 10m, 3m, 5m })
+                total += WasabiCardFundingMath.CardDrawUsd(true, face, 1m, 0);
+            Assert.Equal(42m, total);
+        }
     }
 }

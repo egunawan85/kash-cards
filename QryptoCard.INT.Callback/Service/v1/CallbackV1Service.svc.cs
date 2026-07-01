@@ -426,11 +426,17 @@ namespace QryptoCard.INT.Callback.Service.v1
                 }
                 else if (credit.Success)
                 {
-                    // WasabiCard auto-funding — Tier 2 (eager pass-through). Only on a GENUINE new
-                    // credit (never on a duplicate_event replay), so a redelivered webhook can't
-                    // double-forward. The credited net is what the customer's wallet shows, i.e. the
-                    // "deposit" amount the eager rule is sized against; the forward is gated and
-                    // idempotent (keyed on the TransactionID) and a no-op when auto-funding is OFF.
+                    // Deposit-into-card settlement (streaming model). On a GENUINE new credit only,
+                    // apply it to the depositing user's open funding intent; when covered the intent
+                    // advances to Funding for the streaming forwarder. Gated by
+                    // CardFundingStreamingEnabled; a no-op (and no double-apply) otherwise.
+                    CardFundingSettlementService.OnDepositCredited(dep.UserID, net, x.TransactionID);
+
+                    // WasabiCard auto-funding — legacy Tier 2 (eager pass-through), gated by its own
+                    // WasabiCardAutoFundEnabled switch. Retired by the streaming model above; kept
+                    // behind its independent switch so the two paths never both move money. Only on a
+                    // GENUINE new credit (never a duplicate_event replay) so a redelivered webhook
+                    // can't double-forward; idempotent (keyed on the TransactionID).
                     WasabiCardFundingService.OnDepositCredited(net, x.TransactionID);
                 }
                 //invoice
@@ -478,6 +484,23 @@ namespace QryptoCard.INT.Callback.Service.v1
             {
                 System.Diagnostics.Trace.TraceError("RunWasabiCardMonitor failed: " + ex.GetType().FullName);
                 return "{\"error\":\"monitor_failed\"}";
+            }
+        }
+
+        // Deposit-into-card streaming pump: forwards covered intents to WasabiCard and confirms the
+        // float credit (Funding -> Confirming -> Issuing). The INT-tier issuance tick then opens/tops
+        // up the card. Driven by the scheduler like RunWasabiCardMonitor; a no-op while the streaming
+        // switch (CardFundingStreamingEnabled) is OFF.
+        public string RunCardFundingPump()
+        {
+            try
+            {
+                return CardFundingForwardService.RunTick();
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Trace.TraceError("RunCardFundingPump failed: " + ex.GetType().FullName);
+                return "{\"error\":\"pump_failed\"}";
             }
         }
 

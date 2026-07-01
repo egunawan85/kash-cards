@@ -215,15 +215,19 @@ namespace QryptoCard.INT.Callback.Service
         /// destination, grosses up for the WasabiCard fee, submits via Runegate, and records the
         /// trichotomy outcome. Returns a small status object for the tick summary / logs.
         /// </summary>
-        private static object AttemptTransfer(string type, string partnerRef, string depositTxId, decimal netUsd)
+        private static object AttemptTransfer(string type, string partnerRef, string depositTxId, decimal netUsd,
+            bool enforceMinTransfer = true, bool? isEnabledOverride = null)
         {
-            // Defense-in-depth: both callers already gate on Enabled(); re-check here so the
-            // kill-switch holds for any future caller too.
-            if (!Enabled()) return new { partnerRef, skipped = "disabled" };
+            // Defense-in-depth: callers already gate; re-check here so the kill-switch holds for any
+            // future caller. The streaming per-intent forwarder passes its own gate (the streaming
+            // switch) via isEnabledOverride so it is not coupled to the legacy auto-fund switch.
+            if (!(isEnabledOverride ?? Enabled())) return new { partnerRef, skipped = "disabled" };
 
             netUsd = Math.Round(netUsd, 4);
+            // The min-transfer floor is the LEGACY amortized-model economic guard; streaming per-card
+            // forwards pass the flat cost through as the fixed deposit fee, so they forward at any size.
             double minTransfer = Cfg(EnvMinTransferUsd, SetMinTransferUsd, DefMinTransfer);
-            if (netUsd < (decimal)minTransfer)
+            if (enforceMinTransfer && netUsd < (decimal)minTransfer)
                 return new { partnerRef, skipped = "below_min_transfer", netUsd };
 
             // (Daily cap is enforced ATOMICALLY in Reserve() below, together with the floor
@@ -337,6 +341,47 @@ namespace QryptoCard.INT.Callback.Service
                 "A " + type + " transfer of $" + netUsd + " (send " + sendUsdt + " USDT, ref " + partnerRef +
                 ") returned an ambiguous result (" + outcome.EnvelopeStatus + "). The funds MAY have moved. Do not retry; verify on Runegate and reconcile the ledger row manually.");
             return new { partnerRef, status = StUnknown, reason = outcome.EnvelopeStatus };
+        }
+
+        // RefillType for a streaming per-intent forward (vs legacy 'floor' / 'eager').
+        public const string StIntentType = "intent";
+
+        /// <summary>
+        /// Forward exactly one card's float draw to WasabiCard for the deposit-into-card streaming
+        /// model. Reuses the hardened transfer primitive (idempotent ledger row, daily cap, address
+        /// pre-flight, ambiguity handling) but: (a) gates on the STREAMING switch, not the legacy
+        /// auto-fund switch, and (b) skips the legacy min-transfer floor so small cards forward too.
+        /// <paramref name="cardDrawUsd"/> is the float the card will draw (face + $1 create for a new
+        /// card); the primitive grosses it up by the float top-up fee. Returns the resulting refill
+        /// Status ("Submitted" advances the intent to Confirming; "Failed"/"Unknown"/skip do not).
+        /// </summary>
+        public static string ForwardForIntent(string partnerRef, string intentId, decimal cardDrawUsd)
+        {
+            AttemptTransfer(StIntentType, partnerRef, intentId, cardDrawUsd,
+                enforceMinTransfer: false, isEnabledOverride: CardFundingSettlementService.Enabled());
+            return ReadRefillStatus(partnerRef);
+        }
+
+        /// <summary>
+        /// Mark a forward ledger row Confirmed (float credit observed) — stamps ConfirmedDate for
+        /// latency measurement. Best-effort: a bookkeeping write must never block issuance.
+        /// </summary>
+        public static void MarkForwardConfirmed(string partnerRef)
+        {
+            try { UpdateStatus(partnerRef, StConfirmed, null, "intent_float_confirmed"); }
+            catch (Exception ex) { System.Diagnostics.Trace.TraceError("MarkForwardConfirmed failed: " + ex.GetType().FullName); }
+        }
+
+        /// <summary>The current Status of a refill/forward ledger row, or null if absent.</summary>
+        public static string ReadRefillStatus(string partnerRef)
+        {
+            using (var db = new DBEntities())
+            {
+                var rows = db.Database.SqlQuery<string>(
+                    "SELECT TOP 1 Status FROM dbo.tblH_WasabiCard_Refill WHERE PartnerReferenceID = @ref",
+                    P("@ref", partnerRef)).ToList();
+                return rows.Count > 0 ? rows[0] : null;
+            }
         }
 
         private static string ProviderRef(TransferOutcome o)
@@ -466,8 +511,13 @@ namespace QryptoCard.INT.Callback.Service
         {
             using (var db = new DBEntities())
             {
+                // Stamp SubmittedDate / ConfirmedDate on first entry to those states so the outbound
+                // forward -> WasabiCard-credit latency is measurable (the mutable UpdatedDate alone
+                // can't capture it). First-write-wins so a later status change never rewrites them.
                 db.Database.ExecuteSqlCommand(
-                    "UPDATE dbo.tblH_WasabiCard_Refill SET Status = @st, ProviderRef = @pref, Note = @note, UpdatedDate = @now " +
+                    "UPDATE dbo.tblH_WasabiCard_Refill SET Status = @st, ProviderRef = @pref, Note = @note, UpdatedDate = @now, " +
+                    "SubmittedDate = CASE WHEN @st = '" + StSubmitted + "' AND SubmittedDate IS NULL THEN @now ELSE SubmittedDate END, " +
+                    "ConfirmedDate = CASE WHEN @st = '" + StConfirmed + "' AND ConfirmedDate IS NULL THEN @now ELSE ConfirmedDate END " +
                     "WHERE PartnerReferenceID = @ref",
                     P("@st", status), P("@pref", providerRef), P("@note", note),
                     P("@now", DateTime.Now), P("@ref", partnerRef));
