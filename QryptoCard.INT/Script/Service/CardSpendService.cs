@@ -163,10 +163,12 @@ namespace QryptoCard.INT.Script.Service
 
                 // Finalize synchronously from the provider's open response (it carries the cardNo): bind
                 // the card, activate, mark Success, record balance, and pay the referral commission NOW,
-                // instead of depending on the inbound WasabiCard webhook (not delivered in this
-                // deployment). Best-effort: the cardNo is already stamped above, so if this can't confirm
-                // yet the order stays InProgress and is recoverable; a later webhook/sweep finalize is an
-                // idempotent no-op (the order is already Success, and commission is deduped per order).
+                // rather than depending SOLELY on the inbound WasabiCard webhook. (The webhook IS
+                // delivered — confirmed in prod 2026-07-01 — but we finalize synchronously anyway so a
+                // dropped/delayed webhook can't strand the order.) Best-effort: the cardNo is already
+                // stamped above, so if this can't confirm yet the order stays InProgress and is
+                // recoverable; a later webhook/sweep finalize is an idempotent no-op (order already
+                // Success, commission deduped per order).
                 try
                 {
                     var cardNo = res?.data?.FirstOrDefault()?.cardNo ?? resH?.data?.FirstOrDefault()?.cardNo;
@@ -318,8 +320,8 @@ namespace QryptoCard.INT.Script.Service
                 StampTopUpSuccess(x.ID, res);
 
                 // Finalize the top-up synchronously (mark Success + pay the referral commission NOW)
-                // instead of depending on the inbound WasabiCard webhook, which is not delivered in this
-                // deployment — without this the top-up strands InProgress with no commission. Best-effort:
+                // rather than depending SOLELY on the inbound WasabiCard webhook (which IS delivered —
+                // confirmed in prod 2026-07-01 — but must not be a single point of failure). Best-effort:
                 // the deposit row is already stamped, so a finalize hiccup leaves it recoverable, and a
                 // later webhook/sweep finalize is an idempotent no-op (commission is deduped per order).
                 try
