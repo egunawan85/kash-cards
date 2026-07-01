@@ -60,6 +60,35 @@ namespace QryptoCard.INT.Callback.Service
             }
         }
 
+        // ---- C2: Runegate transfer completed -> stamp the on-chain hash onto our forward ----
+        // The synchronous transfer response gives only a TRANSFER id (stored as ProviderRef); the
+        // on-chain tx hash arrives here, on Runegate's transfer-completion webhook. Capture it onto the
+        // forward row (keyed by the transfer id) so OnFloatLanded can then correlate WasabiCard's
+        // wallet_transaction (which reports that same on-chain hash) to this forward — the third leg of
+        // the three-way match. DOCS-BASED / UNVERIFIED payload shape (transfer id + hash carrier are
+        // confirmed against a live forward before this is wired to the endpoint); gated + best-effort.
+        public static void OnForwardChainHash(string transferId, string chainTxHash)
+        {
+            if (!CardFundingSettlementService.Enabled()) return;
+            if (string.IsNullOrWhiteSpace(transferId) || string.IsNullOrWhiteSpace(chainTxHash)) return;
+            try
+            {
+                using (var db = new DBEntities())
+                {
+                    // Stamp the hash only if not already set (idempotent against redelivery). Only our
+                    // intent forwards; a transfer id that matches no forward is a safe no-op.
+                    db.Database.ExecuteSqlCommand(
+                        "UPDATE dbo.tblH_WasabiCard_Refill SET ChainTxHash = @hash, UpdatedDate = @now " +
+                        "WHERE RefillType = 'intent' AND ProviderRef = @tid AND ChainTxHash IS NULL",
+                        P("@hash", chainTxHash), P("@now", DateTime.Now), P("@tid", transferId));
+                }
+            }
+            catch (Exception ex)
+            {
+                Trace.TraceError("CardFundingWebhook.OnForwardChainHash failed for transfer " + transferId + ": " + ex.GetType().FullName);
+            }
+        }
+
         // ---- C2: our forward landed in the float -> confirm + advance to Issuing ----
         // DOCS-BASED / UNVERIFIED payload shape. Do NOT enable without validating the wallet_transaction
         // payload (esp. that txId == the hash Runegate returns) via one live forward.
@@ -74,10 +103,17 @@ namespace QryptoCard.INT.Callback.Service
             {
                 using (var db = new DBEntities())
                 {
-                    // Match to OUR forward by the on-chain tx hash (ProviderRef). Only intent-type forwards.
+                    // Match to OUR forward by the on-chain tx hash. Primary key is ChainTxHash (stamped by
+                    // the transfer-completion webhook, OnForwardChainHash), which is exactly what WasabiCard
+                    // reports here; ProviderRef is a fallback for gateways whose synchronous transfer id IS
+                    // the chain hash. Only intent-type forwards.
                     var rows = db.Database.SqlQuery<ForwardRow>(
                         "SELECT TOP 1 PartnerReferenceID, DepositTxId AS IntentID, NetUsd " +
-                        "FROM dbo.tblH_WasabiCard_Refill WHERE RefillType = 'intent' AND ProviderRef = @tx",
+                        "FROM dbo.tblH_WasabiCard_Refill WHERE RefillType = 'intent' AND (ChainTxHash = @tx OR ProviderRef = @tx) " +
+                        // Deterministic: prefer the authoritative ChainTxHash match over the ProviderRef
+                        // fallback, then newest, so a (astronomically unlikely) hash/ref collision can't pick
+                        // the wrong forward and advance the wrong intent.
+                        "ORDER BY CASE WHEN ChainTxHash = @tx THEN 0 ELSE 1 END, ID DESC",
                         P("@tx", txId)).ToList();
                     if (rows.Count == 0)
                     {
