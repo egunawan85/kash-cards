@@ -19,6 +19,18 @@ namespace QryptoCard.Dashboard
         /// </summary>
         protected global::System.Web.UI.HtmlControls.HtmlGenericControl lblBalance;
 
+        /// <summary>lblBalanceLab control.</summary>
+        protected global::System.Web.UI.HtmlControls.HtmlGenericControl lblBalanceLab;
+
+        /// <summary>lblBalanceCur control.</summary>
+        protected global::System.Web.UI.HtmlControls.HtmlGenericControl lblBalanceCur;
+
+        /// <summary>lnkTopUp control.</summary>
+        protected global::System.Web.UI.HtmlControls.HtmlAnchor lnkTopUp;
+
+        /// <summary>litFundingBanner control.</summary>
+        protected global::System.Web.UI.WebControls.Literal litFundingBanner;
+
         /// <summary>
         /// viewCard control.
         /// </summary>

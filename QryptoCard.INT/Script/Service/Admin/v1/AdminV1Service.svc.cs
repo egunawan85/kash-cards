@@ -75,6 +75,86 @@ namespace QryptoCard.INT.Script.Service.Admin.v1
                   || role.Equals(RoleModel.Admin, StringComparison.OrdinalIgnoreCase));
         }
 
+        // ---------- getFundingReconcile (Phase D1 — money-trail reconcile, READ-ONLY) ----------
+
+        // Ops visibility over the deposit-into-card money trail. Reads vw_Card_Funding_Reconcile
+        // (intent + invoice + forward ledger + order + wallet, one row per intent) with server-side
+        // filters. READ-ONLY: no money moves, nothing is mutated. Owner/Admin only (it exposes user
+        // balances + money trails — deny-by-default for Viewer/unknown). Every filter value is a
+        // SqlParameter (no string interpolation of caller input), and TOP is a bounded parameter, so
+        // there is no injection surface. Data is returned as a JSON string (the established cross-WCF
+        // pattern) so no DataContract/KnownType is needed.
+        public OutputModel getFundingReconcile(string em, string status, string userId, string intentId,
+            bool overpaidOnly, int stuckMinutes, string fromDate, string toDate, int top)
+        {
+            try
+            {
+                if (isDeniedAdminManage(em))
+                {
+                    op.Status = "failed";
+                    op.Message = "You are not authorized to run this endpoint.";
+                    return op;
+                }
+
+                var where = new List<string>();
+                var ps = new List<System.Data.SqlClient.SqlParameter>();
+
+                if (!string.IsNullOrWhiteSpace(status))
+                {
+                    where.Add("IntentStatus = @status");
+                    ps.Add(new System.Data.SqlClient.SqlParameter("@status", status.Trim()));
+                }
+                if (!string.IsNullOrWhiteSpace(userId))
+                {
+                    where.Add("UserID = @userId");
+                    ps.Add(new System.Data.SqlClient.SqlParameter("@userId", userId.Trim()));
+                }
+                if (!string.IsNullOrWhiteSpace(intentId))
+                {
+                    where.Add("IntentID = @intentId");
+                    ps.Add(new System.Data.SqlClient.SqlParameter("@intentId", intentId.Trim()));
+                }
+                if (overpaidOnly)
+                    where.Add("IsOverpaid = 1");
+                if (stuckMinutes > 0)
+                {
+                    // "Stuck": still in an in-flight status and untouched for > N minutes.
+                    where.Add("IntentStatus IN ('Funding','Confirming','Issuing') AND UpdatedDate IS NOT NULL AND UpdatedDate < @stuckCutoff");
+                    ps.Add(new System.Data.SqlClient.SqlParameter("@stuckCutoff", DateTime.Now.AddMinutes(-stuckMinutes)));
+                }
+                DateTime parsed;
+                if (!string.IsNullOrWhiteSpace(fromDate) && DateTime.TryParse(fromDate, out parsed))
+                {
+                    where.Add("CreatedDate >= @fromDate");
+                    ps.Add(new System.Data.SqlClient.SqlParameter("@fromDate", parsed));
+                }
+                if (!string.IsNullOrWhiteSpace(toDate) && DateTime.TryParse(toDate, out parsed))
+                {
+                    where.Add("CreatedDate < @toDate");
+                    ps.Add(new System.Data.SqlClient.SqlParameter("@toDate", parsed));
+                }
+
+                int limit = (top > 0 && top <= 1000) ? top : 200;   // bounded page size
+                ps.Add(new System.Data.SqlClient.SqlParameter("@top", limit));
+
+                string sql = "SELECT TOP (@top) * FROM dbo.vw_Card_Funding_Reconcile" +
+                    (where.Count > 0 ? " WHERE " + string.Join(" AND ", where) : "") +
+                    " ORDER BY CreatedDate DESC";
+
+                var rows = db.Database.SqlQuery<FundingReconcileRow>(sql, ps.ToArray()).ToList();
+                op.Status = "success";
+                op.Data = JsonConvert.SerializeObject(rows, Formatting.None);
+                op.Message = rows.Count + " row(s).";
+                return op;
+            }
+            catch (Exception ex)
+            {
+                op.Status = "failed";
+                op.Message = "Reconcile query failed: " + ex.Message;
+                return op;
+            }
+        }
+
         // ---------- devCreditWallet (dev-only test-credit tool, SD-2) ----------
 
         // Per-call ceiling on a single test credit. A dev-only convenience to blunt a
@@ -1172,5 +1252,42 @@ namespace QryptoCard.INT.Script.Service.Admin.v1
             }
             return op;
         }
+    }
+
+    // Materialization POCO for vw_Card_Funding_Reconcile (EF6 Database.SqlQuery<T> maps by column
+    // name). NOT an EF entity / DataContract — it is serialized to JSON for the response, so it needs
+    // no mapping or KnownType registration. Decimal columns are typed `decimal`/`decimal?` (EF6 throws
+    // materializing a SQL decimal into a double); LEFT-JOIN columns are nullable.
+    public class FundingReconcileRow
+    {
+        public string IntentID { get; set; }
+        public string UserID { get; set; }
+        public string Kind { get; set; }
+        public string IntentStatus { get; set; }
+        public string InvoiceID { get; set; }
+        public string InvoiceAddress { get; set; }
+        public decimal ExpectedTotal { get; set; }
+        public decimal ReceivedTotal { get; set; }
+        public decimal Shortfall { get; set; }
+        public int IsOverpaid { get; set; }
+        public decimal Face { get; set; }
+        public string IntentCardNo { get; set; }
+        public string OrderID { get; set; }
+        public DateTime CreatedDate { get; set; }
+        public DateTime? UpdatedDate { get; set; }
+        public DateTime? ExpiryDate { get; set; }
+        public string ForwardRef { get; set; }
+        public string ForwardStatus { get; set; }
+        public decimal? ForwardNetUsd { get; set; }
+        public decimal? ForwardSentUsdt { get; set; }
+        public decimal? ForwardLandedUsd { get; set; }
+        public string ForwardChainTxHash { get; set; }
+        public string ForwardProviderRef { get; set; }
+        public DateTime? ForwardSubmittedDate { get; set; }
+        public DateTime? ForwardConfirmedDate { get; set; }
+        public DateTime? ForwardLandedDate { get; set; }
+        public string OrderStatus { get; set; }
+        public string OrderCardNo { get; set; }
+        public decimal? WalletBalance { get; set; }
     }
 }

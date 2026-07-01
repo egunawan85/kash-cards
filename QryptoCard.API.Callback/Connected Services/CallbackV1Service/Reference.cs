@@ -455,6 +455,14 @@ namespace QryptoCard.API.Callback.CallbackV1Service {
 
         [System.ServiceModel.OperationContractAttribute(Action="http://tempuri.org/ICallbackV1Service/RunWasabiCardMonitor", ReplyAction="http://tempuri.org/ICallbackV1Service/RunWasabiCardMonitorResponse")]
         System.Threading.Tasks.Task<string> RunWasabiCardMonitorAsync();
+
+        // Hand-added to mirror RunWasabiCardMonitor (deposit-into-card pump tick). Regenerate the
+        // service reference in VS to normalize this file when convenient.
+        [System.ServiceModel.OperationContractAttribute(Action="http://tempuri.org/ICallbackV1Service/RunCardFundingPump", ReplyAction="http://tempuri.org/ICallbackV1Service/RunCardFundingPumpResponse")]
+        string RunCardFundingPump();
+
+        [System.ServiceModel.OperationContractAttribute(Action="http://tempuri.org/ICallbackV1Service/RunCardFundingPump", ReplyAction="http://tempuri.org/ICallbackV1Service/RunCardFundingPumpResponse")]
+        System.Threading.Tasks.Task<string> RunCardFundingPumpAsync();
     }
 
     [System.CodeDom.Compiler.GeneratedCodeAttribute("System.ServiceModel", "4.0.0.0")]
@@ -538,6 +546,14 @@ namespace QryptoCard.API.Callback.CallbackV1Service {
 
         public System.Threading.Tasks.Task<string> RunWasabiCardMonitorAsync() {
             return base.Channel.RunWasabiCardMonitorAsync();
+        }
+
+        public string RunCardFundingPump() {
+            return base.Channel.RunCardFundingPump();
+        }
+
+        public System.Threading.Tasks.Task<string> RunCardFundingPumpAsync() {
+            return base.Channel.RunCardFundingPumpAsync();
         }
     }
 }

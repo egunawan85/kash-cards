@@ -144,6 +144,7 @@
             </div>
 
             <asp:Button runat="server" ID="btnBuyX" OnClick="btnBuy_ServerClick" CssClass="btn btn-cyan btn-lg cd-buy" Text="Buy" OnClientClick="this.disabled=true; this.value='Processing...';" UseSubmitBehavior="false" />
+            <asp:Literal runat="server" ID="litFundCta" />
         </section>
         <!--end::Buy form-->
 

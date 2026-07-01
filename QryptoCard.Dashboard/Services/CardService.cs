@@ -233,5 +233,84 @@ namespace QryptoCard.Dashboard.Services
                 return op;
             }
         }
+
+        // ---- Deposit-into-card: funding-intent lifecycle -------------------------
+        // Every call is user-scoped server-side (em = the bearer identity); the app never trusts a
+        // client-supplied user. All no-op while CardFundingStreamingEnabled is OFF.
+
+        public OutputModel createFundingIntent(long cardTypeId, decimal amount)
+        {
+            try
+            {
+                string path = "/v1/card/funding/intent";
+                return op = AuthClient.ExecuteJsonPost(path, new { cardTypeId = cardTypeId, amount = amount });
+            }
+            catch (Exception ex)
+            {
+                op.Message = ex.ToString();
+                op.Status = "error";
+                return op;
+            }
+        }
+
+        public OutputModel createFundingTopUp(string cardNo, decimal amount)
+        {
+            try
+            {
+                string path = "/v1/card/funding/topup";
+                return op = AuthClient.ExecuteJsonPost(path, new { cardNo = cardNo, amount = amount });
+            }
+            catch (Exception ex)
+            {
+                op.Message = ex.ToString();
+                op.Status = "error";
+                return op;
+            }
+        }
+
+        public OutputModel getFundingIntentStatus(string intentId)
+        {
+            try
+            {
+                string path = "/v1/card/funding/status";
+                return op = AuthClient.ExecuteJsonPost(path, new { intentId = intentId });
+            }
+            catch (Exception ex)
+            {
+                op.Message = ex.ToString();
+                op.Status = "error";
+                return op;
+            }
+        }
+
+        public OutputModel cancelFundingIntent(string intentId)
+        {
+            try
+            {
+                string path = "/v1/card/funding/cancel";
+                return op = AuthClient.ExecuteJsonPost(path, new { intentId = intentId });
+            }
+            catch (Exception ex)
+            {
+                op.Message = ex.ToString();
+                op.Status = "error";
+                return op;
+            }
+        }
+
+        public OutputModel getFundingOpenIntents()
+        {
+            try
+            {
+                string path = "/v1/card/funding/list";
+                return op = AuthClient.ExecuteJsonPost(path, new { });
+            }
+            catch (Exception ex)
+            {
+                op.Message = ex.ToString();
+                op.Status = "error";
+                return op;
+            }
+        }
     }
 }

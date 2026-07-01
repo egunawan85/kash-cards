@@ -41,6 +41,9 @@ namespace QryptoCard.Dashboard.card
         /// </remarks>
         protected global::System.Web.UI.WebControls.HiddenField hfCardNo;
 
+        /// <summary>litAddFunds control.</summary>
+        protected global::System.Web.UI.WebControls.Literal litAddFunds;
+
         /// <summary>
         /// hfReferralLink control.
         /// </summary>

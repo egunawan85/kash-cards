@@ -59,6 +59,12 @@ namespace QryptoCard.Dashboard
         /// </summary>
         protected global::System.Web.UI.WebControls.Literal lblTotalReferrals;
 
+        /// <summary>pnlAvailBal control.</summary>
+        protected global::System.Web.UI.WebControls.Panel pnlAvailBal;
+
+        /// <summary>lblAvailBalance control.</summary>
+        protected global::System.Web.UI.WebControls.Literal lblAvailBalance;
+
         /// <summary>
         /// divnoreferral control.
         /// </summary>

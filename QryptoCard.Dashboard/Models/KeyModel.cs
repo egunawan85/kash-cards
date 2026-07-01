@@ -30,6 +30,22 @@ namespace QryptoCard.Dashboard.Models
         public static string DETAIL_OWN_URL = "/card/mycarddetail?id=";
         public static string TXCARD_URL = "/txcard?id=";
 
+        // Deposit-into-card CUSTOMER-UI switch (front-end only). Ships OFF ("0"): every existing page
+        // renders exactly as today. Flip this to "1" IN TANDEM with the backend CardFundingStreamingEnabled
+        // to turn on the "Total card balance" relabel, the referrals "Available balance" line, the card-list
+        // "In progress" section, and the txdeposit -> fund-card redirect. Separate flag because the web tier
+        // has no DB access to read the backend setting; keeping it explicit avoids a half-on UI.
+        public static bool CARD_FUNDING_UI_ENABLED
+        {
+            get
+            {
+                string v = SecretsConfig.GetOptional("CARD_FUNDING_UI_ENABLED", "0");
+                if (string.IsNullOrWhiteSpace(v)) return false;
+                v = v.Trim();
+                return v == "1" || string.Equals(v, "true", System.StringComparison.OrdinalIgnoreCase);
+            }
+        }
+
         // --- Secrets / key material (env-only via SecretsConfig; never committed) ---
         public static string WASABICARD_PRIVATE_KEY_XML => SecretsConfig.Require("WASABICARD_PRIVATE_KEY_XML");
     }

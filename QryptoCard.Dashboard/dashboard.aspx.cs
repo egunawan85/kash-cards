@@ -55,6 +55,31 @@ namespace QryptoCard.Dashboard
             getDashboardData();
             bindWallet();
             getCard();
+            // Deposit-into-card UI (dark by default): only when CARD_FUNDING_UI_ENABLED does the balance
+            // panel relabel to "Total card balance" (getCard) and the in-progress banner appear. While OFF
+            // this page is byte-for-byte today's dashboard.
+            if (KeyModel.CARD_FUNDING_UI_ENABLED) bindFundingBanner();
+        }
+
+        // "N cards being funded" banner — a link into the card list's In-progress section. Best-effort:
+        // a failed/empty lookup simply shows nothing (never breaks the dashboard).
+        void bindFundingBanner()
+        {
+            try
+            {
+                OutputModel op = cs.getFundingOpenIntents();
+                if (op == null || op.Status != "success" || op.Data == null) return;
+                var items = JsonConvert.DeserializeObject<List<FundingIntentModel>>(op.Data.ToString());
+                int n = items != null ? items.Count : 0;
+                if (n <= 0) return;
+                string url = ResolveUrl("~/card/mycardlist");
+                string label = n == 1 ? "1 card being funded" : (n + " cards being funded");
+                litFundingBanner.Text =
+                    "<section class=\"panel\" style=\"display:flex;align-items:center;justify-content:space-between;gap:12px\">"
+                    + "<span style=\"color:var(--ink-2)\">" + Server.HtmlEncode(label) + "</span>"
+                    + "<a class=\"btn btn-line\" href=\"" + Server.HtmlEncode(url) + "\">Track &rarr;</a></section>";
+            }
+            catch { /* no banner on failure */ }
         }
 
         // Live wallet panel (S-F). Every figure shown here is server-returned; nothing is
@@ -179,6 +204,10 @@ namespace QryptoCard.Dashboard
                 if (op.Status == "success" && op.Data != null)
                 {
                     var cards = JsonConvert.DeserializeObject<List<CardModel>>(op.Data.ToString());
+                    // "Total card balance" = sum of owned-card balances (from the list already fetched
+                    // here — no extra per-card call). Gated: while the UI is dark the wallet "Available
+                    // balance" the markup already bound stays exactly as today.
+                    ApplyTotalCardBalance(cards);
                     if (cards != null && cards.Count > 0)
                     {
                         // Prefer an active card; otherwise the first. "Manage" covers the rest.
@@ -217,6 +246,22 @@ namespace QryptoCard.Dashboard
 
             viewCard.Visible = false;
             viewNoCard.Visible = true;
+        }
+
+        // Relabel the balance panel to "Total card balance" = sum of the owned cards' balances (Param5
+        // is the per-card balance the list already carries). Only when the deposit-into-card UI is on;
+        // otherwise a no-op so the wallet balance already bound by getWalletBalance stands.
+        void ApplyTotalCardBalance(List<CardModel> cards)
+        {
+            if (!KeyModel.CARD_FUNDING_UI_ENABLED) return;
+            decimal total = QryptoCard.Sec.CardFundingDisplay.SumBalances(
+                (cards ?? new List<CardModel>()).Select(c => c.Param5));
+            lblBalance.InnerHtml = QryptoCard.Sec.CardFundingDisplay.FormatMoney(total);
+            lblBalanceLab.InnerText = "Total card balance";
+            lblBalanceCur.InnerText = "USD";
+            // No wallet top-up in the new flow — point the primary action at getting/funding a card.
+            lnkTopUp.HRef = ResolveUrl("~/card/cardlist");
+            lnkTopUp.InnerText = "Get a card";
         }
 
         // ---- Wallet-ledger row rendering (S-F) -------------------------------------------

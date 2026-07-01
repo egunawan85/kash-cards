@@ -34,6 +34,30 @@ namespace QryptoCard.Dashboard
             getReferral();
             getDashboardData();
             getReferralList();
+            // Deposit-into-card: the internal wallet resurfaces here (only) as a display-only
+            // "Available balance" (commissions + refunds + deposit residual), withdrawable soon. Dark by
+            // default — the referrals page is unchanged until CARD_FUNDING_UI_ENABLED is set.
+            if (KeyModel.CARD_FUNDING_UI_ENABLED) getAvailableBalance();
+        }
+
+        // Display-only available balance = the internal wallet (getBalance -> tblM_User_Balance). Shown
+        // on the referrals tab now that the dashboard "Available balance" became "Total card balance".
+        void getAvailableBalance()
+        {
+            try
+            {
+                OutputModel op = us.getBalance(new UserBalanceModel());
+                if (op.Status == "success" && op.Data != null)
+                {
+                    var b = JsonConvert.DeserializeObject<UserBalanceModel>(op.Data.ToString());
+                    if (b != null && b.Balance.HasValue)
+                    {
+                        lblAvailBalance.Text = b.Balance.Value.ToString("0.00") + " USDT";
+                        pnlAvailBal.Visible = true;
+                    }
+                }
+            }
+            catch { /* leave hidden on failure */ }
         }
 
         // Referral code + link. The visible fields are read-only; the canonical value is mirrored

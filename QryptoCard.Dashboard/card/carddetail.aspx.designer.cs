@@ -267,6 +267,9 @@ namespace QryptoCard.Dashboard.card
         /// </remarks>
         protected global::System.Web.UI.WebControls.Button btnBuyX;
 
+        /// <summary>litFundCta control.</summary>
+        protected global::System.Web.UI.WebControls.Literal litFundCta;
+
         /// <summary>
         /// lblUsage control.
         /// </summary>

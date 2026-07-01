@@ -589,5 +589,71 @@ namespace QryptoCard.INT.Script.Service
             body = body.Replace("{code}", otp);
             return body;
         }
+
+        // Deposit-into-card terminal-state notification (E6). Called from the issuance tick's notify
+        // sweep when a funding intent reaches Completed / Failed / Expired. Body is built INLINE (no
+        // Server.MapPath / HttpContext dependency) so it is safe to send from the scheduled background
+        // tick, which has no page context. Throws on send failure so the caller logs it (the sweep has
+        // already claimed the row, so this is at-most-once — no retry storm).
+        public static void sendCardFundingUpdate(string em, string user, bool success, bool topUp, string status)
+        {
+            string to = em;
+            string from = KeyModel.EMAIL_ADDRESS;
+
+            MimeMessage message = new MimeMessage();
+            message.From.Add(new MailboxAddress("noreply", from));
+            message.To.Add(new MailboxAddress("Kash Cards", to));
+            message.Subject = success ? "Your card is ready" : "Your card funding didn't complete";
+
+            var bodyBuilder = new BodyBuilder();
+            bodyBuilder.HtmlBody = buildCardFundingBody(user, success, topUp, status);
+            message.Body = bodyBuilder.ToMessageBody();
+
+            try
+            {
+                using (var client = new SmtpClient())
+                {
+                    client.Connect(KeyModel.EMAIL_SMTP_GATEWAY, KeyModel.EMAIL_SMTP_PORT);
+                    client.AuthenticationMechanisms.Remove("XOAUTH2");
+                    client.Authenticate(KeyModel.EMAIL_SMTP_USER, KeyModel.EMAIL_PASSWORD);
+                    client.Send(message);
+                    client.Disconnect(true);
+                }
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Trace.TraceError("Card-funding email send failed: " + ex);
+                throw;
+            }
+        }
+
+        private static string buildCardFundingBody(string user, bool success, bool topUp, string status)
+        {
+            string greetingName = string.IsNullOrWhiteSpace(user) ? "there" : user;
+            string headline, detail;
+            if (success)
+            {
+                headline = topUp ? "Your top-up is complete" : "Your card is ready";
+                detail = topUp
+                    ? "Your funds have landed and your card balance is updated. You can view it in My Cards."
+                    : "Your funds have landed and your new card is live. You can view it in My Cards.";
+            }
+            else
+            {
+                bool expired = string.Equals(status, "Expired", StringComparison.OrdinalIgnoreCase);
+                headline = "Your card funding didn't complete";
+                detail = (expired
+                    ? "This request expired before your deposit was fully received. "
+                    : "This funding could not be completed. ")
+                    + "Any crypto already received stays in your available balance for your next purchase.";
+            }
+
+            return "<div style=\"font-family:Arial,Helvetica,sans-serif;color:#0c141c;font-size:15px;line-height:1.5\">"
+                + "<p>Hi " + System.Web.HttpUtility.HtmlEncode(greetingName) + ",</p>"
+                + "<h2 style=\"margin:0 0 8px\">" + System.Web.HttpUtility.HtmlEncode(headline) + "</h2>"
+                + "<p>" + System.Web.HttpUtility.HtmlEncode(detail) + "</p>"
+                + "<p style=\"color:#5b6b7a;font-size:13px\">You're receiving this because you started a card funding on Kash Cards.</p>"
+                + "</div>";
+        }
     }
 }

@@ -53,6 +53,14 @@ namespace QryptoCard.INT.Script.Service.Admin.v1
         [OperationContract]
         OutputModel refundCard(string em, string orderId);
 
+        // Deposit-into-card money-trail reconcile (READ-ONLY ops visibility): reads
+        // vw_Card_Funding_Reconcile (one stitched row per intent) with server-side, fully
+        // parameterized filters. No money moves, nothing mutates. Owner/Admin only. Primitive
+        // params (dates as ISO strings) keep the proxy edit minimal — no new DataContract.
+        [OperationContract]
+        OutputModel getFundingReconcile(string em, string status, string userId, string intentId,
+            bool overpaidOnly, int stuckMinutes, string fromDate, string toDate, int top);
+
 
 
 
