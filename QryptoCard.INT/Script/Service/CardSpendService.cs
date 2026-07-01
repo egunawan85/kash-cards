@@ -237,10 +237,42 @@ namespace QryptoCard.INT.Script.Service
 
             x.Status = StatusModel.Created;
             if (x.DateTransaction == null) x.DateTransaction = DateTime.Now;
-            using (var ctx = new DBEntities())
+            try
             {
-                ctx.tblT_Card_Deposit.Add(x);
-                ctx.SaveChanges();
+                using (var ctx = new DBEntities())
+                {
+                    ctx.tblT_Card_Deposit.Add(x);
+                    ctx.SaveChanges();
+                }
+            }
+            catch (Exception dupEx) when (!string.IsNullOrWhiteSpace(x.UserReferenceID) && WalletService.IsDuplicateKey(dupEx))
+            {
+                // Idempotency (mirrors OpenCard): the winning submit already created (and owns the money
+                // path for) this top-up. Return ITS outcome, point x.ID at the original — no second insert,
+                // no second debit, no second depositCard. The DB unique index UX_tblT_Card_Deposit_User_Ref
+                // is the authority (a check-then-insert in app code races). Required by the streaming
+                // issuance tick, which re-runs a top-up while the provider outcome is ambiguous.
+                using (var re = new DBEntities())
+                {
+                    var existing = re.tblT_Card_Deposit
+                        .Where(p => p.UserID == x.UserID && p.UserReferenceID == x.UserReferenceID)
+                        .OrderBy(p => p.DateTransaction)
+                        .FirstOrDefault();
+                    if (existing != null)
+                    {
+                        x.ID = existing.ID;
+                        x.Status = existing.Status;
+                        return new SpendResult
+                        {
+                            // A still-Created original hasn't run its debit yet — don't report success to a
+                            // racing replay before the winner's money path resolves; Failed is terminal.
+                            Success = existing.Status != StatusModel.Failed && existing.Status != StatusModel.Created,
+                            Status = existing.Status,
+                            Message = "Request already submitted"
+                        };
+                    }
+                }
+                return new SpendResult { Success = false, Status = StatusModel.Failed, Message = "Request already submitted" };
             }
 
             // Debit-first, atomically transitioning the order Created -> PendingProvider (see OpenCard).

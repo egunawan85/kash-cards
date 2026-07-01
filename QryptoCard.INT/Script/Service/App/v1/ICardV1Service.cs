@@ -69,5 +69,15 @@ namespace QryptoCard.INT.Script.Service.App.v1
 
         [OperationContract]
         void checkCard(string em, string cardNo);
+
+        // Deposit-into-card: funding-intent lifecycle (gated by CardFundingStreamingEnabled).
+        [OperationContract]
+        OutputModel createCardFundingIntent(string em, long cardTypeId, decimal amount);
+        [OperationContract]
+        OutputModel createCardFundingTopUp(string em, string cardNo, decimal amount);
+        [OperationContract]
+        OutputModel getCardFundingIntentStatus(string em, string intentId);
+        [OperationContract]
+        OutputModel cancelCardFundingIntent(string em, string intentId);
     }
 }

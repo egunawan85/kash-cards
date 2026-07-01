@@ -30,6 +30,37 @@ namespace QryptoCard.INT.Callback.Service
             return Math.Round(netUsd / (1m - f / 100m), 6, MidpointRounding.AwayFromZero);
         }
 
+        /// <summary>
+        /// The USD a single card funding will DRAW from the WasabiCard merchant float:
+        ///   face (lands spendable) + (new card ? createCostUsd : 0) + WasabiCard's per-card deposit fee.
+        /// Prod data (2026-07-01) shows a new-card OPEN draws EXACTLY face + $1 create at a 0% deposit
+        /// fee, so <paramref name="cardDepositFeePct"/> is 0 for opens. DO NOT pass the (unverified)
+        /// top-up rate for an open, or the forward over-draws and the surplus is trapped in the
+        /// one-directional float (there is no WasabiCard payout API). Inputs clamped defensively.
+        /// </summary>
+        public static decimal CardDrawUsd(bool isNewCard, decimal face, decimal createCostUsd, double cardDepositFeePct)
+        {
+            if (face < 0m) face = 0m;
+            if (createCostUsd < 0m) createCostUsd = 0m;
+            decimal draw = face;
+            if (isNewCard) draw += createCostUsd;
+            decimal f = ClampFee(cardDepositFeePct);
+            if (f > 0m) draw += Math.Round(face * f / 100m, 6, MidpointRounding.AwayFromZero);
+            return draw;
+        }
+
+        /// <summary>
+        /// The USDT to send to WasabiCard's merchant deposit address to fund one card: the float
+        /// <see cref="CardDrawUsd"/> the card will consume, grossed up by the inbound float-top-up fee
+        /// (<paramref name="floatTopupFeePct"/>) so exactly that draw lands. Sized to the single card
+        /// only — never speculative — so the streaming float drains back toward ~zero.
+        /// </summary>
+        public static decimal ForwardUsdtForCard(bool isNewCard, decimal face, decimal createCostUsd,
+            double cardDepositFeePct, double floatTopupFeePct)
+        {
+            return GrossUpSend(CardDrawUsd(isNewCard, face, createCostUsd, cardDepositFeePct), floatTopupFeePct);
+        }
+
         private static decimal ClampFee(double pct)
         {
             if (pct < 0) pct = 0;

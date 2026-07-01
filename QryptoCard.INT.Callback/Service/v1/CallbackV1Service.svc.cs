@@ -426,12 +426,24 @@ namespace QryptoCard.INT.Callback.Service.v1
                 }
                 else if (credit.Success)
                 {
-                    // WasabiCard auto-funding — Tier 2 (eager pass-through). Only on a GENUINE new
-                    // credit (never on a duplicate_event replay), so a redelivered webhook can't
-                    // double-forward. The credited net is what the customer's wallet shows, i.e. the
-                    // "deposit" amount the eager rule is sized against; the forward is gated and
-                    // idempotent (keyed on the TransactionID) and a no-op when auto-funding is OFF.
-                    WasabiCardFundingService.OnDepositCredited(net, x.TransactionID);
+                    // MUTUALLY EXCLUSIVE money-out paths (on a GENUINE new credit only). The streaming
+                    // model REPLACES the legacy eager pass-through; they must NEVER both run for one
+                    // deposit — they use different partner refs, so neither the ledger dedup nor the
+                    // daily cap would stop a double-forward into WasabiCard's one-way float (both
+                    // external red-teams flagged this). Enforced here as an if/else, and defensively
+                    // again inside each service. Streaming wins when its switch is on.
+                    if (CardFundingSettlementService.Enabled())
+                    {
+                        // Apply the credit to the user's open funding intent; when covered it advances
+                        // to Funding for the streaming forwarder. No-op if there is no open intent.
+                        CardFundingSettlementService.OnDepositCredited(dep.UserID, net, x.TransactionID);
+                    }
+                    else
+                    {
+                        // Legacy Tier 2 (eager pass-through), gated by WasabiCardAutoFundEnabled; a no-op
+                        // when that switch is OFF. Idempotent (keyed on the TransactionID).
+                        WasabiCardFundingService.OnDepositCredited(net, x.TransactionID);
+                    }
                 }
                 //invoice
                 //var z = db.tblT_Transaction.Where(p => p.PGCryptoInvoiceID == x.TransactionID && p.Status == StatusModel.WaitingPayment).FirstOrDefault();
@@ -478,6 +490,29 @@ namespace QryptoCard.INT.Callback.Service.v1
             {
                 System.Diagnostics.Trace.TraceError("RunWasabiCardMonitor failed: " + ex.GetType().FullName);
                 return "{\"error\":\"monitor_failed\"}";
+            }
+        }
+
+        // Deposit-into-card streaming pump: forwards covered intents to WasabiCard and confirms the
+        // float credit (Funding -> Confirming -> Issuing). The INT-tier issuance tick then opens/tops
+        // up the card. A no-op while the streaming switch (CardFundingStreamingEnabled) is OFF.
+        //
+        // NOT YET SCHEDULER-WIRED: this method is on ICallbackV1Service, but the loopback controller
+        // route (mirror monitorBalance), the regenerated WCF client (Reference.cs), and the
+        // scheduler-trigger.ps1 entry still need to be added before it runs — AND the INT-tier
+        // CardFundingIssuanceService.RunTick needs its own trigger (different project; the pump does not
+        // reach it). Both ticks MUST be driven before enabling the feature. See the PR "reachability"
+        // checklist. (RT round 7 correctly flagged that the pipeline is unwired past settlement.)
+        public string RunCardFundingPump()
+        {
+            try
+            {
+                return CardFundingForwardService.RunTick();
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Trace.TraceError("RunCardFundingPump failed: " + ex.GetType().FullName);
+                return "{\"error\":\"pump_failed\"}";
             }
         }
 

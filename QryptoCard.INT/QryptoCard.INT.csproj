@@ -269,6 +269,9 @@
     </Compile>
     <Compile Include="Script\Service\Common.cs" />
     <Compile Include="Script\Service\CardCatalogService.cs" />
+    <Compile Include="Script\Service\CardFundingIntentService.cs" />
+    <Compile Include="Script\Service\CardFundingIssuanceService.cs" />
+    <Compile Include="Script\Service\CardholderProvisioningService.cs" />
     <Compile Include="Script\Service\CardholderGeoService.cs" />
     <Compile Include="Script\Service\AddressGeneratorService.cs" />
     <Compile Include="Script\Service\WalletService.cs" />

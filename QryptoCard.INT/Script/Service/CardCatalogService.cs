@@ -34,9 +34,14 @@ namespace QryptoCard.INT.Script.Service
         // tblM_Setting.Name keys for the two global pricing knobs (admin-editable).
         public const string SettingCardPrice = "CardPrice";
         public const string SettingDepositFeeRate = "CardDepositFeeRate";
+        // Flat "fixed deposit fee" (USDT) charged per card funding, covering the Runegate
+        // withdrawal (float top-up) flat cost so streaming per-card forwarding stays margin
+        // positive at any size. Separate from the % deposit fee. Ships 0 until set.
+        public const string SettingFixedDepositFee = "CardFixedDepositFee";
         // Defaults when the setting row is missing/blank.
         public const double DefaultCardPrice = 0d;
         public const double DefaultDepositFeeRate = 3d;
+        public const double DefaultFixedDepositFee = 0d;
 
         // Env-driven card-price markup (deploy-controlled, read live each catalog build). The
         // customer CardPrice = WasabiCard's wholesale OriginalCardPrice marked up by this %, rounded
@@ -77,6 +82,18 @@ namespace QryptoCard.INT.Script.Service
         public static double GetDepositFeeRate()
         {
             return GetSetting(SettingDepositFeeRate, DefaultDepositFeeRate);
+        }
+
+        /// <summary>
+        /// The current flat fixed-deposit-fee (USDT), read directly like the deposit-fee %. A flat
+        /// charge added to every card funding (new or top-up) that passes through the Runegate
+        /// transfer cost; clamped to &gt;= 0. Both the funding-intent quote and the eventual order snapshot
+        /// this so the customer-facing amount and the money path can never disagree.
+        /// </summary>
+        public static double GetFixedDepositFee()
+        {
+            double v = GetSetting(SettingFixedDepositFee, DefaultFixedDepositFee);
+            return v < 0d ? 0d : v;
         }
 
         /// <summary>

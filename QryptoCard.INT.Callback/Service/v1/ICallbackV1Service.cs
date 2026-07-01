@@ -34,5 +34,12 @@ namespace QryptoCard.INT.Callback.Service.v1
         // the low-balance/coverage alert. Returns a compact JSON summary.
         [OperationContract]
         string RunWasabiCardMonitor();
+
+        // Deposit-into-card streaming pump tick (forward + confirm). On the contract so it can be wired
+        // to the scheduled trigger exactly like RunWasabiCardMonitor. NOTE: the loopback controller
+        // route + generated client (Reference.cs) + scheduler-trigger.ps1 entry still need to be added
+        // to actually drive it (the reachability increment). No-op while streaming is OFF.
+        [OperationContract]
+        string RunCardFundingPump();
     }
 }
