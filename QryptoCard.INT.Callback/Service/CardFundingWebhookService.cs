@@ -109,7 +109,11 @@ namespace QryptoCard.INT.Callback.Service
                     // the chain hash. Only intent-type forwards.
                     var rows = db.Database.SqlQuery<ForwardRow>(
                         "SELECT TOP 1 PartnerReferenceID, DepositTxId AS IntentID, NetUsd " +
-                        "FROM dbo.tblH_WasabiCard_Refill WHERE RefillType = 'intent' AND (ChainTxHash = @tx OR ProviderRef = @tx)",
+                        "FROM dbo.tblH_WasabiCard_Refill WHERE RefillType = 'intent' AND (ChainTxHash = @tx OR ProviderRef = @tx) " +
+                        // Deterministic: prefer the authoritative ChainTxHash match over the ProviderRef
+                        // fallback, then newest, so a (astronomically unlikely) hash/ref collision can't pick
+                        // the wrong forward and advance the wrong intent.
+                        "ORDER BY CASE WHEN ChainTxHash = @tx THEN 0 ELSE 1 END, ID DESC",
                         P("@tx", txId)).ToList();
                     if (rows.Count == 0)
                     {

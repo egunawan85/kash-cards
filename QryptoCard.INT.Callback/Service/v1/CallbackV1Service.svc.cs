@@ -342,7 +342,7 @@ namespace QryptoCard.INT.Callback.Service.v1
                         string wtype = (string)j["type"];
                         string wstatus = (string)j["status"];
                         if (!string.IsNullOrEmpty(wstatus) && wstatus.ToLowerInvariant() == "success"
-                            && !string.IsNullOrEmpty(wtype) && wtype.ToLowerInvariant().Contains("deposit"))
+                            && !string.IsNullOrEmpty(wtype) && wtype.ToLowerInvariant() == "deposit")
                         {
                             CardFundingWebhookService.OnFloatLanded(
                                 (string)j["txId"], (string)j["fromAddress"], (string)j["receivedAmount"]);

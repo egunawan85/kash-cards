@@ -8,11 +8,19 @@ namespace QryptoCard.INT.Callback.Service
 {
     /// <summary>
     /// Deposit-into-card settlement (Callback tier), INVOICE model: each intent has its own Runegate
-    /// invoice (unique address + PartnerReferenceID = intentId). The Runegate deposit webhook carries
-    /// that PartnerReferenceID + a Status (PartiallyPaid / OverPaid / Completed), and Runegate tracks
-    /// the invoice's cumulative paid state — so settlement REACTS to status rather than summing deposits:
-    ///   - PartiallyPaid → record received-so-far (display), stay Pending, no wallet credit yet.
-    ///   - Completed / OverPaid → credit the wallet ONCE (deduped on the InvoiceID) + advance Pending→Funding.
+    /// invoice (unique address + PartnerReferenceID = intentId). Runegate delivers ONE deposit webhook
+    /// per settled on-chain payment (an invoice can be paid by MULTIPLE transactions — split payment),
+    /// carrying that PartnerReferenceID and the payment's net amount.
+    ///
+    /// Settlement is amount-driven (NOT status-driven), exactly like the proven engine matcher:
+    ///   - credit each genuine per-transaction net to the wallet ONCE (dedup on the payment's
+    ///     TransactionID), and
+    ///   - ACCUMULATE ReceivedTotal (+= net) atomically, advancing Pending→Funding when the accumulated
+    ///     total covers ExpectedTotal.
+    /// This handles split (each tx credited + accrued), exact, and overpay (surplus → available balance)
+    /// correctly. Crediting only the covering event / overwriting ReceivedTotal (an earlier bug) LOST
+    /// split-payment funds. NOTE: assumes the webhook's amount is PER-TRANSACTION net (same as the legacy
+    /// static path); reconfirm on the live invoice spike.
     ///
     /// Gated by CardFundingStreamingEnabled (ships OFF). Best-effort, never throws into the credit path.
     /// </summary>
@@ -36,21 +44,26 @@ namespace QryptoCard.INT.Callback.Service
         /// static-address path. Returns FALSE if it is not our invoice (caller handles it legacy-style).
         /// Credits the wallet ONCE on the covered/terminal event (dedup on the InvoiceID = txId).
         /// </summary>
+        // Mirror the legacy PGCryptoCreditFloor: ignore dust below $1 (never credit / accrue on it), so a
+        // malformed sub-$1 event can't credit pennies and wrongly nudge the accumulate toward covered.
+        private const decimal CreditFloor = 1m;
+
         public static bool TrySettleInvoicePayment(DBEntities db, string partnerRef, string txId,
             decimal amount, string status, decimal commission, double commissionPct, string rawJson)
         {
             if (!Enabled()) return false;
             if (string.IsNullOrWhiteSpace(partnerRef)) return false;
 
-            string userId;
+            string userId; decimal expectedTotal;
             try
             {
                 // PartnerReferenceID == IntentID (we set it that way at invoice creation).
                 var rows = db.Database.SqlQuery<InvoiceIntentRow>(
-                    "SELECT TOP 1 IntentID, UserID FROM dbo.tblT_Card_Funding_Intent WHERE IntentID = @ref",
+                    "SELECT TOP 1 IntentID, UserID, ExpectedTotal FROM dbo.tblT_Card_Funding_Intent WHERE IntentID = @ref",
                     P("@ref", partnerRef)).ToList();
                 if (rows.Count == 0) return false; // not one of our streaming invoices → legacy path
                 userId = rows[0].UserID;
+                expectedTotal = rows[0].ExpectedTotal;
             }
             catch (Exception ex)
             {
@@ -60,40 +73,33 @@ namespace QryptoCard.INT.Callback.Service
                 return false;
             }
 
-            // ADVANCE ONLY WHEN THE WALLET IS ACTUALLY CREDITED. Issuance later debits the wallet by the
-            // intent's ExpectedTotal, so advancing Pending->Funding without a matching credit would drive
-            // the balance negative / fail issuance. So the advance is gated on a confirmed credit:
-            //   - not covered (PartiallyPaid) -> record ReceivedTotal, stay Pending, no credit.
-            //   - covered but a malformed amount (<= 0) -> do NOT advance; surface for reconcile.
-            //   - covered + credited (fresh success OR already-credited duplicate) -> advance to Funding.
-            //   - covered but the credit failed transiently -> stay Pending; the webhook journal drives
-            //     reconcile/replay (we never falsely advance an un-credited intent).
-            bool covered = InvoicePaymentStatus.IsCovered(status);
+            // It IS our invoice. Credit each genuine PER-TRANSACTION net ONCE, then accumulate ReceivedTotal
+            // and advance when it covers ExpectedTotal. Amount-driven (not status-driven) so split payments
+            // are summed correctly; the volatile Status is never the authority. See the class doc.
             try
             {
-                if (!covered)
+                // Dust floor (mirror legacy): sub-$1 events are journaled, never credited/accrued.
+                if (amount < CreditFloor)
                 {
-                    Advance(partnerRef, amount, false); // partial: update ReceivedTotal only
+                    Trace.TraceError("CardFundingSettlement: sub-floor amount " + amount + " for intent " + partnerRef + " — journaled, not credited.");
                     return true;
                 }
-                if (amount <= 0m)
-                {
-                    Trace.TraceError("CardFundingSettlement: covered status '" + status + "' with non-positive amount " + amount + " for intent " + partnerRef + " — not advancing, held for reconcile.");
-                    return true;
-                }
-                // Credit the user's wallet ONCE — dedup is on txId (= InvoiceID), so a re-delivered
-                // Completed can't double-credit, and the earlier PartiallyPaid events (which don't credit)
-                // don't consume the dedup slot.
+
                 WalletService.EnsureWallet(userId);
+                // Dedup on the webhook's TransactionID (the Runegate payment-event id) → each on-chain
+                // payment credits the wallet EXACTLY once, even on redelivery.
                 var credit = WalletService.CreditDeposit(userId, amount, commission, commissionPct, txId, status, rawJson);
-                bool credited = credit.Success || credit.FailureReason == "duplicate_event";
-                if (!credited)
+                if (credit.Success)
                 {
-                    Trace.TraceError("CardFundingSettlement: wallet credit failed (" + credit.FailureReason + ") for intent " + partnerRef + " — staying Pending, held for reconcile.");
-                    Advance(partnerRef, amount, false); // record received, do not advance
-                    return true;
+                    // Genuine new credit → accumulate this net + advance-if-now-covered (atomic, idempotent).
+                    AccumulateAndMaybeAdvance(partnerRef, amount, expectedTotal);
                 }
-                Advance(partnerRef, amount, true); // credited -> advance Pending->Funding
+                else if (credit.FailureReason != "duplicate_event")
+                {
+                    // Transient credit failure — do NOT accumulate/advance; the webhook journal drives replay.
+                    Trace.TraceError("CardFundingSettlement: wallet credit failed (" + credit.FailureReason + ") for intent " + partnerRef + " — held for reconcile.");
+                }
+                // duplicate_event → this exact payment already credited+accrued on its first delivery: no-op.
             }
             catch (Exception ex)
             {
@@ -103,20 +109,20 @@ namespace QryptoCard.INT.Callback.Service
             return true; // it is our invoice — handled (or journaled for reconcile)
         }
 
-        // Advance the intent: always record ReceivedTotal (display), and move Pending->Funding only when
-        // credited==true. State-gated on Pending so a re-delivered/late event (or an already-advanced
-        // intent) is a no-op — idempotent.
-        private static void Advance(string intentId, decimal receivedTotal, bool credited)
+        // Accumulate the credited net onto ReceivedTotal and advance Pending→Funding once it covers
+        // ExpectedTotal — a SINGLE atomic UPDATE using the pre-update RHS, state-gated on Pending so a
+        // late/dup event or an already-advanced intent is a no-op. Called ONLY on a genuine new credit.
+        private static void AccumulateAndMaybeAdvance(string intentId, decimal net, decimal expectedTotal)
         {
             using (var db = new DBEntities())
             {
                 db.Database.ExecuteSqlCommand(
                     "UPDATE dbo.tblT_Card_Funding_Intent " +
-                    "SET ReceivedTotal = @recv, " +
-                    "    Status = CASE WHEN @credited = 1 THEN 'Funding' ELSE Status END, " +
+                    "SET ReceivedTotal = ReceivedTotal + @net, " +
+                    "    Status = CASE WHEN ReceivedTotal + @net >= @expected THEN 'Funding' ELSE Status END, " +
                     "    UpdatedDate = @now " +
                     "WHERE IntentID = @id AND Status = 'Pending'",
-                    P("@recv", receivedTotal), P("@credited", credited ? 1 : 0), P("@now", DateTime.Now), P("@id", intentId));
+                    P("@net", net), P("@expected", expectedTotal), P("@now", DateTime.Now), P("@id", intentId));
             }
         }
 
@@ -124,6 +130,7 @@ namespace QryptoCard.INT.Callback.Service
         {
             public string IntentID { get; set; }
             public string UserID { get; set; }
+            public decimal ExpectedTotal { get; set; }
         }
 
         private static SqlParameter P(string n, object v) { return new SqlParameter(n, v ?? DBNull.Value); }
