@@ -92,10 +92,14 @@ namespace QryptoCard.INT.Callback.Service
                 //   (c) NO other intent is already Issuing — enforced ATOMICALLY inside the claim (a
                 //       single SERIALIZABLE conditional UPDATE), closing the check-then-act race both
                 //       red-teams flagged, so at most one intent is ever Issuing.
-                decimal? floatUsd = WasabiCardFundingService.ReadFloatUsd();
+                // Idle guard: load the Confirming batch FIRST and only read the WasabiCard float when
+                // there is actually something to confirm — otherwise every minute would fire a needless
+                // getAccountInfo call (API spam + tblH_API_Log noise) while the pipeline sits idle.
+                var confirming = LoadByStatus(CardFundingIntentStatuses.Confirming, Batch);
+                decimal? floatUsd = confirming.Count > 0 ? WasabiCardFundingService.ReadFloatUsd() : (decimal?)null;
                 if (floatUsd.HasValue)
                 {
-                    foreach (var it in LoadByStatus(CardFundingIntentStatuses.Confirming, Batch))
+                    foreach (var it in confirming)
                     {
                         if (floatUsd.Value < CardDraw(it)) continue;
                         string fst = string.IsNullOrEmpty(it.ForwardRef) ? null : WasabiCardFundingService.ReadRefillStatus(it.ForwardRef);

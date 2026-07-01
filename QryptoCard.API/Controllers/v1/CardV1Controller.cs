@@ -327,5 +327,80 @@ namespace QryptoCard.API.Controllers.v1
 
             return op;
         }
+
+        // ---- Deposit-into-card: funding-intent lifecycle (user-authed via BearerAuthentication;
+        // em = the signed-in user). Gated by CardFundingStreamingEnabled inside the service. ----
+
+        [Route("funding/intent")]
+        [HttpPost]
+        public OutputModel createFundingIntent(FundingIntentRequest req)
+        {
+            try { op = sr.createCardFundingIntent(getEmail(), req == null ? 0 : req.cardTypeId, req == null ? 0m : req.amount); }
+            catch (Exception ex) { op.Status = "error"; op.Message = ex.Message; op.Data = null; }
+            return op;
+        }
+
+        [Route("funding/topup")]
+        [HttpPost]
+        public OutputModel createFundingTopUp(FundingTopUpRequest req)
+        {
+            try { op = sr.createCardFundingTopUp(getEmail(), req == null ? null : req.cardNo, req == null ? 0m : req.amount); }
+            catch (Exception ex) { op.Status = "error"; op.Message = ex.Message; op.Data = null; }
+            return op;
+        }
+
+        [Route("funding/status")]
+        [HttpPost]
+        public OutputModel getFundingIntentStatus(FundingIntentRef req)
+        {
+            try { op = sr.getCardFundingIntentStatus(getEmail(), req == null ? null : req.intentId); }
+            catch (Exception ex) { op.Status = "error"; op.Message = ex.Message; op.Data = null; }
+            return op;
+        }
+
+        [Route("funding/cancel")]
+        [HttpPost]
+        public OutputModel cancelFundingIntent(FundingIntentRef req)
+        {
+            try { op = sr.cancelCardFundingIntent(getEmail(), req == null ? null : req.intentId); }
+            catch (Exception ex) { op.Status = "error"; op.Message = ex.Message; op.Data = null; }
+            return op;
+        }
+    }
+
+    // Request bodies for the funding-intent routes (single-object binding from the JSON body).
+    public class FundingIntentRequest { public long cardTypeId { get; set; } public decimal amount { get; set; } }
+    public class FundingTopUpRequest { public string cardNo { get; set; } public decimal amount { get; set; } }
+    public class FundingIntentRef { public string intentId { get; set; } }
+
+    // Scheduled deposit-into-card ISSUANCE tick trigger. SEPARATE controller (NO BearerAuthentication)
+    // so the on-box scheduler can call it; defended like the API.Callback scheduler routes: reject
+    // anything proxied through Cloudflare, then a constant-time shared-secret check — both before any
+    // work. QryptoCard.API is loopback-only (no public host), so in practice only the box reaches this.
+    [RoutePrefix("v1/card")]
+    public class CardFundingSchedulerV1Controller : ApiController
+    {
+        CardV1ServiceClient sr = new CardV1ServiceClient();
+
+        private static string Header(string name)
+        {
+            var ctx = HttpContext.Current;
+            return ctx != null ? ctx.Request.Headers[name] : null;
+        }
+
+        [Route("funding/issue")]
+        [HttpPost]
+        public HttpResponseMessage fundingIssue()
+        {
+            if (!string.IsNullOrEmpty(Header("CF-Connecting-IP")) || !string.IsNullOrEmpty(Header("CF-Ray")))
+                return Request.CreateResponse(HttpStatusCode.NotFound);
+            if (!QryptoCard.Sec.SharedSecretAuth.IsAuthorized(Header("X-Scheduler-Auth"), "SCHEDULER_SHARED_SECRET"))
+                return Request.CreateResponse(HttpStatusCode.Unauthorized);
+
+            string summary = sr.RunCardFundingIssuance();
+            HttpResponseMessage response = Request.CreateResponse(HttpStatusCode.OK);
+            response.Content = new StringContent(summary ?? "{}", Encoding.UTF8, "application/json");
+            return response;
+        }
     }
 }

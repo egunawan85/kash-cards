@@ -58,6 +58,9 @@ param(
 
     [string]$BaseUrl = 'http://127.0.0.1:8084',
 
+    # App-API host (QryptoCard.API, loopback-only) — the deposit-into-card ISSUANCE tick lives here.
+    [string]$AppBaseUrl = 'http://127.0.0.1:8081',
+
     [string]$SecretName = 'SCHEDULER-SHARED-SECRET'
 )
 
@@ -65,11 +68,17 @@ $ErrorActionPreference = 'Stop'
 
 $Path           = '/v1/payment/reconcile/pending'
 $MonitorPath    = '/v1/payment/monitor/balance'
+$PumpPath       = '/v1/payment/funding/pump'   # deposit-into-card pump (forward + confirm), API.Callback
+$IssuePath      = '/v1/card/funding/issue'     # deposit-into-card issuance, App API (8081)
 $EventSource    = 'KashCardsScheduler'
 $SuccessEventId = 1000
 $FailureEventId = 1001
 $MonitorOkId    = 1002
 $MonitorErrId   = 1003
+$PumpOkId       = 1004
+$PumpErrId      = 1005
+$IssueOkId      = 1006
+$IssueErrId     = 1007
 
 function Write-KashEvent {
     param(
@@ -151,6 +160,34 @@ URL:        $BaseUrl$MonitorPath
 Error:      $($_.Exception.GetType().FullName): $($_.Exception.Message)
 "@
         Write-KashEvent -Message $monErr -EntryType 'Warning' -EventId $MonitorErrId
+    }
+
+    # Deposit-into-card streaming PUMP tick (forward covered intents + confirm the float landing). Same
+    # loopback host + shared secret. Best-effort in its OWN try/catch; a no-op while the switch is OFF.
+    # CADENCE NOTE: this task runs every ~10 min; before ENABLING the streaming switch, tighten the
+    # pump + issuance cadence to ~1 min (a separate faster scheduled task, or a shorter task interval).
+    try {
+        $pumpUrl = "$BaseUrl$PumpPath"
+        $psw = [System.Diagnostics.Stopwatch]::StartNew()
+        $pumpResp = Invoke-WebRequest -Method Post -Uri $pumpUrl -Headers $apiHeaders -UseBasicParsing -TimeoutSec 120
+        $psw.Stop()
+        Write-KashEvent -Message "Card-funding pump tick succeeded. URL: $pumpUrl DurationMs: $($psw.ElapsedMilliseconds) HttpStatus: $([int]$pumpResp.StatusCode) Body: $($pumpResp.Content)" -EntryType 'Information' -EventId $PumpOkId
+    }
+    catch {
+        Write-KashEvent -Message "Card-funding pump tick FAILED (non-fatal). URL: $BaseUrl$PumpPath Error: $($_.Exception.GetType().FullName): $($_.Exception.Message)" -EntryType 'Warning' -EventId $PumpErrId
+    }
+
+    # Deposit-into-card ISSUANCE tick (open/top-up the card for intents whose funds landed). Runs on the
+    # APP API host (8081), scheduler-authed with the SAME shared secret. Best-effort in its own try/catch.
+    try {
+        $issueUrl = "$AppBaseUrl$IssuePath"
+        $isw = [System.Diagnostics.Stopwatch]::StartNew()
+        $issueResp = Invoke-WebRequest -Method Post -Uri $issueUrl -Headers $apiHeaders -UseBasicParsing -TimeoutSec 120
+        $isw.Stop()
+        Write-KashEvent -Message "Card-funding issuance tick succeeded. URL: $issueUrl DurationMs: $($isw.ElapsedMilliseconds) HttpStatus: $([int]$issueResp.StatusCode) Body: $($issueResp.Content)" -EntryType 'Information' -EventId $IssueOkId
+    }
+    catch {
+        Write-KashEvent -Message "Card-funding issuance tick FAILED (non-fatal). URL: $AppBaseUrl$IssuePath Error: $($_.Exception.GetType().FullName): $($_.Exception.Message)" -EntryType 'Warning' -EventId $IssueErrId
     }
 }
 catch {
