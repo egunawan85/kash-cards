@@ -200,6 +200,9 @@ namespace QryptoCard.INT.Callback.Service.v1
                             // record card balance) is shared with the reconciliation sweep so it lives
                             // in one place; the sensitive PAN/CVV enrichment below stays webhook-only.
                             var fo = CardFinalizationService.FinalizeOpenSuccess(q.merchantOrderNo, q.cardNo);
+                            // Streaming (Phase C3): the card is confirmed made — complete the matching
+                            // funding intent event-driven. Idempotent + gated; a no-op for legacy orders.
+                            CardFundingWebhookService.OnCardConfirmed(q.merchantOrderNo, q.cardNo);
                             if (fo == CardFinalizationService.FinalizeOutcome.Confirmed)
                             {
                                 var cr = db.tblT_Card.Where(p => p.ID == q.merchantOrderNo).FirstOrDefault();
@@ -232,6 +235,9 @@ namespace QryptoCard.INT.Callback.Service.v1
                             {
                                 // Shared money-critical finalization (also used by the reconciliation sweep).
                                 CardFinalizationService.FinalizeTopUpSuccess(q.merchantOrderNo);
+                                // Streaming (Phase C3): complete the matching funding intent event-driven.
+                                // Idempotent + gated; a no-op for legacy orders.
+                                CardFundingWebhookService.OnCardConfirmed(q.merchantOrderNo, q.cardNo);
 
                                 //do send email
                                 
@@ -323,6 +329,30 @@ namespace QryptoCard.INT.Callback.Service.v1
 
                 
 
+
+                else if (cat == "wallet_transaction" || cat == "wallet_transaction_v2")
+                {
+                    // Phase C2 (DOCS-BASED / UNVERIFIED payload): WasabiCard credited our merchant float
+                    // from one of our forwards. Parse defensively (no strict DTO until the shape is
+                    // verified by one live forward) and, on a successful deposit, confirm the intent's
+                    // forward by the on-chain tx hash. Signature was already verified at the controller.
+                    try
+                    {
+                        var j = Newtonsoft.Json.Linq.JObject.Parse(a);
+                        string wtype = (string)j["type"];
+                        string wstatus = (string)j["status"];
+                        if (!string.IsNullOrEmpty(wstatus) && wstatus.ToLowerInvariant() == "success"
+                            && !string.IsNullOrEmpty(wtype) && wtype.ToLowerInvariant().Contains("deposit"))
+                        {
+                            CardFundingWebhookService.OnFloatLanded(
+                                (string)j["txId"], (string)j["fromAddress"], (string)j["receivedAmount"]);
+                        }
+                    }
+                    catch (Exception wex)
+                    {
+                        System.Diagnostics.Trace.TraceError("Wasabi wallet_transaction parse failed: " + wex.GetType().FullName);
+                    }
+                }
 
                 return;
             }
