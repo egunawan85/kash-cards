@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Data.SqlClient;
 using System.Diagnostics;
 using System.Linq;
+using QryptoCard.INT.Model.Service;
 
 namespace QryptoCard.INT.Script.Service
 {
@@ -89,7 +90,12 @@ namespace QryptoCard.INT.Script.Service
             // order already terminally Failed): Success=false and NOT ProviderPending. Release the
             // intent AND the single-Issuing slot so one bad order can't block the whole pipeline. A
             // ProviderPending/ambiguous replay keeps Success=true and is NOT caught here.
-            if (spend != null && !spend.Success && !spend.ProviderPending)
+            // Release ONLY on a genuinely terminal failure (Status == failed): insufficient balance /
+            // debit fail, or a replay of an order already Failed. A still-Created replay (an overlapping
+            // tick whose debit hasn't committed) also has Success=false but is NOT terminal — it must
+            // stay Pending (retry), never be auto-failed while the sibling attempt is live.
+            if (spend != null && !spend.Success && !spend.ProviderPending
+                && string.Equals(spend.Status, StatusModel.Failed, StringComparison.OrdinalIgnoreCase))
                 return FailReleasingSlot(it, spend.InsufficientBalance ? "insufficient_balance" : "debit_failed", x.ID);
             // Ambiguous, or a replay of an order a sweep/webhook has since finalized (a replay never
             // re-sets ProviderConfirmed). Reconcile against the order's OWN terminal state so the intent
@@ -124,7 +130,12 @@ namespace QryptoCard.INT.Script.Service
 
             if (spend != null && spend.ProviderConfirmed) return CompleteWithCard(it, x.ID, it.CardNo);
             if (spend != null && spend.ProviderFailed) return Fail(it, "topup_failed");
-            if (spend != null && !spend.Success && !spend.ProviderPending)
+            // Release ONLY on a genuinely terminal failure (Status == failed): insufficient balance /
+            // debit fail, or a replay of an order already Failed. A still-Created replay (an overlapping
+            // tick whose debit hasn't committed) also has Success=false but is NOT terminal — it must
+            // stay Pending (retry), never be auto-failed while the sibling attempt is live.
+            if (spend != null && !spend.Success && !spend.ProviderPending
+                && string.Equals(spend.Status, StatusModel.Failed, StringComparison.OrdinalIgnoreCase))
                 return FailReleasingSlot(it, spend.InsufficientBalance ? "insufficient_balance" : "debit_failed", x.ID);
             return TryCompleteTopUpFromOrder(it);
         }
@@ -139,11 +150,13 @@ namespace QryptoCard.INT.Script.Service
                 using (var db = new DBEntities())
                 {
                     var o = db.tblT_Card.FirstOrDefault(c => c.UserID == it.UserID && c.UserReferenceID == it.IntentID);
-                    if (o != null && o.Status == "Success" && !string.IsNullOrEmpty(o.CardNo))
+                    // Order status is a StatusModel value ("success"/"failed", lowercase) — compare
+                    // case-insensitively against the constants, NOT a capitalized literal.
+                    if (o != null && string.Equals(o.Status, StatusModel.Success, StringComparison.OrdinalIgnoreCase) && !string.IsNullOrEmpty(o.CardNo))
                         return CompleteWithCard(it, o.ID, o.CardNo);
                     // Order reconciled to a terminal failure (e.g. an ambiguous open the sweep resolved as
                     // failed + refunded the wallet): release the intent and the single-Issuing slot.
-                    if (o != null && o.Status == "Failed")
+                    if (o != null && string.Equals(o.Status, StatusModel.Failed, StringComparison.OrdinalIgnoreCase))
                         return FailReleasingSlot(it, "order_failed", o.ID);
                 }
             }
@@ -158,9 +171,9 @@ namespace QryptoCard.INT.Script.Service
                 using (var db = new DBEntities())
                 {
                     var o = db.tblT_Card_Deposit.FirstOrDefault(d => d.UserID == it.UserID && d.UserReferenceID == it.IntentID);
-                    if (o != null && o.Status == "Success")
+                    if (o != null && string.Equals(o.Status, StatusModel.Success, StringComparison.OrdinalIgnoreCase))
                         return CompleteWithCard(it, o.ID, it.CardNo);
-                    if (o != null && o.Status == "Failed")
+                    if (o != null && string.Equals(o.Status, StatusModel.Failed, StringComparison.OrdinalIgnoreCase))
                         return FailReleasingSlot(it, "order_failed", o.ID);
                 }
             }
