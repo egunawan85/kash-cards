@@ -175,6 +175,29 @@ namespace QryptoCard.INT.Callback.Service
                     ? Math.Round(floatUsd.Value / liability, 4) : (object)null;
 
                 EvaluateAlert(floatUsd, inFlight, (decimal)floor, liability, summary);
+
+                // Streaming float-drift (Phase D2): forwards SENT to WasabiCard but not yet confirmed
+                // landed are "in flight"; any one stuck past the stale window is a drift/stranding signal
+                // (money left Runegate, WasabiCard hasn't confirmed the float credit). Alert-only, never
+                // auto-resolves — ops verifies + reconciles. Read-only.
+                decimal streamingInFlight; int stuckForwards; string stuckRefs;
+                StreamingForwardDrift(out streamingInFlight, out stuckForwards, out stuckRefs);
+                summary["streamingInFlightUsd"] = streamingInFlight;
+                summary["streamingStuckForwards"] = stuckForwards;
+                if (stuckForwards > 0)
+                {
+                    ThrottledAlert(SetDriftAlertState, "drift",
+                        "Deposit-into-card: stuck forward(s)",
+                        stuckForwards + " streaming forward(s) sent to WasabiCard but not confirmed-landed for > " +
+                        ReadNum(SetForwardStaleMinutes, DefForwardStaleMinutes) + " min ($" + streamingInFlight +
+                        " in flight): " + stuckRefs + ". Verify on Runegate/WasabiCard and reconcile — no auto-action taken.");
+                }
+                else
+                {
+                    // Reset the throttle when healthy so a future stuck condition alerts promptly.
+                    try { WriteAlertState(SetDriftAlertState, "ok"); }
+                    catch (Exception ex) { System.Diagnostics.Trace.TraceError("drift alert-state reset failed: " + ex.GetType().FullName); }
+                }
             }
             catch (Exception ex)
             {
@@ -182,6 +205,46 @@ namespace QryptoCard.INT.Callback.Service
                 System.Diagnostics.Trace.TraceError("WasabiCard monitor tick failed: " + ex);
             }
             return JsonConvert.SerializeObject(summary);
+        }
+
+        // Phase D2 settings.
+        public const string SetForwardStaleMinutes = "CardFundingForwardStaleAlertMinutes";
+        public const string SetDriftAlertState = "CardFundingDriftAlertState";
+        private const double DefForwardStaleMinutes = 30d;
+
+        // Read-only drift probe: streaming forwards SENT (Submitted/Unknown) but not confirmed-landed.
+        // inFlightUsd = sum of their intended NetUsd; stuck = an aged Submitted forward OR any Unknown
+        // (ambiguous outcome). Never throws into the tick.
+        private static void StreamingForwardDrift(out decimal inFlightUsd, out int stuckCount, out string stuckRefs)
+        {
+            inFlightUsd = 0m; stuckCount = 0; stuckRefs = "";
+            try
+            {
+                // Money potentially in flight = every intent forward still Submitted or Unknown (an Unknown
+                // submit is ambiguous — the transfer may have moved funds), so it counts toward the total.
+                string inflightWhere = "RefillType = '" + StIntentType + "' AND Status IN ('" + StSubmitted + "','" + StUnknown + "')";
+                // Stuck = an aged Submitted (past the stale window) OR any Unknown (an ambiguous outcome is a
+                // drift signal immediately, regardless of age — mirrors the StaleForward predicate).
+                string stuckWhere = "RefillType = '" + StIntentType + "' AND ((Status = '" + StSubmitted +
+                    "' AND SubmittedDate IS NOT NULL AND SubmittedDate < @cutoff) OR Status = '" + StUnknown + "')";
+                DateTime cutoff = DateTime.Now.AddMinutes(-ReadNum(SetForwardStaleMinutes, DefForwardStaleMinutes));
+                using (var db = new DBEntities())
+                {
+                    var totals = db.Database.SqlQuery<decimal?>(
+                        "SELECT ISNULL(SUM(NetUsd),0) FROM dbo.tblH_WasabiCard_Refill WHERE " + inflightWhere).ToList();
+                    inFlightUsd = (totals.Count > 0 && totals[0].HasValue) ? totals[0].Value : 0m;
+                    var stuck = db.Database.SqlQuery<string>(
+                        "SELECT TOP 20 PartnerReferenceID FROM dbo.tblH_WasabiCard_Refill WHERE " + stuckWhere +
+                        " ORDER BY SubmittedDate ASC",
+                        P("@cutoff", cutoff)).ToList();
+                    stuckCount = stuck.Count;
+                    stuckRefs = string.Join(",", stuck);
+                }
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Trace.TraceError("StreamingForwardDrift failed: " + ex.GetType().FullName);
+            }
         }
 
         private const string StFloorType = "floor", StEagerType = "eager";

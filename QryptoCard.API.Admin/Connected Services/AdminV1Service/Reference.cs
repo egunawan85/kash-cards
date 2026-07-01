@@ -2250,6 +2250,12 @@ namespace QryptoCard.API.Admin.AdminV1Service {
         [System.ServiceModel.OperationContractAttribute(Action="http://tempuri.org/IAdminV1Service/refundCard", ReplyAction="http://tempuri.org/IAdminV1Service/refundCardResponse")]
         System.Threading.Tasks.Task<QryptoCard.API.Admin.AdminV1Service.OutputModel> refundCardAsync(string em, string orderId);
 
+        [System.ServiceModel.OperationContractAttribute(Action="http://tempuri.org/IAdminV1Service/getFundingReconcile", ReplyAction="http://tempuri.org/IAdminV1Service/getFundingReconcileResponse")]
+        QryptoCard.API.Admin.AdminV1Service.OutputModel getFundingReconcile(string em, string status, string userId, string intentId, bool overpaidOnly, int stuckMinutes, string fromDate, string toDate, int top);
+
+        [System.ServiceModel.OperationContractAttribute(Action="http://tempuri.org/IAdminV1Service/getFundingReconcile", ReplyAction="http://tempuri.org/IAdminV1Service/getFundingReconcileResponse")]
+        System.Threading.Tasks.Task<QryptoCard.API.Admin.AdminV1Service.OutputModel> getFundingReconcileAsync(string em, string status, string userId, string intentId, bool overpaidOnly, int stuckMinutes, string fromDate, string toDate, int top);
+
         [System.ServiceModel.OperationContractAttribute(Action="http://tempuri.org/IAdminV1Service/testEmail", ReplyAction="http://tempuri.org/IAdminV1Service/testEmailResponse")]
         void testEmail();
         
@@ -2432,6 +2438,14 @@ namespace QryptoCard.API.Admin.AdminV1Service {
 
         public System.Threading.Tasks.Task<QryptoCard.API.Admin.AdminV1Service.OutputModel> refundCardAsync(string em, string orderId) {
             return base.Channel.refundCardAsync(em, orderId);
+        }
+
+        public QryptoCard.API.Admin.AdminV1Service.OutputModel getFundingReconcile(string em, string status, string userId, string intentId, bool overpaidOnly, int stuckMinutes, string fromDate, string toDate, int top) {
+            return base.Channel.getFundingReconcile(em, status, userId, intentId, overpaidOnly, stuckMinutes, fromDate, toDate, top);
+        }
+
+        public System.Threading.Tasks.Task<QryptoCard.API.Admin.AdminV1Service.OutputModel> getFundingReconcileAsync(string em, string status, string userId, string intentId, bool overpaidOnly, int stuckMinutes, string fromDate, string toDate, int top) {
+            return base.Channel.getFundingReconcileAsync(em, status, userId, intentId, overpaidOnly, stuckMinutes, fromDate, toDate, top);
         }
 
         public void testEmail() {
