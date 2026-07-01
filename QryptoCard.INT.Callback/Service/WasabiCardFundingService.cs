@@ -321,16 +321,32 @@ namespace QryptoCard.INT.Callback.Service
                     return new { partnerRef, skipped = "daily_cap", netUsd };
             }
 
-            TransferOutcome outcome = PGCryptoService.createTransfer(new TransferRequestModel
+            TransferOutcome outcome;
+            try
             {
-                CoinID = coinId,
-                isToken = 1,
-                TokenID = tokenId,
-                Amount = sendUsdt,
-                Address = address,
-                isFeeIncluded = 0, // Runegate network fee charged ON TOP (Amount lands in full)
-                PartnerReferenceID = partnerRef
-            });
+                outcome = PGCryptoService.createTransfer(new TransferRequestModel
+                {
+                    CoinID = coinId,
+                    isToken = 1,
+                    TokenID = tokenId,
+                    Amount = sendUsdt,
+                    Address = address,
+                    isFeeIncluded = 0, // Runegate network fee charged ON TOP (Amount lands in full)
+                    PartnerReferenceID = partnerRef
+                });
+            }
+            catch (Exception ex)
+            {
+                // The send THREW (network/timeout) AFTER the ledger row was reserved (Initiated). The
+                // funds MAY have moved — treat as ambiguous/in-flight, never auto-retry. Record Unknown
+                // so the row doesn't stay Initiated forever (which would strand a streaming intent), and
+                // alert for manual reconciliation.
+                UpdateStatus(partnerRef, StUnknown, null, "createTransfer_threw:" + ex.GetType().Name);
+                Alert("WasabiCard auto-fund: transfer call threw",
+                    "A " + type + " transfer of $" + netUsd + " (send " + sendUsdt + " USDT, ref " + partnerRef +
+                    ") threw (" + ex.GetType().Name + ") after the ledger row was reserved. The funds MAY have moved. Do not retry; verify on Runegate and reconcile.");
+                return new { partnerRef, status = StUnknown, reason = "createTransfer_threw" };
+            }
 
             if (outcome.Submitted)
             {

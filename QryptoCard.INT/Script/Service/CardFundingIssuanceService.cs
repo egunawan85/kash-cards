@@ -68,7 +68,7 @@ namespace QryptoCard.INT.Script.Service
                 HolderID = it.HolderID,
                 InitialDeposit = (double)it.Face,
                 Price = (double)it.Price,
-                FeeInPercentage = it.FeeInPercentage,
+                FeeInPercentage = (double)it.FeeInPercentage,
                 Fee = (double)it.PercentageFee,
                 // Debit the FULL amount the customer deposited for this card (price + face + % fee +
                 // fixed fee). Only `face` funds the card at WasabiCard; the rest is our margin/cost,
@@ -119,7 +119,7 @@ namespace QryptoCard.INT.Script.Service
                 UserID = it.UserID,
                 CardNo = it.CardNo,
                 Amount = (double)it.Face,
-                FeeInPercentage = it.FeeInPercentage,
+                FeeInPercentage = (double)it.FeeInPercentage,
                 Fee = (double)it.PercentageFee,
                 Total = (double)it.ExpectedTotal, // see IssueNew: full deposit, so no residual gifting
                 ReceivedAmount = (double)it.Face,
@@ -281,7 +281,10 @@ namespace QryptoCard.INT.Script.Service
             public string CardNo { get; set; }
             public decimal Face { get; set; }
             public decimal Price { get; set; }
-            public double FeeInPercentage { get; set; }
+            // MUST be decimal to match the FeeInPercentage decimal(9,4) column: EF6 SqlQuery<T> does NOT
+            // widen decimal->double, it throws on materialization. Reading it as double silently killed
+            // the whole issuance tick every run (RT round 6). Narrowed to double at the assignment.
+            public decimal FeeInPercentage { get; set; }
             public decimal PercentageFee { get; set; }
             public decimal ExpectedTotal { get; set; }
         }

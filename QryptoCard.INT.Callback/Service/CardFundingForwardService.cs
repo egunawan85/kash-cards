@@ -58,10 +58,14 @@ namespace QryptoCard.INT.Callback.Service
                         string partnerRef = "INTENT-" + it.IntentID;
 
                         string st = WasabiCardFundingService.ForwardForIntent(partnerRef, it.IntentID, draw);
-                        if (st == WasabiCardFundingService.StSubmitted || st == WasabiCardFundingService.StUnknown)
+                        if (st == WasabiCardFundingService.StSubmitted || st == WasabiCardFundingService.StUnknown
+                            || st == WasabiCardFundingService.StInitiated)
                         {
-                            // Submitted: awaiting float credit. Unknown: funds MAY have moved — never retry;
-                            // the confirm step handles it. Advance to Confirming (loser of a race no-ops).
+                            // Submitted: awaiting float credit. Unknown/Initiated: AMBIGUOUS — the send may
+                            // have thrown before recording an outcome; funds MAY have moved, so never retry.
+                            // Advance to Confirming (loser of a race no-ops); the confirm step then requires
+                            // Submitted/Confirmed evidence (Initiated/Unknown do NOT satisfy it), so it parks
+                            // for the 180-min reconcile alert instead of sticking in Funding forever.
                             if (ClaimStatus(it.IntentID, CardFundingIntentStatuses.Funding, CardFundingIntentStatuses.Confirming, partnerRef))
                                 forwarded++;
                         }

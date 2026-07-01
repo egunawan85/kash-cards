@@ -96,7 +96,9 @@ namespace QryptoCard.INT.Script.Service
             if (chdr != null && chdr.code == -1)
                 return HolderResult.Fail(chdr.msg, false);
 
-            if (chdr != null && chdr.data != null && chdr.data.status == HolderStatusPass)
+            // Require a positive holder id too: a "pass_audit" with holderId 0 (absent in the JSON) would
+            // otherwise persist a bogus holder that fails at openCard. Treat it as a retryable failure.
+            if (chdr != null && chdr.data != null && chdr.data.status == HolderStatusPass && chdr.data.holderId > 0)
             {
                 var chu = new tblM_Cardholder
                 {
