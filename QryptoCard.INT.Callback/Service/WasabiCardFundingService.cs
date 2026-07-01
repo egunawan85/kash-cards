@@ -383,6 +383,10 @@ namespace QryptoCard.INT.Callback.Service
         /// </summary>
         public static string ForwardForIntent(string partnerRef, string intentId, decimal cardDrawUsd)
         {
+            // We deliberately ignore AttemptTransfer's ad-hoc return and read the outcome back from the
+            // ledger row: the ledger Status IS the source of truth, and it makes retries idempotent —
+            // a duplicate PartnerReferenceID makes Reserve() a no-op (no throw, no new row), so a
+            // re-tick simply re-reads the original attempt's Submitted/Unknown/Failed status here.
             AttemptTransfer(StIntentType, partnerRef, intentId, cardDrawUsd,
                 enforceMinTransfer: false, isEnabledOverride: CardFundingSettlementService.Enabled());
             return ReadRefillStatus(partnerRef);
