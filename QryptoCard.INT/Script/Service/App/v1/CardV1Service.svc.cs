@@ -182,6 +182,19 @@ namespace QryptoCard.INT.Script.Service.App.v1
             return op;
         }
 
+        // Scheduled issuance tick — driven by the on-box scheduler via a scheduler-authed loopback API
+        // route, NOT by users. Issues/tops-up cards for intents whose funds have landed at WasabiCard
+        // and runs the pending-intent expiry sweep. A no-op JSON while CardFundingStreamingEnabled is OFF.
+        public string RunCardFundingIssuance()
+        {
+            try { return CardFundingIssuanceService.RunTick(); }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Trace.TraceError("RunCardFundingIssuance failed: " + ex.GetType().FullName);
+                return "{\"error\":\"issuance_failed\"}";
+            }
+        }
+
         public string getDate()
         {
             return generateBirthdate();

@@ -11,8 +11,9 @@ namespace QryptoCard.INT.Script.Service
     /// <summary>
     /// INT-tier (buy-path) twin of the callback's CardFinalizationService: finalizes a confirmed card
     /// OPEN synchronously, right after the provider returns success — so a purchase completes (card
-    /// bound, activated, balance recorded, referral commission paid) WITHOUT depending on the inbound
-    /// WasabiCard webhook, which is not delivered in this deployment. It cross-checks the provider
+    /// bound, activated, balance recorded, referral commission paid) WITHOUT depending SOLELY on the
+    /// inbound WasabiCard webhook (which IS delivered — confirmed in prod 2026-07-01 — but must not be a
+    /// single point of failure). It cross-checks the provider
     /// (getCardInfo) before writing, only acts on an order still InProgress/PendingProvider, and is
     /// idempotent — so if the callback webhook OR the reconciliation sweep later runs the same finalize,
     /// it is a safe no-op (the order is already Success). The per-order commission dedup index makes the
@@ -90,7 +91,8 @@ namespace QryptoCard.INT.Script.Service
         /// <summary>
         /// Finalize a confirmed TOP-UP synchronously: mark the deposit Success and pay the referrer
         /// their commission — so a top-up completes at purchase time instead of stranding InProgress
-        /// waiting on the inbound WasabiCard webhook (not delivered in this deployment). The card
+        /// while waiting on the inbound WasabiCard webhook (which IS delivered, but is not a single
+        /// point of failure). The card
         /// already exists, so (unlike the open finalize) there is no cardNo to bind or cross-check —
         /// the depositCard 200 is the provider's confirmation. Idempotent (only acts on an
         /// InProgress/PendingProvider deposit), so a later webhook/sweep finalize is a safe no-op and

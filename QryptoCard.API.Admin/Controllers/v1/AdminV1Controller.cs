@@ -125,6 +125,33 @@ namespace QryptoCard.API.Admin.Controllers.v1
             return op;
         }
 
+        // Deposit-into-card money-trail reconcile (POST v1/admin/funding/reconcile). READ-ONLY ops
+        // visibility: stitches each intent's invoice/forward/order/wallet trail into one row. The acting
+        // admin comes from the bearer token (getEmail()), never the body; Owner/Admin-only access and
+        // fully-parameterized filtering are enforced in the INT-tier service. Data returns as a JSON
+        // array of stitched rows (the INT tier ships it as a JSON string; re-hydrated here).
+        [Route("funding/reconcile")]
+        [HttpPost]
+        public OutputModel getFundingReconcile(FundingReconcileModel x)
+        {
+            try
+            {
+                if (x == null) x = new FundingReconcileModel();
+                op = sr.getFundingReconcile(getEmail(), x.Status, x.UserId, x.IntentId,
+                    x.OverpaidOnly, x.StuckMinutes, x.FromDate, x.ToDate, x.Top);
+                if (op.Status == "success" && op.Data != null)
+                    op.Data = JsonConvert.DeserializeObject(op.Data.ToString());
+            }
+            catch (Exception ex)
+            {
+                op.Status = "error";
+                op.Message = ex.Message;
+                op.Data = null;
+            }
+
+            return op;
+        }
+
         [Route("ban")]
         [HttpDelete]
         public OutputModel banAdmin(tblM_Admin x)
@@ -244,5 +271,19 @@ namespace QryptoCard.API.Admin.Controllers.v1
 
             return op;
         }
+    }
+
+    // Request body for the reconcile endpoint. All fields optional; an empty body returns the most
+    // recent intents. Dates are ISO strings (parsed server-side); Top is bounded in the INT tier.
+    public class FundingReconcileModel
+    {
+        public string Status { get; set; }
+        public string UserId { get; set; }
+        public string IntentId { get; set; }
+        public bool OverpaidOnly { get; set; }
+        public int StuckMinutes { get; set; }
+        public string FromDate { get; set; }
+        public string ToDate { get; set; }
+        public int Top { get; set; }
     }
 }

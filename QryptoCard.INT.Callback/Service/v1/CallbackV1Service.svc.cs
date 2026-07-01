@@ -200,6 +200,9 @@ namespace QryptoCard.INT.Callback.Service.v1
                             // record card balance) is shared with the reconciliation sweep so it lives
                             // in one place; the sensitive PAN/CVV enrichment below stays webhook-only.
                             var fo = CardFinalizationService.FinalizeOpenSuccess(q.merchantOrderNo, q.cardNo);
+                            // Streaming (Phase C3): the card is confirmed made — complete the matching
+                            // funding intent event-driven. Idempotent + gated; a no-op for legacy orders.
+                            CardFundingWebhookService.OnCardConfirmed(q.merchantOrderNo, q.cardNo);
                             if (fo == CardFinalizationService.FinalizeOutcome.Confirmed)
                             {
                                 var cr = db.tblT_Card.Where(p => p.ID == q.merchantOrderNo).FirstOrDefault();
@@ -232,6 +235,9 @@ namespace QryptoCard.INT.Callback.Service.v1
                             {
                                 // Shared money-critical finalization (also used by the reconciliation sweep).
                                 CardFinalizationService.FinalizeTopUpSuccess(q.merchantOrderNo);
+                                // Streaming (Phase C3): complete the matching funding intent event-driven.
+                                // Idempotent + gated; a no-op for legacy orders.
+                                CardFundingWebhookService.OnCardConfirmed(q.merchantOrderNo, q.cardNo);
 
                                 //do send email
                                 
@@ -324,6 +330,30 @@ namespace QryptoCard.INT.Callback.Service.v1
                 
 
 
+                else if (cat == "wallet_transaction" || cat == "wallet_transaction_v2")
+                {
+                    // Phase C2 (DOCS-BASED / UNVERIFIED payload): WasabiCard credited our merchant float
+                    // from one of our forwards. Parse defensively (no strict DTO until the shape is
+                    // verified by one live forward) and, on a successful deposit, confirm the intent's
+                    // forward by the on-chain tx hash. Signature was already verified at the controller.
+                    try
+                    {
+                        var j = Newtonsoft.Json.Linq.JObject.Parse(a);
+                        string wtype = (string)j["type"];
+                        string wstatus = (string)j["status"];
+                        if (!string.IsNullOrEmpty(wstatus) && wstatus.ToLowerInvariant() == "success"
+                            && !string.IsNullOrEmpty(wtype) && wtype.ToLowerInvariant() == "deposit")
+                        {
+                            CardFundingWebhookService.OnFloatLanded(
+                                (string)j["txId"], (string)j["fromAddress"], (string)j["receivedAmount"]);
+                        }
+                    }
+                    catch (Exception wex)
+                    {
+                        System.Diagnostics.Trace.TraceError("Wasabi wallet_transaction parse failed: " + wex.GetType().FullName);
+                    }
+                }
+
                 return;
             }
             catch (Exception ex)
@@ -376,8 +406,25 @@ namespace QryptoCard.INT.Callback.Service.v1
                     return;
                 }
 
-                // Confirmed-status gate: credit only on a settled/paid deposit. A pre-confirmation
-                // delivery is ignored (no credit); the confirmed delivery carries isPaid == 1.
+                // INVOICE (streaming) attribution FIRST — BEFORE the isPaid gate. A per-intent Runegate
+                // invoice payment carries PartnerReferenceID = intentId; it is attributed + settled by the
+                // invoice, not the static address, and it gates on the invoice STATUS (PartiallyPaid /
+                // OverPaid / Completed) rather than isPaid: a PartiallyPaid delivery (isPaid == 0) must
+                // still be processed so the "received so far" progress updates — TrySettleInvoicePayment
+                // only credits + advances on a COVERED status, so processing a partial is safe. Returns
+                // true iff this is one of our streaming invoices — then it is fully handled here and must
+                // NOT fall through to the legacy path or the isPaid gate below. A static-address deposit
+                // carries no matching PartnerReferenceID, so it returns false and continues unchanged.
+                if (CardFundingSettlementService.TrySettleInvoicePayment(
+                        db, x.PartnerReferenceID, x.TransactionID, x.Total ?? 0m, x.Status,
+                        x.Commision ?? 0m, x.CommisionInPercentage ?? 0d, JsonConvert.SerializeObject(x)))
+                {
+                    return;
+                }
+
+                // Confirmed-status gate (legacy static-address path): credit only on a settled/paid
+                // deposit. A pre-confirmation delivery is ignored (no credit); the confirmed delivery
+                // carries isPaid == 1.
                 if (x.isPaid != 1)
                 {
                     System.Diagnostics.Trace.TraceWarning(
@@ -426,22 +473,14 @@ namespace QryptoCard.INT.Callback.Service.v1
                 }
                 else if (credit.Success)
                 {
-                    // MUTUALLY EXCLUSIVE money-out paths (on a GENUINE new credit only). The streaming
-                    // model REPLACES the legacy eager pass-through; they must NEVER both run for one
-                    // deposit — they use different partner refs, so neither the ledger dedup nor the
-                    // daily cap would stop a double-forward into WasabiCard's one-way float (both
-                    // external red-teams flagged this). Enforced here as an if/else, and defensively
-                    // again inside each service. Streaming wins when its switch is on.
-                    if (CardFundingSettlementService.Enabled())
+                    // This is a STATIC-ADDRESS deposit (invoice deposits already returned above). It
+                    // credits the user's available balance and does NOT match any funding intent —
+                    // intents fund via their own invoices now. The legacy eager pass-through into
+                    // WasabiCard's one-way float runs ONLY when streaming is OFF (its own switch,
+                    // WasabiCardAutoFundEnabled, still gates it); under streaming a static-address
+                    // deposit simply tops up available balance with no forward.
+                    if (!CardFundingSettlementService.Enabled())
                     {
-                        // Apply the credit to the user's open funding intent; when covered it advances
-                        // to Funding for the streaming forwarder. No-op if there is no open intent.
-                        CardFundingSettlementService.OnDepositCredited(dep.UserID, net, x.TransactionID);
-                    }
-                    else
-                    {
-                        // Legacy Tier 2 (eager pass-through), gated by WasabiCardAutoFundEnabled; a no-op
-                        // when that switch is OFF. Idempotent (keyed on the TransactionID).
                         WasabiCardFundingService.OnDepositCredited(net, x.TransactionID);
                     }
                 }
@@ -497,12 +536,11 @@ namespace QryptoCard.INT.Callback.Service.v1
         // float credit (Funding -> Confirming -> Issuing). The INT-tier issuance tick then opens/tops
         // up the card. A no-op while the streaming switch (CardFundingStreamingEnabled) is OFF.
         //
-        // NOT YET SCHEDULER-WIRED: this method is on ICallbackV1Service, but the loopback controller
-        // route (mirror monitorBalance), the regenerated WCF client (Reference.cs), and the
-        // scheduler-trigger.ps1 entry still need to be added before it runs — AND the INT-tier
-        // CardFundingIssuanceService.RunTick needs its own trigger (different project; the pump does not
-        // reach it). Both ticks MUST be driven before enabling the feature. See the PR "reachability"
-        // checklist. (RT round 7 correctly flagged that the pipeline is unwired past settlement.)
+        // SCHEDULER-WIRED (Phase B): driven by the loopback route funding/pump + scheduler-trigger.ps1,
+        // and the INT-tier CardFundingIssuanceService.RunTick has its own trigger (funding/issue). Still
+        // a no-op until CardFundingStreamingEnabled is ON. Before enabling: tighten the tick cadence to
+        // ~1 min and regenerate the WCF client proxies in VS + smoke-test the loopback calls (the
+        // Reference.cs proxies were hand-edited, so the WCF Action dispatch is not compile-verified here).
         public string RunCardFundingPump()
         {
             try

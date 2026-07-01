@@ -109,5 +109,23 @@ namespace QryptoCard.Tests.Unit
                 total += WasabiCardFundingMath.CardDrawUsd(true, face, 1m, 0);
             Assert.Equal(42m, total);
         }
+
+        // ---- Phase C: confirmed-landing gate ----
+
+        [Fact]
+        public void LandedCoversDraw_ExactAndOver_Cover()
+        {
+            Assert.True(WasabiCardFundingMath.LandedCoversDraw(21m, 21m));     // exact
+            Assert.True(WasabiCardFundingMath.LandedCoversDraw(25m, 21m));     // over
+            Assert.True(WasabiCardFundingMath.LandedCoversDraw(21.000050m, 21.000100m)); // 6dp rounding within epsilon
+        }
+
+        [Fact]
+        public void LandedCoversDraw_Short_DoesNotCover()
+        {
+            Assert.False(WasabiCardFundingMath.LandedCoversDraw(20.5m, 21m));  // underpaid float
+            Assert.False(WasabiCardFundingMath.LandedCoversDraw(0m, 21m));
+            Assert.False(WasabiCardFundingMath.LandedCoversDraw(-5m, 21m));    // negative never covers
+        }
     }
 }

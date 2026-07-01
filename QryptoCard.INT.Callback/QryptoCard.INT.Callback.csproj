@@ -157,6 +157,7 @@
     <Compile Include="Service\WasabiCardAddressGuard.cs" />
     <Compile Include="Service\CardFundingSettlementService.cs" />
     <Compile Include="Service\CardFundingForwardService.cs" />
+    <Compile Include="Service\CardFundingWebhookService.cs" />
     <Compile Include="Service\WalletService.cs" />
     <Compile Include="Service\CardFinalizationService.cs" />
     <Compile Include="Service\ReferralCommissionService.cs" />

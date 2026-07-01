@@ -1,9 +1,13 @@
 using System;
+using System.Collections.Generic;
 using System.Data;
 using System.Data.SqlClient;
+using System.Diagnostics;
 using System.Globalization;
 using System.Linq;
+using QryptoCard.INT.Model.PGCrypto;
 using QryptoCard.INT.Model.Service;
+using QryptoCard.INT.Script.Gateway.PGCrypto;
 using QryptoCard.Sec;
 
 namespace QryptoCard.INT.Script.Service
@@ -45,6 +49,16 @@ namespace QryptoCard.INT.Script.Service
         public const string SetExpiryMinutes = "CardFundingIntentExpiryMinutes";
         private const double DefMinDepositUsd = 0d;   // 0 => use the WasabiCard per-program quota
         private const double DefExpiryMinutes = 1440d;
+
+        // Runegate invoice config (merchant-specific string ids; operator-provided via Param1/env).
+        // Required to mint a per-intent USDT-TRC20 invoice. The customer MUST be dynamic-address
+        // (isStaticAddress=0) so each invoice gets its own address and concurrent invoices are allowed.
+        public const string SetPaymentId = "RunegatePaymentId";
+        public const string EnvPaymentId = "RUNEGATE_PAYMENT_ID";
+        public const string SetCustomerId = "RunegateCustomerId";
+        public const string EnvCustomerId = "RUNEGATE_CUSTOMER_ID";
+        public const string SetProductId = "RunegateProductId";
+        public const string EnvProductId = "RUNEGATE_PRODUCT_ID";
 
         public class Result
         {
@@ -117,12 +131,16 @@ namespace QryptoCard.INT.Script.Service
                 decimal pctFee = CardFundingMath.PercentageFee(feePct, face);
                 decimal expectedTotal = CardFundingMath.ExpectedTotal(price, face, feePct, fixedFee);
 
-                var addr = WalletService.EnsureDepositAddress(userId);
-                if (addr == null || string.IsNullOrWhiteSpace(addr.Address))
-                    return Result.Fail("Deposit address is temporarily unavailable. Please try again shortly.", true);
+                // Mint a per-intent Runegate invoice (unique address + amount, tagged PartnerReferenceID
+                // = intentId) INSTEAD of the shared static address. Attribution of the landed deposit is
+                // then unambiguous per intent, and multiple concurrent intents are safe.
+                string intentId = Guid.NewGuid().ToString("N");
+                var inv = CreateInvoiceForIntent(intentId, expectedTotal);
+                if (inv == null)
+                    return Result.Fail("Deposit request is temporarily unavailable. Please try again shortly.", true);
 
-                return InsertIntent(db, userId, KindNew, cardTypeId, holder.HolderId, null, addr.Address,
-                    face, price, feePct, pctFee, fixedFee, expectedTotal);
+                return InsertIntent(db, intentId, userId, KindNew, cardTypeId, holder.HolderId, null,
+                    inv.Address, inv.InvoiceID, face, price, feePct, pctFee, fixedFee, expectedTotal);
             }
         }
 
@@ -156,69 +174,56 @@ namespace QryptoCard.INT.Script.Service
                 decimal pctFee = CardFundingMath.PercentageFee(feePct, face);
                 decimal expectedTotal = CardFundingMath.ExpectedTotal(0m, face, feePct, fixedFee); // no card price on a top-up
 
-                var addr = WalletService.EnsureDepositAddress(userId);
-                if (addr == null || string.IsNullOrWhiteSpace(addr.Address))
-                    return Result.Fail("Deposit address is temporarily unavailable. Please try again shortly.", true);
+                string intentId = Guid.NewGuid().ToString("N");
+                var inv = CreateInvoiceForIntent(intentId, expectedTotal);
+                if (inv == null)
+                    return Result.Fail("Deposit request is temporarily unavailable. Please try again shortly.", true);
 
-                return InsertIntent(db, userId, KindTopUp, null, null, cardNo, addr.Address,
-                    face, 0m, feePct, pctFee, fixedFee, expectedTotal);
+                return InsertIntent(db, intentId, userId, KindTopUp, null, null, cardNo,
+                    inv.Address, inv.InvoiceID, face, 0m, feePct, pctFee, fixedFee, expectedTotal);
             }
         }
 
-        // Race-safe insert enforcing ONE open intent per user (conditional insert under SERIALIZABLE,
-        // backed by the filtered unique index UX_CFI_OneOpenPerUser).
-        private static Result InsertIntent(DBEntities db, string userId, string kind, long? cardTypeId,
-            long? holderId, string cardNo, string address, decimal face, decimal price, double feePct,
+        // Plain insert — multiple concurrent intents per user are now allowed (each isolated by its own
+        // invoice/address; a landed deposit is attributed by the invoice's PartnerReferenceID, not by
+        // "the user's single open intent"). IntentID is unique (UX_CFI_IntentID); a GUID collision is
+        // astronomically unlikely and surfaces as a retryable duplicate-key error.
+        private static Result InsertIntent(DBEntities db, string intentId, string userId, string kind, long? cardTypeId,
+            long? holderId, string cardNo, string invoiceAddress, string invoiceId, decimal face, decimal price, double feePct,
             decimal pctFee, decimal fixedFee, decimal expectedTotal)
         {
-            string intentId = Guid.NewGuid().ToString("N");
             DateTime now = DateTime.Now;
             DateTime expiry = now.AddMinutes(ReadNum(SetExpiryMinutes, DefExpiryMinutes));
 
             const string sql =
                 "INSERT INTO dbo.tblT_Card_Funding_Intent " +
-                "(IntentID, UserID, Kind, CardTypeId, HolderID, CardNo, DepositAddress, " +
+                "(IntentID, UserID, Kind, CardTypeId, HolderID, CardNo, DepositAddress, InvoiceID, InvoiceAddress, " +
                 " Face, Price, FeeInPercentage, PercentageFee, FixedFee, ExpectedTotal, ReceivedTotal, " +
                 " Status, CreatedDate, ExpiryDate) " +
-                "SELECT @intentId, @userId, @kind, @cardTypeId, @holderId, @cardNo, @addr, " +
+                "VALUES (@intentId, @userId, @kind, @cardTypeId, @holderId, @cardNo, @addr, @invId, @addr, " +
                 " @face, @price, @feePct, @pctFee, @fixedFee, @expectedTotal, 0, " +
-                " 'Pending', @now, @expiry " +
-                "WHERE NOT EXISTS (SELECT 1 FROM dbo.tblT_Card_Funding_Intent WITH (UPDLOCK, HOLDLOCK) " +
-                "                  WHERE UserID = @userId AND Status IN ('Pending','Funding','Confirming','Issuing'))";
+                " 'Pending', @now, @expiry)";
 
-            using (var tx = db.Database.BeginTransaction(IsolationLevel.Serializable))
+            try
             {
-                try
-                {
-                    int rows = db.Database.ExecuteSqlCommand(sql,
-                        P("@intentId", intentId), P("@userId", userId), P("@kind", kind),
-                        P("@cardTypeId", (object)cardTypeId), P("@holderId", (object)holderId),
-                        P("@cardNo", (object)cardNo), P("@addr", address),
-                        P("@face", face), P("@price", price), P("@feePct", (decimal)feePct),
-                        P("@pctFee", pctFee), P("@fixedFee", fixedFee), P("@expectedTotal", expectedTotal),
-                        P("@now", now), P("@expiry", expiry));
-                    tx.Commit();
-
-                    if (rows != 1)
-                        return Result.Fail("You already have a card being funded. Finish or cancel it first.", false);
-                }
-                catch (Exception ex) when (IsDuplicateKey(ex))
-                {
-                    tx.Rollback();
-                    return Result.Fail("You already have a card being funded. Finish or cancel it first.", false);
-                }
-                catch
-                {
-                    tx.Rollback();
-                    throw;
-                }
+                db.Database.ExecuteSqlCommand(sql,
+                    P("@intentId", intentId), P("@userId", userId), P("@kind", kind),
+                    P("@cardTypeId", (object)cardTypeId), P("@holderId", (object)holderId),
+                    P("@cardNo", (object)cardNo), P("@addr", invoiceAddress), P("@invId", (object)invoiceId),
+                    P("@face", face), P("@price", price), P("@feePct", (decimal)feePct),
+                    P("@pctFee", pctFee), P("@fixedFee", fixedFee), P("@expectedTotal", expectedTotal),
+                    P("@now", now), P("@expiry", expiry));
+            }
+            catch (Exception ex) when (IsDuplicateKey(ex))
+            {
+                return Result.Fail("Could not start card funding. Please try again.", true);
             }
 
             return new Result
             {
                 Ok = true,
                 IntentID = intentId,
-                DepositAddress = address,
+                DepositAddress = invoiceAddress,
                 Network = "TRC20",
                 Coin = "USDT",
                 Face = face,
@@ -228,6 +233,60 @@ namespace QryptoCard.INT.Script.Service
                 ExpectedTotal = expectedTotal,
                 Status = StPending,
             };
+        }
+
+        // Mint a Runegate invoice for this intent: unique deposit address + amount = ExpectedTotal (one
+        // product line, Price overridden), tagged PartnerReferenceID = intentId (idempotent per merchant)
+        // and DateExpired matching the intent expiry. Returns the invoice (Address + InvoiceID) or null if
+        // config is missing / the gateway fails / the returned coin isn't USDT (defensive — never show a
+        // non-USDT address). The merchant customer MUST be dynamic-address (isStaticAddress=0).
+        private static InvoiceModel CreateInvoiceForIntent(string intentId, decimal expectedTotal)
+        {
+            string paymentId = ReadParam1(EnvPaymentId, SetPaymentId);
+            string customerId = ReadParam1(EnvCustomerId, SetCustomerId);
+            string productId = ReadParam1(EnvProductId, SetProductId);
+            if (string.IsNullOrWhiteSpace(paymentId) || string.IsNullOrWhiteSpace(customerId) || string.IsNullOrWhiteSpace(productId))
+            {
+                Trace.TraceError("CardFundingIntent: Runegate invoice config (RunegatePaymentId/CustomerId/ProductId) not set — cannot create invoice.");
+                return null;
+            }
+
+            var req = new InvoiceModel
+            {
+                PaymentID = paymentId,
+                CustomerID = customerId,
+                PartnerReferenceID = intentId,
+                DateExpired = DateTime.Now.AddMinutes(ReadNum(SetExpiryMinutes, DefExpiryMinutes)),
+                Notes = "Card funding " + intentId,
+                Products = new List<ProductModel>
+                {
+                    new ProductModel { ProductID = productId, Price = expectedTotal, Quantity = 1 }
+                }
+            };
+
+            InvoiceModel resp;
+            try { resp = PGCryptoService.createInvoice(req); }
+            catch (Exception ex) { Trace.TraceError("CardFundingIntent: createInvoice threw: " + ex.GetType().FullName); resp = null; }
+            if (resp == null || string.IsNullOrWhiteSpace(resp.Address)) return null;
+            // Defensive: only proceed with a USDT invoice (the merchant PaymentID should resolve to
+            // USDT-TRC20; never hand the customer a non-USDT address).
+            if (!string.IsNullOrEmpty(resp.Symbol) && !string.Equals(resp.Symbol, "USDT", StringComparison.OrdinalIgnoreCase))
+            {
+                Trace.TraceError("CardFundingIntent: invoice returned non-USDT symbol '" + resp.Symbol + "' — rejecting.");
+                return null;
+            }
+            return resp;
+        }
+
+        private static string ReadParam1(string envName, string dbName)
+        {
+            string e = SecretsConfig.GetOptional(envName, null);
+            if (!string.IsNullOrWhiteSpace(e)) return e;
+            using (var db = new DBEntities())
+            {
+                var s = db.tblM_Setting.FirstOrDefault(p => p.Name == dbName);
+                return s != null ? s.Param1 : null;
+            }
         }
 
         // ---- status ----------------------------------------------------------

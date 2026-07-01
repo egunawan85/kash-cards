@@ -61,6 +61,18 @@ namespace QryptoCard.INT.Callback.Service
             return GrossUpSend(CardDrawUsd(isNewCard, face, createCostUsd, cardDepositFeePct), floatTopupFeePct);
         }
 
+        /// <summary>
+        /// True when the amount that ACTUALLY landed in the float (from the wallet_transaction webhook)
+        /// covers the card's required draw — the gate for advancing an intent to issuance on confirmed
+        /// per-forward evidence (vs. a pooled-balance guess). A tiny epsilon absorbs 6dp USDT rounding so
+        /// an exact-to-the-cent landing is not treated as short. A negative landing never covers.
+        /// </summary>
+        public static bool LandedCoversDraw(decimal landedUsd, decimal drawUsd)
+        {
+            if (landedUsd < 0m) return false;
+            return landedUsd + 0.0001m >= drawUsd;
+        }
+
         private static decimal ClampFee(double pct)
         {
             if (pct < 0) pct = 0;
