@@ -81,7 +81,10 @@ namespace QryptoCard.INT.Script.Service
 
             if (spend != null && spend.ProviderConfirmed) return CompleteWithCard(it, x.ID, x.CardNo);
             if (spend != null && spend.ProviderFailed) return Fail(it, "open_failed");
-            return Outcome.Pending; // ambiguous / insufficient — leave Issuing for reconcile + replay
+            // Ambiguous, or a replay of an order a sweep/webhook has since finalized (a replay never
+            // re-sets ProviderConfirmed). Reconcile against the order's OWN terminal state so the intent
+            // still completes instead of sticking in Issuing forever.
+            return TryCompleteNewFromOrder(it);
         }
 
         private static Outcome IssueTopUp(IntentRow it)
@@ -111,6 +114,39 @@ namespace QryptoCard.INT.Script.Service
 
             if (spend != null && spend.ProviderConfirmed) return CompleteWithCard(it, x.ID, it.CardNo);
             if (spend != null && spend.ProviderFailed) return Fail(it, "topup_failed");
+            return TryCompleteTopUpFromOrder(it);
+        }
+
+        // Reconcile a new-card intent against its order's terminal state (handles the ambiguous-open /
+        // replay case where the live SpendResult never carries ProviderConfirmed but a sweep/webhook has
+        // since marked the order Success). Completes + binds CardNo when the order is Success; else Pending.
+        private static Outcome TryCompleteNewFromOrder(IntentRow it)
+        {
+            try
+            {
+                using (var db = new DBEntities())
+                {
+                    var o = db.tblT_Card.FirstOrDefault(c => c.UserID == it.UserID && c.UserReferenceID == it.IntentID);
+                    if (o != null && o.Status == "Success" && !string.IsNullOrEmpty(o.CardNo))
+                        return CompleteWithCard(it, o.ID, o.CardNo);
+                }
+            }
+            catch (Exception ex) { Trace.TraceError("TryCompleteNewFromOrder failed for intent " + it.IntentID + ": " + ex.GetType().FullName); }
+            return Outcome.Pending;
+        }
+
+        private static Outcome TryCompleteTopUpFromOrder(IntentRow it)
+        {
+            try
+            {
+                using (var db = new DBEntities())
+                {
+                    var o = db.tblT_Card_Deposit.FirstOrDefault(d => d.UserID == it.UserID && d.UserReferenceID == it.IntentID);
+                    if (o != null && o.Status == "Success")
+                        return CompleteWithCard(it, o.ID, it.CardNo);
+                }
+            }
+            catch (Exception ex) { Trace.TraceError("TryCompleteTopUpFromOrder failed for intent " + it.IntentID + ": " + ex.GetType().FullName); }
             return Outcome.Pending;
         }
 

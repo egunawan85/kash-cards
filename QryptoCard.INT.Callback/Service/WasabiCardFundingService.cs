@@ -192,6 +192,11 @@ namespace QryptoCard.INT.Callback.Service
             try
             {
                 if (!Enabled()) return;
+                // Defense-in-depth mutual exclusion: the streaming deposit-into-card model REPLACES this
+                // legacy eager forward. If streaming is on, this path must NOT also forward — otherwise
+                // one deposit forwards twice into the one-way float (both red-teams flagged this). The
+                // credit-hook already gates via if/else; this is the second, service-owned line.
+                if (CardFundingSettlementService.Enabled()) return;
                 if (string.IsNullOrEmpty(depositTxId)) return;
                 double eager = Cfg(EnvEagerThresholdUsd, SetEagerThresholdUsd, DefEager);
                 if (depositAmount <= (decimal)eager) return; // small deposits feed the wallet; floor covers them

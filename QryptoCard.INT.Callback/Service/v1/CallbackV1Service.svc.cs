@@ -426,18 +426,24 @@ namespace QryptoCard.INT.Callback.Service.v1
                 }
                 else if (credit.Success)
                 {
-                    // Deposit-into-card settlement (streaming model). On a GENUINE new credit only,
-                    // apply it to the depositing user's open funding intent; when covered the intent
-                    // advances to Funding for the streaming forwarder. Gated by
-                    // CardFundingStreamingEnabled; a no-op (and no double-apply) otherwise.
-                    CardFundingSettlementService.OnDepositCredited(dep.UserID, net, x.TransactionID);
-
-                    // WasabiCard auto-funding — legacy Tier 2 (eager pass-through), gated by its own
-                    // WasabiCardAutoFundEnabled switch. Retired by the streaming model above; kept
-                    // behind its independent switch so the two paths never both move money. Only on a
-                    // GENUINE new credit (never a duplicate_event replay) so a redelivered webhook
-                    // can't double-forward; idempotent (keyed on the TransactionID).
-                    WasabiCardFundingService.OnDepositCredited(net, x.TransactionID);
+                    // MUTUALLY EXCLUSIVE money-out paths (on a GENUINE new credit only). The streaming
+                    // model REPLACES the legacy eager pass-through; they must NEVER both run for one
+                    // deposit — they use different partner refs, so neither the ledger dedup nor the
+                    // daily cap would stop a double-forward into WasabiCard's one-way float (both
+                    // external red-teams flagged this). Enforced here as an if/else, and defensively
+                    // again inside each service. Streaming wins when its switch is on.
+                    if (CardFundingSettlementService.Enabled())
+                    {
+                        // Apply the credit to the user's open funding intent; when covered it advances
+                        // to Funding for the streaming forwarder. No-op if there is no open intent.
+                        CardFundingSettlementService.OnDepositCredited(dep.UserID, net, x.TransactionID);
+                    }
+                    else
+                    {
+                        // Legacy Tier 2 (eager pass-through), gated by WasabiCardAutoFundEnabled; a no-op
+                        // when that switch is OFF. Idempotent (keyed on the TransactionID).
+                        WasabiCardFundingService.OnDepositCredited(net, x.TransactionID);
+                    }
                 }
                 //invoice
                 //var z = db.tblT_Transaction.Where(p => p.PGCryptoInvoiceID == x.TransactionID && p.Status == StatusModel.WaitingPayment).FirstOrDefault();

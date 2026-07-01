@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Data;
 using System.Data.SqlClient;
 using System.Diagnostics;
 using System.Linq;
@@ -23,8 +24,10 @@ namespace QryptoCard.INT.Callback.Service
         // Settings for float-draw sizing (mirror the migration seeds; env/DB/default precedence).
         public const string SetCreateCostUsd = "WasabiCardCreateCostUsd";       // flat $ drawn on a new-card open
         public const string SetOpenFeePct = "WasabiCardWcFeeRatePctOpen";        // per-card deposit fee % (open = 0)
+        public const string SetTopUpFeePct = "WasabiCardWcFeeRatePctTopUp";      // per-card deposit fee % (top-up = 0)
         private const double DefCreateCostUsd = 1d;
         private const double DefOpenFeePct = 0d;
+        private const double DefTopUpFeePct = 0d;
 
         private const int Batch = 20;
 
@@ -63,23 +66,27 @@ namespace QryptoCard.INT.Callback.Service
                     // the intent Funding -> retry on a later tick when the condition clears.
                 }
 
-                // 2) CONFIRM: Confirming -> Issuing, SERIALIZED (only when nothing is already Issuing),
-                //    and only when the float actually covers this card's draw.
-                if (CountByStatus(CardFundingIntentStatuses.Issuing) == 0)
+                // 2) CONFIRM: Confirming -> Issuing. Three guards, all required:
+                //   (a) EVIDENCE our forward actually submitted/confirmed (the ForwardRef ledger row is
+                //       Submitted/Confirmed) — an Unknown/ambiguous forward may never have moved, and we
+                //       must NOT issue against the shared baseline float without OUR funds landing.
+                //   (b) the float covers this card's draw; and
+                //   (c) NO other intent is already Issuing — enforced ATOMICALLY inside the claim (a
+                //       single SERIALIZABLE conditional UPDATE), closing the check-then-act race both
+                //       red-teams flagged, so at most one intent is ever Issuing.
+                decimal? floatUsd = WasabiCardFundingService.ReadFloatUsd();
+                if (floatUsd.HasValue)
                 {
-                    decimal? floatUsd = WasabiCardFundingService.ReadFloatUsd();
-                    if (floatUsd.HasValue)
+                    foreach (var it in LoadByStatus(CardFundingIntentStatuses.Confirming, Batch))
                     {
-                        foreach (var it in LoadByStatus(CardFundingIntentStatuses.Confirming, Batch))
+                        if (floatUsd.Value < CardDraw(it)) continue;
+                        string fst = string.IsNullOrEmpty(it.ForwardRef) ? null : WasabiCardFundingService.ReadRefillStatus(it.ForwardRef);
+                        if (fst != "Submitted" && fst != "Confirmed") continue; // no landed-forward evidence -> wait/reconcile
+                        if (ClaimIssuingIfNoneIssuing(it.IntentID))
                         {
-                            if (floatUsd.Value < CardDraw(it)) continue;
-                            if (ClaimStatus(it.IntentID, CardFundingIntentStatuses.Confirming, CardFundingIntentStatuses.Issuing, null))
-                            {
-                                if (!string.IsNullOrEmpty(it.ForwardRef))
-                                    WasabiCardFundingService.MarkForwardConfirmed(it.ForwardRef);
-                                confirmed++;
-                                break; // one at a time
-                            }
+                            WasabiCardFundingService.MarkForwardConfirmed(it.ForwardRef);
+                            confirmed++;
+                            break; // one at a time
                         }
                     }
                 }
@@ -98,7 +105,9 @@ namespace QryptoCard.INT.Callback.Service
         {
             bool isNew = string.Equals(it.Kind, "new", StringComparison.OrdinalIgnoreCase);
             decimal createCost = (decimal)ReadNum(SetCreateCostUsd, DefCreateCostUsd);
-            double cardFeePct = ReadNum(SetOpenFeePct, DefOpenFeePct);
+            // Per-card deposit fee %: SEPARATE settings for open vs top-up (prod shows 0% for both, but
+            // WasabiCard could price them differently). Never size a top-up off the open rate.
+            double cardFeePct = isNew ? ReadNum(SetOpenFeePct, DefOpenFeePct) : ReadNum(SetTopUpFeePct, DefTopUpFeePct);
             return WasabiCardFundingMath.CardDrawUsd(isNew, it.Face, createCost, cardFeePct);
         }
 
@@ -138,14 +147,26 @@ namespace QryptoCard.INT.Callback.Service
             }
         }
 
-        private static int CountByStatus(string status)
+        // Atomically advance ONE Confirming intent to Issuing, but only if NO intent is currently
+        // Issuing — the "no other Issuing" test and the claim are one SERIALIZABLE statement, so two
+        // concurrent ticks cannot both advance (the check-then-act race both red-teams flagged). The
+        // HOLDLOCK range-locks the NOT EXISTS predicate so a concurrent claim serializes behind it.
+        private static bool ClaimIssuingIfNoneIssuing(string intentId)
         {
             using (var db = new DBEntities())
+            using (var tx = db.Database.BeginTransaction(IsolationLevel.Serializable))
             {
-                var rows = db.Database.SqlQuery<int>(
-                    "SELECT COUNT(*) FROM dbo.tblT_Card_Funding_Intent WHERE Status = @st",
-                    P("@st", status)).ToList();
-                return rows.Count > 0 ? rows[0] : 0;
+                try
+                {
+                    int rows = db.Database.ExecuteSqlCommand(
+                        "UPDATE dbo.tblT_Card_Funding_Intent SET Status = 'Issuing', UpdatedDate = @now " +
+                        "WHERE IntentID = @id AND Status = 'Confirming' " +
+                        "AND NOT EXISTS (SELECT 1 FROM dbo.tblT_Card_Funding_Intent WITH (UPDLOCK, HOLDLOCK) WHERE Status = 'Issuing')",
+                        P("@now", DateTime.Now), P("@id", intentId));
+                    tx.Commit();
+                    return rows == 1;
+                }
+                catch { tx.Rollback(); throw; }
             }
         }
 

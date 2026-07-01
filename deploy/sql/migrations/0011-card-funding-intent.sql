@@ -52,18 +52,26 @@ BEGIN
         -- so a filtered unique index can enforce one-open-intent-per-user at the DB level.
         OpenFlag AS (CASE WHEN Status IN ('Pending','Funding','Confirming','Issuing') THEN 1 ELSE NULL END) PERSISTED
     );
-
-    -- Public id lookup (app polls status by IntentID).
-    CREATE UNIQUE INDEX UX_CFI_IntentID ON dbo.tblT_Card_Funding_Intent (IntentID);
-
-    -- The one-open-intent-per-user guarantee: only one row per user may have OpenFlag = 1.
-    CREATE UNIQUE INDEX UX_CFI_OneOpenPerUser ON dbo.tblT_Card_Funding_Intent (UserID)
-        WHERE OpenFlag = 1;
-
-    -- Settlement looks up a user's open intent; expiry sweep filters on ExpiryDate.
-    CREATE INDEX IX_CFI_User_Status ON dbo.tblT_Card_Funding_Intent (UserID, Status);
-    CREATE INDEX IX_CFI_Expiry      ON dbo.tblT_Card_Funding_Intent (ExpiryDate);
 END
+GO
+
+-- Indexes guarded INDIVIDUALLY (not only inside the table IF NOT EXISTS) so a partial prior run
+-- that created the table but not every index self-heals on re-run.
+
+-- Public id lookup (app polls status by IntentID).
+IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = 'UX_CFI_IntentID' AND object_id = OBJECT_ID('dbo.tblT_Card_Funding_Intent'))
+    CREATE UNIQUE INDEX UX_CFI_IntentID ON dbo.tblT_Card_Funding_Intent (IntentID);
+GO
+-- The one-open-intent-per-user guarantee: only one row per user may have OpenFlag = 1.
+IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = 'UX_CFI_OneOpenPerUser' AND object_id = OBJECT_ID('dbo.tblT_Card_Funding_Intent'))
+    CREATE UNIQUE INDEX UX_CFI_OneOpenPerUser ON dbo.tblT_Card_Funding_Intent (UserID) WHERE OpenFlag = 1;
+GO
+-- Settlement looks up a user's open intent; expiry sweep filters on ExpiryDate.
+IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = 'IX_CFI_User_Status' AND object_id = OBJECT_ID('dbo.tblT_Card_Funding_Intent'))
+    CREATE INDEX IX_CFI_User_Status ON dbo.tblT_Card_Funding_Intent (UserID, Status);
+GO
+IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = 'IX_CFI_Expiry' AND object_id = OBJECT_ID('dbo.tblT_Card_Funding_Intent'))
+    CREATE INDEX IX_CFI_Expiry ON dbo.tblT_Card_Funding_Intent (ExpiryDate);
 GO
 
 -- Real forward-timing capture on the refill ledger (the previously-single UpdatedDate could
@@ -114,6 +122,12 @@ GO
 -- gross-up by the top-up rate or we over-forward into the one-way float.
 IF NOT EXISTS (SELECT 1 FROM dbo.tblM_Setting WHERE Name = 'WasabiCardWcFeeRatePctOpen')
     INSERT INTO dbo.tblM_Setting (Name, Value, DateCreated) VALUES ('WasabiCardWcFeeRatePctOpen', 0, GETDATE());
+GO
+
+-- WasabiCard deposit fee % applied on a TOP-UP (separate from the open rate; prod shows 0% for both,
+-- but WasabiCard could price top-ups differently). Never size a top-up forward off the open rate.
+IF NOT EXISTS (SELECT 1 FROM dbo.tblM_Setting WHERE Name = 'WasabiCardWcFeeRatePctTopUp')
+    INSERT INTO dbo.tblM_Setting (Name, Value, DateCreated) VALUES ('WasabiCardWcFeeRatePctTopUp', 0, GETDATE());
 GO
 
 -- Streaming forward confirmation loop: poll cadence (seconds) and max wait (minutes) for the
