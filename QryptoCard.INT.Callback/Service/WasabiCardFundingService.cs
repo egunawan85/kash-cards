@@ -61,7 +61,9 @@ namespace QryptoCard.INT.Callback.Service
         private const double DefFloor = 500, DefTarget = 700, DefEager = 500, DefDailyCap = 30000,
             DefMinTransfer = 50, DefWcFee = 1.4, DefReAlertHours = 6, DefPlatformFee = 3, DefStaleMinutes = 60;
 
-        private const string StInitiated = "Initiated", StSubmitted = "Submitted",
+        // Public so other services (the streaming forward pump) reference these instead of duplicating
+        // the string literals — a rename then can't silently misroute (RT round 4).
+        public const string StInitiated = "Initiated", StSubmitted = "Submitted",
             StConfirmed = "Confirmed", StFailed = "Failed", StUnknown = "Unknown";
 
         private static SqlParameter P(string n, object v) { return new SqlParameter(n, v ?? DBNull.Value); }
@@ -150,8 +152,11 @@ namespace QryptoCard.INT.Callback.Service
                 summary["enabled"] = Enabled();
 
                 // Floor refill (Tier 1), only when enabled, the float read succeeded, and the
-                // effective balance (pot + money on the way) is below the floor.
-                if (Enabled() && floatUsd.HasValue)
+                // effective balance (pot + money on the way) is below the floor. Also suppressed when
+                // the streaming model is on: it maintains near-zero float per-intent, so a floor top-up
+                // would fight it and re-strand capital (RT symmetry with the eager-path exclusion). The
+                // monitoring/alerting below still runs.
+                if (Enabled() && !CardFundingSettlementService.Enabled() && floatUsd.HasValue)
                 {
                     decimal effective = floatUsd.Value + inFlight;
                     if (effective < (decimal)floor && !HasInFlightFloor())

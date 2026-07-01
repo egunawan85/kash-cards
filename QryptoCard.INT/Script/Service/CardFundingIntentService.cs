@@ -36,8 +36,9 @@ namespace QryptoCard.INT.Script.Service
         public const string KindTopUp = "topup";
 
         // Settings / env (env wins, then DB, then default) — mirrors the funding service.
-        public const string SetEnabled = "CardFundingStreamingEnabled";
-        public const string EnvEnabled = "CARD_FUNDING_STREAMING_ENABLED";
+        // Keys come from the shared QryptoCard.Sec.CardFundingGate so the Callback-tier copy can't drift.
+        public const string SetEnabled = CardFundingGate.SettingEnabled;
+        public const string EnvEnabled = CardFundingGate.EnvEnabled;
         public const string SetMinDepositUsd = "CardMinDepositUsd";
         public const string SetExpiryMinutes = "CardFundingIntentExpiryMinutes";
         private const double DefMinDepositUsd = 0d;   // 0 => use the WasabiCard per-program quota
@@ -181,7 +182,7 @@ namespace QryptoCard.INT.Script.Service
                         P("@intentId", intentId), P("@userId", userId), P("@kind", kind),
                         P("@cardTypeId", (object)cardTypeId), P("@holderId", (object)holderId),
                         P("@cardNo", (object)cardNo), P("@addr", address),
-                        P("@face", face), P("@price", price), P("@feePct", feePct),
+                        P("@face", face), P("@price", price), P("@feePct", (decimal)feePct),
                         P("@pctFee", pctFee), P("@fixedFee", fixedFee), P("@expectedTotal", expectedTotal),
                         P("@now", now), P("@expiry", expiry));
                     tx.Commit();

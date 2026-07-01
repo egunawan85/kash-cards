@@ -55,9 +55,11 @@ namespace QryptoCard.INT.Script.Service
 
         private static Outcome IssueNew(IntentRow it)
         {
-            var data = it.CardTypeId.HasValue ? CardCatalogService.GetById(it.CardTypeId.Value) : null;
-            if (data == null) return Fail(it, "card_unavailable");
-
+            // Do NOT re-fetch the live catalog here: by this point the money is committed (the float is
+            // already forwarded), and CardCatalogService.GetById returns null on a TRANSIENT WasabiCard
+            // catalog hiccup — which would permanently fail a paid intent. The card type / holder need
+            // was already resolved at intent creation; isNeedCardholder is purely cosmetic on the order
+            // row and derives from the resolved HolderID.
             var x = new tblT_Card
             {
                 ID = "QRYCRDBUY" + CounterService.Next(1).ToString("000000000000"),
@@ -75,7 +77,7 @@ namespace QryptoCard.INT.Script.Service
                 ReceivedAmount = (double)it.Face,
                 Currency = "USD",
                 ReceivedCurrency = "USD",
-                isNeedCardholder = data.NeedCardHolder,
+                isNeedCardholder = it.HolderID.HasValue ? 1 : 0,
                 DateExpired = DateTime.Now.AddHours(1),
                 UserReferenceID = it.IntentID, // idempotency: a re-run replays, never double-issues
             };
@@ -84,7 +86,11 @@ namespace QryptoCard.INT.Script.Service
             try { spend = CardSpendService.OpenCard(x); }
             catch (Exception ex) { Trace.TraceError("IssueNew OpenCard threw for intent " + it.IntentID + ": " + ex.GetType().FullName); return Outcome.Pending; }
 
-            if (spend != null && spend.ProviderConfirmed) return CompleteWithCard(it, x.ID, x.CardNo);
+            // Read CardNo back from the STAMPED order row, not the stale in-memory x (OpenCard's
+            // StampOpenSuccess updates a fresh DB entity, never x.CardNo) — else the intent completes
+            // with CardNo=null and the app can't show the new card. TryCompleteNewFromOrder does this
+            // and is idempotent.
+            if (spend != null && spend.ProviderConfirmed) return TryCompleteNewFromOrder(it);
             if (spend != null && spend.ProviderFailed) return Fail(it, "open_failed");
             // Definitive NON-provider failure (insufficient balance / debit fail, or a replay of an
             // order already terminally Failed): Success=false and NOT ProviderPending. Release the

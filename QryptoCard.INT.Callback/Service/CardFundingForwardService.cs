@@ -30,6 +30,11 @@ namespace QryptoCard.INT.Callback.Service
         private const double DefTopUpFeePct = 0d;
 
         private const int Batch = 20;
+        // A FRESH Issuing intent serializes issuance (blocks others); but an intent stuck in Issuing
+        // longer than this (a genuinely ambiguous provider outcome that never resolved) must NOT block
+        // the whole pipeline forever — after this window it stops holding the gate, keeps being retried
+        // by the issuance tick, and is surfaced by the 180-min stuck alert for reconciliation.
+        private const int IssuingStaleMinutes = 30;
 
         public static string RunTick()
         {
@@ -49,14 +54,14 @@ namespace QryptoCard.INT.Callback.Service
                     string partnerRef = "INTENT-" + it.IntentID;
 
                     string st = WasabiCardFundingService.ForwardForIntent(partnerRef, it.IntentID, draw);
-                    if (st == "Submitted" || st == "Unknown")
+                    if (st == WasabiCardFundingService.StSubmitted || st == WasabiCardFundingService.StUnknown)
                     {
                         // Submitted: awaiting float credit. Unknown: funds MAY have moved — never retry;
                         // the confirm step handles it. Advance to Confirming (loser of a race no-ops).
                         if (ClaimStatus(it.IntentID, CardFundingIntentStatuses.Funding, CardFundingIntentStatuses.Confirming, partnerRef))
                             forwarded++;
                     }
-                    else if (st == "Failed")
+                    else if (st == WasabiCardFundingService.StFailed)
                     {
                         // Definitive reject — money did NOT move. Fail the intent; the deposit stays as
                         // internal-wallet residual and the user can start a new intent.
@@ -81,7 +86,7 @@ namespace QryptoCard.INT.Callback.Service
                     {
                         if (floatUsd.Value < CardDraw(it)) continue;
                         string fst = string.IsNullOrEmpty(it.ForwardRef) ? null : WasabiCardFundingService.ReadRefillStatus(it.ForwardRef);
-                        if (fst != "Submitted" && fst != "Confirmed") continue; // no landed-forward evidence -> wait/reconcile
+                        if (fst != WasabiCardFundingService.StSubmitted && fst != WasabiCardFundingService.StConfirmed) continue; // no landed-forward evidence -> wait/reconcile
                         if (ClaimIssuingIfNoneIssuing(it.IntentID))
                         {
                             WasabiCardFundingService.MarkForwardConfirmed(it.ForwardRef);
@@ -161,8 +166,10 @@ namespace QryptoCard.INT.Callback.Service
                     int rows = db.Database.ExecuteSqlCommand(
                         "UPDATE dbo.tblT_Card_Funding_Intent SET Status = 'Issuing', UpdatedDate = @now " +
                         "WHERE IntentID = @id AND Status = 'Confirming' " +
-                        "AND NOT EXISTS (SELECT 1 FROM dbo.tblT_Card_Funding_Intent WITH (UPDLOCK, HOLDLOCK) WHERE Status = 'Issuing')",
-                        P("@now", DateTime.Now), P("@id", intentId));
+                        "AND NOT EXISTS (SELECT 1 FROM dbo.tblT_Card_Funding_Intent WITH (UPDLOCK, HOLDLOCK) " +
+                        "                WHERE Status = 'Issuing' AND UpdatedDate > @staleCutoff)",
+                        P("@now", DateTime.Now), P("@id", intentId),
+                        P("@staleCutoff", DateTime.Now.AddMinutes(-IssuingStaleMinutes)));
                     tx.Commit();
                     return rows == 1;
                 }

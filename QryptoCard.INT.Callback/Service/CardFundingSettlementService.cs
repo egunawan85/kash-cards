@@ -20,8 +20,9 @@ namespace QryptoCard.INT.Callback.Service
     /// </summary>
     public static class CardFundingSettlementService
     {
-        public const string SetEnabled = "CardFundingStreamingEnabled";
-        public const string EnvEnabled = "CARD_FUNDING_STREAMING_ENABLED";
+        // Keys come from the shared QryptoCard.Sec.CardFundingGate so the INT-tier copy can't drift.
+        public const string SetEnabled = CardFundingGate.SettingEnabled;
+        public const string EnvEnabled = CardFundingGate.EnvEnabled;
 
         public static bool Enabled()
         {
