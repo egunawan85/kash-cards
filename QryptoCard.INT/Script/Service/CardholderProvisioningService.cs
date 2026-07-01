@@ -19,6 +19,10 @@ namespace QryptoCard.INT.Script.Service
     /// </summary>
     public static class CardholderProvisioningService
     {
+        // WasabiCard's "verified holder" status. Named once so the reuse lookup and the accept check
+        // can't drift, and a vocabulary change is a one-line edit.
+        public const string HolderStatusPass = "pass_audit";
+
         public class HolderResult
         {
             public bool Ok;
@@ -46,7 +50,7 @@ namespace QryptoCard.INT.Script.Service
             // NOT register a duplicate holder at WasabiCard.
             var existing = db.tblM_Cardholder.FirstOrDefault(
                 p => p.UserID == userId && p.CardTypeId == typeId
-                  && p.isActive == 1 && p.Status == "pass_audit");
+                  && p.isActive == 1 && p.Status == HolderStatusPass);
             if (existing != null && existing.HolderID.HasValue)
                 return HolderResult.Success(existing.HolderID.Value);
 
@@ -92,7 +96,7 @@ namespace QryptoCard.INT.Script.Service
             if (chdr != null && chdr.code == -1)
                 return HolderResult.Fail(chdr.msg, false);
 
-            if (chdr != null && chdr.data != null && chdr.data.status == "pass_audit")
+            if (chdr != null && chdr.data != null && chdr.data.status == HolderStatusPass)
             {
                 var chu = new tblM_Cardholder
                 {

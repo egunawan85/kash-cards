@@ -46,11 +46,7 @@ BEGIN
 
         CreatedDate     datetime      NOT NULL,
         UpdatedDate     datetime      NULL,
-        ExpiryDate      datetime      NULL,
-
-        -- Persisted flag = 1 while the intent is OPEN (awaiting/settling funds), else NULL,
-        -- so a filtered unique index can enforce one-open-intent-per-user at the DB level.
-        OpenFlag AS (CASE WHEN Status IN ('Pending','Funding','Confirming','Issuing') THEN 1 ELSE NULL END) PERSISTED
+        ExpiryDate      datetime      NULL
     );
 END
 GO
@@ -62,9 +58,12 @@ GO
 IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = 'UX_CFI_IntentID' AND object_id = OBJECT_ID('dbo.tblT_Card_Funding_Intent'))
     CREATE UNIQUE INDEX UX_CFI_IntentID ON dbo.tblT_Card_Funding_Intent (IntentID);
 GO
--- The one-open-intent-per-user guarantee: only one row per user may have OpenFlag = 1.
+-- The one-open-intent-per-user guarantee: only one row per user may be in an OPEN status. The filter
+-- predicate is on the base Status column directly (NOT a computed column — SQL Server rejects a
+-- filtered-index predicate that references a computed column, even PERSISTED).
 IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = 'UX_CFI_OneOpenPerUser' AND object_id = OBJECT_ID('dbo.tblT_Card_Funding_Intent'))
-    CREATE UNIQUE INDEX UX_CFI_OneOpenPerUser ON dbo.tblT_Card_Funding_Intent (UserID) WHERE OpenFlag = 1;
+    CREATE UNIQUE INDEX UX_CFI_OneOpenPerUser ON dbo.tblT_Card_Funding_Intent (UserID)
+        WHERE Status IN ('Pending','Funding','Confirming','Issuing');
 GO
 -- Settlement looks up a user's open intent; expiry sweep filters on ExpiryDate.
 IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = 'IX_CFI_User_Status' AND object_id = OBJECT_ID('dbo.tblT_Card_Funding_Intent'))

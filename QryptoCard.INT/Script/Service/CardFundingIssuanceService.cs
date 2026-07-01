@@ -234,9 +234,13 @@ namespace QryptoCard.INT.Script.Service
             {
                 using (var db = new DBEntities())
                 {
+                    // Status list built from the shared constants (not raw literals) so a rename can't
+                    // silently drop stuck intents from this alert. Constants only — no user input.
+                    string openMoving = "'" + CardFundingIntentService.StFunding + "','" +
+                        CardFundingIntentService.StConfirming + "','" + CardFundingIntentService.StIssuing + "'";
                     var rows = db.Database.SqlQuery<string>(
                         "SELECT IntentID FROM dbo.tblT_Card_Funding_Intent " +
-                        "WHERE Status IN ('Funding','Confirming','Issuing') AND UpdatedDate IS NOT NULL AND UpdatedDate < @cutoff",
+                        "WHERE Status IN (" + openMoving + ") AND UpdatedDate IS NOT NULL AND UpdatedDate < @cutoff",
                         P("@cutoff", DateTime.Now.AddMinutes(-StuckAlertMinutes))).ToList();
                     if (rows.Count > 0)
                         Trace.TraceError("CardFundingIssuance: " + rows.Count + " intent(s) stuck in a money-moving state > " +

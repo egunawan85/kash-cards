@@ -50,25 +50,34 @@ namespace QryptoCard.INT.Callback.Service
                 // next tick re-reads the same ledger row's status) with no stuck Confirming state.
                 foreach (var it in LoadByStatus(CardFundingIntentStatuses.Funding, Batch))
                 {
-                    decimal draw = CardDraw(it);
-                    string partnerRef = "INTENT-" + it.IntentID;
+                    // Per-intent try/catch so a throw on ONE intent (e.g. a DB blip in ForwardForIntent)
+                    // doesn't abort the whole tick and skip the CONFIRM pass below for everyone else.
+                    try
+                    {
+                        decimal draw = CardDraw(it);
+                        string partnerRef = "INTENT-" + it.IntentID;
 
-                    string st = WasabiCardFundingService.ForwardForIntent(partnerRef, it.IntentID, draw);
-                    if (st == WasabiCardFundingService.StSubmitted || st == WasabiCardFundingService.StUnknown)
-                    {
-                        // Submitted: awaiting float credit. Unknown: funds MAY have moved — never retry;
-                        // the confirm step handles it. Advance to Confirming (loser of a race no-ops).
-                        if (ClaimStatus(it.IntentID, CardFundingIntentStatuses.Funding, CardFundingIntentStatuses.Confirming, partnerRef))
-                            forwarded++;
+                        string st = WasabiCardFundingService.ForwardForIntent(partnerRef, it.IntentID, draw);
+                        if (st == WasabiCardFundingService.StSubmitted || st == WasabiCardFundingService.StUnknown)
+                        {
+                            // Submitted: awaiting float credit. Unknown: funds MAY have moved — never retry;
+                            // the confirm step handles it. Advance to Confirming (loser of a race no-ops).
+                            if (ClaimStatus(it.IntentID, CardFundingIntentStatuses.Funding, CardFundingIntentStatuses.Confirming, partnerRef))
+                                forwarded++;
+                        }
+                        else if (st == WasabiCardFundingService.StFailed)
+                        {
+                            // Definitive reject — money did NOT move. Fail the intent; the deposit stays as
+                            // internal-wallet residual and the user can start a new intent.
+                            ClaimStatus(it.IntentID, CardFundingIntentStatuses.Funding, CardFundingIntentStatuses.Failed, null);
+                        }
+                        // else pre-reserve skip (address/cap/resolve/disabled) created NO ledger row and left
+                        // the intent Funding -> retry on a later tick when the condition clears.
                     }
-                    else if (st == WasabiCardFundingService.StFailed)
+                    catch (Exception ex)
                     {
-                        // Definitive reject — money did NOT move. Fail the intent; the deposit stays as
-                        // internal-wallet residual and the user can start a new intent.
-                        ClaimStatus(it.IntentID, CardFundingIntentStatuses.Funding, CardFundingIntentStatuses.Failed, null);
+                        Trace.TraceError("CardFundingForwardService forward step failed for intent " + it.IntentID + ": " + ex.GetType().FullName);
                     }
-                    // else pre-reserve skip (address/cap/resolve/disabled) created NO ledger row and left
-                    // the intent Funding -> retry on a later tick when the condition clears.
                 }
 
                 // 2) CONFIRM: Confirming -> Issuing. Three guards, all required:
@@ -189,16 +198,17 @@ namespace QryptoCard.INT.Callback.Service
         }
     }
 
-    /// <summary>Shared intent status literals (Callback tier mirror of the INT-tier constants).</summary>
+    /// <summary>Intent status literals, sourced from the shared QryptoCard.Sec.CardFundingStatuses so
+    /// the Callback- and INT-tier sets can't drift apart (the recurring RT drift class).</summary>
     internal static class CardFundingIntentStatuses
     {
-        public const string Pending = "Pending";
-        public const string Funding = "Funding";
-        public const string Confirming = "Confirming";
-        public const string Issuing = "Issuing";
-        public const string Completed = "Completed";
-        public const string Expired = "Expired";
-        public const string Cancelled = "Cancelled";
-        public const string Failed = "Failed";
+        public const string Pending = QryptoCard.Sec.CardFundingStatuses.Pending;
+        public const string Funding = QryptoCard.Sec.CardFundingStatuses.Funding;
+        public const string Confirming = QryptoCard.Sec.CardFundingStatuses.Confirming;
+        public const string Issuing = QryptoCard.Sec.CardFundingStatuses.Issuing;
+        public const string Completed = QryptoCard.Sec.CardFundingStatuses.Completed;
+        public const string Expired = QryptoCard.Sec.CardFundingStatuses.Expired;
+        public const string Cancelled = QryptoCard.Sec.CardFundingStatuses.Cancelled;
+        public const string Failed = QryptoCard.Sec.CardFundingStatuses.Failed;
     }
 }

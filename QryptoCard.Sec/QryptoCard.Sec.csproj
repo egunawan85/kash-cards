@@ -50,6 +50,7 @@
     <Compile Include="ReferralMath.cs" />
     <Compile Include="CardFundingMath.cs" />
     <Compile Include="CardFundingGate.cs" />
+    <Compile Include="CardFundingStatuses.cs" />
     <Compile Include="RunegateWebhookVerifier.cs" />
     <Compile Include="WasabiSignatureVerifier.cs" />
     <Compile Include="WebhookCrossCheckEvaluator.cs" />

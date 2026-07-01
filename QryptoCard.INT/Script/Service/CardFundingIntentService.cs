@@ -22,15 +22,17 @@ namespace QryptoCard.INT.Script.Service
     /// </summary>
     public static class CardFundingIntentService
     {
-        // Lifecycle statuses (string constants; the DB OpenFlag computed column mirrors the OPEN set).
-        public const string StPending = "Pending";       // awaiting funds
-        public const string StFunding = "Funding";        // covered; forwarding to WasabiCard
-        public const string StConfirming = "Confirming";  // forward submitted; awaiting float credit
-        public const string StIssuing = "Issuing";        // float landed; issuing the card
-        public const string StCompleted = "Completed";
-        public const string StExpired = "Expired";
-        public const string StCancelled = "Cancelled";
-        public const string StFailed = "Failed";
+        // Lifecycle statuses (string constants). The OPEN set (Pending/Funding/Confirming/Issuing) is
+        // what the filtered unique index UX_CFI_OneOpenPerUser enforces one-per-user on.
+        // Shared source of truth in QryptoCard.Sec so the two tiers' status sets can't drift.
+        public const string StPending = CardFundingStatuses.Pending;
+        public const string StFunding = CardFundingStatuses.Funding;
+        public const string StConfirming = CardFundingStatuses.Confirming;
+        public const string StIssuing = CardFundingStatuses.Issuing;
+        public const string StCompleted = CardFundingStatuses.Completed;
+        public const string StExpired = CardFundingStatuses.Expired;
+        public const string StCancelled = CardFundingStatuses.Cancelled;
+        public const string StFailed = CardFundingStatuses.Failed;
 
         public const string KindNew = "new";
         public const string KindTopUp = "topup";
@@ -139,6 +141,16 @@ namespace QryptoCard.INT.Script.Service
                 var card = db.tblT_Card.FirstOrDefault(c => c.CardNo == cardNo && c.UserID == userId && c.isActive == 1);
                 if (card == null) return Result.Fail("Card not found.", false);
 
+                // Enforce the card type's TOP-UP (recharge) quota so an over-limit top-up can't push
+                // surplus into WasabiCard's one-way float (it would be rejected at issuance, refunded to
+                // the user, and left stranded in the float). Mirrors the min/max guard in CreateNewCard.
+                var ct = card.CardTypeId.HasValue ? CardCatalogService.GetById(card.CardTypeId.Value) : null;
+                if (ct == null) return Result.Fail("Card is not available for top-up right now. Please try again shortly.", true);
+                double rMin = Math.Max(ToDouble(ct.RechargeMinQuota), ReadNum(SetMinDepositUsd, DefMinDepositUsd));
+                double rMax = ToDouble(ct.RechargeMaxQuota);
+                if (rMin > 0 && (double)face < rMin) return Result.Fail("Minimum top-up amount is " + rMin.ToString("0.##") + " USD.", false);
+                if (rMax > 0 && (double)face > rMax) return Result.Fail("Maximum top-up amount is " + rMax.ToString("0.##") + " USD.", false);
+
                 double feePct = CardCatalogService.GetDepositFeeRate();
                 decimal fixedFee = (decimal)CardCatalogService.GetFixedDepositFee();
                 decimal pctFee = CardFundingMath.PercentageFee(feePct, face);
@@ -172,7 +184,7 @@ namespace QryptoCard.INT.Script.Service
                 " @face, @price, @feePct, @pctFee, @fixedFee, @expectedTotal, 0, " +
                 " 'Pending', @now, @expiry " +
                 "WHERE NOT EXISTS (SELECT 1 FROM dbo.tblT_Card_Funding_Intent WITH (UPDLOCK, HOLDLOCK) " +
-                "                  WHERE UserID = @userId AND OpenFlag = 1)";
+                "                  WHERE UserID = @userId AND Status IN ('Pending','Funding','Confirming','Issuing'))";
 
             using (var tx = db.Database.BeginTransaction(IsolationLevel.Serializable))
             {
