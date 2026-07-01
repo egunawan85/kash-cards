@@ -10,6 +10,7 @@ namespace QryptoCard.INT.Model.PGCrypto
         public long ID { get; set; }
         public string UUID { get; set; }
         public string InvoiceID { get; set; }
+        public string PaymentID { get; set; }   // merchant payment method (resolves the coin) — required on create
         public string CustomerID { get; set; }
         public string CustomerName { get; set; }
         public string CustomerEmail { get; set; }

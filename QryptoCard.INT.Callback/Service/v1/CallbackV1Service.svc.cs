@@ -406,8 +406,25 @@ namespace QryptoCard.INT.Callback.Service.v1
                     return;
                 }
 
-                // Confirmed-status gate: credit only on a settled/paid deposit. A pre-confirmation
-                // delivery is ignored (no credit); the confirmed delivery carries isPaid == 1.
+                // INVOICE (streaming) attribution FIRST — BEFORE the isPaid gate. A per-intent Runegate
+                // invoice payment carries PartnerReferenceID = intentId; it is attributed + settled by the
+                // invoice, not the static address, and it gates on the invoice STATUS (PartiallyPaid /
+                // OverPaid / Completed) rather than isPaid: a PartiallyPaid delivery (isPaid == 0) must
+                // still be processed so the "received so far" progress updates — TrySettleInvoicePayment
+                // only credits + advances on a COVERED status, so processing a partial is safe. Returns
+                // true iff this is one of our streaming invoices — then it is fully handled here and must
+                // NOT fall through to the legacy path or the isPaid gate below. A static-address deposit
+                // carries no matching PartnerReferenceID, so it returns false and continues unchanged.
+                if (CardFundingSettlementService.TrySettleInvoicePayment(
+                        db, x.PartnerReferenceID, x.TransactionID, x.Total ?? 0m, x.Status,
+                        x.Commision ?? 0m, x.CommisionInPercentage ?? 0d, JsonConvert.SerializeObject(x)))
+                {
+                    return;
+                }
+
+                // Confirmed-status gate (legacy static-address path): credit only on a settled/paid
+                // deposit. A pre-confirmation delivery is ignored (no credit); the confirmed delivery
+                // carries isPaid == 1.
                 if (x.isPaid != 1)
                 {
                     System.Diagnostics.Trace.TraceWarning(
@@ -456,22 +473,14 @@ namespace QryptoCard.INT.Callback.Service.v1
                 }
                 else if (credit.Success)
                 {
-                    // MUTUALLY EXCLUSIVE money-out paths (on a GENUINE new credit only). The streaming
-                    // model REPLACES the legacy eager pass-through; they must NEVER both run for one
-                    // deposit — they use different partner refs, so neither the ledger dedup nor the
-                    // daily cap would stop a double-forward into WasabiCard's one-way float (both
-                    // external red-teams flagged this). Enforced here as an if/else, and defensively
-                    // again inside each service. Streaming wins when its switch is on.
-                    if (CardFundingSettlementService.Enabled())
+                    // This is a STATIC-ADDRESS deposit (invoice deposits already returned above). It
+                    // credits the user's available balance and does NOT match any funding intent —
+                    // intents fund via their own invoices now. The legacy eager pass-through into
+                    // WasabiCard's one-way float runs ONLY when streaming is OFF (its own switch,
+                    // WasabiCardAutoFundEnabled, still gates it); under streaming a static-address
+                    // deposit simply tops up available balance with no forward.
+                    if (!CardFundingSettlementService.Enabled())
                     {
-                        // Apply the credit to the user's open funding intent; when covered it advances
-                        // to Funding for the streaming forwarder. No-op if there is no open intent.
-                        CardFundingSettlementService.OnDepositCredited(dep.UserID, net, x.TransactionID);
-                    }
-                    else
-                    {
-                        // Legacy Tier 2 (eager pass-through), gated by WasabiCardAutoFundEnabled; a no-op
-                        // when that switch is OFF. Idempotent (keyed on the TransactionID).
                         WasabiCardFundingService.OnDepositCredited(net, x.TransactionID);
                     }
                 }
