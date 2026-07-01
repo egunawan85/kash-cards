@@ -118,6 +118,14 @@ namespace QryptoCard.Dashboard.card
                 dt = JsonConvert.DeserializeObject<CardModel>(op.Data.ToString());
                 hfCardID.Value = dt.ID;
                 hfCardNo.Value = dt.CardNo;
+
+                // Deposit-into-card: top up by funding with crypto (the funding flow), gated by the UI
+                // switch. Dark by default -> no button, existing top-up modal is unaffected.
+                if (KeyModel.CARD_FUNDING_UI_ENABLED && !string.IsNullOrEmpty(dt.CardNo))
+                {
+                    string fundUrl = ResolveUrl("~/card/fundcard?topup=" + HttpUtility.UrlEncode(dt.CardNo));
+                    litAddFunds.Text = "<a class=\"btn btn-cyan\" href=\"" + Server.HtmlEncode(fundUrl) + "\">Add funds</a>";
+                }
                 // Masked card-number shape on the 3D card — only the last 4 are real (the provider
                 // never returns a full PAN). Strip to digits and show the last 4 behind a bullet mask.
                 string cardDigits = new string((dt.CardNumber ?? "").Where(char.IsDigit).ToArray());

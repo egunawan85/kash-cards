@@ -60,6 +60,7 @@
             <div class="sub">Manage this card, reveal its details, and top it up.</div>
         </div>
         <div class="dash-top-actions">
+            <asp:Literal runat="server" ID="litAddFunds" />
             <a class="btn btn-line" href='<%= ResolveUrl("~/card/mycardlist") %>'>Back to My Cards</a>
         </div>
     </div>

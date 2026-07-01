@@ -39,8 +39,10 @@
         <div class="cards-sum-sep"></div>
         <div class="cards-sum-it"><div class="n"><asp:Literal runat="server" ID="litActiveCards" Text="0" /></div><div class="l">Active</div></div>
         <div class="cards-sum-sep"></div>
-        <div class="cards-sum-it"><div class="n"><asp:Literal runat="server" ID="litAvailBal" Text="&#8212;" /></div><div class="l">Available balance</div></div>
+        <div class="cards-sum-it"><div class="n"><asp:Literal runat="server" ID="litAvailBal" Text="&#8212;" /></div><div class="l"><asp:Literal runat="server" ID="litAvailBalLab" Text="Available balance" /></div></div>
     </div>
+
+    <asp:Literal runat="server" ID="litInProgress" />
 
     <div class="mycards-grid">
         <asp:Repeater ID="rptCard" runat="server">

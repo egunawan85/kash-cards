@@ -136,6 +136,12 @@ namespace QryptoCard.INT.Script.Service.App.v1
                     s.ExpectedTotal,
                     s.ReceivedTotal,
                     s.CardNo,
+                    // Snapshot so the app can re-show the address-first funding screen on resume.
+                    s.DepositAddress,
+                    s.Face,
+                    s.Price,
+                    s.PercentageFee,
+                    s.FixedFee,
                 }, Formatting.None);
             }
             catch (Exception ex) { op.Message = ex.Message; op.Status = "error"; }
@@ -149,6 +155,32 @@ namespace QryptoCard.INT.Script.Service.App.v1
                 bool ok = CardFundingIntentService.Cancel(getUserId(em), intentId);
                 op.Status = ok ? "success" : "failed";
                 op.Message = ok ? "Cancelled" : "This intent can no longer be cancelled.";
+            }
+            catch (Exception ex) { op.Message = ex.Message; op.Status = "error"; }
+            return op;
+        }
+
+        // Open (in-flight) funding intents for the signed-in user — the card list's "In progress"
+        // section. User-scoped in the service (em -> uid); each item carries enough to render a tracker
+        // tile (id, kind, status, received/expected, and the target card for a top-up).
+        public OutputModel getCardFundingOpenIntents(string em)
+        {
+            try
+            {
+                var list = CardFundingIntentService.ListOpen(getUserId(em));
+                var items = list.Select(s => new
+                {
+                    s.IntentID,
+                    s.Kind,
+                    s.Status,
+                    s.ExpectedTotal,
+                    s.ReceivedTotal,
+                    s.CardNo,
+                    s.Face,
+                }).ToList();
+                op.Status = "success";
+                op.Message = "Success";
+                op.Data = JsonConvert.SerializeObject(items, Formatting.None);
             }
             catch (Exception ex) { op.Message = ex.Message; op.Status = "error"; }
             return op;

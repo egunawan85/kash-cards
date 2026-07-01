@@ -65,6 +65,12 @@ namespace QryptoCard.Dashboard.card
         /// </summary>
         protected global::System.Web.UI.WebControls.Literal litAvailBal;
 
+        /// <summary>litAvailBalLab control.</summary>
+        protected global::System.Web.UI.WebControls.Literal litAvailBalLab;
+
+        /// <summary>litInProgress control.</summary>
+        protected global::System.Web.UI.WebControls.Literal litInProgress;
+
         /// <summary>
         /// rptCard control.
         /// </summary>

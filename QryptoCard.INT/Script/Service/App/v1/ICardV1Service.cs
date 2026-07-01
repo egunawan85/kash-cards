@@ -79,6 +79,8 @@ namespace QryptoCard.INT.Script.Service.App.v1
         OutputModel getCardFundingIntentStatus(string em, string intentId);
         [OperationContract]
         OutputModel cancelCardFundingIntent(string em, string intentId);
+        [OperationContract]
+        OutputModel getCardFundingOpenIntents(string em);
 
         // Scheduled issuance tick (issues/tops-up cards for intents whose funds landed at WasabiCard,
         // plus the pending-intent expiry sweep). NOT user-facing — no `em`, and the app API exposes it

@@ -17,6 +17,15 @@ namespace QryptoCard.Dashboard
 
         protected void Page_Load(object sender, EventArgs e)
         {
+            // Deposit-into-card retires the standalone wallet-deposit view: the deposit address now
+            // appears ONLY inside the per-card funding flow. When the UI is on, send users to their
+            // cards instead of the reusable wallet address. Dark by default -> page works as today.
+            if (KeyModel.CARD_FUNDING_UI_ENABLED)
+            {
+                Response.Redirect("~/card/mycardlist");
+                return;
+            }
+
             // Standalone page (no master): mirror the original txdeposit auth guard — bounce to
             // the dashboard (which enforces login) when there's no authenticated session.
             if (Common.checkID())

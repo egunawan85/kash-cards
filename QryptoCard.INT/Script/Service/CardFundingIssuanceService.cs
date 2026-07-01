@@ -48,7 +48,79 @@ namespace QryptoCard.INT.Script.Service
                 Trace.TraceError("CardFundingIssuanceService.RunTick failed: " + ex.GetType().FullName);
             }
 
-            return "{\"issued\":" + issued + ",\"failed\":" + failed + ",\"expired\":" + expired + "}";
+            int notified = NotifyTerminalIntents();
+
+            return "{\"issued\":" + issued + ",\"failed\":" + failed + ",\"expired\":" + expired
+                + ",\"notified\":" + notified + "}";
+        }
+
+        // E6: email the user ONCE when their funding reaches a terminal state (Completed / Failed /
+        // Expired). Single-writer (this tick), CLAIM-then-send: a conditional UPDATE stamps NotifiedDate
+        // (WHERE NotifiedDate IS NULL) and only the row we actually claimed (rows == 1) is emailed, so a
+        // redelivery / an overlapping tick can't double-send. At-most-once by design — email is a
+        // best-effort convenience on top of the reliable channels (the live tracker + the card list); a
+        // send failure is logged, never retried into a storm, and never breaks the issuance tick. Cancelled
+        // is user-initiated and intentionally not emailed. Returns how many notifications were sent.
+        private static int NotifyTerminalIntents()
+        {
+            int sent = 0;
+            try
+            {
+                using (var db = new DBEntities())
+                {
+                    var rows = db.Database.SqlQuery<NotifyRow>(
+                        "SELECT TOP 20 IntentID, UserID, Kind, Status, CardNo " +
+                        "FROM dbo.tblT_Card_Funding_Intent " +
+                        "WHERE Status IN ('" + CardFundingIntentService.StCompleted + "','" +
+                            CardFundingIntentService.StFailed + "','" + CardFundingIntentService.StExpired + "') " +
+                        "AND NotifiedDate IS NULL ORDER BY ID ASC").ToList();
+
+                    foreach (var r in rows)
+                    {
+                        // Claim: at-most-once. If we didn't win the claim (0 rows), another pass has it.
+                        int claimed = db.Database.ExecuteSqlCommand(
+                            "UPDATE dbo.tblT_Card_Funding_Intent SET NotifiedDate = @now " +
+                            "WHERE IntentID = @id AND NotifiedDate IS NULL",
+                            P("@now", DateTime.Now), P("@id", r.IntentID));
+                        if (claimed != 1) continue;
+
+                        try
+                        {
+                            string email = null, name = null;
+                            using (var d2 = new DBEntities())
+                            {
+                                var u = d2.tblM_User.FirstOrDefault(x => x.UserID == r.UserID);
+                                if (u != null) { email = u.Email; name = u.FirstName; }
+                            }
+                            if (string.IsNullOrEmpty(email)) continue; // claimed (won't retry); nothing to send to
+
+                            bool success = string.Equals(r.Status, CardFundingIntentService.StCompleted,
+                                StringComparison.OrdinalIgnoreCase);
+                            bool topUp = string.Equals(r.Kind, CardFundingIntentService.KindTopUp,
+                                StringComparison.OrdinalIgnoreCase);
+                            NotificationMailkitService.sendCardFundingUpdate(email, name, success, topUp, r.Status);
+                            sent++;
+                        }
+                        catch (Exception ex)
+                        {
+                            // Best-effort: the row is already claimed (at-most-once). Log and move on.
+                            Trace.TraceError("CardFundingIssuance: notify email failed for intent " +
+                                r.IntentID + ": " + ex.GetType().FullName);
+                        }
+                    }
+                }
+            }
+            catch (Exception ex) { Trace.TraceError("NotifyTerminalIntents failed: " + ex.GetType().FullName); }
+            return sent;
+        }
+
+        private class NotifyRow
+        {
+            public string IntentID { get; set; }
+            public string UserID { get; set; }
+            public string Kind { get; set; }
+            public string Status { get; set; }
+            public string CardNo { get; set; }
         }
 
         private enum Outcome { Completed, Failed, Pending }
