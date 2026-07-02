@@ -114,7 +114,13 @@ namespace QryptoCard.Dashboard.card
                 catch { m = null; }
                 if (m != null && !string.IsNullOrEmpty(m.IntentID))
                 {
-                    RenderTrack(m);
+                    // Post/Redirect/Get: land on the tracker via a GET (?intent=<id>) instead of rendering it
+                    // inline from this POST. A browser refresh of a POST result re-submits the form — which,
+                    // without this redirect, mints a DUPLICATE intent + deposit address every time the user
+                    // reloads a slow-settling tracker. The GET re-reads the same intent (ResumeTracking), so
+                    // refreshing is now idempotent.
+                    Response.Redirect(ResolveUrl("~/card/fundcard?intent=" + Server.UrlEncode(m.IntentID)), false);
+                    Context.ApplicationInstance.CompleteRequest();
                     return;
                 }
             }

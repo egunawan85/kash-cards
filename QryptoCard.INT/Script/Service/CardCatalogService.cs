@@ -118,6 +118,24 @@ namespace QryptoCard.INT.Script.Service
             return Math.Ceiling(wholesale * (1d + markupPct / 100d));
         }
 
+        // The only cardholder model our frictionless holder registration can satisfy. WasabiCard tags each
+        // program with metadata.cardHolderModel: "B2B" needs just name/address/phone (what we send), while
+        // "B2C" demands full document KYC (government ID number + uploaded ID photos + nationality/
+        // occupation/salary) that we do NOT collect — its createHolder fails "The BIN not support the model".
+        public const string HolderModelB2B = "B2B";
+
+        /// <summary>
+        /// Can our funding flow actually issue this program end-to-end? True when it needs no cardholder,
+        /// or its cardholder model is the lightweight B2B shape we support. Pure + case-insensitive.
+        /// FAIL-CLOSED: a holder-required card with an unknown/missing model is treated as unsupported, so
+        /// we never advertise a card whose KYC we can't complete (which would dead-end at createHolder).
+        /// </summary>
+        public static bool IsFulfillable(bool needCardHolder, string cardHolderModel)
+        {
+            if (!needCardHolder) return true;
+            return string.Equals((cardHolderModel ?? "").Trim(), HolderModelB2B, StringComparison.OrdinalIgnoreCase);
+        }
+
         // Customer card price for a card: a flat CARD_PRICE_GLOBAL override if set, else the WasabiCard
         // wholesale price marked up by the (per-card or global) % and rounded up (MarkupPrice).
         static double ComputeCardPrice(string wholesaleStr, long cardTypeId)
@@ -185,8 +203,13 @@ namespace QryptoCard.INT.Script.Service
             if (resp == null || !resp.success || resp.data == null)
                 return new List<WCCardTypeResponseModel.Datum>();
 
+            // Offer only programs that are online AND that our funding flow can actually fulfil — i.e. no
+            // cardholder needed, or a B2B holder model. B2C (heavy document KYC) programs are hidden so the
+            // buy flow never dead-ends at createHolder ("The BIN not support the model").
             return resp.data
-                .Where(d => d != null && string.Equals(d.status, "online", StringComparison.OrdinalIgnoreCase))
+                .Where(d => d != null
+                    && string.Equals(d.status, "online", StringComparison.OrdinalIgnoreCase)
+                    && IsFulfillable(d.needCardHolder, d.metadata != null ? d.metadata.cardHolderModel : null))
                 .ToList();
         }
 

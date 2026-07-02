@@ -81,7 +81,9 @@
                     <asp:TextBox runat="server" ID="txtAmount" TextMode="Number" placeholder="0.00" />
                 </div>
                 <span class="fc-note">You'll see the card price, our service fee and the network fee before you send anything.</span>
-                <asp:Button runat="server" ID="btnContinue" CssClass="btn btn-primary fc-btn" Text="Continue" OnClick="btnContinue_Click" />
+                <asp:Button runat="server" ID="btnContinue" CssClass="btn btn-primary fc-btn" Text="Continue" OnClick="btnContinue_Click"
+                    UseSubmitBehavior="false"
+                    OnClientClick="if(this.dataset.busy=='1'){return false;} this.dataset.busy='1'; this.innerText='Processing…';" />
             </div>
         </asp:Panel>
 
@@ -234,7 +236,8 @@
                 } catch (e) { }
             }
 
-            var delays = [5000, 15000, 30000, 60000]; // backoff, then stop and rely on email + My Cards
+            var delays = [5000, 15000, 30000]; // fast-path backoff ramp, then hold at STEADY_MS
+            var STEADY_MS = 30000;             // keep polling steadily while the page is open (settlement is minutes, not seconds)
             var step = 0;
 
             function apply(data) {
@@ -260,11 +263,13 @@
                         } catch (e) { }
                     }
                     if (done) return;
-                    if (step < delays.length) {
-                        setTimeout(poll, delays[step]);
-                        step++;
-                    }
-                    // else: stop polling; the leave-note + email + My Cards cover it.
+                    // Keep polling while the page is open: ramp through the backoff, then hold at a steady
+                    // interval. Settlement takes minutes (two on-chain hops), so we must NOT stop early — only
+                    // a terminal state (Completed/Failed/Expired, handled by `done` above) ends the poller. The
+                    // email + My Cards remain the fallback for a user who closes the page.
+                    var next = step < delays.length ? delays[step] : STEADY_MS;
+                    step++;
+                    setTimeout(poll, next);
                 };
                 req.send();
             }

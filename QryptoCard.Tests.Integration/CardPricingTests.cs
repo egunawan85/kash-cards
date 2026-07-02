@@ -21,5 +21,23 @@ namespace QryptoCard.Tests.Integration
         {
             Assert.Equal(expected, CardCatalogService.MarkupPrice(wholesale, markupPct));
         }
+
+        // Catalog allowlist: we only offer programs our funding flow can actually issue — no cardholder
+        // needed, or a B2B holder model. B2C (heavy document KYC we don't collect) and any unknown/missing
+        // model on a holder-required card are hidden, so the buy flow never dead-ends at createHolder.
+        [Theory]
+        [InlineData(false, "B2C", true)]    // no holder needed -> model irrelevant, always fulfillable
+        [InlineData(false, null, true)]
+        [InlineData(true, "B2B", true)]     // B2B holder = the lightweight shape we send
+        [InlineData(true, "b2b", true)]     // case-insensitive
+        [InlineData(true, " B2B ", true)]   // trimmed
+        [InlineData(true, "B2C", false)]    // B2C = full document KYC -> not offered
+        [InlineData(true, null, false)]     // fail-closed: unknown model on a holder-required card
+        [InlineData(true, "", false)]
+        [InlineData(true, "SOMETHING_NEW", false)]
+        public void IsFulfillable_OnlyNoHolderOrB2B(bool needCardHolder, string model, bool expected)
+        {
+            Assert.Equal(expected, CardCatalogService.IsFulfillable(needCardHolder, model));
+        }
     }
 }
