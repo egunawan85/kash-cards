@@ -23,13 +23,25 @@ namespace QryptoCard.INT.Callback.Service
     /// deposit commission is ABSORBED by our margin (our real float nets less) rather than charged on top;
     /// it also keeps issuance's ExpectedTotal debit balanced against the wallet credit.
     ///
-    /// SPLIT-PAYMENT NOTE (payment-request specific): Runegate aggregates partial on-chain payments to the
-    /// request's address INTERNALLY and fires the deposit webhook only ONCE, on completion (Completed/
-    /// OverPaid), reporting the FINAL chunk's amount — it does NOT webhook each partial. So the common
-    /// single-send case (and a single overpaid send) covers exactly; a genuinely SPLIT payment reports
-    /// only the last chunk, under-accumulates, and the intent stays Pending until an operator reconciles
-    /// it (the earlier chunks are safe in our Runegate merchant balance; the D1 reconcile view flags the
-    /// shortfall). No funds are lost — it degrades into the existing stuck-intent → operator path.
+    /// LEDGER NOTE: for intent-path deposits the wallet credit is the GROSS (Amount stores gross, not
+    /// net) — unlike the legacy static path which credits net. So a reconciliation query must NOT compute
+    /// "what the customer sent" as Amount + Commision for these rows (that double-counts the commission);
+    /// the gross IS Amount. Gross-crediting is sound ONLY because the credited amount is drained by
+    /// issuance's ExpectedTotal debit as the intent leaves Pending — hence credit + accumulate happen only
+    /// while Pending (a deposit to an already-advanced/terminal intent is journaled, not credited). Any
+    /// future withdraw/cash-out path must reconcile gross-vs-net before it can pay out available balance.
+    ///
+    /// SPLIT-PAYMENT NOTE (payment-request specific, verified against the Runegate source): Runegate fires
+    /// a deposit webhook for EVERY on-chain partial payment (not once on completion), but every partial of
+    /// the same payment request carries the SAME TransactionID (the request's id) — the per-chunk amount
+    /// differs but the dedup key does not. So on a genuinely SPLIT payment: the FIRST chunk is credited
+    /// (gross) to available balance and the intent stays Pending (< ExpectedTotal); every LATER chunk is a
+    /// TransactionID duplicate → dropped (duplicate_event) → NOT credited. The intent stays stuck at the
+    /// first-chunk amount. No funds are lost (Runegate holds the full amount in our merchant balance; the
+    /// D1 reconcile view flags ReceivedTotal &lt; ExpectedTotal), but this needs an OPERATOR:
+    ///   RECONCILE A STUCK SPLIT INTENT BY CREDITING ONLY THE SHORTFALL (ExpectedTotal − ReceivedTotal),
+    ///   NEVER RE-CREDITING THE FULL ExpectedTotal — the first chunk is ALREADY in available balance.
+    /// (The webhook payload carries no per-chunk unique id, so per-partial dedup isn't possible app-side.)
     ///
     /// Gated by CardFundingStreamingEnabled (ships OFF). Best-effort, never throws into the credit path.
     /// </summary>
@@ -48,10 +60,10 @@ namespace QryptoCard.INT.Callback.Service
         }
 
         /// <summary>
-        /// If this deposit webhook is for one of our per-intent invoices (PartnerReferenceID matches an
-        /// intent), settle it and return TRUE (handled) — the caller must NOT fall through to the legacy
-        /// static-address path. Returns FALSE if it is not our invoice (caller handles it legacy-style).
-        /// Credits the wallet ONCE on the covered/terminal event (dedup on the InvoiceID = txId).
+        /// If this deposit webhook is for one of our per-intent payment requests (PartnerReferenceID
+        /// matches an intent), settle it and return TRUE (handled) — the caller must NOT fall through to
+        /// the legacy static-address path. Returns FALSE if it is not ours (caller handles it legacy-style).
+        /// Credits the wallet ONCE per webhook TransactionID (dedup), and only while the intent is Pending.
         /// </summary>
         // Mirror the legacy PGCryptoCreditFloor: ignore dust below $1 (never credit / accrue on it), so a
         // malformed sub-$1 event can't credit pennies and wrongly nudge the accumulate toward covered.
@@ -63,23 +75,39 @@ namespace QryptoCard.INT.Callback.Service
             if (!Enabled()) return false;
             if (string.IsNullOrWhiteSpace(partnerRef)) return false;
 
-            string userId; decimal expectedTotal;
+            string userId; decimal expectedTotal; string intentStatus;
             try
             {
-                // PartnerReferenceID == IntentID (we set it that way at invoice creation).
+                // PartnerReferenceID == IntentID (we set it that way at payment-request creation).
                 var rows = db.Database.SqlQuery<InvoiceIntentRow>(
-                    "SELECT TOP 1 IntentID, UserID, ExpectedTotal FROM dbo.tblT_Card_Funding_Intent WHERE IntentID = @ref",
+                    "SELECT TOP 1 IntentID, UserID, ExpectedTotal, Status FROM dbo.tblT_Card_Funding_Intent WHERE IntentID = @ref",
                     P("@ref", partnerRef)).ToList();
-                if (rows.Count == 0) return false; // not one of our streaming invoices → legacy path
+                if (rows.Count == 0) return false; // not one of our streaming intents → legacy path
                 userId = rows[0].UserID;
                 expectedTotal = rows[0].ExpectedTotal;
+                intentStatus = rows[0].Status;
             }
             catch (Exception ex)
             {
                 // Couldn't determine — do NOT claim it (a transient DB error shouldn't hijack a legacy
-                // deposit); the legacy path's unknown-address branch safely no-ops on the invoice address.
+                // deposit); the legacy path's unknown-address branch safely no-ops on the dynamic address.
                 Trace.TraceError("CardFundingSettlement.TrySettleInvoicePayment lookup failed for ref " + partnerRef + ": " + ex.GetType().FullName);
                 return false;
+            }
+
+            // It IS our intent (so we must handle it — return true — and NOT fall through to the legacy
+            // static-address path). Only credit + accumulate GROSS while the intent is still PENDING: the
+            // gross credit is sound only because it is drained by issuance's ExpectedTotal debit, which
+            // happens exactly once as the intent advances OUT of Pending. A deposit arriving after the
+            // intent has already advanced/terminated (Funding/Issuing/Completed/Expired/Cancelled/Failed)
+            // is unexpected — crediting gross then would leave ~0.5% unbacked in spendable balance with no
+            // offsetting debit. So journal it for operator reconciliation instead (the funds are safe in
+            // our Runegate merchant balance; the D1 reconcile view surfaces the intent). See the class doc.
+            if (!string.Equals(intentStatus, "Pending", StringComparison.OrdinalIgnoreCase))
+            {
+                Trace.TraceError("CardFundingSettlement: deposit for intent " + partnerRef + " in non-Pending state '" +
+                    intentStatus + "' — journaled for reconcile, not credited (avoids unbacked gross credit).");
+                return true;
             }
 
             // It IS our intent. Credit each genuine PER-TRANSACTION GROSS ONCE, then accumulate ReceivedTotal
@@ -147,6 +175,7 @@ namespace QryptoCard.INT.Callback.Service
             public string IntentID { get; set; }
             public string UserID { get; set; }
             public decimal ExpectedTotal { get; set; }
+            public string Status { get; set; }
         }
 
         private static SqlParameter P(string n, object v) { return new SqlParameter(n, v ?? DBNull.Value); }

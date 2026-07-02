@@ -247,12 +247,13 @@ namespace QryptoCard.INT.Script.Service
         }
 
         // Mint a Runegate PAYMENT REQUEST for this intent: unique dynamic deposit address for a custom
-        // Amount = ExpectedTotal, tagged PartnerReferenceID = intentId, with IdempotencyKey = intentId so
-        // a retried create returns the SAME address/transaction rather than minting a second one. Returns
-        // the created transaction (Address + TransactionID) or null if config is missing / the gateway
-        // fails / the returned coin isn't USDT (defensive — never show a non-USDT address). Needs NO
-        // pre-registered product or customer; the CoinID resolves to USDT-TRC20 and each request gets its
-        // own dynamic address, so concurrent intents are safe.
+        // Amount = ExpectedTotal, tagged PartnerReferenceID = intentId. IdempotencyKey = intentId dedups a
+        // retried single POST on Runegate's side; note the intentId is freshly generated per create call,
+        // so a user re-submitting the funding form mints a NEW intent + request (the old one just expires),
+        // not the same address. Returns the created transaction (Address + TransactionID) or null if config
+        // is missing / the gateway fails / the returned coin isn't USDT (defensive — never show a non-USDT
+        // address). Needs NO pre-registered product or customer; each request gets its own dynamic address,
+        // so concurrent intents are safe.
         private static TransactionModel CreatePaymentForIntent(string intentId, decimal expectedTotal)
         {
             string merchantId = ReadParam1(EnvMerchantId, SetMerchantId);
@@ -279,11 +280,11 @@ namespace QryptoCard.INT.Script.Service
             try { resp = PGCryptoService.createPayment(req); }
             catch (Exception ex) { Trace.TraceError("CardFundingIntent: createPayment threw: " + ex.GetType().FullName); resp = null; }
             if (resp == null || string.IsNullOrWhiteSpace(resp.Address)) return null;
-            // Defensive: only proceed with a USDT payment request (the CoinID should resolve to
-            // USDT-TRC20; never hand the customer a non-USDT address).
-            if (!string.IsNullOrEmpty(resp.Symbol) && !string.Equals(resp.Symbol, "USDT", StringComparison.OrdinalIgnoreCase))
+            // Defensive, FAIL-CLOSED: proceed only when the response symbol is explicitly USDT. A missing/
+            // empty or non-USDT symbol is rejected (never hand the customer an address for the wrong coin).
+            if (!string.Equals(resp.Symbol, "USDT", StringComparison.OrdinalIgnoreCase))
             {
-                Trace.TraceError("CardFundingIntent: payment request returned non-USDT symbol '" + resp.Symbol + "' — rejecting.");
+                Trace.TraceError("CardFundingIntent: payment request returned non-USDT symbol '" + (resp.Symbol ?? "(null)") + "' — rejecting.");
                 return null;
             }
             return resp;

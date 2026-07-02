@@ -32,6 +32,7 @@ IF NOT EXISTS (SELECT 1 FROM dbo.tblM_Setting WHERE Name = 'RunegateTokenId')
 GO
 
 -- ---- retire the invoice-model config (no longer read after the payment-request switch) ----
-
+-- ROLLBACK NOTE (ops): this DELETE is one-way — reverting to the invoice model would require manually
+-- re-inserting RunegatePaymentId/ProductId/CustomerId (and their values). Acceptable for a one-way switch.
 DELETE FROM dbo.tblM_Setting WHERE Name IN ('RunegatePaymentId', 'RunegateProductId', 'RunegateCustomerId');
 GO
