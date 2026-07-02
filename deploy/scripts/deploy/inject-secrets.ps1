@@ -212,7 +212,16 @@ $OptionalConfigNames = @(
     # Per-card overrides (CARD_PRICE_MARKUP_<cardTypeId>) are read by the app too; add the specific
     # name here if you want to seed one from KV for a given card.
     'CARD_PRICE_MARKUP',
-    'CARD_PRICE_GLOBAL'
+    'CARD_PRICE_GLOBAL',
+    # Deposit-into-card: two switches (backend money movement + customer UI) and the Runegate
+    # payment-request ids. Unset => the feature stays fully dark (backend won't mint requests, the
+    # new UI doesn't render). Streaming + the ids also have DB fallbacks (tblM_Setting Value/Param1);
+    # the env var wins when set. See deploy/secrets/.env.example for the full description.
+    'CARD_FUNDING_STREAMING_ENABLED',
+    'CARD_FUNDING_UI_ENABLED',
+    'RUNEGATE_MERCHANT_ID',
+    'RUNEGATE_COIN_ID',
+    'RUNEGATE_TOKEN_ID'
 )
 
 # -- Pull each secret from KV once (cache in a local map). Never log values. --
