@@ -35,11 +35,22 @@ namespace QryptoCard.INT.Model.WasabiCard
             public int maxCount { get; set; }
             public string status { get; set; }
             public ExtFieldVO extFieldVO { get; set; }
+            public Metadata metadata { get; set; }
         }
 
         public class ExtFieldVO
         {
             public List<RechargeCurrencyInfo> rechargeCurrencyInfos { get; set; }
+        }
+
+        // Per-program metadata. cardHolderModel selects which cardholder-registration shape WasabiCard
+        // expects when needCardHolder is true: "B2B" (name/address/phone only — what our frictionless
+        // holder flow sends) vs "B2C" (full document KYC: government ID number + uploaded ID photos +
+        // nationality/occupation/salary — which we do NOT collect). We only offer cards we can actually
+        // fulfil, so this drives the catalog allowlist (see CardCatalogService).
+        public class Metadata
+        {
+            public string cardHolderModel { get; set; }
         }
 
         public class RechargeCurrencyInfo
