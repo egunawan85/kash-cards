@@ -7,20 +7,29 @@ using QryptoCard.Sec;
 namespace QryptoCard.INT.Callback.Service
 {
     /// <summary>
-    /// Deposit-into-card settlement (Callback tier), INVOICE model: each intent has its own Runegate
-    /// invoice (unique address + PartnerReferenceID = intentId). Runegate delivers ONE deposit webhook
-    /// per settled on-chain payment (an invoice can be paid by MULTIPLE transactions — split payment),
-    /// carrying that PartnerReferenceID and the payment's net amount.
+    /// Deposit-into-card settlement (Callback tier), PAYMENT-REQUEST model: each intent has its own
+    /// Runegate payment request (unique dynamic address + PartnerReferenceID = intentId). Runegate
+    /// delivers ONE deposit webhook per settled on-chain payment (an intent can be paid by MULTIPLE
+    /// transactions — split payment), carrying that PartnerReferenceID, the NET it credited us, and the
+    /// gateway commission it kept.
     ///
-    /// Settlement is amount-driven (NOT status-driven), exactly like the proven engine matcher:
-    ///   - credit each genuine per-transaction net to the wallet ONCE (dedup on the payment's
+    /// Settlement is amount-driven (NOT status-driven), exactly like the proven engine matcher, and works
+    /// in GROSS on-chain terms (net + commission = what the customer actually SENT):
+    ///   - credit each genuine per-transaction GROSS to the wallet ONCE (dedup on the payment's
     ///     TransactionID), and
-    ///   - ACCUMULATE ReceivedTotal (+= net) atomically, advancing Pending→Funding when the accumulated
-    ///     total covers ExpectedTotal.
-    /// This handles split (each tx credited + accrued), exact, and overpay (surplus → available balance)
-    /// correctly. Crediting only the covering event / overwriting ReceivedTotal (an earlier bug) LOST
-    /// split-payment funds. NOTE: assumes the webhook's amount is PER-TRANSACTION net (same as the legacy
-    /// static path); reconfirm on the live invoice spike.
+    ///   - ACCUMULATE ReceivedTotal (+= gross) atomically, advancing Pending→Funding when the accumulated
+    ///     gross covers ExpectedTotal.
+    /// Working in gross means the customer pays the clean ExpectedTotal sticker and Runegate's ~0.5%
+    /// deposit commission is ABSORBED by our margin (our real float nets less) rather than charged on top;
+    /// it also keeps issuance's ExpectedTotal debit balanced against the wallet credit.
+    ///
+    /// SPLIT-PAYMENT NOTE (payment-request specific): Runegate aggregates partial on-chain payments to the
+    /// request's address INTERNALLY and fires the deposit webhook only ONCE, on completion (Completed/
+    /// OverPaid), reporting the FINAL chunk's amount — it does NOT webhook each partial. So the common
+    /// single-send case (and a single overpaid send) covers exactly; a genuinely SPLIT payment reports
+    /// only the last chunk, under-accumulates, and the intent stays Pending until an operator reconciles
+    /// it (the earlier chunks are safe in our Runegate merchant balance; the D1 reconcile view flags the
+    /// shortfall). No funds are lost — it degrades into the existing stuck-intent → operator path.
     ///
     /// Gated by CardFundingStreamingEnabled (ships OFF). Best-effort, never throws into the credit path.
     /// </summary>
@@ -73,26 +82,31 @@ namespace QryptoCard.INT.Callback.Service
                 return false;
             }
 
-            // It IS our invoice. Credit each genuine PER-TRANSACTION net ONCE, then accumulate ReceivedTotal
+            // It IS our intent. Credit each genuine PER-TRANSACTION GROSS ONCE, then accumulate ReceivedTotal
             // and advance when it covers ExpectedTotal. Amount-driven (not status-driven) so split payments
-            // are summed correctly; the volatile Status is never the authority. See the class doc.
+            // are summed correctly; the volatile Status is never the authority. Working in GROSS (net +
+            // commission = what the customer sent) means the customer pays the clean ExpectedTotal and the
+            // gateway commission is absorbed by our margin, and keeps the wallet credit aligned with
+            // issuance's ExpectedTotal debit. See the class doc.
+            decimal gross = CardFundingMath.GrossOnChain(amount, commission);
             try
             {
-                // Dust floor (mirror legacy): sub-$1 events are journaled, never credited/accrued.
-                if (amount < CreditFloor)
+                // Dust floor (mirror legacy): sub-$1 (gross) events are journaled, never credited/accrued.
+                if (gross < CreditFloor)
                 {
-                    Trace.TraceError("CardFundingSettlement: sub-floor amount " + amount + " for intent " + partnerRef + " — journaled, not credited.");
+                    Trace.TraceError("CardFundingSettlement: sub-floor gross " + gross + " for intent " + partnerRef + " — journaled, not credited.");
                     return true;
                 }
 
                 WalletService.EnsureWallet(userId);
                 // Dedup on the webhook's TransactionID (the Runegate payment-event id) → each on-chain
-                // payment credits the wallet EXACTLY once, even on redelivery.
-                var credit = WalletService.CreditDeposit(userId, amount, commission, commissionPct, txId, status, rawJson);
+                // payment credits the wallet EXACTLY once, even on redelivery. Credit the GROSS (commission
+                // recorded separately for reconciliation); the ~0.5% is absorbed at the real float.
+                var credit = WalletService.CreditDeposit(userId, gross, commission, commissionPct, txId, status, rawJson);
                 if (credit.Success)
                 {
-                    // Genuine new credit → accumulate this net + advance-if-now-covered (atomic, idempotent).
-                    AccumulateAndMaybeAdvance(partnerRef, amount, expectedTotal);
+                    // Genuine new credit → accumulate this gross + advance-if-now-covered (atomic, idempotent).
+                    AccumulateAndMaybeAdvance(partnerRef, gross, expectedTotal);
                 }
                 else if (credit.FailureReason != "duplicate_event")
                 {
@@ -109,20 +123,22 @@ namespace QryptoCard.INT.Callback.Service
             return true; // it is our invoice — handled (or journaled for reconcile)
         }
 
-        // Accumulate the credited net onto ReceivedTotal and advance Pending→Funding once it covers
+        // Accumulate the credited GROSS onto ReceivedTotal and advance Pending→Funding once it covers
         // ExpectedTotal — a SINGLE atomic UPDATE using the pre-update RHS, state-gated on Pending so a
         // late/dup event or an already-advanced intent is a no-op. Called ONLY on a genuine new credit.
-        private static void AccumulateAndMaybeAdvance(string intentId, decimal net, decimal expectedTotal)
+        // ReceivedTotal is in GROSS on-chain terms (what the customer sent), so it is directly comparable
+        // to the ExpectedTotal sticker; the gateway commission is absorbed at the float, not here.
+        private static void AccumulateAndMaybeAdvance(string intentId, decimal gross, decimal expectedTotal)
         {
             using (var db = new DBEntities())
             {
                 db.Database.ExecuteSqlCommand(
                     "UPDATE dbo.tblT_Card_Funding_Intent " +
-                    "SET ReceivedTotal = ReceivedTotal + @net, " +
-                    "    Status = CASE WHEN ReceivedTotal + @net >= @expected THEN 'Funding' ELSE Status END, " +
+                    "SET ReceivedTotal = ReceivedTotal + @gross, " +
+                    "    Status = CASE WHEN ReceivedTotal + @gross >= @expected THEN 'Funding' ELSE Status END, " +
                     "    UpdatedDate = @now " +
                     "WHERE IntentID = @id AND Status = 'Pending'",
-                    P("@net", net), P("@expected", expectedTotal), P("@now", DateTime.Now), P("@id", intentId));
+                    P("@gross", gross), P("@expected", expectedTotal), P("@now", DateTime.Now), P("@id", intentId));
             }
         }
 

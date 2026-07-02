@@ -8,6 +8,8 @@ namespace QryptoCard.INT.Model.PGCrypto
     public class TransactionModel
     {
         public string TransactionID { get; set; }
+        public string MerchantID { get; set; }       // merchant that owns the payment request (createPayment input)
+        public string IdempotencyKey { get; set; }   // dedup on (Company,Merchant,key) — we set it = intentId
         public string PaymentType { get; set; }
         public string CoinID { get; set; }
         public string Coin { get; set; }
