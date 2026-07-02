@@ -47,6 +47,9 @@ namespace QryptoCard.INT.Script.Service
         public const string EnvEnabled = CardFundingGate.EnvEnabled;
         public const string SetMinDepositUsd = "CardMinDepositUsd";
         public const string SetExpiryMinutes = "CardFundingIntentExpiryMinutes";
+        // Expire the intent this many minutes BEFORE the deposit address is recycled, leaving time for a
+        // last-minute deposit to confirm on-chain while the address is still alive.
+        private const int ExpiryBufferMinutes = 15;
         private const double DefMinDepositUsd = 0d;   // 0 => use the WasabiCard per-program quota
         private const double DefExpiryMinutes = 1440d;
 
@@ -151,7 +154,7 @@ namespace QryptoCard.INT.Script.Service
                     return Result.Fail("Deposit request is temporarily unavailable. Please try again shortly.", true);
 
                 return InsertIntent(db, intentId, userId, KindNew, cardTypeId, holder.HolderId, null,
-                    inv.Address, inv.TransactionID, face, price, feePct, pctFee, fixedFee, expectedTotal);
+                    inv.Address, inv.TransactionID, inv.DateExpired, face, price, feePct, pctFee, fixedFee, expectedTotal);
             }
         }
 
@@ -191,7 +194,7 @@ namespace QryptoCard.INT.Script.Service
                     return Result.Fail("Deposit request is temporarily unavailable. Please try again shortly.", true);
 
                 return InsertIntent(db, intentId, userId, KindTopUp, null, null, cardNo,
-                    inv.Address, inv.TransactionID, face, 0m, feePct, pctFee, fixedFee, expectedTotal);
+                    inv.Address, inv.TransactionID, inv.DateExpired, face, 0m, feePct, pctFee, fixedFee, expectedTotal);
             }
         }
 
@@ -200,11 +203,15 @@ namespace QryptoCard.INT.Script.Service
         // "the user's single open intent"). IntentID is unique (UX_CFI_IntentID); a GUID collision is
         // astronomically unlikely and surfaces as a retryable duplicate-key error.
         private static Result InsertIntent(DBEntities db, string intentId, string userId, string kind, long? cardTypeId,
-            long? holderId, string cardNo, string invoiceAddress, string invoiceId, decimal face, decimal price, double feePct,
+            long? holderId, string cardNo, string invoiceAddress, string invoiceId, DateTime? addressExpiryUtc, decimal face, decimal price, double feePct,
             decimal pctFee, decimal fixedFee, decimal expectedTotal)
         {
             DateTime now = DateTime.Now;
-            DateTime expiry = now.AddMinutes(ReadNum(SetExpiryMinutes, DefExpiryMinutes));
+            // Expire the intent from the deposit ADDRESS's own lifetime (minus a confirmation buffer) so the
+            // UI never shows an address Runegate has already recycled. Falls back to the configured window
+            // only if the gateway returned no expiry.
+            DateTime expiry = CardFundingMath.IntentExpiry(now, addressExpiryUtc, DateTime.UtcNow,
+                ExpiryBufferMinutes, (int)ReadNum(SetExpiryMinutes, DefExpiryMinutes));
 
             const string sql =
                 "INSERT INTO dbo.tblT_Card_Funding_Intent " +

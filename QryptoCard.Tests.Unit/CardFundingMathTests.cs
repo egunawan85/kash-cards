@@ -1,3 +1,4 @@
+using System;
 using QryptoCard.Sec;
 using Xunit;
 
@@ -82,6 +83,61 @@ namespace QryptoCard.Tests.Unit
             Assert.Equal(0m, CardFundingMath.GrossOnChain(-5m, -1m));
             Assert.Equal(10m, CardFundingMath.GrossOnChain(10m, -1m));
             Assert.Equal(2m, CardFundingMath.GrossOnChain(-1m, 2m));
+        }
+
+        [Fact]
+        public void IntentExpiry_TracksAddressLifeMinusBuffer()
+        {
+            // Runegate's address lives 60 min (expiry = utcNow + 60); with a 15-min buffer the intent
+            // should expire ~45 min after creation, in the created clock — never after the address dies.
+            var createdLocal = new DateTime(2026, 7, 2, 10, 0, 0, DateTimeKind.Local);
+            var utcNow = new DateTime(2026, 7, 2, 3, 0, 0, DateTimeKind.Utc);      // any offset from local
+            var addressExpiry = utcNow.AddMinutes(60);
+            var expiry = CardFundingMath.IntentExpiry(createdLocal, addressExpiry, utcNow, 15, 1440);
+            Assert.Equal(createdLocal.AddMinutes(45), expiry);
+        }
+
+        [Fact]
+        public void IntentExpiry_UnspecifiedKindTreatedAsUtc()
+        {
+            // A JSON-deserialized expiry often has Kind=Unspecified; it must be read as UTC (Runegate sets
+            // it from UtcNow), not as local — else a non-UTC server would skew the window by its offset.
+            var createdLocal = new DateTime(2026, 7, 2, 10, 0, 0, DateTimeKind.Local);
+            var utcNow = new DateTime(2026, 7, 2, 3, 0, 0, DateTimeKind.Utc);
+            var addressExpiryUnspec = DateTime.SpecifyKind(utcNow.AddMinutes(60), DateTimeKind.Unspecified);
+            var expiry = CardFundingMath.IntentExpiry(createdLocal, addressExpiryUnspec, utcNow, 15, 1440);
+            Assert.Equal(createdLocal.AddMinutes(45), expiry);
+        }
+
+        [Fact]
+        public void IntentExpiry_NoAddressExpiry_UsesFallback()
+        {
+            var createdLocal = new DateTime(2026, 7, 2, 10, 0, 0, DateTimeKind.Local);
+            var utcNow = new DateTime(2026, 7, 2, 3, 0, 0, DateTimeKind.Utc);
+            var expiry = CardFundingMath.IntentExpiry(createdLocal, null, utcNow, 15, 45);
+            Assert.Equal(createdLocal.AddMinutes(45), expiry);
+        }
+
+        [Fact]
+        public void IntentExpiry_NearDeadAddress_ClampedToAtLeastOneMinute()
+        {
+            // Address already within the buffer of dying -> never non-positive; yields a minimal window.
+            var createdLocal = new DateTime(2026, 7, 2, 10, 0, 0, DateTimeKind.Local);
+            var utcNow = new DateTime(2026, 7, 2, 3, 0, 0, DateTimeKind.Utc);
+            var addressExpiry = utcNow.AddMinutes(5);   // only 5 min left, buffer 15
+            var expiry = CardFundingMath.IntentExpiry(createdLocal, addressExpiry, utcNow, 15, 1440);
+            Assert.Equal(createdLocal.AddMinutes(1), expiry);
+        }
+
+        [Fact]
+        public void IntentExpiry_LongerAddressLife_IsHonored_NotCappedByFallback()
+        {
+            // If Runegate ever lengthens the address life, honor it (don't cap at the fallback).
+            var createdLocal = new DateTime(2026, 7, 2, 10, 0, 0, DateTimeKind.Local);
+            var utcNow = new DateTime(2026, 7, 2, 3, 0, 0, DateTimeKind.Utc);
+            var addressExpiry = utcNow.AddMinutes(120);
+            var expiry = CardFundingMath.IntentExpiry(createdLocal, addressExpiry, utcNow, 15, 45);
+            Assert.Equal(createdLocal.AddMinutes(105), expiry);
         }
     }
 }

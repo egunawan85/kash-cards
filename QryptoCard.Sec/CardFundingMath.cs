@@ -61,5 +61,33 @@ namespace QryptoCard.Sec
             if (commission < 0m) commission = 0m;
             return netReceived + commission;
         }
+
+        /// <summary>
+        /// When a funding intent should expire, derived from the deposit address's OWN lifetime so the two
+        /// can never drift. Runegate recycles the payment-request address at <paramref name="addressExpiryUtc"/>
+        /// (a UTC instant it returns on create); we expire the intent <paramref name="bufferMinutes"/> BEFORE
+        /// that, so the customer's last accepted moment still leaves time for the on-chain deposit to confirm
+        /// while the address is alive — we never show an address that's about to be recycled. Returned in the
+        /// same local clock as <paramref name="createdLocal"/> (matching how CreatedDate is stored), computed
+        /// via a TZ-agnostic remaining-lifetime DURATION so a UTC-vs-local server can't skew it. If Runegate
+        /// gave no expiry, fall back to <paramref name="fallbackMinutes"/> from creation. The window is
+        /// clamped to at least 1 minute (never non-positive), but is NOT capped by the fallback — a longer
+        /// address life is honored.
+        /// </summary>
+        public static DateTime IntentExpiry(DateTime createdLocal, DateTime? addressExpiryUtc, DateTime utcNow,
+            int bufferMinutes, int fallbackMinutes)
+        {
+            if (bufferMinutes < 0) bufferMinutes = 0;
+            if (fallbackMinutes < 1) fallbackMinutes = 1;
+            if (!addressExpiryUtc.HasValue) return createdLocal.AddMinutes(fallbackMinutes);
+
+            DateTime addr = addressExpiryUtc.Value;
+            // A value deserialized from JSON may arrive Kind=Unspecified; Runegate sets it from UtcNow, so
+            // treat an unspecified kind as UTC. A Local/Utc kind is normalized by ToUniversalTime().
+            if (addr.Kind == DateTimeKind.Unspecified) addr = DateTime.SpecifyKind(addr, DateTimeKind.Utc);
+            double minutesLeft = (addr.ToUniversalTime() - utcNow.ToUniversalTime()).TotalMinutes - bufferMinutes;
+            if (minutesLeft < 1) minutesLeft = 1;   // never non-positive; a near-dead address yields a short window
+            return createdLocal.AddMinutes(minutesLeft);
+        }
     }
 }
