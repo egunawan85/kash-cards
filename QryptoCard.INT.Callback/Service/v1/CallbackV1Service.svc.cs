@@ -406,13 +406,14 @@ namespace QryptoCard.INT.Callback.Service.v1
                     return;
                 }
 
-                // INVOICE (streaming) attribution FIRST — BEFORE the isPaid gate. A per-intent Runegate
-                // invoice payment carries PartnerReferenceID = intentId; it is attributed + settled by the
-                // invoice, not the static address, and it gates on the invoice STATUS (PartiallyPaid /
-                // OverPaid / Completed) rather than isPaid: a PartiallyPaid delivery (isPaid == 0) must
-                // still be processed so the "received so far" progress updates — TrySettleInvoicePayment
-                // only credits + advances on a COVERED status, so processing a partial is safe. Returns
-                // true iff this is one of our streaming invoices — then it is fully handled here and must
+                // PAYMENT-REQUEST (streaming) attribution FIRST — BEFORE the isPaid gate. A per-intent
+                // Runegate payment request carries PartnerReferenceID = intentId; it is attributed +
+                // settled by the intent, not the static address. Settlement is STATUS-AGNOSTIC and
+                // amount-driven: it credits ANY delivery for a still-Pending intent whose gross (net +
+                // commission) clears the $1 dust floor — the volatile Status string is never trusted — and
+                // advances the intent only when the accumulated gross covers ExpectedTotal. This must run
+                // even for a not-yet-"paid" delivery (isPaid == 0), so it precedes the isPaid gate. Returns
+                // true iff this is one of our streaming intents — then it is fully handled here and must
                 // NOT fall through to the legacy path or the isPaid gate below. A static-address deposit
                 // carries no matching PartnerReferenceID, so it returns false and continues unchanged.
                 if (CardFundingSettlementService.TrySettleInvoicePayment(

@@ -362,5 +362,81 @@ namespace QryptoCard.INT.Script.Gateway.PGCrypto
                 return response = null;
             }
         }
+
+        // Create a Runegate PAYMENT REQUEST (a dynamic-address transaction for a custom amount, tagged
+        // with our PartnerReferenceID). Unlike createInvoice this needs no pre-registered product or
+        // customer — just CoinID + Amount + MerchantID + PartnerReferenceID (+ optional IdempotencyKey
+        // for gateway-side dedup). Returns the created transaction (Address + TransactionID + real
+        // DateExpired) on success, or null on any failure. Mirrors createInvoice's proxy/log shape.
+        public static TransactionModel createPayment(TransactionModel req)
+        {
+            DBEntities db = new DBEntities();
+            tblH_API_Log api = new tblH_API_Log();
+            TransactionModel response = new TransactionModel();
+            try
+            {
+                using (HttpClient clients = new HttpClient())
+                {
+                    clients.BaseAddress = new Uri(KeyModel.PGCRYPTO_API_URL);
+                    clients.Timeout = TimeSpan.FromSeconds(5);   // real 5s cap (HttpClient.Timeout is a value; .Add was a no-op leaving the 100s default)
+                    clients.DefaultRequestHeaders.Accept.Clear();
+
+                    clients.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
+
+                    ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls12;
+
+                    string path = "/v1/payment";
+                    clients.DefaultRequestHeaders.Add("Authorization", "Basic " + credentials());
+                    var httpContent = new StringContent(JsonConvert.SerializeObject(req), Encoding.UTF8, "application/json");
+                    var xxx = JsonConvert.SerializeObject(req);
+                    HttpResponseMessage responses = clients.PostAsync(path, httpContent).Result;
+
+                    api.Type = "PGCrypto - CreatePayment";
+                    api.Request = xxx;
+                    api.RequestDate = DateTime.Now;
+
+                    if (responses.IsSuccessStatusCode)
+                    {
+                        string resultJSON = responses.Content.ReadAsStringAsync().Result;
+                        if (responses.StatusCode == HttpStatusCode.OK)
+                        {
+                            api.Response = resultJSON;
+                            api.ResponseDate = DateTime.Now;
+                            db.tblH_API_Log.Add(api);
+                            db.SaveChanges();
+                            var x = JsonConvert.DeserializeObject<PGOutputModel>(resultJSON);
+                            if (x.Status == "success")
+                                return response = JsonConvert.DeserializeObject<TransactionModel>(x.Data.ToString());
+                            else
+                                return response = null;
+                        }
+                        else
+                        {
+                            api.Response = responses.StatusCode.ToString() + " - " + responses.Content.ReadAsStringAsync().Result;
+                            api.ResponseDate = DateTime.Now;
+                            db.tblH_API_Log.Add(api);
+                            db.SaveChanges();
+                            return response = null;
+                        }
+                    }
+                    else
+                    {
+                        api.Response = responses.StatusCode.ToString() + " - " + responses.Content.ReadAsStringAsync().Result;
+                        api.ResponseDate = DateTime.Now;
+                        db.tblH_API_Log.Add(api);
+                        db.SaveChanges();
+                        return response = null;
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                api.Response = ex.ToString();
+                api.ResponseDate = DateTime.Now;
+                db.tblH_API_Log.Add(api);
+                db.SaveChanges();
+                return response = null;
+            }
+        }
     }
 }

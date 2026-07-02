@@ -50,15 +50,18 @@ namespace QryptoCard.INT.Script.Service
         private const double DefMinDepositUsd = 0d;   // 0 => use the WasabiCard per-program quota
         private const double DefExpiryMinutes = 1440d;
 
-        // Runegate invoice config (merchant-specific string ids; operator-provided via Param1/env).
-        // Required to mint a per-intent USDT-TRC20 invoice. The customer MUST be dynamic-address
-        // (isStaticAddress=0) so each invoice gets its own address and concurrent invoices are allowed.
-        public const string SetPaymentId = "RunegatePaymentId";
-        public const string EnvPaymentId = "RUNEGATE_PAYMENT_ID";
-        public const string SetCustomerId = "RunegateCustomerId";
-        public const string EnvCustomerId = "RUNEGATE_CUSTOMER_ID";
-        public const string SetProductId = "RunegateProductId";
-        public const string EnvProductId = "RUNEGATE_PRODUCT_ID";
+        // Runegate payment-request config (merchant-specific string ids; operator-provided via Param1/env).
+        // Required to mint a per-intent USDT-TRC20 payment request. A payment request needs NO pre-
+        // registered product or customer — just the merchant and the coin; each request gets its own
+        // dynamic address, so concurrent intents are safe.
+        public const string SetMerchantId = "RunegateMerchantId";
+        public const string EnvMerchantId = "RUNEGATE_MERCHANT_ID";
+        // USDT-TRC20 is a TOKEN on the TRON chain: CoinID = the TRON chain coin, TokenID = USDT (with
+        // isToken=1). Both required so the payment request is denominated in USDT, not native TRX.
+        public const string SetCoinId = "RunegateCoinId";        // TRON chain coin id at Runegate
+        public const string EnvCoinId = "RUNEGATE_COIN_ID";
+        public const string SetTokenId = "RunegateTokenId";      // USDT token id (on the TRON chain)
+        public const string EnvTokenId = "RUNEGATE_TOKEN_ID";
 
         public class Result
         {
@@ -139,16 +142,16 @@ namespace QryptoCard.INT.Script.Service
                 decimal pctFee = CardFundingMath.PercentageFee(feePct, face);
                 decimal expectedTotal = CardFundingMath.ExpectedTotal(price, face, feePct, fixedFee);
 
-                // Mint a per-intent Runegate invoice (unique address + amount, tagged PartnerReferenceID
-                // = intentId) INSTEAD of the shared static address. Attribution of the landed deposit is
-                // then unambiguous per intent, and multiple concurrent intents are safe.
+                // Mint a per-intent Runegate payment request (unique dynamic address + amount, tagged
+                // PartnerReferenceID = intentId) INSTEAD of the shared static address. Attribution of the
+                // landed deposit is then unambiguous per intent, and multiple concurrent intents are safe.
                 string intentId = Guid.NewGuid().ToString("N");
-                var inv = CreateInvoiceForIntent(intentId, expectedTotal);
+                var inv = CreatePaymentForIntent(intentId, expectedTotal);
                 if (inv == null)
                     return Result.Fail("Deposit request is temporarily unavailable. Please try again shortly.", true);
 
                 return InsertIntent(db, intentId, userId, KindNew, cardTypeId, holder.HolderId, null,
-                    inv.Address, inv.InvoiceID, face, price, feePct, pctFee, fixedFee, expectedTotal);
+                    inv.Address, inv.TransactionID, face, price, feePct, pctFee, fixedFee, expectedTotal);
             }
         }
 
@@ -183,12 +186,12 @@ namespace QryptoCard.INT.Script.Service
                 decimal expectedTotal = CardFundingMath.ExpectedTotal(0m, face, feePct, fixedFee); // no card price on a top-up
 
                 string intentId = Guid.NewGuid().ToString("N");
-                var inv = CreateInvoiceForIntent(intentId, expectedTotal);
+                var inv = CreatePaymentForIntent(intentId, expectedTotal);
                 if (inv == null)
                     return Result.Fail("Deposit request is temporarily unavailable. Please try again shortly.", true);
 
                 return InsertIntent(db, intentId, userId, KindTopUp, null, null, cardNo,
-                    inv.Address, inv.InvoiceID, face, 0m, feePct, pctFee, fixedFee, expectedTotal);
+                    inv.Address, inv.TransactionID, face, 0m, feePct, pctFee, fixedFee, expectedTotal);
             }
         }
 
@@ -243,44 +246,45 @@ namespace QryptoCard.INT.Script.Service
             };
         }
 
-        // Mint a Runegate invoice for this intent: unique deposit address + amount = ExpectedTotal (one
-        // product line, Price overridden), tagged PartnerReferenceID = intentId (idempotent per merchant)
-        // and DateExpired matching the intent expiry. Returns the invoice (Address + InvoiceID) or null if
-        // config is missing / the gateway fails / the returned coin isn't USDT (defensive — never show a
-        // non-USDT address). The merchant customer MUST be dynamic-address (isStaticAddress=0).
-        private static InvoiceModel CreateInvoiceForIntent(string intentId, decimal expectedTotal)
+        // Mint a Runegate PAYMENT REQUEST for this intent: unique dynamic deposit address for a custom
+        // Amount = ExpectedTotal, tagged PartnerReferenceID = intentId. IdempotencyKey = intentId dedups a
+        // retried single POST on Runegate's side; note the intentId is freshly generated per create call,
+        // so a user re-submitting the funding form mints a NEW intent + request (the old one just expires),
+        // not the same address. Returns the created transaction (Address + TransactionID) or null if config
+        // is missing / the gateway fails / the returned coin isn't USDT (defensive — never show a non-USDT
+        // address). Needs NO pre-registered product or customer; each request gets its own dynamic address,
+        // so concurrent intents are safe.
+        private static TransactionModel CreatePaymentForIntent(string intentId, decimal expectedTotal)
         {
-            string paymentId = ReadParam1(EnvPaymentId, SetPaymentId);
-            string customerId = ReadParam1(EnvCustomerId, SetCustomerId);
-            string productId = ReadParam1(EnvProductId, SetProductId);
-            if (string.IsNullOrWhiteSpace(paymentId) || string.IsNullOrWhiteSpace(customerId) || string.IsNullOrWhiteSpace(productId))
+            string merchantId = ReadParam1(EnvMerchantId, SetMerchantId);
+            string coinId = ReadParam1(EnvCoinId, SetCoinId);
+            string tokenId = ReadParam1(EnvTokenId, SetTokenId);
+            if (string.IsNullOrWhiteSpace(merchantId) || string.IsNullOrWhiteSpace(coinId) || string.IsNullOrWhiteSpace(tokenId))
             {
-                Trace.TraceError("CardFundingIntent: Runegate invoice config (RunegatePaymentId/CustomerId/ProductId) not set — cannot create invoice.");
+                Trace.TraceError("CardFundingIntent: Runegate payment config (RunegateMerchantId/CoinId/TokenId) not set — cannot create payment request.");
                 return null;
             }
 
-            var req = new InvoiceModel
+            var req = new TransactionModel
             {
-                PaymentID = paymentId,
-                CustomerID = customerId,
+                MerchantID = merchantId,
+                CoinID = coinId,
+                isToken = 1,        // USDT is a token on the TRON chain
+                TokenID = tokenId,
+                Amount = expectedTotal,
                 PartnerReferenceID = intentId,
-                DateExpired = DateTime.Now.AddMinutes(ReadNum(SetExpiryMinutes, DefExpiryMinutes)),
-                Notes = "Card funding " + intentId,
-                Products = new List<ProductModel>
-                {
-                    new ProductModel { ProductID = productId, Price = expectedTotal, Quantity = 1 }
-                }
+                IdempotencyKey = intentId,
             };
 
-            InvoiceModel resp;
-            try { resp = PGCryptoService.createInvoice(req); }
-            catch (Exception ex) { Trace.TraceError("CardFundingIntent: createInvoice threw: " + ex.GetType().FullName); resp = null; }
+            TransactionModel resp;
+            try { resp = PGCryptoService.createPayment(req); }
+            catch (Exception ex) { Trace.TraceError("CardFundingIntent: createPayment threw: " + ex.GetType().FullName); resp = null; }
             if (resp == null || string.IsNullOrWhiteSpace(resp.Address)) return null;
-            // Defensive: only proceed with a USDT invoice (the merchant PaymentID should resolve to
-            // USDT-TRC20; never hand the customer a non-USDT address).
-            if (!string.IsNullOrEmpty(resp.Symbol) && !string.Equals(resp.Symbol, "USDT", StringComparison.OrdinalIgnoreCase))
+            // Defensive, FAIL-CLOSED: proceed only when the response symbol is explicitly USDT. A missing/
+            // empty or non-USDT symbol is rejected (never hand the customer an address for the wrong coin).
+            if (!string.Equals(resp.Symbol, "USDT", StringComparison.OrdinalIgnoreCase))
             {
-                Trace.TraceError("CardFundingIntent: invoice returned non-USDT symbol '" + resp.Symbol + "' — rejecting.");
+                Trace.TraceError("CardFundingIntent: payment request returned non-USDT symbol '" + (resp.Symbol ?? "(null)") + "' — rejecting.");
                 return null;
             }
             return resp;

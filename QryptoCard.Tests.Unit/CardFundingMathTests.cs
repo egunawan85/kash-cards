@@ -55,5 +55,33 @@ namespace QryptoCard.Tests.Unit
         {
             Assert.Equal(120m, CardFundingMath.ExpectedTotal(20m, 100m, 0, 0m));
         }
+
+        [Fact]
+        public void GrossOnChain_IsNetPlusCommission()
+        {
+            // Real prod shape: customer sent 28.50; Runegate kept 0.1425 (0.5%); we netted 28.3575.
+            // The gross the customer sent — what coverage is measured against — is net + commission.
+            Assert.Equal(28.50m, CardFundingMath.GrossOnChain(28.3575m, 0.1425m));
+        }
+
+        [Fact]
+        public void GrossOnChain_ExactlyCoversExpectedTotal_UnderPointFivePercentCommission()
+        {
+            // Customer pays the clean sticker (ExpectedTotal = 100); Runegate takes 0.5% (0.50); we net
+            // 99.50. Coverage is decided on gross, so 99.50 + 0.50 = 100.00 exactly covers ExpectedTotal —
+            // the intent advances, and the 0.5% is absorbed by our margin (the float nets less), never
+            // charged on top of the customer's 100.
+            decimal net = 99.50m, commission = 0.50m, expectedTotal = 100m;
+            Assert.Equal(expectedTotal, CardFundingMath.GrossOnChain(net, commission));
+            Assert.True(CardFundingMath.GrossOnChain(net, commission) >= expectedTotal);
+        }
+
+        [Fact]
+        public void GrossOnChain_NegativeInputsClamped()
+        {
+            Assert.Equal(0m, CardFundingMath.GrossOnChain(-5m, -1m));
+            Assert.Equal(10m, CardFundingMath.GrossOnChain(10m, -1m));
+            Assert.Equal(2m, CardFundingMath.GrossOnChain(-1m, 2m));
+        }
     }
 }

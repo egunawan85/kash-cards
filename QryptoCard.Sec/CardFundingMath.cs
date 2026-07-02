@@ -44,5 +44,22 @@ namespace QryptoCard.Sec
             decimal total = price + face + PercentageFee(feePct, face) + fixedFee;
             return Math.Round(total, 2, MidpointRounding.AwayFromZero);
         }
+
+        /// <summary>
+        /// The GROSS on-chain amount the customer actually sent for a settled deposit event =
+        /// net-received + gateway-commission. Runegate's deposit webhook reports the NET it credited us
+        /// (<paramref name="netReceived"/>) and the commission it kept (<paramref name="commission"/>)
+        /// separately; the customer's obligation is measured against what they SENT (the gross), so
+        /// coverage of ExpectedTotal is decided on this value. The gateway commission is therefore
+        /// absorbed by our margin (our real float nets less), never charged on top of the customer's
+        /// ExpectedTotal sticker. Both inputs are clamped to &gt;= 0 so a malformed event can't credit or
+        /// accrue a negative amount.
+        /// </summary>
+        public static decimal GrossOnChain(decimal netReceived, decimal commission)
+        {
+            if (netReceived < 0m) netReceived = 0m;
+            if (commission < 0m) commission = 0m;
+            return netReceived + commission;
+        }
     }
 }
